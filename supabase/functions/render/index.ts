@@ -8,9 +8,9 @@
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
-const IMAGE_MODEL = Deno.env.get('GEMINI_IMAGE_MODEL') ?? 'gemini-2.5-flash-image';
+const IMAGE_MODEL = Deno.env.get('GEMINI_IMAGE_MODEL') ?? 'gemini-3.1-flash-image';
 const VEO_MODEL = Deno.env.get('VEO_MODEL') ?? 'veo-3.0-fast-generate-001';
-const TTS_MODEL = Deno.env.get('GEMINI_TTS_MODEL') ?? 'gemini-2.5-flash-preview-tts';
+const TTS_MODEL = Deno.env.get('GEMINI_TTS_MODEL') ?? 'gemini-3.8-flash-tts';
 const TTS_VOICE = Deno.env.get('TTS_VOICE') ?? 'Kore';
 const CREDITS_PER_SCENE = Number(Deno.env.get('RENDER_CREDITS_PER_SCENE') ?? 3); // keep in sync with src/services/credits.ts
 const BUDGET_MS = 95_000;
@@ -122,9 +122,11 @@ async function generateVoice(scene: SceneRow) {
     contents: [{ role: 'user', parts: [{ text: `Read this like an expressive storyteller for a dramatic short video, in the language it is written in:\n${line}` }] }],
     generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: TTS_VOICE } } } },
   });
-  const audio = out?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-  if (!audio) throw new Error('TTS returned no audio');
-  return pcmToWav(b64ToBytes(audio));
+  const inline = out?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+  if (!inline?.data) throw new Error('TTS returned no audio');
+  const bytes = b64ToBytes(inline.data);
+  // Newer TTS models return a ready WAV; older ones return raw PCM (audio/L16).
+  return String(inline.mimeType ?? '').includes('wav') ? bytes : pcmToWav(bytes);
 }
 
 // ---------- Pipeline ----------

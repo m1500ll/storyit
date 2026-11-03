@@ -4,9 +4,9 @@
 // Single-file on purpose so it can be pasted into the Supabase dashboard editor.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.8-flash';
+const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
 // Used when the main model stays overloaded. Set GEMINI_FALLBACK_MODEL to "none" to disable.
-const FALLBACK_MODEL = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? 'gemini-3.8-flash-lite';
+const FALLBACK_MODEL = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? 'gemini-3.5-flash-lite';
 const RETRYABLE = new Set([429, 500, 503, 504]);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // Supabase stops a function after ~150s (free plan) without a usable response, so stay well below it.
