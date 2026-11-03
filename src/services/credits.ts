@@ -4,7 +4,7 @@ export { InsufficientCreditsError } from './errors';
 export const CREDIT_COSTS = {
   conceptGeneration: 1,
   sceneBreakdown: 2,
-  sceneRender: 3, // image + video per scene
+  sceneRender: 30, // image + 6–8s video + voice per scene; real cost ≈ $0.67–0.87 (Nov 2026), see README
   sceneRetry: 0,
 } as const;
 

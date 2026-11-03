@@ -73,8 +73,8 @@ const scenesSchema = {
           narration: { type: 'STRING', description: 'What happens, one or two sentences' },
           dialogue: { type: 'STRING', nullable: true, description: 'Format: Name: "line". Null if silent.' },
           image_prompt: { type: 'STRING', description: 'Self-contained prompt for the keyframe image, repeating character visual traits' },
-          video_prompt: { type: 'STRING', description: 'Camera movement and action for a 3-5s clip' },
-          duration_seconds: { type: 'INTEGER', description: 'Between 3 and 5' },
+          video_prompt: { type: 'STRING', description: 'Camera movement and action for a 6-8s clip' },
+          duration_seconds: { type: 'INTEGER', description: 'Between 6 and 8' },
         },
         required: ['title', 'narration', 'image_prompt', 'video_prompt', 'duration_seconds'],
       },
@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
           ...s,
           position: i + 1,
           dialogue: s.dialogue ?? null,
-          duration_seconds: Math.min(Math.max(Number(s.duration_seconds) || 4, 3), 5),
+          duration_seconds: Math.min(Math.max(Number(s.duration_seconds) || 7, 6), 8),
         })),
       };
     }

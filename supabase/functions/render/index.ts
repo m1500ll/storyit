@@ -1,19 +1,23 @@
 // Supabase Edge Function: `render`
-// Turns each storyboard scene into: keyframe image (Gemini image) -> 9:16 clip (Veo) -> voice-over (Gemini TTS).
+// Turns each storyboard scene into: keyframe image (Gemini image) -> 9:16 clip (Gemini Omni, Interactions API) -> voice-over (Gemini TTS).
 // The browser calls `tick` repeatedly; each call advances scenes as far as it can within a time budget,
-// so we never hit the Edge Function wall-clock limit even though Veo takes minutes.
+// so we never hit the Edge Function wall-clock limit even though a clip takes ~40s+.
 //
 // Secrets: GEMINI_API_KEY (required). Optional model overrides (Google renames models often):
-//   GEMINI_IMAGE_MODEL, VEO_MODEL, GEMINI_TTS_MODEL, TTS_VOICE, RENDER_CREDITS_PER_SCENE
+//   GEMINI_IMAGE_MODEL, VIDEO_MODEL, GEMINI_TTS_MODEL, TTS_VOICE, RENDER_CREDITS_PER_SCENE
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
 const IMAGE_MODEL = Deno.env.get('GEMINI_IMAGE_MODEL') ?? 'gemini-3.1-flash-image';
-const VEO_MODEL = Deno.env.get('VEO_MODEL') ?? 'veo-3.0-fast-generate-001';
+// Veo was retired from the Gemini API; Gemini Omni only answers on the Interactions API.
+const VIDEO_MODEL = Deno.env.get('VIDEO_MODEL') ?? 'gemini-omni-1.1-flash';
+const CLIP_MIN_S = 6;
+const CLIP_MAX_S = 8;
 const TTS_MODEL = Deno.env.get('GEMINI_TTS_MODEL') ?? 'gemini-3.8-flash-tts';
 const TTS_VOICE = Deno.env.get('TTS_VOICE') ?? 'Kore';
-const CREDITS_PER_SCENE = Number(Deno.env.get('RENDER_CREDITS_PER_SCENE') ?? 3); // keep in sync with src/services/credits.ts
+const CREDITS_PER_SCENE = Number(Deno.env.get('RENDER_CREDITS_PER_SCENE') ?? 30); // keep in sync with src/services/credits.ts
 const BUDGET_MS = 95_000;
+const CONCURRENCY = Number(Deno.env.get('RENDER_CONCURRENCY') ?? 2);
 const MAX_ATTEMPTS = 3;
 const STALE_CLAIM_MS = 3 * 60_000;
 const BUCKET = 'renders';
@@ -82,7 +86,7 @@ async function generateImage(scene: SceneRow, chars: Character[], reference: Uin
   const parts: unknown[] = [{
     text: `Vertical 9:16 keyframe for a short AI story video. Keep characters EXACTLY consistent with this character sheet${reference ? ' and with the reference image' : ''}:\n${characterSheet(chars)}\n\nScene ${scene.position}: ${scene.image_prompt}\nNo text, no captions, no watermark.`,
   }];
-  if (reference) parts.push({ inlineData: { mimeType: 'image/png', data: bytesToB64(reference) } });
+  if (reference) parts.push({ inlineData: { mimeType: sniffMime(reference), data: bytesToB64(reference) } });
   const out = await google(`models/${IMAGE_MODEL}:generateContent`, {
     contents: [{ role: 'user', parts }],
     generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '9:16' } },
@@ -92,28 +96,44 @@ async function generateImage(scene: SceneRow, chars: Character[], reference: Uin
   return { bytes: b64ToBytes(img.data), mime: (img.mimeType as string) ?? 'image/png' };
 }
 
-async function submitVideo(scene: SceneRow, image: Uint8Array, mime: string) {
-  const out = await google(`models/${VEO_MODEL}:predictLongRunning`, {
-    instances: [{ prompt: `${scene.video_prompt}. Smooth cinematic motion, characters stay on-model. No text.`, image: { bytesBase64Encoded: bytesToB64(image), mimeType: mime } }],
-    parameters: { aspectRatio: '9:16', personGeneration: 'allow_adult' },
+const sniffMime = (b: Uint8Array) =>
+  b[0] === 0xff && b[1] === 0xd8 ? 'image/jpeg' : b[0] === 0x52 && b[1] === 0x49 ? 'image/webp' : 'image/png';
+const clipSeconds = (scene: SceneRow) => Math.min(Math.max(Math.round(scene.duration_seconds || CLIP_MIN_S), CLIP_MIN_S), CLIP_MAX_S);
+
+/** Starts a background image-to-video interaction; returns its id. */
+async function submitVideo(scene: SceneRow, image: Uint8Array) {
+  const out = await google('interactions', {
+    model: VIDEO_MODEL,
+    background: true,
+    response_modalities: ['video'],
+    input: [
+      { type: 'text', text: `Animate this image into a ${clipSeconds(scene)} second vertical 9:16 clip. ${scene.video_prompt}. Smooth cinematic motion, characters stay exactly on-model as in the image. No text, no captions, no speech, no music.` },
+      { type: 'image', data: bytesToB64(image), mime_type: sniffMime(image) },
+    ],
   });
-  if (!out?.name) throw new Error('Veo did not return an operation');
-  return out.name as string;
+  if (!out?.id) throw new Error('Video model did not return an interaction id');
+  return out.id as string;
 }
 
-/** Returns the clip bytes when ready, null while Veo is still working. */
-async function pollVideo(operation: string): Promise<Uint8Array | null> {
-  const op = await google(operation);
-  if (!op.done) return null;
-  if (op.error) throw new Error(`Veo: ${op.error.message ?? 'generation failed'}`);
-  const uri = op.response?.generateVideoResponse?.generatedSamples?.[0]?.video?.uri;
-  if (!uri) {
-    const reason = op.response?.generateVideoResponse?.raiMediaFilteredReasons?.[0];
-    throw new Error(reason ? `Veo blocked the clip: ${reason}` : 'Veo returned no video');
+/** Returns the clip bytes when ready, null while the model is still working. */
+async function pollVideo(id: string): Promise<Uint8Array | null> {
+  const res = await fetch(`${API}/interactions/${encodeURIComponent(id)}`, {
+    headers: { 'x-goog-api-key': key() }, signal: AbortSignal.timeout(60_000),
+  });
+  if (!res.ok) throw new Error(`Google ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  const it = await res.json();
+  if (it.status === 'in_progress' || it.status === 'queued') return null;
+  if (it.status !== 'completed') throw new Error(`Video: ${it.errors?.[0]?.message ?? it.error?.message ?? it.status ?? 'generation failed'} (often a safety filter: soften the video prompt and retry)`);
+  const outputs = (it.steps ?? []).filter((st: { type: string }) => st.type === 'model_output')
+    .flatMap((st: { content?: unknown[] }) => st.content ?? []) as { type: string; data?: string; uri?: string }[];
+  const video = outputs.find((c) => c.type === 'video');
+  if (video?.data) return b64ToBytes(video.data);
+  if (video?.uri) {
+    const dl = await fetch(video.uri, { headers: { 'x-goog-api-key': key() }, redirect: 'follow' });
+    if (!dl.ok) throw new Error(`Could not download clip (${dl.status})`);
+    return new Uint8Array(await dl.arrayBuffer());
   }
-  const res = await fetch(uri, { headers: { 'x-goog-api-key': key() }, redirect: 'follow' });
-  if (!res.ok) throw new Error(`Could not download clip (${res.status})`);
-  return new Uint8Array(await res.arrayBuffer());
+  throw new Error('Video model returned no clip (it may have been blocked by safety filters)');
 }
 
 async function generateVoice(scene: SceneRow) {
@@ -167,7 +187,7 @@ async function advance(admin: SupabaseClient, scene: SceneRow, base: string, cha
     }
     case 'video_submit': {
       const img = await download(admin, scene.image_path!);
-      Object.assign(patch, { operation: await submitVideo(scene, img, 'image/png'), stage: NEXT.video_submit, attempts: 0 });
+      Object.assign(patch, { operation: await submitVideo(scene, img), stage: NEXT.video_submit, attempts: 0 });
       break;
     }
     case 'video_wait': {
@@ -225,7 +245,8 @@ async function tick(admin: SupabaseClient, userId: string, storyId: string) {
 
     // Scene 1's image is the visual reference for the others: render it first.
     const first = work.find((s) => s.position === 1 && s.stage === 'image');
-    const batch = first ? [first] : work.slice(0, 6);
+    // Clips come back inline (~5 MB base64 each): keep few in memory at once (Edge Functions have ~256 MB).
+    const batch = first ? [first] : work.slice(0, CONCURRENCY);
     const claimed: SceneRow[] = [];
     for (const s of batch) if (await claim(admin, s)) claimed.push(s);
     if (claimed.length === 0) break;
