@@ -3,7 +3,7 @@ import type { Database } from '@/types/database';
 import type { StoryWithScenes } from '@/types/domain';
 import { store } from '../store';
 import { InsufficientCreditsError } from '../errors';
-import type { Repository } from './types';
+import type { RenderProgress, Repository } from './types';
 
 const STORY_SELECT = '*, scenes(*), characters(*)';
 
@@ -20,6 +20,33 @@ function required<T>(res: { data: T; error: { message: string } | null }): NonNu
 }
 
 const sortScenes = (s: StoryWithScenes): StoryWithScenes => ({ ...s, scenes: [...s.scenes].sort((a, b) => a.position - b.position) });
+
+const SIGNED_TTL = 60 * 60; // 1h
+
+/** Replaces private storage paths with short-lived signed URLs the browser can load. */
+async function withMediaUrls(db: SupabaseClient<Database>, stories: StoryWithScenes[]): Promise<StoryWithScenes[]> {
+  const paths = stories.flatMap((st) => st.scenes.flatMap((s) => [s.image_path, s.video_path, s.audio_path])).filter((p): p is string => Boolean(p));
+  if (paths.length === 0) return stories;
+  const { data } = await db.storage.from('renders').createSignedUrls(paths, SIGNED_TTL);
+  const url = new Map((data ?? []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
+  const get = (p: string | null) => (p ? url.get(p) ?? null : null);
+  return stories.map((st) => ({
+    ...st,
+    scenes: st.scenes.map((s) => ({ ...s, image_url: get(s.image_path), video_url: get(s.video_path), audio_url: get(s.audio_path) })),
+  }));
+}
+
+async function invokeRender(db: SupabaseClient<Database>, body: Record<string, unknown>): Promise<RenderProgress> {
+  const { data, error } = await db.functions.invoke<RenderProgress>('render', { body });
+  if (error) {
+    const ctx = (error as { context?: Response }).context;
+    const msg = ctx && typeof ctx.json === 'function' ? ((await ctx.json().catch(() => ({}))) as { error?: string }).error : undefined;
+    if (msg && /not enough story credits/i.test(msg)) throw new InsufficientCreditsError(0, 0);
+    throw new Error(msg ?? error.message);
+  }
+  store.notify();
+  return data!;
+}
 
 export function createSupabaseRepository(db: SupabaseClient<Database>): Repository {
   const uid = async () => {
@@ -53,12 +80,12 @@ export function createSupabaseRepository(db: SupabaseClient<Database>): Reposito
 
     async listStories() {
       const rows = required(await db.from('stories').select(STORY_SELECT).order('created_at', { ascending: false }));
-      return (rows as unknown as StoryWithScenes[]).map(sortScenes);
+      return withMediaUrls(db, (rows as unknown as StoryWithScenes[]).map(sortScenes));
     },
 
     async getStory(id) {
       const row = unwrap(await db.from('stories').select(STORY_SELECT).eq('id', id).maybeSingle());
-      return row ? sortScenes(row as unknown as StoryWithScenes) : null;
+      return row ? (await withMediaUrls(db, [sortScenes(row as unknown as StoryWithScenes)]))[0]! : null;
     },
 
     async createStory(idea, concept, drafts) {
@@ -96,6 +123,10 @@ export function createSupabaseRepository(db: SupabaseClient<Database>): Reposito
       unwrap(await db.from('scenes').update({ status, error_message: null }).eq('id', sceneId));
       store.notify();
     },
+
+    startRender: (storyId) => invokeRender(db, { action: 'start', story_id: storyId }),
+    tickRender: (storyId) => invokeRender(db, { action: 'tick', story_id: storyId }),
+    retryScene: (storyId, sceneId, fromStart) => invokeRender(db, { action: 'retry', story_id: storyId, scene_id: sceneId, from_start: fromStart }),
 
     async approveStory(id, hash) {
       unwrap(await db.from('stories').update({ approved_hash: hash, approved_at: new Date().toISOString(), status: 'approved' }).eq('id', id));

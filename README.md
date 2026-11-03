@@ -49,3 +49,10 @@ supabase/migrations/0001_init.sql   schema + RLS + consume_credits() + approval-
 
 ## Testimonials
 `src/data/testimonials.ts` holds placeholder quotes that only render in dev. Replace them with real, consented quotes before launch.
+
+## Video render pipeline
+- `supabase/migrations/0004_render_pipeline.sql`: scene render stages + private `renders` storage bucket.
+- `supabase/functions/render`: per scene, keyframe image (Gemini image) → 9:16 clip (Veo, long-running) → voice-over (Gemini TTS). The browser calls `tick` in a loop (`useRenderLoop`); each call works ~95s, so the Edge Function limit is never hit. Scene 1's image is the visual reference for all others (character consistency).
+- Final MP4 is assembled **in the browser** with self-hosted ffmpeg.wasm (`src/lib/assemble.ts`): clips looped/trimmed to fit the voice-over, captions burned in (Inter Display, OFL), 720×1280 H.264/AAC.
+- Model names are env-overridable (Google renames often): `GEMINI_IMAGE_MODEL`, `VEO_MODEL`, `GEMINI_TTS_MODEL`, `TTS_VOICE`, `RENDER_CREDITS_PER_SCENE`.
+- ⚠️ Credit pricing (3/scene) is a placeholder: recompute from current Veo/image/TTS prices before charging customers.

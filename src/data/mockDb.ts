@@ -14,6 +14,7 @@ function makeScenes(storyId: string, statuses: Scene['status'][]): Scene[] {
     id: `${storyId}-s${d.position}`,
     story_id: storyId,
     status: statuses[i] ?? 'pending',
+    stage: (statuses[i] === 'generated' ? 'done' : 'pending') as Scene['stage'], image_path: null, video_path: null, audio_path: null, operation: null, attempts: 0, claimed_at: null,
     image_url: null,
     video_url: null,
     character_ids: [`${storyId}-c1`, `${storyId}-c2`],
@@ -26,7 +27,7 @@ function story(id: string, title: string, status: StoryWithScenes['status'], ep:
   return {
     id, user_id: USER_ID, title, idea: 'A lovers\' quarrel between a jealous strawberry and an arrogant lemon',
     logline: 'A possessive strawberry suspects her arrogant lemon boyfriend of cheating.', genre: 'Fruit Drama',
-    aspect_ratio: '9:16', status, episode_number: ep, series_id: 'series-zest', approved_at: null, approved_hash: null,
+    aspect_ratio: '9:16', status, episode_number: ep, series_id: 'series-zest', approved_at: null, approved_hash: null, render_started_at: null,
     created_at: iso(minsAgo), updated_at: iso(minsAgo / 2),
     scenes: makeScenes(id, statuses),
     characters: [

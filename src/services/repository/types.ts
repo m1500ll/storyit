@@ -17,4 +17,14 @@ export interface Repository {
   updateScene(storyId: string, sceneId: string, patch: Partial<SceneEditableFields>): Promise<void>;
   setSceneStatus(sceneId: string, status: Scene['status']): Promise<void>;
   approveStory(id: string, hash: string): Promise<void>;
+
+  // Render pipeline
+  /** Debits credits and queues every scene. */
+  startRender(storyId: string): Promise<RenderProgress>;
+  /** Advances the pipeline; call repeatedly until `finished`. */
+  tickRender(storyId: string): Promise<RenderProgress>;
+  /** Free retry of one scene; `fromStart` regenerates the image too (after an edit). */
+  retryScene(storyId: string, sceneId: string, fromStart?: boolean): Promise<RenderProgress>;
 }
+
+export interface RenderProgress { finished: boolean; done: number; failed: number; total: number }

@@ -1,30 +1,38 @@
-import { ImageIcon, RotateCcw, Video } from 'lucide-react';
+import { ImageIcon, RefreshCw, RotateCcw, Video } from 'lucide-react';
 import { useState } from 'react';
-import type { Scene } from '@/types/database';
+import type { SceneView } from '@/types/domain';
 import type { SceneEditableFields } from '@/services/repository';
 import { Button, ScenePoster, StatusBadge } from '../ui';
 
 interface Props {
-  scene: Scene;
+  scene: SceneView;
   /** Species of the scene's lead character, used for the placeholder poster. */
   species?: string;
   onSave: (patch: Partial<SceneEditableFields>) => void;
-  onRetry: () => void;
+  /** fromStart = regenerate image + clip + voice (after editing prompts). */
+  onRetry: (fromStart?: boolean) => void;
 }
 
 export function SceneCard({ scene, species, onSave, onRetry }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<SceneEditableFields>(scene);
 
+  const [stale, setStale] = useState(false);
   const save = () => {
     onSave(draft);
+    // Rendered media no longer matches the edited prompts.
+    if (scene.image_url && (draft.image_prompt !== scene.image_prompt || draft.video_prompt !== scene.video_prompt)) setStale(true);
     setEditing(false);
   };
 
   return (
     <article className="surface flex gap-4 p-4">
       <div className="relative grid aspect-[9/16] w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-gradient-to-b from-ink-700 to-ink-850">
-        {scene.image_url ? <img src={scene.image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        {scene.video_url ? (
+          <video src={scene.video_url} poster={scene.image_url ?? undefined} muted loop playsInline preload="metadata"
+            onMouseEnter={(e) => void e.currentTarget.play().catch(() => {})} onMouseLeave={(e) => e.currentTarget.pause()}
+            className="absolute inset-0 h-full w-full object-cover" aria-label={`Clip for scene ${scene.position}`} />
+        ) : scene.image_url ? <img src={scene.image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
           : scene.status === 'generated' ? <ScenePoster species={species} seed={scene.position} className="absolute inset-0" />
           : scene.status === 'generating' ? <div className="absolute inset-0 animate-pulse bg-gradient-to-b from-violet-500/20 to-transparent" />
           : <ImageIcon className="h-5 w-5 text-zinc-600" />}
@@ -57,7 +65,10 @@ export function SceneCard({ scene, species, onSave, onRetry }: Props) {
             {scene.error_message && <p className="mt-2 text-xs text-coral-300">{scene.error_message}</p>}
             <div className="mt-3 flex gap-2">
               <Button size="sm" variant="secondary" onClick={() => { setDraft(scene); setEditing(true); }}>Edit</Button>
-              {scene.status === 'failed' && <Button size="sm" variant="danger" onClick={onRetry}><RotateCcw className="h-3 w-3" /> Retry free</Button>}
+              {scene.status === 'failed' && <Button size="sm" variant="danger" onClick={() => onRetry(false)}><RotateCcw className="h-3 w-3" /> Retry free</Button>}
+              {stale && scene.status === 'generated' && (
+                <Button size="sm" variant="secondary" onClick={() => { setStale(false); onRetry(true); }}><RefreshCw className="h-3 w-3" /> Re-render with new prompts</Button>
+              )}
             </div>
           </>
         )}

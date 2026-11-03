@@ -1,6 +1,6 @@
 import { mockDb } from '@/data/mockDb';
 import { hashScenes } from '@/lib/approval';
-import { store } from '../store';
+import { delay, store } from '../store';
 import { InsufficientCreditsError } from '../errors';
 import type { Repository } from './types';
 
@@ -44,10 +44,11 @@ export const mockRepository: Repository = {
     const story = {
       id, user_id: mockDb.profile.id, title: concept.title, idea, logline: concept.logline, genre: 'Fruit Drama',
       aspect_ratio: '9:16' as const, status: 'scenes_ready' as const, episode_number: 1, series_id: null,
-      approved_at: null, approved_hash: null, created_at: ts, updated_at: ts, characters,
+      approved_at: null, approved_hash: null, render_started_at: null, created_at: ts, updated_at: ts, characters,
       scenes: drafts.map((d) => ({
         ...d, id: `${id}-s${d.position}`, story_id: id, status: 'pending' as const, image_url: null, video_url: null,
         character_ids: characters.map((c) => c.id), error_message: null, updated_at: ts,
+        stage: 'pending' as const, image_path: null, video_path: null, audio_path: null, operation: null, attempts: 0, claimed_at: null,
       })),
     };
     mockDb.stories.unshift(story);
@@ -75,6 +76,46 @@ export const mockRepository: Repository = {
     const found = findScene(sceneId);
     if (found) Object.assign(found.scene, { status, error_message: null });
     await changed(undefined);
+  },
+
+  async startRender(storyId) {
+    const story = mockDb.stories.find((s) => s.id === storyId);
+    if (!story) throw new Error('Story not found');
+    if (story.status !== 'generating') {
+      await this.consumeCredits(story.scenes.length * 3, storyId, `${story.title} — ${story.scenes.length} scene renders`);
+      story.status = 'generating';
+      story.scenes.forEach((s) => Object.assign(s, { status: 'queued', stage: 'image' }));
+      store.notify();
+    }
+    return this.tickRender(storyId);
+  },
+
+  /** Demo mode: fakes one scene per tick (no real media). */
+  async tickRender(storyId) {
+    const story = mockDb.stories.find((s) => s.id === storyId);
+    if (!story) throw new Error('Story not found');
+    await delay(500 + Math.random() * 400);
+    const next = story.scenes.find((s) => s.status === 'queued' || s.status === 'generating');
+    if (next) {
+      Object.assign(next, next.status === 'queued' ? { status: 'generating' } : { status: 'generated', stage: 'done' });
+      const following = story.scenes.find((s) => s.status === 'queued');
+      if (next.status === 'generated' && following) following.status = 'generating';
+    }
+    const done = story.scenes.filter((s) => s.status === 'generated').length;
+    const failed = story.scenes.filter((s) => s.status === 'failed').length;
+    const finished = done + failed === story.scenes.length;
+    if (finished && story.status === 'generating') story.status = 'in_review';
+    store.notify();
+    return { finished, done, failed, total: story.scenes.length };
+  },
+
+  async retryScene(storyId, sceneId) {
+    const found = findScene(sceneId);
+    if (found) Object.assign(found.scene, { status: 'queued', stage: 'image', error_message: null });
+    const story = mockDb.stories.find((s) => s.id === storyId);
+    if (story) story.status = 'generating';
+    store.notify();
+    return this.tickRender(storyId);
   },
 
   async approveStory(id, hash) {

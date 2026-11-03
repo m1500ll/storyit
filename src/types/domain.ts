@@ -13,8 +13,11 @@ export interface StoryConcept {
 /** Scene draft returned by the AI before persistence (Wizard phase 2). */
 export type SceneDraft = Pick<Scene, 'position' | 'title' | 'narration' | 'dialogue' | 'image_prompt' | 'video_prompt' | 'duration_seconds'>;
 
+/** Scene as shown in the UI: storage paths resolved to short-lived signed URLs. */
+export type SceneView = Scene & { audio_url?: string | null };
+
 export interface StoryWithScenes extends Story {
-  scenes: Scene[];
+  scenes: SceneView[];
   characters: Character[];
 }
 

@@ -5,6 +5,8 @@
 
 export type StoryStatus = 'draft' | 'concept_selected' | 'scenes_ready' | 'generating' | 'in_review' | 'approved' | 'published';
 export type SceneStatus = 'pending' | 'queued' | 'generating' | 'generated' | 'failed';
+/** Render pipeline step (server-side). */
+export type RenderStage = 'pending' | 'image' | 'video_submit' | 'video_wait' | 'audio' | 'done' | 'failed';
 export type CreditTransactionType = 'purchase' | 'subscription_grant' | 'consumption' | 'refund' | 'bonus';
 export type AspectRatio = '9:16' | '1:1' | '16:9';
 
@@ -34,6 +36,7 @@ export interface Database {
           series_id: UUID | null;
           approved_at: Timestamp | null;
           approved_hash: string | null;
+          render_started_at: Timestamp | null;
           created_at: Timestamp;
           updated_at: Timestamp;
         };
@@ -58,9 +61,12 @@ export interface Database {
           id: UUID; story_id: UUID; position: number; title: string; narration: string; dialogue: string | null;
           image_prompt: string; video_prompt: string; duration_seconds: number; status: SceneStatus;
           image_url: string | null; video_url: string | null; character_ids: UUID[]; error_message: string | null;
+          stage: RenderStage; image_path: string | null; video_path: string | null; audio_path: string | null;
+          operation: string | null; attempts: number; claimed_at: Timestamp | null;
           updated_at: Timestamp;
         };
-        Insert: Omit<Database['public']['Tables']['scenes']['Row'], 'id' | 'updated_at' | 'status' | 'image_url' | 'video_url' | 'error_message'> & {
+        Insert: Omit<Database['public']['Tables']['scenes']['Row'],
+          'id' | 'updated_at' | 'status' | 'image_url' | 'video_url' | 'error_message' | 'stage' | 'image_path' | 'video_path' | 'audio_path' | 'operation' | 'attempts' | 'claimed_at'> & {
           id?: UUID; status?: SceneStatus;
         };
         Update: Partial<Omit<Database['public']['Tables']['scenes']['Row'], 'id' | 'story_id'>>;
