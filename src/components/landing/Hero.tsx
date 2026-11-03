@@ -17,7 +17,7 @@ export function Hero() {
           Storyit writes, storyboards and renders 15-scene vertical episodes with consistent characters — you stay the director with a human approval gate before anything ships.
         </p>
         <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-          <Link to="/app/new"><Button size="lg">Start your first episode <ArrowRight className="h-4 w-4" /></Button></Link>
+          <Link to="/login"><Button size="lg">Start your first episode <ArrowRight className="h-4 w-4" /></Button></Link>
           <a href="#demo"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> Watch demo</Button></a>
         </div>
         <p className="mt-4 text-xs text-zinc-600">30 free Story Credits · No card required</p>

@@ -1,13 +1,13 @@
 import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { StoryWithScenes } from '@/types/domain';
-import { ProgressBar, StatusBadge } from '../ui';
+import { ProgressBar, ScenePoster, StatusBadge } from '../ui';
 
 export function ProjectCard({ story }: { story: StoryWithScenes }) {
   const done = story.scenes.filter((s) => s.status === 'generated').length;
   return (
     <Link to={`/app/stories/${story.id}`} className="surface group flex items-center gap-4 p-4 transition hover:border-white/15">
-      <div className="grid aspect-[9/16] w-12 shrink-0 place-items-center rounded-lg bg-gradient-to-b from-coral-500/30 to-violet-600/30 text-xl">🍓</div>
+      <div className="aspect-[9/16] w-12 shrink-0 overflow-hidden rounded-lg"><ScenePoster species={story.characters[0]?.species} seed={story.episode_number + 2} /></div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h3 className="truncate text-sm font-medium text-zinc-100">{story.title}</h3>

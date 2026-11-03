@@ -2,15 +2,17 @@ import { ImageIcon, RotateCcw, Video } from 'lucide-react';
 import { useState } from 'react';
 import type { Scene } from '@/types/database';
 import type { SceneEditableFields } from '@/services/repository';
-import { Button, StatusBadge } from '../ui';
+import { Button, ScenePoster, StatusBadge } from '../ui';
 
 interface Props {
   scene: Scene;
+  /** Species of the scene's lead character, used for the placeholder poster. */
+  species?: string;
   onSave: (patch: Partial<SceneEditableFields>) => void;
   onRetry: () => void;
 }
 
-export function SceneCard({ scene, onSave, onRetry }: Props) {
+export function SceneCard({ scene, species, onSave, onRetry }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<SceneEditableFields>(scene);
 
@@ -22,7 +24,10 @@ export function SceneCard({ scene, onSave, onRetry }: Props) {
   return (
     <article className="surface flex gap-4 p-4">
       <div className="relative grid aspect-[9/16] w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-gradient-to-b from-ink-700 to-ink-850">
-        {scene.status === 'generated' ? <span className="text-3xl">🍓</span> : <ImageIcon className="h-5 w-5 text-zinc-600" />}
+        {scene.image_url ? <img src={scene.image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          : scene.status === 'generated' ? <ScenePoster species={species} seed={scene.position} className="absolute inset-0" />
+          : scene.status === 'generating' ? <div className="absolute inset-0 animate-pulse bg-gradient-to-b from-violet-500/20 to-transparent" />
+          : <ImageIcon className="h-5 w-5 text-zinc-600" />}
         <span className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 text-[10px] tabular-nums text-zinc-300">{scene.position}</span>
       </div>
       <div className="min-w-0 flex-1">

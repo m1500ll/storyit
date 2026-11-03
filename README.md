@@ -39,3 +39,13 @@ supabase/migrations/0001_init.sql   schema + RLS + consume_credits() + approval-
 - **Gemini key is server-only**: `services/gemini.ts` calls a `gemini` Supabase Edge Function (to be written).
 - **Credits** are debited only via the `consume_credits` SECURITY DEFINER function; clients cannot update balances.
 - **Approval** stores a fingerprint of scene content; any edit revokes it (client-side in mocks, DB trigger in Supabase).
+
+## Payments (Stripe) — setup checklist
+1. Run `supabase/migrations/0003_billing.sql` in the SQL Editor.
+2. In Stripe (test mode first), create 4 prices: Creator $29/mo, Studio $99/mo (recurring), Pack 100 $12, Pack 500 $49 (one-time).
+3. Supabase → Edge Functions → Secrets: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_CREATOR`, `STRIPE_PRICE_STUDIO`, `STRIPE_PRICE_PACK_100`, `STRIPE_PRICE_PACK_500`, `APP_URL`.
+4. Deploy `supabase/functions/billing` (Verify JWT on) and `supabase/functions/stripe-webhook` (Verify JWT **off**).
+5. Stripe → Developers → Webhooks: endpoint `https://<project>.supabase.co/functions/v1/stripe-webhook`, events `checkout.session.completed`, `invoice.paid`, `customer.subscription.deleted`; put its signing secret in `STRIPE_WEBHOOK_SECRET`.
+
+## Testimonials
+`src/data/testimonials.ts` holds placeholder quotes that only render in dev. Replace them with real, consented quotes before launch.

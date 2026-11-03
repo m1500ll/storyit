@@ -22,13 +22,13 @@ export default function DashboardPage() {
         description="Your series at a glance. Episodes awaiting review need your sign-off before publication."
         actions={<Button onClick={() => navigate('/app/new')}><Plus className="h-4 w-4" /> Create episode</Button>} />
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <div className="grid grid-cols-3 gap-3">
             {stats.map(({ label, value, icon: Icon }) => (
-              <Card key={label} className="p-4">
+              <Card key={label} className="p-3 sm:p-4">
                 <Icon className="h-4 w-4 text-zinc-500" />
                 <p className="mt-3 font-display text-3xl text-zinc-50 tabular-nums">{value}</p>
-                <p className="text-xs text-zinc-500">{label}</p>
+                <p className="truncate text-xs text-zinc-500">{label}</p>
               </Card>
             ))}
           </div>

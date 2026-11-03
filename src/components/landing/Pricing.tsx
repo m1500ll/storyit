@@ -28,7 +28,7 @@ export function Pricing() {
                   <li key={perk} className="flex items-start gap-2 text-sm text-zinc-400"><Check className="mt-0.5 h-4 w-4 text-violet-400" />{perk}</li>
                 ))}
               </ul>
-              <Link to="/app" className="mt-8"><Button variant={featured ? 'primary' : 'secondary'} className="w-full">Choose {p.name}</Button></Link>
+              <Link to="/login" className="mt-8"><Button variant={featured ? 'primary' : 'secondary'} className="w-full">Choose {p.name}</Button></Link>
             </div>
           );
         })}

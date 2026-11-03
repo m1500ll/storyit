@@ -17,5 +17,5 @@ const styles: Record<SceneStatus | StoryStatus, { label: string; cls: string }> 
 
 export function StatusBadge({ status, className }: { status: SceneStatus | StoryStatus; className?: string }) {
   const s = styles[status];
-  return <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium', s.cls, className)}>{s.label}</span>;
+  return <span className={cn('inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-medium', s.cls, className)}>{s.label}</span>;
 }

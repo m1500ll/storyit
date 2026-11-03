@@ -2,6 +2,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ApprovalPanel } from '@/components/scenes/ApprovalPanel';
+import { ExportPanel } from '@/components/scenes/ExportPanel';
 import { SceneCard } from '@/components/scenes/SceneCard';
 import { LoadState, PageHeader, StatusBadge } from '@/components/ui';
 import { useStory } from '@/hooks/useStore';
@@ -36,14 +37,14 @@ export default function SceneEditorPage() {
         ))}
       </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
           {story.scenes.map((scene) => (
-            <SceneCard key={scene.id} scene={scene}
+            <SceneCard key={scene.id} scene={scene} species={story.characters[(scene.position - 1) % Math.max(story.characters.length, 1)]?.species}
               onSave={(patch) => act(() => repository.updateScene(story.id, scene.id, patch))}
               onRetry={() => act(() => productionService.retryScene(story.id, scene))} />
           ))}
         </div>
-        <div><ApprovalPanel story={story} onApprove={() => act(() => approvalService.approve(story.id))} /></div>
+        <div className="lg:sticky lg:top-24 lg:self-start"><ApprovalPanel story={story} onApprove={() => act(() => approvalService.approve(story.id))} /><ExportPanel story={story} /></div>
       </div>
     </>
   );

@@ -15,3 +15,10 @@ export const PLANS = [
 ] as const;
 
 export const estimateEpisodeCost = (sceneCount: number) => sceneCount * CREDIT_COSTS.sceneRender;
+
+export const CREDIT_PACKS = [
+  { id: 'pack_100', credits: 100, price: 12 },
+  { id: 'pack_500', credits: 500, price: 49, badge: 'Best value' },
+] as const;
+
+export type ProductKey = 'creator' | 'studio' | (typeof CREDIT_PACKS)[number]['id'];

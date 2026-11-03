@@ -10,7 +10,7 @@ export function ApprovalPanel({ story, onApprove }: { story: StoryWithScenes; on
   const approved = Boolean(story.approved_at);
 
   return (
-    <Card className="sticky top-24">
+    <Card>
       <p className="label flex items-center gap-1.5"><ShieldCheck className="h-3 w-3" /> Human approval</p>
       <div className="mt-4 flex items-baseline justify-between">
         <span className="font-display text-3xl text-zinc-50 tabular-nums">{ready}/{total}</span>
