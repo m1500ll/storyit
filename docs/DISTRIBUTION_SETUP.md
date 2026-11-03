@@ -61,10 +61,11 @@ npx supabase functions deploy captions --project-ref hubkgvfiiszthzqyfguf
 `social` et `publisher` vérifient eux-mêmes qui les appelle (`publisher` n'accepte que la clé service).
 
 ## 5. Activer le moteur (chaque minute)
-1. Supabase → Project Settings → **Vault** → *New secret* : nom `publisher_service_key`, valeur = clé **service_role**
-   (Project Settings → API ; la même que le secret `SUPABASE_SERVICE_ROLE_KEY` des fonctions).
-2. SQL Editor : collez `supabase/migrations/0007_publisher_cron.sql` → **Run**.
-3. Contrôle (SQL Editor) — doit lister des appels avec le statut 200 après 2 minutes :
+1. Créez un jeton aléatoire (terminal) : `openssl rand -hex 32`.
+2. Secret de fonction `PUBLISHER_CRON_TOKEN` = ce jeton.
+3. Supabase → Project Settings → **Vault** → *New secret* : nom `publisher_cron_token`, même valeur.
+4. SQL Editor : collez `supabase/migrations/0007_publisher_cron.sql` → **Run**.
+5. Contrôle (SQL Editor) — après 2 minutes, des appels avec le statut 200 :
 ```sql
 select status_code, left(content::text, 120), created from net._http_response order by created desc limit 5;
 ```

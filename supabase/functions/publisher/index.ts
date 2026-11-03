@@ -16,6 +16,12 @@ const deps: WorkerDeps = { accessToken, tiktok, instagram, fetchFile: (url, rang
 
 const BUDGET_MS = 100_000;
 const WORKER = `w-${crypto.randomUUID().slice(0, 8)}`;
+function timingSafeEqual(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
 
 type Pub = Record<string, any>;
@@ -79,9 +85,11 @@ async function planCampaigns(db: SupabaseClient) {
 // ---------- 2-4. Execute publications ----------
 
 Deno.serve(async (req) => {
-  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  if (req.headers.get('Authorization') !== `Bearer ${key}`) return json({ error: 'Forbidden' }, 403);
-  const db = createClient(Deno.env.get('SUPABASE_URL')!, key);
+  // Only the scheduler may call this: a dedicated random token, kept in the function secrets and in the database Vault.
+  const token = Deno.env.get('PUBLISHER_CRON_TOKEN');
+  const given = req.headers.get('Authorization') ?? '';
+  if (!token || token.length < 32 || !timingSafeEqual(given, `Bearer ${token}`)) return json({ error: 'Forbidden' }, 403);
+  const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const started = Date.now();
   const stats = { started: 0, polled: 0 };
 
