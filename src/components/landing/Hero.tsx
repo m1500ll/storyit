@@ -15,6 +15,7 @@ export function Hero() {
   const [open, setOpen] = useState<ShowcaseVideo | null>(null);
   return (
     <section className="relative overflow-hidden">
+      <div aria-hidden="true" className="bg-grid mask-fade-radial pointer-events-none absolute inset-0" />
       <div className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px]" />
       <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-20 text-center md:px-6 md:pt-28">
         <p className="label mx-auto inline-flex items-center gap-2 rounded-full border border-line/10 px-3 py-1">

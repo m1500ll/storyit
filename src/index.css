@@ -15,6 +15,7 @@
     --emerald-200: 167 243 208; --emerald-300: 110 231 183;
     --amber-100: 254 243 199; --amber-200: 253 230 138; --amber-300: 252 211 77;
     --sky-300: 125 211 252;
+    --grid-alpha: 0.1;
   }
   /* Light: soft paper background, white cards, ink text; accents darkened for contrast. */
   :root[data-theme='light'] {
@@ -28,6 +29,7 @@
     --emerald-200: 4 120 87; --emerald-300: 5 150 105;
     --amber-100: 120 53 15; --amber-200: 146 64 14; --amber-300: 180 83 9;
     --sky-300: 3 105 161;
+    --grid-alpha: 0.07;
   }
   html { transition: background-color 0.2s ease; }
   ::selection { @apply bg-violet-500/40 text-white; }
@@ -49,3 +51,18 @@
 
 @keyframes fadein { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+
+@layer utilities {
+  /* Subtle square grid ("grillage") that follows the theme's line colour. */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, rgb(var(--line) / var(--grid-alpha)) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(var(--line) / var(--grid-alpha)) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+  /* Fades the grid out towards the edges so it never competes with content. */
+  .mask-fade-radial {
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 35%, #000 30%, transparent 100%);
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 35%, #000 30%, transparent 100%);
+  }
+}
