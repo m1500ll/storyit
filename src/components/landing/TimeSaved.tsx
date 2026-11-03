@@ -16,7 +16,16 @@ export function TimeSaved() {
       <p className="label text-center">Time</p>
       <h2 className="mt-3 text-center font-display text-4xl text-zinc-50 md:text-5xl">Stop spending your evenings on pre-production</h2>
       <p className="mx-auto mt-3 max-w-xl text-center text-sm text-zinc-400">Posting daily is what grows an account. Writing, storyboarding and prompting every episode by hand is what makes creators quit. Storyit does the repetitive part.</p>
-      <div className="surface mt-12 overflow-x-auto p-0">
+      <ul className="mt-10 space-y-3 md:hidden">
+        {ROWS.map(([step, before, after]) => (
+          <li key={step} className="surface p-4">
+            <p className="text-sm font-medium text-zinc-100">{step}</p>
+            <p className="mt-2 flex items-start gap-2 text-xs text-zinc-500"><X className="mt-0.5 h-3.5 w-3.5 shrink-0 text-coral-400/70" />{before}</p>
+            <p className="mt-1.5 flex items-start gap-2 text-sm text-zinc-200"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" />{after}</p>
+          </li>
+        ))}
+      </ul>
+      <div className="surface mt-12 hidden overflow-x-auto p-0 md:block">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead>
             <tr className="border-b border-white/[0.06]">
