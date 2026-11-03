@@ -7,6 +7,10 @@ import { FAQ } from '@/components/landing/FAQ';
 import { FinalCTA } from '@/components/landing/FinalCTA';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { Testimonials } from '@/components/landing/Testimonials';
+import { Monetization } from '@/components/landing/Monetization';
+import { Results } from '@/components/landing/Results';
+import { Showcase } from '@/components/landing/Showcase';
+import { TimeSaved } from '@/components/landing/TimeSaved';
 import { Link } from 'react-router-dom';
 import { Logo } from '@/components/ui';
 
@@ -15,8 +19,12 @@ export default function LandingPage() {
     <div className="min-h-screen bg-ink-950">
       <MarketingNavbar />
       <Hero />
-      <DemoVideo />
+      <Showcase />
+      <TimeSaved />
+      <Monetization />
+      <Results />
       <HowItWorks />
+      <DemoVideo />
       <FeatureGrid />
       <Testimonials />
       <Pricing />

@@ -7,8 +7,8 @@ export function MarketingNavbar() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-6">
         <Logo />
         <nav className="hidden gap-8 text-sm text-zinc-400 md:flex">
-          <a href="/#features" className="hover:text-zinc-100">Features</a>
-          <a href="/#demo" className="hover:text-zinc-100">Demo</a>
+          <a href="/#examples" className="hover:text-zinc-100">Examples</a>
+          <a href="/#money" className="hover:text-zinc-100">Monetisation</a>
           <a href="/#pricing" className="hover:text-zinc-100">Pricing</a>
           <a href="/#faq" className="hover:text-zinc-100">FAQ</a>
         </nav>

@@ -22,9 +22,9 @@ export function DemoVideo() {
     <section id="demo" className="mx-auto max-w-6xl px-4 py-16 md:px-6">
       <div className="surface grid items-center gap-10 overflow-hidden p-6 md:grid-cols-[1fr_auto] md:p-12">
         <div>
-          <p className="label">Live demo</p>
-          <h2 className="mt-3 font-display text-4xl text-zinc-50">“Zest & Jealousy”, Episode 1</h2>
-          <p className="mt-3 max-w-md text-sm text-zinc-400">One sentence in, fifteen scenes out. Same strawberry, same lemon, every shot — with a cliffhanger that brings viewers back for episode 2.</p>
+          <p className="label">Inside the studio</p>
+          <h2 className="mt-3 font-display text-4xl text-zinc-50">Your storyboard, scene by scene</h2>
+          <p className="mt-3 max-w-md text-sm text-zinc-400">Example: “a jealous strawberry and an arrogant lemon”. Fifteen scenes, each with its line of dialogue and prompts — with a cliffhanger that brings viewers back for episode 2.</p>
           <ol className="mt-6 grid max-w-md grid-cols-5 gap-2">
             {FRUIT_DRAMA_SCENES.map((s, n) => (
               <li key={s.position}>
