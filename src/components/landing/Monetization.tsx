@@ -7,7 +7,7 @@ const PLATFORMS = [
   {
     id: 'tiktok', name: 'TikTok', program: 'Creator Rewards Program',
     rules: ['18+ and an eligible country (France included)', '10,000+ followers', '100,000+ views in the last 30 days', 'Original videos longer than 1 minute'],
-    rpm: { min: 0.4, max: 1.0, label: 'per 1,000 qualified views' },
+    rpm: { min: 0.1, max: 0.95, label: 'per 1,000 qualified views' },
     url: 'https://www.tiktok.com/creators/creator-portal/en-us/getting-paid-to-create/creator-rewards-program/',
   },
   {
@@ -71,13 +71,13 @@ export function Monetization() {
             ))}
           </div>
           <label htmlFor="views" className="mt-6 block text-sm text-zinc-300">
-            Monthly views: <span className="font-semibold tabular-nums text-zinc-50">{views.toLocaleString('en-US')}</span>
+            Monthly {platformId === 'tiktok' ? 'qualified ' : ''}views: <span className="font-semibold tabular-nums text-zinc-50">{views.toLocaleString('en-US')}</span>
           </label>
           <input id="views" type="range" min={0} max={VIEW_STEPS.length - 1} value={step} onChange={(e) => setStep(Number(e.target.value))}
             className="mt-3 w-full accent-violet-500" aria-valuetext={`${views.toLocaleString('en-US')} views`} />
           <p className="mt-4 flex gap-2 text-[11px] leading-relaxed text-zinc-500">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Estimate only, using commonly reported rates of {fmt(rpm.min)}–{fmt(rpm.max)} {rpm.label}. Real payouts vary a lot by country, audience, watch time and niche, and require meeting each program’s rules. Not a promise of earnings.
+            Estimate only, using rates creators publicly report ({fmt(rpm.min)}–{fmt(rpm.max)} {rpm.label}).{platformId === 'tiktok' && ' Only part of your views qualify: views from ineligible countries, short watches and repeat views don’t count — often well under half of total views.'} Real payouts vary a lot by country, audience, watch time and niche. Not a promise of earnings.
           </p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-ink-950/60 px-8 py-6 text-center md:min-w-[260px]">
