@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ApprovalPanel } from '@/components/scenes/ApprovalPanel';
 import { ExportPanel } from '@/components/scenes/ExportPanel';
 import { SceneCard } from '@/components/scenes/SceneCard';
-import { LoadState, PageHeader, StatusBadge } from '@/components/ui';
+import { LoadState, PageHeader, StatusBadge, useToast } from '@/components/ui';
 import { useStory } from '@/hooks/useStore';
 import { approvalService, productionService } from '@/services/production';
 import { repository } from '@/services/repository';
@@ -13,10 +13,11 @@ export default function SceneEditorPage() {
   const { storyId } = useParams();
   const { data: story, loading, error } = useStory(storyId);
   const [actionError, setActionError] = useState<string | null>(null);
+  const toast = useToast();
 
-  const act = (fn: () => Promise<unknown>) => {
+  const act = (fn: () => Promise<unknown>, done?: string) => {
     setActionError(null);
-    fn().catch((e: unknown) => setActionError(e instanceof Error ? e.message : String(e)));
+    fn().then(() => done && toast(done)).catch((e: unknown) => setActionError(e instanceof Error ? e.message : String(e)));
   };
 
   if (!story) {
@@ -40,11 +41,11 @@ export default function SceneEditorPage() {
         <div className="min-w-0 space-y-3">
           {story.scenes.map((scene) => (
             <SceneCard key={scene.id} scene={scene} species={story.characters[(scene.position - 1) % Math.max(story.characters.length, 1)]?.species}
-              onSave={(patch) => act(() => repository.updateScene(story.id, scene.id, patch))}
-              onRetry={() => act(() => productionService.retryScene(story.id, scene))} />
+              onSave={(patch) => act(() => repository.updateScene(story.id, scene.id, patch), story.approved_at ? 'Scene saved — approval revoked, please review again.' : 'Scene saved.')}
+              onRetry={() => act(() => productionService.retryScene(story.id, scene), 'Retrying scene — no credits used.')} />
           ))}
         </div>
-        <div className="lg:sticky lg:top-24 lg:self-start"><ApprovalPanel story={story} onApprove={() => act(() => approvalService.approve(story.id))} /><ExportPanel story={story} /></div>
+        <div className="lg:sticky lg:top-24 lg:self-start"><ApprovalPanel story={story} onApprove={() => act(() => approvalService.approve(story.id), 'Episode approved for publication.')} /><ExportPanel story={story} /></div>
       </div>
     </>
   );

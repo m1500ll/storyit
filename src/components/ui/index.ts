@@ -9,3 +9,4 @@ export * from './Logo';
 export * from './PageHeader';
 export * from './LoadState';
 export * from './FruitArt';
+export * from './Toast';
