@@ -7,6 +7,7 @@
  * Verify field names against these pages when the platforms change their APIs.
  */
 import type { Platform } from './distribution.ts';
+import type { CreatorInfo, TikTokOptions } from './platformSpecs.ts';
 
 const env = (k: string) => (globalThis as { Deno?: { env: { get(k: string): string | undefined } } }).Deno?.env.get(k);
 export const IG_VERSION = env('IG_API_VERSION') ?? 'v23.0';
@@ -40,7 +41,8 @@ async function call(url: string, init: RequestInit & { sent?: boolean } = {}) {
 async function aesKey() {
   const raw = env('TOKEN_ENCRYPTION_KEY');
   if (!raw) throw new Error('TOKEN_ENCRYPTION_KEY secret is not set');
-  const bytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
+  let bytes = new Uint8Array(0);
+  try { bytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0)); } catch { /* invalid base64 */ }
   if (bytes.length !== 32) throw new Error('TOKEN_ENCRYPTION_KEY must be 32 bytes, base64-encoded');
   return crypto.subtle.importKey('raw', bytes, 'AES-GCM', false, ['encrypt', 'decrypt']);
 }
@@ -64,7 +66,19 @@ export interface Profile {
   external_id: string; username: string | null; display_name: string | null; avatar_url: string | null;
   scopes: string[]; account_type?: string | null; can_publish: boolean; publish_restriction: string | null;
 }
-export interface SubmitInput { caption: string; title?: string | null; videoBytes?: Uint8Array; videoUrl?: string; size: number; privacy?: string | null }
+export interface SubmitInput {
+  caption: string; size: number; durationSeconds?: number | null;
+  /** Reads bytes [start, end] of the video (inclusive): only one chunk is ever in memory. */
+  readChunk?: (start: number, end: number) => Promise<Uint8Array>;
+  videoUrl?: string;
+  tiktok?: TikTokOptions;
+}
+const MB = 1024 * 1024;
+/** TikTok FILE_UPLOAD chunking: ≤10 MB in one piece; otherwise 10 MB chunks, the last one absorbs the remainder (< 20 MB). */
+export function tiktokChunks(size: number) {
+  if (size <= 10 * MB) return { chunkSize: size, count: 1 };
+  return { chunkSize: 10 * MB, count: Math.floor(size / (10 * MB)) };
+}
 export type PollResult = { state: 'pending' } | { state: 'published'; postId?: string | null; url?: string | null; note?: string } | { state: 'failed'; reason: string } | { state: 'ready_to_publish' };
 
 const inSeconds = (s?: number) => (s ? new Date(Date.now() + s * 1000).toISOString() : null);
@@ -102,7 +116,12 @@ export const tiktok = {
   },
   async creatorInfo(token: string) {
     const b = await call(`${TT}/post/publish/creator_info/query/`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json; charset=UTF-8' }, body: '{}' });
-    return b.data as { creator_username?: string; creator_nickname?: string; privacy_level_options: string[]; max_video_post_duration_sec: number };
+    const d = b.data ?? {};
+    return {
+      creator_nickname: d.creator_nickname ?? '', creator_username: d.creator_username, creator_avatar_url: d.creator_avatar_url,
+      privacy_level_options: d.privacy_level_options ?? [], comment_disabled: Boolean(d.comment_disabled), duet_disabled: Boolean(d.duet_disabled),
+      stitch_disabled: Boolean(d.stitch_disabled), max_video_post_duration_sec: Number(d.max_video_post_duration_sec ?? 600),
+    } satisfies CreatorInfo;
   },
   async profile(token: string, scopes: string[]): Promise<Profile> {
     const b = await call(`${TT}/user/info/?fields=open_id,avatar_url,display_name,username`, { headers: { Authorization: `Bearer ${token}` } });
@@ -110,7 +129,7 @@ export const tiktok = {
     const hasPublish = scopes.includes('video.publish');
     const audited = env('TIKTOK_APP_AUDITED') === 'true';
     let options: string[] = [];
-    if (hasPublish) options = (await tiktok.creatorInfo(token).catch(() => ({ privacy_level_options: [] as string[] }))).privacy_level_options ?? [];
+    if (hasPublish) options = (await tiktok.creatorInfo(token).catch(() => null))?.privacy_level_options ?? [];
     return {
       external_id: u.open_id, username: u.username ?? null, display_name: u.display_name ?? null, avatar_url: u.avatar_url ?? null, scopes,
       can_publish: hasPublish && options.length > 0,
@@ -118,34 +137,47 @@ export const tiktok = {
         : !audited ? 'TikTok app not audited yet: TikTok makes every post private (only visible to the account owner)' : null,
     };
   },
-  /** Direct Post with FILE_UPLOAD (our storage domain is not verified with TikTok, so PULL_FROM_URL is not usable). */
+  /**
+   * Direct Post with FILE_UPLOAD (our storage domain is not verified with TikTok, so PULL_FROM_URL is not usable).
+   * The options are the ones the user chose in the TikTok-compliant form; nothing is defaulted here.
+   */
   async submit(token: string, input: SubmitInput): Promise<string> {
-    if (!input.videoBytes) throw new PlatformError('Video bytes missing', 400, false);
+    const o = input.tiktok ?? {};
+    if (!input.readChunk) throw new PlatformError('Video source missing', 400, false);
+    if (!o.privacy_level || !o.consented_at) throw new PlatformError('TikTok settings were not confirmed by the user', 400, false);
+    // Fresh creator info right before posting (required by TikTok): the account may have changed.
     const info = await tiktok.creatorInfo(token);
-    const wanted = input.privacy ?? (env('TIKTOK_APP_AUDITED') === 'true' ? 'PUBLIC_TO_EVERYONE' : 'SELF_ONLY');
-    const privacy = info.privacy_level_options.includes(wanted) ? wanted : info.privacy_level_options.includes('SELF_ONLY') ? 'SELF_ONLY' : info.privacy_level_options[0];
-    if (!privacy) throw new PlatformError('This TikTok account cannot receive posts from this app right now', 403, false);
-    const size = input.videoBytes.length;
-    const MB = 1024 * 1024;
-    const chunk = size <= 64 * MB ? size : 10 * MB;
-    const count = size <= 64 * MB ? 1 : Math.floor(size / chunk);
+    if (!info.privacy_level_options.includes(o.privacy_level)) throw new PlatformError(`Visibility "${o.privacy_level}" is no longer available for this account`, 400, false);
+    if (input.durationSeconds != null && input.durationSeconds > info.max_video_post_duration_sec) {
+      throw new PlatformError(`This account accepts videos up to ${info.max_video_post_duration_sec} s`, 400, false);
+    }
+    const size = input.size;
+    const { chunkSize, count } = tiktokChunks(size);
     const init = await call(`${TT}/post/publish/video/init/`, {
       method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json; charset=UTF-8' },
       body: JSON.stringify({
-        post_info: { title: input.caption.slice(0, 2200), privacy_level: privacy, disable_comment: false, disable_duet: false, disable_stitch: false },
-        source_info: { source: 'FILE_UPLOAD', video_size: size, chunk_size: chunk, total_chunk_count: count },
+        post_info: {
+          title: input.caption.slice(0, 2200), privacy_level: o.privacy_level,
+          disable_comment: info.comment_disabled || Boolean(o.disable_comment),
+          disable_duet: info.duet_disabled || Boolean(o.disable_duet),
+          disable_stitch: info.stitch_disabled || Boolean(o.disable_stitch),
+          brand_content_toggle: Boolean(o.commercial && o.brand_content),
+          brand_organic_toggle: Boolean(o.commercial && o.brand_organic),
+        },
+        source_info: { source: 'FILE_UPLOAD', video_size: size, chunk_size: chunkSize, total_chunk_count: count },
       }),
     });
     const { publish_id, upload_url } = init.data ?? {};
     if (!publish_id || !upload_url) throw new PlatformError('TikTok did not return an upload URL', 502, false);
     // From here TikTok has a publish_id: any failure is reported with it so it can be reconciled, never re-sent blindly.
     for (let i = 0; i < count; i++) {
-      const start = i * chunk;
-      const end = i === count - 1 ? size - 1 : start + chunk - 1;
+      const start = i * chunkSize;
+      const end = i === count - 1 ? size - 1 : start + chunkSize - 1;
+      const bytes = await input.readChunk(start, end).catch((e) => { throw Object.assign(new PlatformError(`Could not read the video: ${e instanceof Error ? e.message : e}`, null, true), { code: `publish_id:${publish_id}` }); });
       await call(upload_url, {
         method: 'PUT', sent: true,
         headers: { 'Content-Type': 'video/mp4', 'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': String(end - start + 1) },
-        body: input.videoBytes.slice(start, end + 1) as unknown as BodyInit,
+        body: bytes as unknown as BodyInit,
       }).catch((e: PlatformError) => { e.code = `publish_id:${publish_id}`; throw e; });
     }
     return publish_id as string;

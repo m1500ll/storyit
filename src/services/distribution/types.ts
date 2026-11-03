@@ -1,5 +1,7 @@
 import type { PubStatus, RotationConfig } from '@shared/distribution.ts';
 import type { Editorial } from '@shared/captions.ts';
+import type { CreatorInfo, TikTokOptions } from '@shared/platformSpecs.ts';
+export type { CreatorInfo, TikTokOptions };
 
 export type Platform = 'tiktok' | 'instagram';
 export type { Editorial, PubStatus, RotationConfig };
@@ -18,7 +20,7 @@ export interface MediaAsset {
 export interface Publication {
   id: string; campaign_id: string | null; media_id: string; account_id: string; platform: Platform; scheduled_at: string; status: PubStatus;
   caption: string | null; hook: string | null; title: string | null; hashtags: string[]; metadata_source: 'none' | 'ai' | 'manual';
-  caption_edited: boolean; metadata_approved: boolean; metadata_warnings: string[]; attempts: number; max_attempts: number;
+  caption_edited: boolean; metadata_approved: boolean; metadata_warnings: string[]; platform_options: TikTokOptions; attempts: number; max_attempts: number;
   external_id: string | null; external_post_id: string | null; external_url: string | null; last_error: string | null;
   last_checked_at: string | null; published_at: string | null; created_at: string; updated_at: string;
 }
@@ -52,7 +54,9 @@ export interface DistributionRepository {
   // publications
   listPublications(filter?: { from?: string; to?: string; mediaId?: string; accountId?: string }): Promise<Publication[]>;
   schedulePublications(rows: { media_id: string; account_id: string; platform: Platform; scheduled_at: string; idempotency_key: string; campaign_id?: string | null }[]): Promise<{ created: number; duplicates: number }>;
-  updatePublication(id: string, patch: Partial<Pick<Publication, 'caption' | 'hook' | 'title' | 'hashtags' | 'scheduled_at' | 'metadata_approved' | 'caption_edited' | 'metadata_source'>> & { status?: 'scheduled' | 'cancelled' | 'draft' }): Promise<void>;
+  /** Live TikTok creator info (nickname, allowed visibility, interaction settings, max duration). */
+  creatorInfo(accountId: string): Promise<CreatorInfo>;
+  updatePublication(id: string, patch: Partial<Pick<Publication, 'caption' | 'hook' | 'title' | 'hashtags' | 'scheduled_at' | 'metadata_approved' | 'caption_edited' | 'metadata_source' | 'platform_options'>> & { status?: 'scheduled' | 'cancelled' | 'draft' }): Promise<void>;
   generateCaptions(ids: string[], force?: boolean): Promise<{ id: string; ok: boolean; error?: string; skipped?: string }[]>;
   listEvents(publicationId: string): Promise<PublicationEvent[]>;
   // campaigns

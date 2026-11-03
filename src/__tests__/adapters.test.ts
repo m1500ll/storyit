@@ -1,6 +1,6 @@
 /** Platform adapters against mocked HTTP (no real account involved). */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { instagram, PlatformError, tiktok } from '@shared/social.ts';
+import { instagram, PlatformError, tiktok, tiktokChunks } from '@shared/social.ts';
 
 type Call = { url: string; init?: RequestInit };
 function mockFetch(responses: ((c: Call) => Response | Promise<Response>)[]) {
@@ -17,27 +17,55 @@ function mockFetch(responses: ((c: Call) => Response | Promise<Response>)[]) {
 const ok = (body: unknown) => () => new Response(JSON.stringify(body), { status: 200 });
 afterEach(() => vi.unstubAllGlobals());
 
+const CREATOR = { creator_nickname: 'Marcel', privacy_level_options: ['SELF_ONLY'], comment_disabled: false, duet_disabled: true, stitch_disabled: false, max_video_post_duration_sec: 60 };
+const OPTS = { privacy_level: 'SELF_ONLY', consented_at: '2026-11-04T10:00:00Z', commercial: true, brand_organic: true };
+const reader = (log: [number, number][]) => async (a: number, b: number) => { log.push([a, b]); return new Uint8Array(b - a + 1); };
+
 describe('TikTok Direct Post', () => {
-  it('queries creator info, inits with a privacy level it offers, uploads, returns the publish_id', async () => {
+  it('re-reads creator info, sends the user\'s choices, uploads in one piece when small', async () => {
     const calls = mockFetch([
-      ok({ data: { privacy_level_options: ['SELF_ONLY'], max_video_post_duration_sec: 600 }, error: { code: 'ok' } }),
+      ok({ data: CREATOR, error: { code: 'ok' } }),
       ok({ data: { publish_id: 'p_123', upload_url: 'https://upload.tiktok/x' }, error: { code: 'ok' } }),
       () => new Response('', { status: 201 }),
     ]);
-    const id = await tiktok.submit('tok', { caption: 'Hi', size: 3, videoBytes: new Uint8Array([1, 2, 3]) });
+    const reads: [number, number][] = [];
+    const id = await tiktok.submit('tok', { caption: 'Hi', size: 3, durationSeconds: 30, readChunk: reader(reads), tiktok: OPTS });
     expect(id).toBe('p_123');
     const init = JSON.parse(String(calls[1]!.init!.body));
-    expect(init.post_info.privacy_level).toBe('SELF_ONLY'); // unaudited app: private only
-    expect(init.source_info).toMatchObject({ source: 'FILE_UPLOAD', video_size: 3, total_chunk_count: 1 });
+    expect(init.post_info).toMatchObject({ privacy_level: 'SELF_ONLY', disable_duet: true, disable_comment: false, brand_organic_toggle: true, brand_content_toggle: false });
+    expect(init.source_info).toMatchObject({ source: 'FILE_UPLOAD', video_size: 3, chunk_size: 3, total_chunk_count: 1 });
     expect((calls[2]!.init!.headers as Record<string, string>)['Content-Range']).toBe('bytes 0-2/3');
+    expect(reads).toEqual([[0, 2]]);
+  });
+  it('streams big files in 10 MB chunks (never the whole file in memory); the last chunk takes the remainder', async () => {
+    const MB = 1024 * 1024;
+    const size = 25 * MB + 123;
+    expect(tiktokChunks(size)).toEqual({ chunkSize: 10 * MB, count: 2 });
+    mockFetch([ok({ data: CREATOR, error: { code: 'ok' } }), ok({ data: { publish_id: 'p', upload_url: 'https://u' }, error: { code: 'ok' } }), () => new Response('', { status: 206 }), () => new Response('', { status: 201 })]);
+    const reads: [number, number][] = [];
+    await tiktok.submit('tok', { caption: '', size, durationSeconds: 30, readChunk: reader(reads), tiktok: OPTS });
+    expect(reads).toEqual([[0, 10 * MB - 1], [10 * MB, size - 1]]);
+    expect(Math.max(...reads.map(([a, b]) => b - a + 1))).toBeLessThan(20 * MB);
+  });
+  it('refuses to post without the user\'s TikTok choices, before calling TikTok', async () => {
+    const calls = mockFetch([]);
+    const err = await tiktok.submit('tok', { caption: '', size: 1, readChunk: reader([]), tiktok: {} }).catch((e) => e);
+    expect(err).toMatchObject({ sent: false, message: expect.stringMatching(/not confirmed/) });
+    expect(calls).toHaveLength(0);
+  });
+  it('rejects a visibility the account no longer offers, and videos over the account max duration', async () => {
+    mockFetch([ok({ data: CREATOR, error: { code: 'ok' } })]);
+    await expect(tiktok.submit('t', { caption: '', size: 1, readChunk: reader([]), tiktok: { ...OPTS, privacy_level: 'PUBLIC_TO_EVERYONE' } })).rejects.toMatchObject({ sent: false });
+    mockFetch([ok({ data: CREATOR, error: { code: 'ok' } })]);
+    await expect(tiktok.submit('t', { caption: '', size: 1, durationSeconds: 61, readChunk: reader([]), tiktok: OPTS })).rejects.toThrow(/up to 60 s/);
   });
   it('an upload failure after init is "sent" and carries the publish_id for reconciliation', async () => {
     mockFetch([
-      ok({ data: { privacy_level_options: ['SELF_ONLY'] }, error: { code: 'ok' } }),
+      ok({ data: CREATOR, error: { code: 'ok' } }),
       ok({ data: { publish_id: 'p_9', upload_url: 'https://u' }, error: { code: 'ok' } }),
       () => { throw new TypeError('socket hang up'); },
     ]);
-    const err = await tiktok.submit('tok', { caption: '', size: 1, videoBytes: new Uint8Array([1]) }).catch((e) => e);
+    const err = await tiktok.submit('tok', { caption: '', size: 1, readChunk: reader([]), tiktok: OPTS }).catch((e) => e);
     expect(err).toBeInstanceOf(PlatformError);
     expect(err.sent).toBe(true);
     expect(err.code).toBe('publish_id:p_9');

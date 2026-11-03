@@ -4,6 +4,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { adapters, decrypt, instagram, tiktok, type Profile } from '../_shared/social.ts';
 import { accessToken, saveTokens } from '../_shared/tokens.ts';
+import { checkState, oauthError } from '../_shared/oauth.ts';
 import type { Platform } from '../_shared/distribution.ts';
 
 const URL_BASE = Deno.env.get('SUPABASE_URL')!;
@@ -29,8 +30,9 @@ async function callback(platform: Platform, url: URL) {
   const code = url.searchParams.get('code');
   // CSRF: the state must exist, match the platform, be < 10 min old, and is consumed once.
   const { data: st } = await admin.from('oauth_states').delete().eq('state', state).select().maybeSingle();
-  if (!st || st.platform !== platform || Date.parse(st.created_at) < Date.now() - 10 * 60_000) return back({ error: 'The connection link expired or was already used. Please try again.' });
-  if (!code) return back({ error: url.searchParams.get('error_description') ?? 'Connection cancelled.' });
+  const valid = checkState(st, platform);
+  if (!valid.ok) return back({ error: valid.reason });
+  if (!code) return back({ error: oauthError(url.searchParams) });
 
   try {
     const tokens = await adapters[platform].exchange(code, callbackUri(platform));
@@ -91,6 +93,17 @@ Deno.serve(async (req) => {
       const { error } = await admin.from('oauth_states').insert({ state, user_id: auth.user.id, platform: body.platform });
       if (error) return json({ error: 'Could not start the connection' }, 500);
       return json({ url: adapters[body.platform].authorizeUrl(callbackUri(body.platform), state) });
+    }
+
+    case 'creator_info': {
+      // Live TikTok creator info, required right before posting (Content Sharing Guidelines).
+      const { data: acc } = await userClient.from('social_accounts').select('id, platform').eq('id', body.account_id ?? '').maybeSingle();
+      if (!acc || acc.platform !== 'tiktok') return json({ error: 'TikTok account not found' }, 404);
+      try {
+        return json(await tiktok.creatorInfo(await accessToken(admin, acc as { id: string; platform: Platform })));
+      } catch (e) {
+        return json({ error: e instanceof Error ? e.message.slice(0, 200) : 'Could not reach TikTok' }, 502);
+      }
     }
 
     case 'verify':

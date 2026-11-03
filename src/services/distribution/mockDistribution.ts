@@ -76,7 +76,7 @@ export function createMockDistribution(): DistributionRepository {
         const p = {
           id: crypto.randomUUID(), campaign_id: r.campaign_id ?? null, media_id: r.media_id, account_id: r.account_id, platform: r.platform,
           scheduled_at: r.scheduled_at, status: 'scheduled', caption: null, hook: null, title: null, hashtags: [], metadata_source: 'none',
-          caption_edited: false, metadata_approved: false, metadata_warnings: [], attempts: 0, max_attempts: 3, external_id: null,
+          caption_edited: false, metadata_approved: false, metadata_warnings: [], platform_options: {}, attempts: 0, max_attempts: 3, external_id: null,
           external_post_id: null, external_url: null, last_error: null, last_checked_at: null, published_at: null, created_at: now(), updated_at: now(),
         } as Publication;
         db.pubs.push(p);
@@ -90,10 +90,16 @@ export function createMockDistribution(): DistributionRepository {
       const p = db.pubs.find((x) => x.id === id);
       if (!p) throw new Error('Publication not found');
       if (!['draft', 'scheduled', 'failed', 'needs_attention'].includes(p.status)) throw new Error(`Publication already started (${p.status}), it can no longer be changed`);
+      const next = { ...p, ...patch };
+      if (next.metadata_approved && next.platform === 'tiktok' && (!next.platform_options?.privacy_level || !next.platform_options?.consented_at)) {
+        throw new Error('TikTok: choose who can view the video and accept the declaration before approving');
+      }
+      if (next.metadata_approved && !next.caption?.trim() && !next.hashtags.length) throw new Error('Write or generate a caption before approving');
       if (patch.status && patch.status !== p.status) log(p, 'status', { from: p.status, to: patch.status });
       Object.assign(p, patch, { updated_at: now() });
       changed(undefined);
     },
+    creatorInfo: async () => { throw new Error('Demo mode: TikTok account info needs a real connected account.'); },
     generateCaptions: async (ids) => ids.map((id) => ({ id, ok: false, error: 'AI captions are not available in demo mode: write the caption manually.' })),
     listEvents: async (id) => db.events.filter((e) => e.publication_id === id),
 

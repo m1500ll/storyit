@@ -7,6 +7,7 @@ import { useAccounts, useGroups, useIntegrations, useMedia, usePublications } fr
 import { cn } from '@/lib/cn';
 import { distribution, type RotationConfig, type SocialAccount } from '@/services/distribution';
 import { destKey, libraryRunway, planSimultaneous, rotationSummary, zonedToUtc, type DestinationKey } from '@shared/distribution.ts';
+import { checkVideo } from '@shared/platformSpecs.ts';
 
 const BLOCKING = ['draft', 'scheduled', 'queued', 'processing', 'submitted', 'published', 'needs_attention'];
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -91,7 +92,14 @@ function Simultaneous({ initial }: { initial: string[] }) {
   const existing = useMemo(() => new Set<DestinationKey>(pubs.filter((p) => BLOCKING.includes(p.status)).map((p) => destKey(p.media_id, p.account_id))), [pubs]);
   const chosen = accounts.filter((a) => targets.has(a.id));
   const toUtc = (local: string) => (local ? zonedToUtc(local.slice(0, 10), local.slice(11, 16), tz) : '');
-  const plan = [...videos].map((v) => ({ v, ...planSimultaneous(v, chosen, toUtc(when), new Set(existing), Object.fromEntries(Object.entries(perAccount).filter(([, t]) => t).map(([id, t]) => [id, toUtc(t)]))) }));
+  const plan = [...videos].map((v) => {
+    const raw = planSimultaneous(v, chosen, toUtc(when), new Set(existing), Object.fromEntries(Object.entries(perAccount).filter(([, t]) => t).map(([id, t]) => [id, toUtc(t)])));
+    const m = media.find((x) => x.id === v);
+    // Platform constraints are checked before anything is scheduled.
+    const blocked = raw.planned.map((p) => ({ p, issues: m ? checkVideo(p.platform, m).filter((i) => i.level === 'error') : [] })).filter((x) => x.issues.length);
+    return { v, planned: raw.planned.filter((p) => !blocked.some((b) => b.p === p)),
+      skipped: [...raw.skipped, ...blocked.map((b) => ({ account_id: b.p.account_id, reason: b.issues.map((i) => i.message).join(', ') }))] };
+  });
   const total = plan.reduce((n, p) => n + p.planned.length, 0);
   const skipped = plan.reduce((n, p) => n + p.skipped.length, 0);
   const inPast = when && Date.parse(toUtc(when)) < Date.now() - 60_000;
@@ -144,7 +152,8 @@ function Simultaneous({ initial }: { initial: string[] }) {
       <Card className="self-start lg:sticky lg:top-24">
         <p className="label">Summary</p>
         <p className="mt-3 font-display text-3xl tabular-nums text-zinc-50">{total}</p>
-        <p className="text-xs text-zinc-400">publication{total > 1 ? 's' : ''}: {videos.size} video{videos.size > 1 ? 's' : ''} × {chosen.length} account{chosen.length > 1 ? 's' : ''}{skipped ? `, ${skipped} skipped (already on that account)` : ''}.</p>
+        <p className="text-xs text-zinc-400">publication{total > 1 ? 's' : ''}: {videos.size} video{videos.size > 1 ? 's' : ''} × {chosen.length} account{chosen.length > 1 ? 's' : ''}{skipped ? `, ${skipped} skipped, see below` : ''}.</p>
+        {skipped > 0 && <ul className="mt-2 space-y-0.5 text-[11px] text-amber-300">{plan.flatMap((p) => p.skipped.map((x) => <li key={p.v + x.account_id}>Skipped {media.find((m) => m.id === p.v)?.title} → {accountLabel(accounts.find((a) => a.id === x.account_id))}: {x.reason}</li>))}</ul>}
         <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto text-[11px] text-zinc-500">
           {plan.flatMap((p) => p.planned.map((x) => <li key={x.idempotency_key} className="truncate">{media.find((m) => m.id === x.media_id)?.title} → {accountLabel(accounts.find((a) => a.id === x.account_id))}</li>))}
         </ul>

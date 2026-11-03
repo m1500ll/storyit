@@ -2,10 +2,12 @@ import { AlertTriangle, Check, ChevronDown, ExternalLink, Pause, Play, RefreshCw
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { accountLabel, fmtDateTime, inputCls, ModeBanner, Notice, PlatformDot, PubBadge } from '@/components/distribution/bits';
+import { TikTokSettings } from '@/components/distribution/TikTokSettings';
 import { Button, Card, LoadState, PageHeader, useToast } from '@/components/ui';
 import { useAccounts, useCampaigns, useIntegrations, useMedia, usePublications } from '@/hooks/useDistribution';
 import { cn } from '@/lib/cn';
-import { distribution, type Publication, type PublicationEvent, type PubStatus, type SocialAccount } from '@/services/distribution';
+import { distribution, type MediaAsset, type Publication, type PublicationEvent, type PubStatus, type SocialAccount, type TikTokOptions } from '@/services/distribution';
+import { checkVideo } from '@shared/platformSpecs.ts';
 import { finalCaption } from '@shared/captions.ts';
 
 type View = 'day' | 'week' | 'month';
@@ -96,7 +98,7 @@ export default function PublicationsPage({ history = false }: { history?: boolea
           {[...byDay.entries()].map(([day, list]) => (
             <section key={day}>
               <h2 className="mb-2 text-xs font-medium text-zinc-400">{new Date(day).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })} <span className="text-zinc-600 tabular-nums">· {list.length}</span></h2>
-              <ul className="space-y-2">{list.map((p) => <PublicationRow key={p.id} pub={p} account={accounts.find((a) => a.id === p.account_id)} videoTitle={media.find((m) => m.id === p.media_id)?.title ?? 'Video'} ai={Boolean(integ?.ai)} />)}</ul>
+              <ul className="space-y-2">{list.map((p) => <PublicationRow key={p.id} pub={p} account={accounts.find((a) => a.id === p.account_id)} video={media.find((m) => m.id === p.media_id)} ai={Boolean(integ?.ai)} />)}</ul>
             </section>
           ))}
         </div>
@@ -107,7 +109,10 @@ export default function PublicationsPage({ history = false }: { history?: boolea
 
 const EDITABLE: PubStatus[] = ['draft', 'scheduled', 'failed'];
 
-function PublicationRow({ pub, account, videoTitle, ai }: { pub: Publication; account?: SocialAccount; videoTitle: string; ai: boolean }) {
+function PublicationRow({ pub, account, video, ai }: { pub: Publication; account?: SocialAccount; video?: MediaAsset; ai: boolean }) {
+  const videoTitle = video?.title ?? 'Video';
+  const [tt, setTt] = useState<TikTokOptions>(pub.platform_options ?? {});
+  const specs = video ? checkVideo(pub.platform, video) : [];
   const [open, setOpen] = useState(false);
   const [caption, setCaption] = useState(pub.caption ?? '');
   const [tags, setTags] = useState(pub.hashtags.join(' '));
@@ -119,7 +124,10 @@ function PublicationRow({ pub, account, videoTitle, ai }: { pub: Publication; ac
   useEffect(() => { setCaption(pub.caption ?? ''); setTags(pub.hashtags.join(' ')); }, [pub.caption, pub.hashtags]);
 
   const editable = EDITABLE.includes(pub.status);
+  const ttDirty = JSON.stringify(tt) !== JSON.stringify(pub.platform_options ?? {});
   const dirty = caption !== (pub.caption ?? '') || tags !== pub.hashtags.join(' ');
+  const ttReady = pub.platform !== 'tiktok' || Boolean(tt.privacy_level && tt.consented_at);
+  const specBlocked = specs.some((i) => i.level === 'error');
   const hashtags = tags.split(/[\s,]+/).filter(Boolean).map((t) => '#' + t.replace(/^#+/, ''));
   const full = finalCaption(caption, hashtags);
   const run = async (k: string, fn: () => Promise<unknown>, ok?: string) => {
@@ -128,6 +136,7 @@ function PublicationRow({ pub, account, videoTitle, ai }: { pub: Publication; ac
   };
   const save = (approve: boolean) => run(approve ? 'approve' : 'save', () => distribution.updatePublication(pub.id, {
     caption, hashtags, caption_edited: dirty || pub.caption_edited, metadata_source: dirty ? 'manual' : pub.metadata_source, metadata_approved: approve,
+    ...(pub.platform === 'tiktok' ? { platform_options: tt } : {}),
   }), approve ? 'Caption approved.' : 'Caption saved.');
   const generate = (force: boolean) => run('ai', async () => {
     const [r] = await distribution.generateCaptions([pub.id], force);
@@ -148,6 +157,7 @@ function PublicationRow({ pub, account, videoTitle, ai }: { pub: Publication; ac
         <div className="border-t border-line/[0.06] px-4 py-3">
           {pub.last_error && <p role="alert" className="mb-2 text-xs text-coral-300">{pub.last_error}</p>}
           {pub.metadata_warnings.length > 0 && <p className="mb-2 text-xs text-amber-300">To check: {pub.metadata_warnings.join(' · ')}</p>}
+          {specs.length > 0 && <ul className="mb-2 space-y-0.5 text-xs">{specs.map((i) => <li key={i.message} className={i.level === 'error' ? 'text-coral-300' : 'text-amber-300'}>{i.level === 'error' ? 'Blocked' : 'Warning'}: {i.message}{i.source === 'to_verify' ? ' (limit not confirmed by official docs)' : ''}</li>)}</ul>}
           <div className="grid gap-3 lg:grid-cols-[1fr_260px]">
             <div className="min-w-0">
               <label htmlFor={`cap-${pub.id}`} className="text-xs text-zinc-400">Caption for {accountLabel(account)}{pub.caption_edited && <span className="text-zinc-500"> · edited by you</span>}</label>
@@ -155,10 +165,11 @@ function PublicationRow({ pub, account, videoTitle, ai }: { pub: Publication; ac
               <label htmlFor={`tags-${pub.id}`} className="mt-2 block text-xs text-zinc-400">Hashtags</label>
               <input id={`tags-${pub.id}`} disabled={!editable} value={tags} onChange={(e) => setTags(e.target.value)} className={cn(inputCls, 'mt-1')} placeholder="#FruitDrama #DrameFamilial…" />
               <p className={cn('mt-1 text-[11px] tabular-nums', full.length > 2200 ? 'text-coral-300' : 'text-zinc-500')}>{full.length}/2200</p>
+              {pub.platform === 'tiktok' && account && <div className="mt-3"><TikTokSettings accountId={account.id} value={tt} onChange={setTt} durationSeconds={video?.duration_seconds ?? null} disabled={!editable} /></div>}
               {editable && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  <Button size="sm" disabled={!caption.trim() || full.length > 2200} loading={busy === 'approve'} onClick={() => save(true)}><Check className="h-3.5 w-3.5" /> {pub.metadata_approved && !dirty ? 'Approved' : 'Approve caption'}</Button>
-                  {dirty && <Button size="sm" variant="secondary" loading={busy === 'save'} onClick={() => save(false)}>Save draft</Button>}
+                  <Button size="sm" disabled={!caption.trim() || full.length > 2200 || !ttReady || specBlocked} loading={busy === 'approve'} onClick={() => save(true)}><Check className="h-3.5 w-3.5" /> {pub.metadata_approved && !dirty && !ttDirty ? 'Approved' : pub.platform === 'tiktok' ? 'Approve post' : 'Approve caption'}</Button>
+                  {(dirty || ttDirty) && <Button size="sm" variant="secondary" loading={busy === 'save'} onClick={() => save(false)}>Save draft</Button>}
                   <Button size="sm" variant="ghost" disabled={!ai} title={ai ? undefined : 'AI captions are not configured'} loading={busy === 'ai'}
                     onClick={() => (pub.caption_edited && !window.confirm('Replace your edited caption with a new AI caption?') ? undefined : generate(pub.caption_edited))}>
                     <Sparkles className="h-3.5 w-3.5" /> {pub.caption ? 'Rewrite with AI' : 'Write with AI'}

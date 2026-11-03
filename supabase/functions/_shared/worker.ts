@@ -3,6 +3,7 @@
 import { backoffMs, classifyHttp } from './distribution.ts';
 import { finalCaption } from './captions.ts';
 import { PlatformError, type instagram as IG, type tiktok as TT } from './social.ts';
+import { checkVideo } from './platformSpecs.ts';
 
 // deno-lint-ignore no-explicit-any
 export type Db = any;
@@ -13,7 +14,8 @@ export interface WorkerDeps {
   accessToken: (db: Db, account: { id: string; platform: 'tiktok' | 'instagram' }) => Promise<string>;
   tiktok: Pick<typeof TT, 'submit' | 'poll'>;
   instagram: Pick<typeof IG, 'submit' | 'poll' | 'publish'>;
-  fetchFile: (url: string) => Promise<Response>;
+  /** Fetches the video (optionally a byte range) from a short-lived signed URL. */
+  fetchFile: (url: string, range?: string) => Promise<Response>;
 }
 
 const POLL_EVERY_MS = 45_000;
@@ -66,6 +68,12 @@ export async function start(db: Db, pub: Pub, deps: WorkerDeps) {
   if (!account.can_publish) return set(db, pub.id, { status: 'failed', last_error: account.publish_restriction ?? 'This account cannot publish through the API' });
   const text = finalCaption(pub.caption, pub.hashtags ?? []);
   if (text.length > 2200) return set(db, pub.id, { status: 'failed', last_error: 'Caption is longer than 2200 characters' });
+  const specErrors = checkVideo(account.platform, media).filter((i) => i.level === 'error');
+  if (specErrors.length) return set(db, pub.id, { status: 'failed', last_error: specErrors.map((i) => i.message).join(' · ') });
+  const tt = pub.platform_options ?? {};
+  if (account.platform === 'tiktok' && (!tt.privacy_level || !tt.consented_at)) {
+    return set(db, pub.id, { status: 'failed', last_error: 'TikTok settings (visibility, disclosure, declaration) were not confirmed: open the post, confirm them, then retry' });
+  }
   // Belt and braces on top of the unique index.
   const { count } = await db.from('scheduled_publications').select('id', { count: 'exact', head: true })
     .eq('media_id', pub.media_id).eq('account_id', pub.account_id).in('status', ['published', 'submitted', 'needs_attention']).neq('id', pub.id);
@@ -80,9 +88,14 @@ export async function start(db: Db, pub: Pub, deps: WorkerDeps) {
     sent = true;
     let externalId: string;
     if (account.platform === 'tiktok') {
-      const file = await deps.fetchFile(signed.signedUrl);
-      if (!file.ok) throw new PlatformError(`Could not read the video (${file.status})`, 500, false);
-      externalId = await tiktok.submit(token, { caption: text, size: Number(media.size_bytes), videoBytes: new Uint8Array(await file.arrayBuffer()), privacy: account.editorial?.privacy_level ?? null });
+      const readChunk = async (start: number, end: number) => {
+        const r = await deps.fetchFile(signed.signedUrl, `bytes=${start}-${end}`);
+        if (r.status !== 206 && !(r.ok && start === 0 && end === Number(media.size_bytes) - 1)) throw new Error(`storage returned ${r.status}`);
+        const buf = new Uint8Array(await r.arrayBuffer());
+        if (buf.length !== end - start + 1) throw new Error('incomplete chunk');
+        return buf;
+      };
+      externalId = await tiktok.submit(token, { caption: text, size: Number(media.size_bytes), durationSeconds: media.duration_seconds, readChunk, tiktok: tt });
     } else {
       externalId = await instagram.submit(token, account.external_id, { caption: text, size: Number(media.size_bytes), videoUrl: signed.signedUrl });
     }

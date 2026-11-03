@@ -24,7 +24,8 @@ describe('distribution flows (demo repository)', () => {
     const v = await d.uploadMedia(file('b.mp4'), { title: 'B', tags: [] }, () => {});
     await d.schedulePublications(planSimultaneous(v.id, [a!, b!], new Date().toISOString(), new Set()).planned);
     const [p1, p2] = await d.listPublications({ mediaId: v.id });
-    await d.updatePublication(p1!.id, { caption: 'Texte TikTok', caption_edited: true, metadata_source: 'manual', metadata_approved: true });
+    await expect(d.updatePublication(p1!.id, { caption: 'Texte TikTok', metadata_approved: true })).rejects.toThrow(/TikTok/); // TikTok needs the user's settings
+    await d.updatePublication(p1!.id, { caption: 'Texte TikTok', caption_edited: true, metadata_source: 'manual', metadata_approved: true, platform_options: { privacy_level: 'SELF_ONLY', consented_at: 'now' } });
     const after = await d.listPublications({ mediaId: v.id });
     expect(after.find((p) => p.id === p1!.id)).toMatchObject({ caption: 'Texte TikTok', caption_edited: true, metadata_approved: true });
     expect(after.find((p) => p.id === p2!.id)!.caption).toBeNull();

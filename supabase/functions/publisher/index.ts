@@ -9,10 +9,10 @@ import {
 } from '../_shared/distribution.ts';
 import { generateVariant } from '../_shared/captions.ts';
 import { instagram, tiktok } from '../_shared/social.ts';
-import { accessToken } from '../_shared/tokens.ts';
+import { accessToken, refreshDueTokens } from '../_shared/tokens.ts';
 import { poll, start, type WorkerDeps } from '../_shared/worker.ts';
 
-const deps: WorkerDeps = { accessToken, tiktok, instagram, fetchFile: (url) => fetch(url) };
+const deps: WorkerDeps = { accessToken, tiktok, instagram, fetchFile: (url, range) => fetch(url, range ? { headers: { Range: range } } : undefined) };
 
 const BUDGET_MS = 100_000;
 const WORKER = `w-${crypto.randomUUID().slice(0, 8)}`;
@@ -50,7 +50,10 @@ async function planCampaigns(db: SupabaseClient) {
         const account = accounts.find((a: any) => a.id === p.account_id)!;
         const video = (lib ?? []).find((v: Pub) => v.id === p.media_id)!;
         const row: Pub = { ...p, user_id: c.user_id, campaign_id: c.id, status: 'scheduled' };
-        if (cfg.auto_approve) {
+        if (p.platform === 'tiktok') {
+          // TikTok requires the user to choose visibility/disclosure and accept the declaration for each post.
+          row.metadata_warnings = ['TikTok: confirm visibility, disclosure and declaration, then approve this post'];
+        } else if (cfg.auto_approve) {
           try {
             const v = await generateVariant(Deno.env.get('GEMINI_API_KEY') ?? '', Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash', p.platform,
               { title: video.title, notes: video.notes, tags: video.tags }, account.editorial ?? {}, account);
@@ -82,6 +85,9 @@ Deno.serve(async (req) => {
   const started = Date.now();
   const stats = { started: 0, polled: 0 };
 
+  // Emergency stop without touching the database: set the secret PUBLISHER_DISABLED=true.
+  if (Deno.env.get('PUBLISHER_DISABLED') === 'true') return json({ ok: true, disabled: true });
+  const tokens = await refreshDueTokens(db).catch((e) => { console.error('token refresh', e); return null; });
   await planCampaigns(db).catch((e) => console.error('planner', e));
   while (Date.now() - started < BUDGET_MS - 30_000) {
     const { data: batch, error } = await db.rpc('claim_publications', { p_worker: WORKER, p_limit: 5 });
@@ -92,6 +98,6 @@ Deno.serve(async (req) => {
       stats.started++; return start(db, p, deps);
     }));
   }
-  return json({ ok: true, ...stats, worker: WORKER });
+  return json({ ok: true, ...stats, tokens, worker: WORKER });
 });
 

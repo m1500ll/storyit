@@ -36,12 +36,13 @@ function fakeDb(tables: Record<string, Row[]>) {
 
 let tables: Record<string, Row[]>;
 let deps: WorkerDeps;
-const pub = (over: Row = {}) => ({ id: 'p1', user_id: 'u1', media_id: 'm1', account_id: 'tt', platform: 'tiktok', caption: 'Hello', hashtags: ['#fruit'], status: 'processing', attempts: 0, max_attempts: 3, send_started_at: null, external_id: null, updated_at: new Date().toISOString(), ...over });
+const TT_OK = { privacy_level: 'SELF_ONLY', consented_at: '2026-11-04T10:00:00Z' };
+const pub = (over: Row = {}) => ({ id: 'p1', user_id: 'u1', media_id: 'm1', account_id: 'tt', platform: 'tiktok', caption: 'Hello', hashtags: ['#fruit'], platform_options: TT_OK, status: 'processing', attempts: 0, max_attempts: 3, send_started_at: null, external_id: null, updated_at: new Date().toISOString(), ...over });
 const get = (id = 'p1') => tables.scheduled_publications!.find((r) => r.id === id)!;
 
 beforeEach(() => {
   tables = {
-    media_assets: [{ id: 'm1', user_id: 'u1', status: 'available', storage_path: 'u1/m1.mp4', size_bytes: 3 }],
+    media_assets: [{ id: 'm1', user_id: 'u1', status: 'available', storage_path: 'u1/m1.mp4', size_bytes: 3, mime: 'video/mp4', duration_seconds: 30, width: 1080, height: 1920 }],
     social_accounts: [
       { id: 'tt', user_id: 'u1', platform: 'tiktok', status: 'connected', can_publish: true, editorial: {}, external_id: 'open1' },
       { id: 'ig', user_id: 'u1', platform: 'instagram', status: 'connected', can_publish: true, editorial: {}, external_id: 'ig1' },
@@ -52,7 +53,7 @@ beforeEach(() => {
   };
   deps = {
     accessToken: vi.fn(async () => 'token'),
-    fetchFile: vi.fn(async () => new Response(new Uint8Array([1, 2, 3]))),
+    fetchFile: vi.fn(async (_u: string, range?: string) => { const [a, b] = (range ?? 'bytes=0-2').slice(6).split('-').map(Number); return new Response(new Uint8Array(b! - a! + 1), { status: 206 }); }),
     tiktok: { submit: vi.fn(async () => 'publish_1'), poll: vi.fn(async () => ({ state: 'pending' as const })) },
     instagram: { submit: vi.fn(async () => 'container_1'), poll: vi.fn(async () => ({ state: 'pending' as const })), publish: vi.fn(async () => ({ postId: 'media_1', url: 'https://ig/p' })) },
   };
@@ -63,7 +64,7 @@ const run = async (p: Row, fn = start) => { tables.scheduled_publications!.push(
 describe('publication worker', () => {
   it('uploads, then waits for the platform: "submitted", not "published"', async () => {
     const r = await run(pub());
-    expect(deps.tiktok.submit).toHaveBeenCalledWith('token', expect.objectContaining({ caption: 'Hello\n\n#fruit' }));
+    expect(deps.tiktok.submit).toHaveBeenCalledWith('token', expect.objectContaining({ caption: 'Hello\n\n#fruit', tiktok: TT_OK, durationSeconds: 30 }));
     expect(r).toMatchObject({ status: 'submitted', external_id: 'publish_1', attempts: 1 });
   });
 
@@ -144,6 +145,24 @@ describe('publication worker', () => {
     const r = await run(pub());
     expect(r.status).toBe('cancelled');
     expect(deps.tiktok.submit).not.toHaveBeenCalled();
+  });
+
+  it('TikTok: never posts without the user-confirmed settings', async () => {
+    const r = await run(pub({ platform_options: {} }));
+    expect(r).toMatchObject({ status: 'failed', last_error: expect.stringMatching(/TikTok settings/) });
+    expect(deps.tiktok.submit).not.toHaveBeenCalled();
+  });
+
+  it('blocks videos the platform would reject (checked again by the server)', async () => {
+    tables.media_assets![0]!.duration_seconds = 1;
+    const r = await run(pub());
+    expect(r).toMatchObject({ status: 'failed', last_error: expect.stringMatching(/shorter than 3/) });
+  });
+
+  it('the upload reads the video by byte ranges from a short-lived URL', async () => {
+    (deps.tiktok.submit as any).mockImplementation(async (_t: string, i: any) => { await i.readChunk(0, 2); return 'p'; });
+    await run(pub());
+    expect(deps.fetchFile).toHaveBeenCalledWith('https://signed/video', 'bytes=0-2');
   });
 
   it('a stuck platform (3h processing) becomes a manual check', async () => {

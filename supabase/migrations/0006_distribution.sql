@@ -21,6 +21,8 @@ create or replace function plan_limit(p_user uuid, p_field text) returns integer
 language sql stable security definer set search_path = public as $$
   select (to_jsonb(l) ->> p_field)::integer from plan_limits l join profiles p on p.plan = l.plan where p.id = p_user
 $$;
+revoke execute on function plan_limit(uuid, text) from public, anon, authenticated;
+grant execute on function plan_limit(uuid, text) to service_role;
 
 -- ---------- Social accounts ----------
 create table if not exists social_account_groups (
@@ -147,6 +149,7 @@ create table if not exists scheduled_publications (
   caption_edited boolean not null default false,   -- a manual edit is never overwritten by regeneration
   metadata_approved boolean not null default false,
   metadata_warnings text[] not null default '{}',
+  platform_options jsonb not null default '{}'::jsonb,   -- TikTok: privacy_level, interactions, commercial disclosure, consent (chosen by the user)
   attempts integer not null default 0,
   max_attempts integer not null default 3,
   next_attempt_at timestamptz,
@@ -271,8 +274,17 @@ begin
     return new;
   end if;
   if not exists (select 1 from media_assets m where m.id = new.media_id and m.user_id = new.user_id)
-     or not exists (select 1 from social_accounts a where a.id = new.account_id and a.user_id = new.user_id and a.platform = new.platform) then
-    raise exception 'video or account not found';
+     or not exists (select 1 from social_accounts a where a.id = new.account_id and a.user_id = new.user_id and a.platform = new.platform)
+     or (new.campaign_id is not null and not exists (select 1 from campaigns c where c.id = new.campaign_id and c.user_id = new.user_id)) then
+    raise exception 'video, account or campaign not found';
+  end if;
+  -- TikTok Content Sharing Guidelines: the user must pick the visibility and accept the declaration before posting.
+  if new.metadata_approved and new.platform = 'tiktok'
+     and (coalesce(new.platform_options ->> 'privacy_level', '') = '' or coalesce(new.platform_options ->> 'consented_at', '') = '') then
+    raise exception 'tiktok_settings_required: choose who can view the video and accept the declaration before approving';
+  end if;
+  if new.metadata_approved and coalesce(btrim(new.caption), '') = '' and cardinality(new.hashtags) = 0 then
+    raise exception 'caption_required: write or generate a caption before approving';
   end if;
   if tg_op = 'INSERT' then
     if new.status not in ('draft', 'scheduled') then raise exception 'new publications must be draft or scheduled'; end if;
@@ -284,9 +296,9 @@ begin
     if lim is not null and used >= lim then raise exception 'plan_limit: too many pending publications for your plan (%)', lim; end if;
   else
     if (to_jsonb(new) - array['status', 'scheduled_at', 'caption', 'hook', 'title', 'hashtags', 'metadata_source', 'caption_edited',
-                               'metadata_approved', 'metadata_warnings', 'updated_at', 'next_attempt_at', 'last_error', 'max_attempts'])
+                               'metadata_approved', 'metadata_warnings', 'platform_options', 'updated_at', 'next_attempt_at', 'last_error', 'max_attempts'])
        is distinct from (to_jsonb(old) - array['status', 'scheduled_at', 'caption', 'hook', 'title', 'hashtags', 'metadata_source', 'caption_edited',
-                               'metadata_approved', 'metadata_warnings', 'updated_at', 'next_attempt_at', 'last_error', 'max_attempts']) then
+                               'metadata_approved', 'metadata_warnings', 'platform_options', 'updated_at', 'next_attempt_at', 'last_error', 'max_attempts']) then
       raise exception 'server-managed fields cannot be changed';
     end if;
     if old.status not in ('draft', 'scheduled', 'failed', 'needs_attention') then

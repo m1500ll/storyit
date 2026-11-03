@@ -99,7 +99,7 @@ describe('migrations & constraints (PostgreSQL)', () => {
     expect((await as(B, `select * from media_assets`)).rows).toEqual([]);
     expect((await as(B, `select * from social_accounts where user_id = $1`, [A])).rows).toEqual([]);
     expect((await as(B, `select * from scheduled_publications`)).rows).toEqual([]);
-    await expect(publish(B, v, '20000000-0000-4000-8000-000000000000', 'tiktok')).rejects.toThrow(/video or account not found/);
+    await expect(publish(B, v, '20000000-0000-4000-8000-000000000000', 'tiktok')).rejects.toThrow(/video, account or campaign not found/);
     await expect(as(B, `insert into media_assets (user_id, title, storage_path, mime, size_bytes) values ($1, 't', $2, 'video/mp4', 1)`, [A, `${A}/x.mp4`])).rejects.toThrow();
   });
 
@@ -133,7 +133,7 @@ describe('migrations & constraints (PostgreSQL)', () => {
     const { rows } = await publish(A, v, ACC(5), 'instagram');
     const id = rows[0]!.id;
     expect((await service(`select * from claim_publications('w1', 50)`)).rows.map((r) => r.id)).not.toContain(id); // not approved yet
-    await as(A, `update scheduled_publications set caption = 'Hello', metadata_approved = true where id = $1`, [id]);
+    await as(A, `update scheduled_publications set caption = 'Hello', metadata_approved = true where id = $1`, [id]); // Instagram: no TikTok settings needed
     const [w1, w2] = await Promise.all([service(`select id from claim_publications('w1', 50)`), service(`select id from claim_publications('w2', 50)`)]);
     const all = [...w1.rows, ...w2.rows].map((r) => r.id).filter((x) => x === id);
     expect(all).toHaveLength(1);
@@ -144,11 +144,30 @@ describe('migrations & constraints (PostgreSQL)', () => {
   it('a paused campaign publishes nothing until it is resumed', async () => {
     const v = await video(A);
     const c = (await as(A, `insert into campaigns (user_id, name, mode, status) values ($1, 'Fruit FR', 'simultaneous', 'paused') returning id`, [A])).rows[0]!.id;
-    const id = (await as(A, `insert into scheduled_publications (user_id, campaign_id, media_id, account_id, platform, scheduled_at, idempotency_key, caption, metadata_approved)
-      values ($1, $2, $3, $4, 'tiktok', now(), $5, 'Hi', true) returning id`, [A, c, v, ACC(0), crypto.randomUUID()])).rows[0]!.id;
+    const id = (await as(A, `insert into scheduled_publications (user_id, campaign_id, media_id, account_id, platform, scheduled_at, idempotency_key, caption, metadata_approved, platform_options)
+      values ($1, $2, $3, $4, 'tiktok', now(), $5, 'Hi', true, '{"privacy_level":"SELF_ONLY","consented_at":"x"}') returning id`, [A, c, v, ACC(0), crypto.randomUUID()])).rows[0]!.id;
     expect((await service(`select id from claim_publications('w', 50)`)).rows.map((r) => r.id)).not.toContain(id);
     await as(A, `update campaigns set status = 'active' where id = $1`, [c]);
     expect((await service(`select id from claim_publications('w', 50)`)).rows.map((r) => r.id)).toContain(id);
+  });
+
+  it('TikTok posts cannot be approved without the user-confirmed visibility and declaration', async () => {
+    const v = await video(A);
+    const id = (await publish(A, v, ACC(2), 'tiktok')).rows[0]!.id;
+    await expect(as(A, `update scheduled_publications set caption = 'Hi', metadata_approved = true where id = $1`, [id])).rejects.toThrow(/tiktok_settings_required/);
+    await as(A, `update scheduled_publications set caption = 'Hi', metadata_approved = true, platform_options = '{"privacy_level":"SELF_ONLY","consented_at":"2026-11-04T10:00:00Z"}' where id = $1`, [id]);
+    await expect(as(A, `update scheduled_publications set caption = '', hashtags = '{}', metadata_approved = true where id = $1`, [id])).rejects.toThrow(/caption_required/);
+  });
+
+  it('a publication cannot be attached to another customer’s campaign', async () => {
+    const c = (await as(B, `insert into campaigns (user_id, name, mode) values ($1, 'B', 'simultaneous') returning id`, [B])).rows[0]!.id;
+    const v = await video(A);
+    await expect(as(A, `insert into scheduled_publications (user_id, campaign_id, media_id, account_id, platform, scheduled_at, idempotency_key) values ($1, $2, $3, $4, 'tiktok', now(), $5)`,
+      [A, c, v, ACC(0), crypto.randomUUID()])).rejects.toThrow(/campaign not found/);
+  });
+
+  it('customers cannot read other customers’ plan through plan_limit()', async () => {
+    await expect(as(A, `select plan_limit($1, 'max_media_assets')`, [B])).rejects.toThrow(/permission denied/);
   });
 
   it('customers cannot call the worker claim function', async () => {
@@ -172,5 +191,14 @@ describe('migrations & constraints (PostgreSQL)', () => {
 
   it('rejects uploads outside the customer folder', async () => {
     await expect(as(A, `insert into media_assets (user_id, title, storage_path, mime, size_bytes) values ($1, 't', $2, 'video/mp4', 1)`, [A, `${B}/x.mp4`])).rejects.toThrow(/invalid storage path/);
+  });
+
+  it('the rollback script removes everything 0006 added and leaves the earlier schema intact', async () => {
+    const sql = readFileSync(join(__dirname, '../../docs/rollback_0006_0007.sql'), 'utf8')
+      .replace(/select cron\.unschedule[^;]*;/, ''); // pg_cron is not available in PGlite
+    await db.exec(sql);
+    const { rows } = await service(`select count(*)::int n from information_schema.tables where table_schema = 'public' and table_name in ('social_accounts','scheduled_publications','media_assets')`);
+    expect(rows[0]!.n).toBe(0);
+    expect((await service(`select count(*)::int n from stories`)).rows[0]!.n).toBeGreaterThanOrEqual(0);
   });
 });

@@ -17,6 +17,8 @@ function check<T>(res: { data: T; error: { message: string } | null }): NonNulla
 const friendly = (m: string) =>
   m.includes('publications_one_per_destination') ? 'This video is already scheduled or published on this account.'
     : m.startsWith('plan_limit: ') ? m.slice(12)
+    : m.startsWith('tiktok_settings_required: ') ? 'TikTok: ' + m.slice(26)
+    : m.startsWith('caption_required: ') ? m.slice(18)
     : m;
 
 export function createSupabaseDistribution(db: SupabaseClient): DistributionRepository {
@@ -118,6 +120,7 @@ export function createSupabaseDistribution(db: SupabaseClient): DistributionRepo
       }
       return done({ created, duplicates });
     },
+    creatorInfo: async (accountId) => invoke('social', { action: 'creator_info', account_id: accountId }),
     updatePublication: async (id, patch) => done(void check(await any.from('scheduled_publications').update(patch).eq('id', id))),
     generateCaptions: async (ids, force) => done((await invoke<{ results: { id: string; ok: boolean; error?: string; skipped?: string }[] }>('captions', { publication_ids: ids, force })).results),
     listEvents: async (id) => check(await any.from('publication_events').select('*').eq('publication_id', id).order('id')),
