@@ -5,6 +5,7 @@ import { accountLabel, inputCls, ModeBanner, Notice, PubBadge } from '@/componen
 import { Button, Card, LoadState, Modal, PageHeader, ProgressBar, useToast } from '@/components/ui';
 import { useAccounts, useIntegrations, useMedia, usePlanLimits, usePublications } from '@/hooks/useDistribution';
 import { cn } from '@/lib/cn';
+import { compressVideo } from '@/lib/compress';
 import { distribution, VIDEO_STATE_LABEL, videoState, type MediaAsset, type VideoState } from '@/services/distribution';
 
 const ACCEPTED = ['video/mp4', 'video/quicktime', 'video/webm'];
@@ -27,7 +28,7 @@ function probe(file: File): Promise<{ duration: number | null; width: number | n
   });
 }
 
-interface UploadItem { name: string; pct: number; error?: string }
+interface UploadItem { name: string; pct: number; error?: string; label?: string }
 
 export default function LibraryPage() {
   const { data: media = [], loading, error } = useMedia();
@@ -63,11 +64,23 @@ export default function LibraryPage() {
       const name = file.name;
       const fail = (msg: string) => setUploads((u) => [...u.filter((x) => x.name !== name), { name, pct: 0, error: msg }]);
       if (!ACCEPTED.includes(file.type)) { fail('Unsupported format: use MP4, MOV or WebM'); continue; }
-      if (file.size > maxMb * 1024 * 1024) { fail(`File is ${Math.round(file.size / 1048576)} MB: the current limit is ${maxMb} MB per video. Export it shorter or more compressed.`); continue; }
+      const limit = maxMb * 1024 * 1024;
+      const set = (patch: Partial<UploadItem>) => setUploads((u) => u.map((x) => (x.name === name ? { ...x, ...patch } : x)));
       setUploads((u) => [...u.filter((x) => x.name !== name), { name, pct: 0 }]);
       try {
         const meta = await probe(file);
-        await distribution.uploadMedia(file, { title: name.replace(/\.[^.]+$/, '').slice(0, 200), tags: [], ...meta },
+        let toUpload = file;
+        if (file.size > limit) {
+          // Too big for storage: compress on this device first (nothing is sent until it fits).
+          if (!meta.duration) throw new Error('Could not read this video\'s duration to compress it. Export it as MP4 and retry.');
+          set({ label: 'Compressing on your device', pct: 0 });
+          toUpload = await compressVideo(file, meta.duration, meta.height, limit - 512 * 1024,
+            (p) => set({ label: p.step === 'loading' ? 'Loading the compressor' : 'Compressing on your device', pct: Math.round(p.ratio * 100) }));
+          Object.assign(meta, await probe(toUpload));
+          toast(`${name}: ${Math.round(file.size / 1048576)} MB → ${Math.round(toUpload.size / 1048576)} MB.`);
+        }
+        set({ label: 'Uploading', pct: 0 });
+        await distribution.uploadMedia(toUpload, { title: name.replace(/\.[^.]+$/, '').slice(0, 200), tags: [], ...meta },
           (pct) => setUploads((u) => u.map((x) => (x.name === name ? { ...x, pct } : x))));
         setUploads((u) => u.filter((x) => x.name !== name));
         toast(`${name} imported.`);
@@ -88,8 +101,9 @@ export default function LibraryPage() {
         {integ && <ModeBanner {...integ} />}
         {uploads.map((u) => (
           <div key={u.name} className="surface px-4 py-3" aria-live="polite">
-            <div className="flex justify-between gap-2 text-xs"><span className="truncate text-zinc-200">{u.name}</span><span className={u.error ? 'text-coral-300' : 'tabular-nums text-zinc-400'}>{u.error ?? `${u.pct}%`}</span></div>
+            <div className="flex justify-between gap-2 text-xs"><span className="truncate text-zinc-200">{u.name}</span><span className={u.error ? 'text-coral-300' : 'tabular-nums text-zinc-400'}>{u.error ?? `${u.label ? u.label + ' · ' : ''}${u.pct}%`}</span></div>
             {!u.error && <div className="mt-2"><ProgressBar value={u.pct} max={100} /></div>}
+            {!u.error && u.label?.startsWith('Compress') && <p className="mt-1.5 text-[11px] text-zinc-500">Keep this tab open: large videos take a few minutes. Nothing is sent until the file fits the {maxMb} MB limit.</p>}
           </div>
         ))}
       </div>
@@ -120,7 +134,7 @@ export default function LibraryPage() {
         <Card className="py-10 text-center">
           <Upload className="mx-auto h-6 w-6 text-violet-300" aria-hidden />
           <p className="mt-3 text-sm text-zinc-200">Your library is empty</p>
-          <p className="mx-auto mt-1 max-w-md text-xs text-zinc-500">Import MP4, MOV or WebM files (up to {maxMb} MB each). Vertical 9:16 works best for TikTok and Reels.</p>
+          <p className="mx-auto mt-1 max-w-md text-xs text-zinc-500">Import MP4, MOV or WebM files. Videos over {maxMb} MB are compressed on your device before upload. Vertical 9:16 works best for TikTok and Reels.</p>
           <Button className="mt-4" onClick={() => fileRef.current?.click()}>Import your first video</Button>
         </Card>
       ) : rows.length === 0 ? <Notice>No video matches these filters.</Notice> : (

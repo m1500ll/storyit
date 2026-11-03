@@ -16,7 +16,7 @@ const H = 1280;
 let instance: Promise<FFmpeg> | null = null;
 
 /** Lazy-loads ffmpeg.wasm (self-hosted, ~30 MB, fetched only when someone exports). */
-function loadFFmpeg(): Promise<FFmpeg> {
+export function loadFFmpeg(): Promise<FFmpeg> {
   instance ??= (async () => {
     const [{ FFmpeg }, core, wasm] = await Promise.all([
       import('@ffmpeg/ffmpeg'),
