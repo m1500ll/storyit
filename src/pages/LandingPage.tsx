@@ -7,6 +7,7 @@ import { FAQ } from '@/components/landing/FAQ';
 import { FinalCTA } from '@/components/landing/FinalCTA';
 import { HowItWorks } from '@/components/landing/HowItWorks';
 import { Testimonials } from '@/components/landing/Testimonials';
+import { InlineCTA } from '@/components/landing/InlineCTA';
 import { Monetization } from '@/components/landing/Monetization';
 import { Results } from '@/components/landing/Results';
 import { Showcase } from '@/components/landing/Showcase';
@@ -20,8 +21,10 @@ export default function LandingPage() {
       <MarketingNavbar />
       <Hero />
       <Showcase />
+      <InlineCTA title="Want episodes like these for your account?" sub="No card required · Cancel anytime" />
       <TimeSaved />
       <Monetization />
+      <InlineCTA title="Start building your series today." sub="30 free credits · no card required" />
       <Results />
       <HowItWorks />
       <DemoVideo />

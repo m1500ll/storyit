@@ -2,7 +2,7 @@ import { Check, Coins } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { billingService } from '@/services/billing';
-import { CREDIT_PACKS, PLANS, type ProductKey } from '@/services/credits';
+import { CREDIT_PACKS, episodesFor, PLANS, type ProductKey } from '@/services/credits';
 import { Button } from '../ui';
 
 export function PlanPicker({ currentPlan, compact }: { currentPlan?: string; compact?: boolean }) {
@@ -32,8 +32,8 @@ export function PlanPicker({ currentPlan, compact }: { currentPlan?: string; com
                 <p className="text-sm font-semibold text-zinc-100">{p.name}</p>
                 {current && <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-zinc-300">Current</span>}
               </div>
-              <p className="mt-2 font-display text-3xl text-zinc-50">${p.price}<span className="font-sans text-xs text-zinc-500">/mo</span></p>
-              <p className="text-xs text-violet-300">{p.credits} credits / month</p>
+              <p className="mt-2 font-display text-3xl text-zinc-50">${p.price}<span className="font-sans text-xs text-zinc-500">{p.period === 'month' ? '/mo' : ''}</span></p>
+              <p className="text-xs text-violet-300">{p.credits} credits {p.period === 'month' ? '/ month' : 'to start'} · ≈ {episodesFor(p.credits)} episodes</p>
               {!compact && (
                 <ul className="mt-3 space-y-1.5">
                   {p.perks.map((k) => <li key={k} className="flex gap-1.5 text-xs text-zinc-400"><Check className="h-3.5 w-3.5 shrink-0 text-violet-400" />{k}</li>)}

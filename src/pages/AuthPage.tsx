@@ -27,7 +27,7 @@ export default function AuthPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
   const from = (useLocation().state as { from?: string } | null)?.from ?? '/app';
-  const [mode, setMode] = useState<Mode>('signin');
+  const [mode, setMode] = useState<Mode>(() => (new URLSearchParams(window.location.search).get('mode') === 'signin' ? 'signin' : 'signup'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState<'form' | 'google' | null>(null);
@@ -74,6 +74,13 @@ export default function AuthPage() {
         <Logo />
         <h1 className="mt-8 font-display text-3xl text-zinc-50">{copy.title}</h1>
         <p className="mt-1 text-sm text-zinc-500">{copy.sub}</p>
+        {mode === 'signup' && (
+          <ul className="mt-4 space-y-1.5 text-xs text-zinc-400">
+            {['Your idea turned into 3 story concepts', 'A 15-scene storyboard in about a minute', 'Free credits, no card, cancel anytime'].map((t) => (
+              <li key={t} className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-violet-400" />{t}</li>
+            ))}
+          </ul>
+        )}
 
         {mode !== 'forgot' && (
           <>

@@ -12,7 +12,7 @@ export function MarketingNavbar() {
           <a href="/#pricing" className="hover:text-zinc-100">Pricing</a>
           <a href="/#faq" className="hover:text-zinc-100">FAQ</a>
         </nav>
-        <div className="flex items-center gap-2"><Link to="/login" className="hidden px-3 text-sm text-zinc-400 hover:text-zinc-100 sm:block">Sign in</Link><Link to="/app"><Button size="sm">Open studio</Button></Link></div>
+        <div className="flex items-center gap-2"><Link to="/login?mode=signin" className="hidden px-3 text-sm text-zinc-400 hover:text-zinc-100 sm:block">Sign in</Link><Link to="/app"><Button size="sm">Open studio</Button></Link></div>
       </div>
     </header>
   );

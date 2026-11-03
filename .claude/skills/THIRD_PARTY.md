@@ -1,0 +1,1 @@
+Skills cro, signup, onboarding, paywalls, pricing, copywriting, marketing-psychology are from https://github.com/coreyhaines31/marketingskills (MIT, (c) 2025 Corey Haines). See MARKETINGSKILLS-LICENSE.

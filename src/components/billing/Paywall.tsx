@@ -1,6 +1,6 @@
 import { Sparkles } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { useProfile } from '@/hooks/useStore';
+import { useProfile, useStories } from '@/hooks/useStore';
 import { PlanPicker } from './PlanPicker';
 
 interface PaywallState { required?: number }
@@ -11,6 +11,7 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PaywallState | null>(null);
   const open = useCallback((s: PaywallState = {}) => setState(s), []);
   const { data: profile } = useProfile();
+  const { data: stories = [] } = useStories();
 
   useEffect(() => {
     if (!state) return;
@@ -28,14 +29,15 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
           <div className="surface relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-b-none p-6 sm:rounded-2xl md:p-8">
             <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-96 -translate-x-1/2 rounded-full bg-violet-600/25 blur-3xl" />
             <Sparkles className="relative h-5 w-5 text-coral-400" />
-            <h2 className="relative mt-3 font-display text-3xl text-zinc-50">Keep the series going</h2>
+            <h2 className="relative mt-3 font-display text-3xl text-zinc-50">Unlock more episodes and keep posting daily</h2>
             <p className="relative mt-1 text-sm text-zinc-400">
               {state.required
                 ? <>This step needs <strong className="text-zinc-200">{state.required} credits</strong> — you have {profile?.credit_balance ?? 0}.</>
                 : 'Pick a plan or a top-up pack.'}
+              {stories.length > 0 && <> You’ve already created <strong className="text-zinc-200">{stories.length} episode{stories.length > 1 ? 's' : ''}</strong> — don’t lose your momentum.</>}
             </p>
             <div className="relative mt-6"><PlanPicker currentPlan={profile?.plan} compact /></div>
-            <button onClick={() => setState(null)} className="relative mt-4 w-full text-center text-xs text-zinc-500 hover:text-zinc-300">Not now</button>
+            <button onClick={() => setState(null)} className="relative mt-4 w-full text-center text-xs text-zinc-500 hover:text-zinc-300">Not now — continue with my current credits</button>
           </div>
         </div>
       )}

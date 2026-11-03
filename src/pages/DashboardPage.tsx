@@ -1,6 +1,8 @@
 import { Clapperboard, Clock, Plus, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { LowCreditsBanner } from '@/components/billing/LowCreditsBanner';
 import { FirstRun } from '@/components/dashboard/FirstRun';
+import { GettingStarted } from '@/components/dashboard/GettingStarted';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
 import { Button, Card, CardHeader, CreditCard, LoadState, PageHeader } from '@/components/ui';
 import { useCredits, useProfile, useStories } from '@/hooks/useStore';
@@ -23,8 +25,10 @@ export default function DashboardPage() {
       <PageHeader eyebrow="Overview" title={profile?.display_name ? `Good to see you, ${profile.display_name.split(' ')[0]}` : 'Your studio'}
         description="Your series at a glance. Episodes awaiting review need your sign-off before publication."
         actions={<Button onClick={() => navigate('/app/new')}><Plus className="h-4 w-4" /> Create episode</Button>} />
+      {stories.length > 0 && <LowCreditsBanner />}
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-6">
+          {!loading && stories.length > 0 && <GettingStarted stories={stories} />}
           <div className="grid grid-cols-3 gap-3">
             {stats.map(({ label, value, icon: Icon }) => (
               <Card key={label} className="p-3 sm:p-4">

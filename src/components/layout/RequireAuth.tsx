@@ -9,6 +9,6 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   if (session === undefined) {
     return <div className="grid min-h-screen place-items-center bg-ink-950"><Loader2 className="h-5 w-5 animate-spin text-zinc-500" /></div>;
   }
-  if (!session) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!session) return <Navigate to="/login?mode=signin" replace state={{ from: location.pathname }} />;
   return <>{children}</>;
 }

@@ -1,13 +1,12 @@
 import { ArrowDownRight, ArrowUpRight, Coins } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCredits } from '@/hooks/useStore';
-import { estimateEpisodeCost } from '@/services/credits';
-import { SCENES_PER_EPISODE } from '@/types/domain';
+import { episodesFor } from '@/services/credits';
 import { Card } from './Card';
 
 export function CreditCard() {
   const { balance, transactions } = useCredits();
-  const episodesLeft = Math.floor(balance / estimateEpisodeCost(SCENES_PER_EPISODE));
+  const episodesLeft = episodesFor(balance);
   return (
     <Card className="relative overflow-hidden">
       <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
