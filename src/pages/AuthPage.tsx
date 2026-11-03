@@ -1,6 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Card, Logo } from '@/components/ui';
 import { GoogleIcon } from '@/components/ui/GoogleIcon';
 import { useAuth } from '@/lib/auth';
@@ -117,6 +117,9 @@ export default function AuthPage() {
             {mode === 'signin' ? 'No account? Create one' : 'Already have an account? Sign in'}
           </button>
         )}
+        <p className="mt-6 text-center text-[11px] leading-relaxed text-zinc-600">
+          By continuing you agree to how we handle your data in our <Link to="/privacy" className="underline hover:text-zinc-400">Privacy Policy</Link>.
+        </p>
       </Card>
     </div>
   );
