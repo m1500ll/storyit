@@ -78,3 +78,12 @@ Migration: `supabase/migrations/0005_publish_pack.sql`.
 
 ## Tests
 `npm test` (Vitest): captions timing/ASS, platform copy & limits, phase status, mock-repository workflow (concept → characters → scenes, credit debits, approval revocation, publish pack, no fake thumbnails in demo).
+
+## Multi-account distribution (priority product)
+Setup steps for the owner: `docs/DISTRIBUTION_SETUP.md`.
+- Data: `0006_distribution.sql` (accounts, groups, library, campaigns, publications, events, plan limits, guards, worker claim). `0007_publisher_cron.sql` runs the worker every minute.
+- Functions: `social` (OAuth TikTok/Instagram, CSRF state, encrypted tokens, verify/disconnect; deploy with `--no-verify-jwt`), `publisher` (server worker: rotation planner + publishing + status polling), `captions` (per-account AI captions).
+- Shared pure logic in `supabase/functions/_shared` (`distribution.ts`, `captions.ts`, `social.ts`, `worker.ts`), imported by the web app as `@shared/*` and covered by tests.
+- Anti-duplicate: unique index (video, account) over non-failed/non-cancelled publications + idempotency keys; uncertain results go to `needs_attention`, never auto-resent.
+- UI: `/app/accounts`, `/app/library`, `/app/distribute`, `/app/calendar`, `/app/history`. The AI episode studio is labelled Beta.
+- Tests: `npm test` replays every migration on PGlite (real PostgreSQL) to check RLS, guards, duplicates and concurrent claims; platform adapters and the worker run against mocked HTTP.

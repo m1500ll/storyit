@@ -1,13 +1,13 @@
-import { Clapperboard, LayoutDashboard, Loader2, Plus, TrendingUp, UserRound } from 'lucide-react';
+import { CalendarDays, FolderOpen, LayoutDashboard, Loader2, Send, UserRound } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/cn';
 import { useWizard } from '@/services/wizardStore';
 
 const items = [
   { to: '/app', label: 'Home', icon: LayoutDashboard, end: true },
-  { to: '/app/episodes', label: 'Episodes', icon: Clapperboard },
-  { to: '/app/new', label: 'Create', icon: Plus },
-  { to: '/app/monetisation', label: 'Money', icon: TrendingUp },
+  { to: '/app/library', label: 'Library', icon: FolderOpen },
+  { to: '/app/distribute', label: 'Distribute', icon: Send },
+  { to: '/app/calendar', label: 'Calendar', icon: CalendarDays },
   { to: '/app/settings', label: 'Account', icon: UserRound },
 ];
 

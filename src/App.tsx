@@ -14,6 +14,10 @@ const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const CreateStoryWizardPage = lazy(() => import('@/pages/CreateStoryWizardPage'));
 const SceneEditorPage = lazy(() => import('@/pages/SceneEditorPage'));
 const PublishPage = lazy(() => import('@/pages/PublishPage'));
+const AccountsPage = lazy(() => import('@/pages/AccountsPage'));
+const LibraryPage = lazy(() => import('@/pages/LibraryPage'));
+const DistributePage = lazy(() => import('@/pages/DistributePage'));
+const PublicationsPage = lazy(() => import('@/pages/PublicationsPage'));
 const ReviewQueuePage = lazy(() => import('@/pages/ReviewQueuePage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const EpisodesPage = lazy(() => import('@/pages/EpisodesPage'));
@@ -41,6 +45,11 @@ export default function App() {
               <Route path="review" element={<ReviewQueuePage />} />
               <Route path="stories/:storyId" element={<SceneEditorPage />} />
               <Route path="stories/:storyId/publish" element={<PublishPage />} />
+              <Route path="accounts" element={<AccountsPage />} />
+              <Route path="library" element={<LibraryPage />} />
+              <Route path="distribute" element={<DistributePage />} />
+              <Route path="calendar" element={<PublicationsPage />} />
+              <Route path="history" element={<PublicationsPage history />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="episodes" element={<EpisodesPage />} />
               <Route path="characters" element={<CharactersPage />} />

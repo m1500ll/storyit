@@ -1,6 +1,7 @@
 import { Clapperboard, Clock, Plus, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { LowCreditsBanner } from '@/components/billing/LowCreditsBanner';
+import { DistributionOverview } from '@/components/dashboard/DistributionOverview';
 import { FirstRun } from '@/components/dashboard/FirstRun';
 import { GettingStarted } from '@/components/dashboard/GettingStarted';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
@@ -23,8 +24,10 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader eyebrow="Overview" title={profile?.display_name ? `Good to see you, ${profile.display_name.split(' ')[0]}` : 'Your studio'}
-        description="Your series at a glance. Episodes awaiting review need your sign-off before publication."
-        actions={<Button onClick={() => navigate('/app/new')}><Plus className="h-4 w-4" /> Create episode</Button>} />
+        description="Your distribution at a glance. The AI episode studio below is in beta."
+        actions={<Button onClick={() => navigate('/app/distribute')}><Plus className="h-4 w-4" /> Distribute videos</Button>} />
+      <div className="mb-8"><DistributionOverview /></div>
+      <p className="label mb-3">AI studio · Beta</p>
       {stories.length > 0 && <LowCreditsBanner />}
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-6">

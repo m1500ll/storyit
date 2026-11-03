@@ -19,7 +19,7 @@ export function Topbar() {
       <div className="flex items-center gap-3">
         <ThemeToggle />
         <button onClick={() => openPaywall()} aria-label="Get more credits" className="rounded-full transition hover:opacity-80"><CreditBalance /></button>
-        <Button size="sm" onClick={() => navigate('/app/new')} className="hidden sm:inline-flex"><Plus className="h-3.5 w-3.5" /> Create episode</Button>
+        <Button size="sm" onClick={() => navigate('/app/distribute')} className="hidden sm:inline-flex"><Plus className="h-3.5 w-3.5" /> Distribute videos</Button>
         <div className="grid h-8 w-8 place-items-center rounded-full bg-ink-700 text-xs font-semibold text-zinc-200" title={name}>
           {name[0]?.toUpperCase()}
         </div>

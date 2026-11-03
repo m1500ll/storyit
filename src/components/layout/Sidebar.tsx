@@ -1,5 +1,5 @@
 import {
-  BookOpen, ClipboardCheck, Clapperboard, Coins, CreditCard, LayoutDashboard, LifeBuoy, Loader2, Settings, Sparkles, TrendingUp, Users,
+  BookOpen, CalendarDays, ClipboardCheck, Clapperboard, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Loader2, Send, Settings, Sparkles, TrendingUp, Users,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useCredits, useStories } from '@/hooks/useStore';
@@ -38,19 +38,24 @@ export function Sidebar() {
 
   const sections: { title: string; items: Item[] }[] = [
     {
-      title: 'Create',
+      title: 'Distribute',
       items: [
         { to: '/app', label: 'Overview', icon: LayoutDashboard, end: true },
-        {
-          to: '/app/new', label: 'New episode', icon: Sparkles,
-          badge: w.pending ? <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-300" aria-label="Generating" />
-            : w.step > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-violet-400" aria-label="Draft in progress" /> : null,
-        },
+        { to: '/app/library', label: 'Video library', icon: FolderOpen },
+        { to: '/app/distribute', label: 'Distribute', icon: Send },
+        { to: '/app/calendar', label: 'Calendar', icon: CalendarDays },
+        { to: '/app/history', label: 'History', icon: History },
+        { to: '/app/accounts', label: 'Social accounts', icon: Link2 },
       ],
     },
     {
-      title: 'Library',
+      title: 'AI studio · Beta',
       items: [
+        {
+          to: '/app/new', label: 'New episode', icon: Sparkles,
+          badge: w.pending ? <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-300" aria-label="Generating" />
+            : w.step > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-violet-400" aria-label="Draft in progress" /> : <span className="rounded-full bg-line/[0.08] px-1.5 text-[10px] text-zinc-400">Beta</span>,
+        },
         { to: '/app/episodes', label: 'Episodes', icon: Clapperboard, badge: <Count n={stories.length} /> },
         { to: '/app/characters', label: 'Characters', icon: Users, badge: <Count n={characters} /> },
         { to: '/app/review', label: 'Review queue', icon: ClipboardCheck, badge: <Count n={toReview} tone="accent" /> },

@@ -5,7 +5,7 @@ import { store } from '@/services/store';
 interface QueryState<T> { data: T | undefined; loading: boolean; error: string | null }
 
 /** Runs an async query and re-runs it whenever the store signals a change (local write or realtime event). */
-function useLiveQuery<T>(fn: () => Promise<T>, key: string): QueryState<T> {
+export function useLiveQuery<T>(fn: () => Promise<T>, key: string): QueryState<T> {
   const version = useSyncExternalStore(store.subscribe, store.getVersion);
   const [state, setState] = useState<QueryState<T>>({ data: undefined, loading: true, error: null });
 
