@@ -9,6 +9,9 @@ const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.8-flash';
 const FALLBACK_MODEL = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? 'gemini-3.8-flash-lite';
 const RETRYABLE = new Set([429, 500, 503, 504]);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// Supabase stops a function after ~150s (free plan) without a usable response, so stay well below it.
+const TOTAL_BUDGET_MS = 100_000;
+const REQUEST_TIMEOUT_MS = 45_000;
 const COSTS = { concepts: 1, scenes: 2 } as const;
 
 const cors = {
@@ -86,9 +89,10 @@ class GeminiHttpError extends Error {
   }
 }
 
-async function requestGemini<T>(model: string, prompt: string, schema: unknown, key: string): Promise<T> {
+async function requestGemini<T>(model: string, prompt: string, schema: unknown, key: string, timeoutMs: number): Promise<T> {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
+    signal: AbortSignal.timeout(timeoutMs),
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -108,14 +112,18 @@ async function callGemini<T>(prompt: string, schema: unknown): Promise<T> {
   if (!key) throw new Error('GEMINI_API_KEY secret is not set');
 
   const models = FALLBACK_MODEL && FALLBACK_MODEL !== 'none' && FALLBACK_MODEL !== MODEL ? [MODEL, FALLBACK_MODEL] : [MODEL];
+  const deadline = Date.now() + TOTAL_BUDGET_MS;
   let lastError: unknown;
   for (const model of models) {
     for (let attempt = 0; attempt < 3; attempt++) {
+      const remaining = deadline - Date.now();
+      if (remaining < 5_000) break;
       try {
-        return await requestGemini<T>(model, prompt, schema, key);
+        return await requestGemini<T>(model, prompt, schema, key, Math.min(REQUEST_TIMEOUT_MS, remaining));
       } catch (e) {
         lastError = e;
-        const retryable = e instanceof GeminiHttpError ? RETRYABLE.has(e.status) : e instanceof SyntaxError;
+        const timedOut = e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError');
+        const retryable = timedOut || (e instanceof GeminiHttpError ? RETRYABLE.has(e.status) : e instanceof SyntaxError);
         if (!retryable) {
           // A missing/retired fallback model should not hide the real overload error.
           if (model !== MODEL && e instanceof GeminiHttpError && e.status === 404) break;
@@ -126,7 +134,9 @@ async function callGemini<T>(prompt: string, schema: unknown): Promise<T> {
       }
     }
   }
-  if (lastError instanceof GeminiHttpError && RETRYABLE.has(lastError.status)) {
+  const transient = lastError === undefined || lastError instanceof DOMException
+    || (lastError instanceof GeminiHttpError && RETRYABLE.has(lastError.status));
+  if (transient) {
     throw new Error('Gemini is overloaded right now. Please try again in a minute — no credits were used.');
   }
   throw lastError;
