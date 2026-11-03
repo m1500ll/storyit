@@ -78,7 +78,7 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
-      consume_credits: { Args: { p_amount: number; p_story_id: string; p_description: string }; Returns: number };
+      consume_credits: { Args: { p_amount: number; p_story_id: string | null; p_description: string }; Returns: number };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

@@ -1,7 +1,7 @@
 import { FRUIT_DRAMA_CONCEPTS, FRUIT_DRAMA_SCENES } from '@/data/fruitDrama';
 import { supabase } from '@/lib/supabase';
 import { SCENES_PER_EPISODE, type SceneDraft, type StoryConcept } from '@/types/domain';
-import { delay } from './store';
+import { delay, store } from './store';
 
 /**
  * Text-generation adapter. The Gemini API key lives server-side only:
@@ -23,18 +23,35 @@ const mockAI: StoryAI = {
   },
 };
 
+/** Extracts the `{ error }` message our Edge Function returns on non-2xx responses. */
+async function edgeError(error: unknown): Promise<Error> {
+  const ctx = (error as { context?: Response }).context;
+  if (ctx && typeof ctx.json === 'function') {
+    try {
+      const body = (await ctx.json()) as { error?: string };
+      if (body.error) return new Error(body.error);
+    } catch { /* fall through */ }
+  }
+  return error instanceof Error ? error : new Error('AI generation failed');
+}
+
+async function invoke<T>(body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase!.functions.invoke<T>('gemini', { body });
+  if (error) throw await edgeError(error);
+  if (!data) throw new Error('Empty AI response');
+  store.notify(); // credits were debited server-side
+  return data;
+}
+
 const edgeAI: StoryAI = {
   async generateConcepts(idea) {
-    const { data, error } = await supabase!.functions.invoke<{ concepts: StoryConcept[] }>('gemini', { body: { task: 'concepts', idea } });
-    if (error || !data) throw error ?? new Error('Empty Gemini response');
-    return data.concepts;
+    return (await invoke<{ concepts: StoryConcept[] }>({ task: 'concepts', idea })).concepts;
   },
   async generateScenes(concept, count = SCENES_PER_EPISODE) {
-    const { data, error } = await supabase!.functions.invoke<{ scenes: SceneDraft[] }>('gemini', { body: { task: 'scenes', concept, count } });
-    if (error || !data) throw error ?? new Error('Empty Gemini response');
-    return data.scenes;
+    return (await invoke<{ scenes: SceneDraft[] }>({ task: 'scenes', concept, count })).scenes;
   },
 };
 
-const useEdge = supabase !== null && import.meta.env.VITE_USE_GEMINI_EDGE === 'true';
+/** Real Gemini whenever Supabase is configured; set VITE_AI_MODE=demo to force canned output. */
+const useEdge = supabase !== null && import.meta.env.VITE_AI_MODE !== 'demo';
 export const storyAI: StoryAI = useEdge ? edgeAI : mockAI;

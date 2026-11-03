@@ -15,7 +15,7 @@ Without `.env`, everything runs on in-memory demo data. To use Supabase:
 2. `cp .env.example .env`, then restart `npm run dev`.
 3. Sign up at `/login`; each new account gets 30 free Story Credits.
 
-AI output stays in demo mode until the `gemini` Edge Function exists (`VITE_USE_GEMINI_EDGE=true`).
+AI: deploy `supabase/functions/gemini` and set the `GEMINI_API_KEY` secret (Edge Functions → Secrets). Set `VITE_AI_MODE=demo` to skip Gemini.
 
 ## Structure
 
