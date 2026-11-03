@@ -11,11 +11,13 @@ const API = 'https://generativelanguage.googleapis.com/v1beta';
 const IMAGE_MODEL = Deno.env.get('GEMINI_IMAGE_MODEL') ?? 'gemini-3.1-flash-image';
 // Veo was retired from the Gemini API; Gemini Omni only answers on the Interactions API.
 const VIDEO_MODEL = Deno.env.get('VIDEO_MODEL') ?? 'gemini-omni-1.1-flash';
-const CLIP_MIN_S = 6;
-const CLIP_MAX_S = 8;
+const CLIP_MIN_S = 4;
+const CLIP_MAX_S = 6;
+// 'native' (default): characters speak inside the clip, like Google Flow. 'tts': legacy narrator voice-over.
+const VOICE_MODE = Deno.env.get('VOICE_MODE') ?? 'native';
 const TTS_MODEL = Deno.env.get('GEMINI_TTS_MODEL') ?? 'gemini-3.8-flash-tts';
 const TTS_VOICE = Deno.env.get('TTS_VOICE') ?? 'Kore';
-const CREDITS_PER_SCENE = Number(Deno.env.get('RENDER_CREDITS_PER_SCENE') ?? 30); // keep in sync with src/services/credits.ts
+const CREDITS_PER_SCENE = Number(Deno.env.get('RENDER_CREDITS_PER_SCENE') ?? 20); // keep in sync with src/services/credits.ts
 const BUDGET_MS = 95_000;
 const CONCURRENCY = Number(Deno.env.get('RENDER_CONCURRENCY') ?? 2);
 const MAX_ATTEMPTS = 3;
@@ -96,6 +98,15 @@ async function generateImage(scene: SceneRow, chars: Character[], reference: Uin
   return { bytes: b64ToBytes(img.data), mime: (img.mimeType as string) ?? 'image/png' };
 }
 
+function videoPrompt(scene: SceneRow) {
+  const base = `Animate this image into a ${clipSeconds(scene)} second vertical 9:16 clip, 3D Pixar-style animation. ${scene.video_prompt}. Characters stay exactly on-model as in the image.`;
+  if (VOICE_MODE !== 'native') return `${base} No text, no captions, no speech, no music.`;
+  const speech = scene.dialogue
+    ? ` The character speaks this line on camera with accurate lip-sync, in the language it is written in, with the voice and emotion indicated: ${scene.dialogue}. Only that character speaks; no narrator.`
+    : ' No dialogue: expressive sounds only (gasps, sobs), no narrator.';
+  return `${base}${speech} Natural sound effects, no background music, no on-screen text or subtitles.`;
+}
+
 const sniffMime = (b: Uint8Array) =>
   b[0] === 0xff && b[1] === 0xd8 ? 'image/jpeg' : b[0] === 0x52 && b[1] === 0x49 ? 'image/webp' : 'image/png';
 const clipSeconds = (scene: SceneRow) => Math.min(Math.max(Math.round(scene.duration_seconds || CLIP_MIN_S), CLIP_MIN_S), CLIP_MAX_S);
@@ -107,7 +118,7 @@ async function submitVideo(scene: SceneRow, image: Uint8Array) {
     background: true,
     response_modalities: ['video'],
     input: [
-      { type: 'text', text: `Animate this image into a ${clipSeconds(scene)} second vertical 9:16 clip. ${scene.video_prompt}. Smooth cinematic motion, characters stay exactly on-model as in the image. No text, no captions, no speech, no music.` },
+      { type: 'text', text: videoPrompt(scene) },
       { type: 'image', data: bytesToB64(image), mime_type: sniffMime(image) },
     ],
   });
@@ -195,7 +206,10 @@ async function advance(admin: SupabaseClient, scene: SceneRow, base: string, cha
       if (!clip) { await admin.from('scenes').update({ claimed_at: null }).eq('id', scene.id); return; }
       const path = `${base}/scene-${pad}.mp4`;
       await upload(admin, path, clip, 'video/mp4');
-      Object.assign(patch, { video_path: path, operation: null, stage: NEXT.video_wait, attempts: 0 });
+      // Native mode: the clip already carries the character's voice, so there is no TTS step.
+      Object.assign(patch, VOICE_MODE === 'native'
+        ? { video_path: path, operation: null, stage: 'done', status: 'generated', attempts: 0 }
+        : { video_path: path, operation: null, stage: NEXT.video_wait, attempts: 0 });
       break;
     }
     case 'audio': {

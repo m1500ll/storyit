@@ -55,9 +55,9 @@ supabase/migrations/0001_init.sql   schema + RLS + consume_credits() + approval-
 - `supabase/functions/render`: per scene, keyframe image (Gemini image) → 9:16 clip (Veo, long-running) → voice-over (Gemini TTS). The browser calls `tick` in a loop (`useRenderLoop`); each call works ~95s, so the Edge Function limit is never hit. Scene 1's image is the visual reference for all others (character consistency).
 - Final MP4 is assembled **in the browser** with self-hosted ffmpeg.wasm (`src/lib/assemble.ts`): clips looped/trimmed to fit the voice-over, captions burned in (Inter Display, OFL), 720×1280 H.264/AAC.
 - Model names are env-overridable (Google renames often): `GEMINI_IMAGE_MODEL` (gemini-3.1-flash-image), `VIDEO_MODEL` (gemini-omni-1.1-flash, Interactions API — Veo was retired), `GEMINI_TTS_MODEL` (gemini-3.8-flash-tts), `TTS_VOICE`, `RENDER_CREDITS_PER_SCENE`, `RENDER_CONCURRENCY` (default 2; clips arrive inline, more scenes at once runs out of memory).
-- Credit pricing (30/scene), measured on a real 15-scene run (Nov 2026):
-  - video ≈ $0.10/s (5,792 tokens/s at 720p) → $0.60–0.80 for a 6–8 s clip
-  - keyframe image ≈ $0.067 · voice-over ≈ $0.002 · concepts + storyboard < $0.01 per episode
-  - ≈ $0.77/scene at 7 s, plus ~20% for free retries (3/15 clips were refused by Google in the test) ≈ $0.92
-  - cheapest credit sold = Studio, $99 / 1200 = $0.0825 → 30 credits ≈ $2.48 → ~60% gross margin after Stripe fees
-  - Recheck against https://ai.google.dev/gemini-api/docs/pricing when Google changes prices.
+- Voices: by default (`VOICE_MODE=native`) the characters speak inside the Gemini Omni clip with lip-sync, like Google Flow (which runs the same "1.1 Flash" model). No narrator, no TTS step, no looping. `VOICE_MODE=tts` restores the old narrator voice-over.
+- Credit pricing (20/scene), from a real run (Nov 2026):
+  - video ≈ $0.10/s (5,792 tokens/s at 720p) → $0.40–0.60 for a 4–6 s clip; keyframe image ≈ $0.067
+  - ≈ $0.57/scene, plus ~20% for free retries ≈ $0.68 → a 15-scene, ~75 s episode costs us ≈ $8–10
+  - cheapest credit sold = Studio, $99 / 1200 = $0.0825 → 20 credits ≈ $1.65 → ~55–60% gross margin after Stripe fees
+  - TikTok pays only for 60 s+ videos, so ≈ $6 of video per episode is the floor at API prices. Recheck https://ai.google.dev/gemini-api/docs/pricing when Google changes prices.

@@ -25,8 +25,11 @@ const json = (body: unknown, status = 200) =>
 
 // ---------- Prompts & schemas ----------
 
-const STYLE_GUIDE = `Genre: "Fruit Drama" — anthropomorphic fruit characters in over-the-top soap-opera stories for TikTok (vertical 9:16).
-Visual style for every image prompt: hyper-real 3D fruit characters, glossy subsurface skin, expressive faces, cinematic soft key light, shallow depth of field, vertical 9:16.
+const STYLE_GUIDE = `Genre: "Fruit Drama" — hyper-dramatic, viral 60s+ TikTok stories starring anthropomorphic 3D fruit/vegetable characters (abusive pears, innocent broccoli, heroic peaches, scheming apples).
+Tone: high drama, extreme emotional contrast — betrayal, heartbreak, sacrifice, revenge, redemption, bizarre humour, suspense.
+Visual style for every image/video prompt: 3D Pixar/Disney-style animation, ultra-detailed organic textures, cinematic studio lighting, extreme facial expressions (sobbing, rage, greed, compassion), vertical 9:16.
+The story must travel through 6 to 8 different locations (e.g. living room → street curb → luxury car → busy downtown → hospital → outdoor wedding). Never pad: no run of similar scenes in the same room; every scene advances the plot.
+The characters speak for themselves on screen (lip-synced). There is NO narrator.
 Keep content brand-safe (no gore, no sexual content).`;
 
 const characterSchema = {
@@ -70,11 +73,11 @@ const scenesSchema = {
         type: 'OBJECT',
         properties: {
           title: { type: 'STRING' },
-          narration: { type: 'STRING', description: 'What happens, one or two sentences' },
-          dialogue: { type: 'STRING', nullable: true, description: 'Format: Name: "line". Null if silent.' },
-          image_prompt: { type: 'STRING', description: 'Self-contained prompt for the keyframe image, repeating character visual traits' },
-          video_prompt: { type: 'STRING', description: 'Camera movement and action for a 6-8s clip' },
-          duration_seconds: { type: 'INTEGER', description: 'Between 6 and 8' },
+          narration: { type: 'STRING', description: 'Location + what happens, one sentence. Stage direction only — never spoken aloud' },
+          dialogue: { type: 'STRING', nullable: true, description: 'Format: Name (voice tone/emotion): "line". ONE character speaking on screen, max 12 words, with gasps/sobs/shouts as punctuation. Null only for a silent reaction shot.' },
+          image_prompt: { type: 'STRING', description: 'Self-contained English prompt: location, each visible character with their full visual traits and clothing, facial expression, body language, background, colour palette' },
+          video_prompt: { type: 'STRING', description: 'English: precise camera motion (push-in, whip-pan, tracking…) and character action / micro-expressions / mouth movement for a 4-6s clip' },
+          duration_seconds: { type: 'INTEGER', description: 'Between 4 and 6 — long enough to say the line' },
         },
         required: ['title', 'narration', 'image_prompt', 'video_prompt', 'duration_seconds'],
       },
@@ -170,14 +173,14 @@ Deno.serve(async (req) => {
       const idea = String(body.idea ?? '').trim().slice(0, 400);
       if (idea.length < 10) return json({ error: 'Idea is too short.' }, 400);
       const out = await callGemini<{ concepts: Record<string, unknown>[] }>(
-        `${STYLE_GUIDE}\n\nUser idea: "${idea}"\n\nPropose exactly 3 clearly different series concepts based on this idea (different tones/angles). Each has exactly 2 or 3 main characters. Write in the same language as the user idea.`,
+        `${STYLE_GUIDE}\n\nUser idea: "${idea}"\n\nPropose exactly 3 wildly dramatic, clearly different concepts based on this idea, each built for a 15-scene arc across several locations with betrayal, sacrifice, revenge, love and redemption. Each has exactly 2 or 3 main characters. Write in the same language as the user idea.`,
         conceptsSchema,
       );
       result = { concepts: out.concepts.slice(0, 3).map((c, i) => ({ ...c, id: `c${i + 1}` })) };
     } else {
       const count = Math.min(Math.max(Number(body.count) || 15, 5), 30);
       const out = await callGemini<{ scenes: Record<string, unknown>[] }>(
-        `${STYLE_GUIDE}\n\nSeries concept (JSON): ${JSON.stringify(body.concept).slice(0, 4000)}\n\nWrite episode 1 as exactly ${count} scenes for a ~60s vertical video: strong hook in scene 1, escalating conflict, a twist around scene 11-13, and a cliffhanger in the last scene. Image prompts must be self-contained and repeat each character's visual traits. Write narration and dialogue in the concept's language; write image/video prompts in English.`,
+        `${STYLE_GUIDE}\n\nSeries concept (JSON): ${JSON.stringify(body.concept).slice(0, 4000)}\n\nWrite episode 1 as exactly ${count} fast-paced scenes for a 60s+ vertical video: shocking hook in scene 1, escalating conflict across 6-8 locations, a twist around scene 11-13, and an emotional payoff or cliffhanger in the last scene. Almost every scene has one short spoken line by the character on screen (no narrator). Image prompts must be self-contained and repeat each character's visual traits. Write narration and dialogue in the concept's language; write image/video prompts in English.`,
         scenesSchema,
       );
       result = {
@@ -185,7 +188,7 @@ Deno.serve(async (req) => {
           ...s,
           position: i + 1,
           dialogue: s.dialogue ?? null,
-          duration_seconds: Math.min(Math.max(Number(s.duration_seconds) || 7, 6), 8),
+          duration_seconds: Math.min(Math.max(Number(s.duration_seconds) || 5, 4), 6),
         })),
       };
     }

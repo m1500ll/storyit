@@ -1,6 +1,6 @@
 import { Clapperboard, Download, Loader2 } from 'lucide-react';
 import { useState } from 'react';
-import { assembleEpisode, type AssemblyProgress } from '@/lib/assemble';
+import { assembleEpisode, type AssemblyProgress, spokenLine } from '@/lib/assemble';
 import { slug } from '@/lib/export';
 import type { StoryWithScenes } from '@/types/domain';
 import { Button, Card, ProgressBar } from '../ui';
@@ -23,7 +23,7 @@ export function FinalVideoPanel({ story }: { story: StoryWithScenes }) {
     setError(null);
     try {
       const blob = await assembleEpisode(story.scenes.map((s) => ({
-        clipUrl: s.video_url!, audioUrl: s.audio_url ?? null, caption: s.dialogue ?? s.narration, duration: s.duration_seconds,
+        clipUrl: s.video_url!, audioUrl: s.audio_url ?? null, caption: spokenLine(s.dialogue) ?? s.narration, duration: s.duration_seconds,
       })), setProgress);
       if (url) URL.revokeObjectURL(url);
       setUrl(URL.createObjectURL(blob));

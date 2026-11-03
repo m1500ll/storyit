@@ -49,6 +49,13 @@ function wavSeconds(bytes: Uint8Array): number {
   return 0;
 }
 
+/** 'Name (tone): "line"' -> 'line' (captions show only what is said). */
+export function spokenLine(dialogue: string | null | undefined): string | null {
+  if (!dialogue) return null;
+  const quoted = dialogue.match(/["“«]\s*([^"”»]+?)\s*["”»]/);
+  return quoted ? quoted[1]! : dialogue.replace(/^[^:]{1,60}:\s*/, '');
+}
+
 /** Wraps caption text into at most 3 short lines (TikTok-style, centred). */
 export function wrapCaption(text: string, max = 22, lines = 3): string {
   const words = text.replace(/\s+/g, ' ').trim().split(' ');
@@ -86,19 +93,19 @@ export async function assembleEpisode(scenes: AssemblyScene[], onProgress: (p: A
       duration = Math.max(duration, wavSeconds(voice) + 0.35);
       await ff.writeFile(`voice${i}.wav`, voice);
       audioArgs.push('-i', `voice${i}.wav`);
-    } else {
-      audioArgs.push('-f', 'lavfi', '-i', 'anullsrc=r=44100:cl=mono');
     }
+    // No separate voice-over: the clip carries the characters' own voices (native mode). Play it once, no loop.
 
     const video = [
       `scale=${W}:${H}:force_original_aspect_ratio=increase`, `crop=${W}:${H}`, 'fps=30', 'setsar=1',
       `drawtext=fontfile=caption.otf:textfile=cap${i}.txt:fontcolor=white:fontsize=46:borderw=5:bordercolor=black@0.85:line_spacing=10:x=(w-text_w)/2:y=h*0.70`,
     ].join(',');
     const code = await ff.exec([
-      '-stream_loop', '-1', '-i', clip, ...audioArgs,
-      '-t', duration.toFixed(2),
-      '-filter_complex', `[0:v]${video}[v];[1:a]aresample=44100,apad[a]`,
-      '-map', '[v]', '-map', '[a]',
+      ...(s.audioUrl ? ['-stream_loop', '-1', '-i', clip, ...audioArgs, '-t', duration.toFixed(2)] : ['-i', clip]),
+      // '0:a?' keeps the clip's own sound when it has one (no failure on silent clips).
+      ...(s.audioUrl
+        ? ['-filter_complex', `[0:v]${video}[v];[1:a]aresample=44100,apad[a]`, '-map', '[v]', '-map', '[a]']
+        : ['-filter_complex', `[0:v]${video}[v]`, '-map', '[v]', '-map', '0:a?', '-ar', '44100']),
       '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '24', '-pix_fmt', 'yuv420p',
       '-c:a', 'aac', '-b:a', '128k', '-ac', '1', '-shortest', seg,
     ]);
