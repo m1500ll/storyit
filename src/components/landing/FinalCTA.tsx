@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { Button } from '../ui';
+import { StartLink } from './StartLink';
 
 export function FinalCTA() {
   return (
@@ -9,7 +9,7 @@ export function FinalCTA() {
         <div aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_20%,transparent_75%)]" />
         <h2 className="relative font-display text-4xl text-zinc-50 md:text-5xl">Your next series is one sentence away.</h2>
         <p className="relative mx-auto mt-3 max-w-md text-sm text-zinc-400">Start with 30 free Story Credits. No card required.</p>
-        <Link to="/login" className="relative mt-8 inline-block"><Button size="lg">Create my first episode <ArrowRight className="h-4 w-4" /></Button></Link>
+        <StartLink to="/app/new" className="relative mt-8 inline-block"><Button size="lg">Create my first episode <ArrowRight className="h-4 w-4" /></Button></StartLink>
       </div>
     </section>
   );

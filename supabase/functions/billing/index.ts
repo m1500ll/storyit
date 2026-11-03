@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'portal') {
-      const session = await stripe('billing_portal/sessions', { customer: customerId, return_url: `${appUrl}/app/settings` });
+      const session = await stripe('billing_portal/sessions', { customer: customerId, return_url: `${appUrl}/app/billing` });
       return json({ url: session.url });
     }
 
@@ -74,8 +74,8 @@ Deno.serve(async (req) => {
       client_reference_id: user.id,
       'line_items[0][price]': price,
       'line_items[0][quantity]': '1',
-      success_url: `${appUrl}/app/settings?checkout=success`,
-      cancel_url: `${appUrl}/app/settings?checkout=cancelled`,
+      success_url: `${appUrl}/app/billing?checkout=success`,
+      cancel_url: `${appUrl}/app/billing?checkout=cancelled`,
       allow_promotion_codes: 'true',
       'metadata[user_id]': user.id,
       'metadata[product]': product,

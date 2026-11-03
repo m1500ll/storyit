@@ -1,10 +1,11 @@
 import { ArrowRight, Play } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { RESULT_HIGHLIGHTS } from '@/data/results';
 import { SHOWCASE, type ShowcaseVideo } from '@/data/showcase';
 import { Button } from '../ui';
 import { VideoCard } from './VideoCard';
 import { VideoLightbox } from './VideoLightbox';
+import { StartLink } from './StartLink';
 
 const FAN = [
   { tilt: -6, y: 18 }, { tilt: -3, y: 4 }, { tilt: 0, y: -6 }, { tilt: 3, y: 4 }, { tilt: 6, y: 18 },
@@ -28,10 +29,16 @@ export function Hero() {
           Create the 60-second story episodes that TikTok, YouTube Shorts &amp; Reels pay creators for — written, storyboarded and prompted in minutes. Post every day and turn your views into income.
         </p>
         <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-          <Link to="/login"><Button size="lg">Start free — 30 credits <ArrowRight className="h-4 w-4" /></Button></Link>
+          <StartLink><Button size="lg">Start free — 30 credits <ArrowRight className="h-4 w-4" /></Button></StartLink>
           <a href="#examples"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> Watch episodes</Button></a>
         </div>
-        <p className="mt-4 text-xs text-zinc-500">No card required · Cancel anytime · <a href="#results" className="underline decoration-dotted underline-offset-2 hover:text-zinc-300">See our real TikTok payouts</a></p>
+        <p className="mt-4 text-xs text-zinc-500">No card required · Cancel anytime</p>
+        <a href="#results" className="group mx-auto mt-6 flex max-w-fit flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] px-5 py-3 transition hover:border-emerald-500/40">
+          {RESULT_HIGHLIGHTS.slice(0, 2).map((h) => (
+            <span key={h.label} className="text-sm text-zinc-300"><strong className="font-display text-xl tabular-nums text-zinc-50">{h.value}</strong> {h.label}</span>
+          ))}
+          <span className="text-xs text-emerald-300 group-hover:underline">on our own TikTok accounts →</span>
+        </a>
 
         <div className="mx-auto mt-14 flex max-w-4xl items-start justify-center gap-2 sm:gap-4">
           {SHOWCASE.slice(0, 5).map((v, i) => (

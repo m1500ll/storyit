@@ -24,7 +24,7 @@ export function CreditCard() {
           </li>
         ))}
       </ul>
-      <Link to="/app/settings" className="mt-4 inline-block text-xs font-medium text-violet-300 hover:text-violet-200">Top up credits →</Link>
+      <Link to="/app/billing" className="mt-4 inline-block text-xs font-medium text-violet-300 hover:text-violet-200">Top up credits →</Link>
     </Card>
   );
 }

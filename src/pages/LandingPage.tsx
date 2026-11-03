@@ -21,11 +21,11 @@ export default function LandingPage() {
       <MarketingNavbar />
       <Hero />
       <Showcase />
+      <Results />
       <InlineCTA title="Want episodes like these for your account?" sub="No card required · Cancel anytime" />
       <TimeSaved />
       <Monetization />
       <InlineCTA title="Start building your series today." sub="30 free credits · no card required" />
-      <Results />
       <HowItWorks />
       <DemoVideo />
       <FeatureGrid />

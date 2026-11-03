@@ -1,82 +1,94 @@
+import { RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { GeneratingState } from '@/components/wizard/GeneratingState';
-import { PageHeader } from '@/components/ui';
+import { usePaywall } from '@/components/billing/Paywall';
+import { Button, PageHeader } from '@/components/ui';
 import { ConceptStep } from '@/components/wizard/ConceptStep';
+import { GeneratingState } from '@/components/wizard/GeneratingState';
 import { IdeaStep } from '@/components/wizard/IdeaStep';
 import { StoryboardStep } from '@/components/wizard/StoryboardStep';
 import { WizardSteps } from '@/components/wizard/WizardSteps';
-import { usePaywall } from '@/components/billing/Paywall';
 import { useCredits } from '@/hooks/useStore';
 import { CREDIT_COSTS, estimateEpisodeCost, InsufficientCreditsError } from '@/services/credits';
-import { storyAI } from '@/services/gemini';
 import { productionService } from '@/services/production';
 import { repository } from '@/services/repository';
-import type { SceneDraft, StoryConcept } from '@/types/domain';
+import { useWizard, wizard } from '@/services/wizardStore';
 
 const STEPS = ['Idea', 'Concept', 'Storyboard'];
 
 export default function CreateStoryWizardPage() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
-  const [params] = useSearchParams();
-  const [idea, setIdea] = useState(() => params.get('idea') ?? '');
-  const [concepts, setConcepts] = useState<StoryConcept[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [scenes, setScenes] = useState<SceneDraft[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const [pending, setPending] = useState<'concepts' | 'scenes' | null>(null);
+  const [params, setParams] = useSearchParams();
+  const w = useWizard();
   const openPaywall = usePaywall();
-
-  // Warn before losing AI output that was already paid for.
-  useEffect(() => {
-    if (step === 0) return;
-    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [step]);
   const { balance, loading: creditsLoading } = useCredits();
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
-  /** Runs a paid step: opens the paywall up-front (or on a server-side credit refusal) instead of failing. */
-  const run = async (cost: number, fn: () => Promise<void>) => {
-    if (!creditsLoading && balance < cost) return openPaywall({ required: cost });
-    setLoading(true);
-    setError(null);
+  // `?idea=` from the dashboard/landing starts a fresh draft with that idea.
+  useEffect(() => {
+    const idea = params.get('idea');
+    if (idea && !w.pending) { wizard.reset(idea); setParams({}, { replace: true }); }
+  }, [params, setParams, w.pending]);
+
+  // Server refused for lack of credits → paywall instead of an error message.
+  useEffect(() => {
+    if (w.error?.credits) {
+      openPaywall({ required: w.step === 0 ? CREDIT_COSTS.conceptGeneration : CREDIT_COSTS.sceneBreakdown });
+      wizard.clearError();
+    }
+  }, [w.error, w.step, openPaywall]);
+
+  const canAfford = (cost: number) => {
+    if (!creditsLoading && balance < cost) { openPaywall({ required: cost }); return false; }
+    return true;
+  };
+
+  const confirm = async () => {
+    const concept = w.concepts.find((c) => c.id === w.selectedId);
+    const cost = estimateEpisodeCost(w.scenes.length);
+    if (!concept || !canAfford(cost)) return;
+    setCreating(true);
+    setCreateError(null);
     try {
-      await fn();
+      const story = await repository.createStory(w.idea, concept, w.scenes);
+      await productionService.startEpisode(story.id);
+      wizard.reset();
+      navigate(`/app/stories/${story.id}`);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Something went wrong';
-      if (e instanceof InsufficientCreditsError || /not enough story credits/i.test(msg)) openPaywall({ required: cost });
-      else setError(msg);
+      if (e instanceof InsufficientCreditsError) openPaywall({ required: cost });
+      else setCreateError(e instanceof Error ? e.message : 'Could not start the render');
     } finally {
-      setLoading(false);
+      setCreating(false);
     }
   };
 
-  const selected = concepts.find((c) => c.id === selectedId);
+  const error = w.error?.message ?? createError;
+  const hasDraft = w.step > 0 || w.idea.length > 0;
 
   return (
     <>
-      <PageHeader eyebrow="New episode" title="From idea to storyboard" description="Phase 1 picks the concept, phase 2 validates the 15-scene breakdown." />
-      <WizardSteps steps={STEPS} current={step} />
+      <PageHeader eyebrow="New episode" title="From idea to storyboard"
+        description="You can leave this page while the AI works — it keeps going and your draft is saved."
+        actions={hasDraft && !w.pending ? <Button variant="ghost" size="sm" onClick={() => wizard.reset()}><RotateCcw className="h-3.5 w-3.5" /> Start over</Button> : undefined} />
+      <WizardSteps steps={STEPS} current={w.step} />
       {error && <p role="alert" className="mb-4 rounded-xl border border-coral-500/30 bg-coral-500/10 px-4 py-3 text-sm text-coral-300">{error}</p>}
 
-      {pending && <GeneratingState kind={pending} />}
+      {w.pending && <GeneratingState kind={w.pending} />}
 
-      {!pending && step === 0 && <IdeaStep idea={idea} onChange={setIdea} loading={loading}
-        onSubmit={() => run(CREDIT_COSTS.conceptGeneration, async () => { setPending('concepts'); try { setConcepts(await storyAI.generateConcepts(idea)); setStep(1); } finally { setPending(null); } })} />}
+      {!w.pending && w.step === 0 && (
+        <IdeaStep idea={w.idea} onChange={wizard.setIdea} loading={false}
+          onSubmit={() => canAfford(CREDIT_COSTS.conceptGeneration) && void wizard.generateConcepts()} />
+      )}
 
-      {!pending && step === 1 && <ConceptStep concepts={concepts} selectedId={selectedId} onSelect={setSelectedId} onBack={() => setStep(0)} loading={loading}
-        onSubmit={() => run(CREDIT_COSTS.sceneBreakdown, async () => { if (selected) { setPending('scenes'); try { setScenes(await storyAI.generateScenes(selected)); setStep(2); } finally { setPending(null); } } })} />}
+      {!w.pending && w.step === 1 && (
+        <ConceptStep concepts={w.concepts} selectedId={w.selectedId} onSelect={wizard.select} onBack={() => wizard.goTo(0)} loading={false}
+          onSubmit={() => canAfford(CREDIT_COSTS.sceneBreakdown) && void wizard.generateScenes()} />
+      )}
 
-      {step === 2 && selected && <StoryboardStep scenes={scenes} onBack={() => setStep(1)} loading={loading}
-        onConfirm={() => run(estimateEpisodeCost(scenes.length), async () => {
-          const story = await repository.createStory(idea, selected, scenes);
-          await productionService.startEpisode(story.id);
-          navigate(`/app/stories/${story.id}`);
-        })} />}
+      {!w.pending && w.step === 2 && (
+        <StoryboardStep scenes={w.scenes} onBack={() => wizard.goTo(1)} loading={creating} onConfirm={confirm} />
+      )}
     </>
   );
 }

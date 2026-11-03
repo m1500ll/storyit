@@ -15,6 +15,12 @@ const CreateStoryWizardPage = lazy(() => import('@/pages/CreateStoryWizardPage')
 const SceneEditorPage = lazy(() => import('@/pages/SceneEditorPage'));
 const ReviewQueuePage = lazy(() => import('@/pages/ReviewQueuePage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
+const EpisodesPage = lazy(() => import('@/pages/EpisodesPage'));
+const CharactersPage = lazy(() => import('@/pages/CharactersPage'));
+const BillingPage = lazy(() => import('@/pages/BillingPage'));
+const MonetisationPage = lazy(() => import('@/pages/MonetisationPage'));
+const GuidePage = lazy(() => import('@/pages/GuidePage'));
+const HelpPage = lazy(() => import('@/pages/HelpPage'));
 
 export default function App() {
   return (
@@ -34,6 +40,12 @@ export default function App() {
               <Route path="review" element={<ReviewQueuePage />} />
               <Route path="stories/:storyId" element={<SceneEditorPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="episodes" element={<EpisodesPage />} />
+              <Route path="characters" element={<CharactersPage />} />
+              <Route path="billing" element={<BillingPage />} />
+              <Route path="monetisation" element={<MonetisationPage />} />
+              <Route path="guide" element={<GuidePage />} />
+              <Route path="help" element={<HelpPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

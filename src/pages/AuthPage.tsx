@@ -26,7 +26,10 @@ function friendly(message: string): string {
 export default function AuthPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
-  const from = (useLocation().state as { from?: string } | null)?.from ?? '/app';
+  const location = useLocation();
+  const nextParam = new URLSearchParams(location.search).get('next');
+  // Only same-site paths, never external URLs.
+  const from = (location.state as { from?: string } | null)?.from ?? (nextParam?.startsWith('/app') ? nextParam : '/app');
   const [mode, setMode] = useState<Mode>(() => (new URLSearchParams(window.location.search).get('mode') === 'signin' ? 'signin' : 'signup'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
