@@ -22,16 +22,16 @@ export function Hero() {
           <span className="h-1.5 w-1.5 rounded-full bg-coral-400" /> For TikTok · YouTube Shorts · Reels
         </p>
         <h1 className="mx-auto mt-6 max-w-4xl font-display text-5xl leading-[1.05] text-zinc-50 md:text-7xl">
-          Turn one idea into an <em className="bg-gradient-to-r from-violet-300 to-coral-300 bg-clip-text italic text-transparent">entire video series</em>
+          Make money with <em className="bg-gradient-to-r from-violet-300 to-coral-300 bg-clip-text italic text-transparent">AI story videos</em>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-base text-zinc-400 md:text-lg">
-          AI story episodes like the ones below — written, storyboarded and prompted in minutes instead of evenings. Post every day, grow faster, and qualify for creator monetisation.
+          Create the 60-second story episodes that TikTok, YouTube Shorts &amp; Reels pay creators for — written, storyboarded and prompted in minutes. Post every day and turn your views into income.
         </p>
         <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
           <Link to="/login"><Button size="lg">Start free — 30 credits <ArrowRight className="h-4 w-4" /></Button></Link>
           <a href="#examples"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> Watch episodes</Button></a>
         </div>
-        <p className="mt-4 text-xs text-zinc-500">No card required · Cancel anytime</p>
+        <p className="mt-4 text-xs text-zinc-500">No card required · Cancel anytime · <a href="#results" className="underline decoration-dotted underline-offset-2 hover:text-zinc-300">See our real TikTok payouts</a></p>
 
         <div className="mx-auto mt-14 flex max-w-4xl items-start justify-center gap-2 sm:gap-4">
           {SHOWCASE.slice(0, 5).map((v, i) => (
