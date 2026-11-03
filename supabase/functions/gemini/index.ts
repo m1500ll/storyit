@@ -39,8 +39,9 @@ const characterSchema = {
     species: { type: 'STRING', description: 'The fruit or vegetable, e.g. Strawberry' },
     personality: { type: 'STRING' },
     visual_description: { type: 'STRING', description: 'Stable visual traits reused in every scene for consistency' },
+    voice_style: { type: 'STRING', description: 'Distinct voice used in every scene: gender, age, pitch, accent, speaking manner (e.g. "high-pitched young woman, fast and sassy, Parisian accent"). Each character must sound clearly different.' },
   },
-  required: ['name', 'species', 'personality', 'visual_description'],
+  required: ['name', 'species', 'personality', 'visual_description', 'voice_style'],
 };
 
 const conceptsSchema = {

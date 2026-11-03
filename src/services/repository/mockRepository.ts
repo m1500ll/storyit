@@ -39,7 +39,7 @@ export const mockRepository: Repository = {
     const id = crypto.randomUUID();
     const ts = new Date().toISOString();
     const characters = concept.characters.map((c, i) => ({
-      ...c, id: `${id}-c${i}`, story_id: id, voice_style: null, reference_image_url: null, created_at: ts,
+      ...c, id: `${id}-c${i}`, story_id: id, voice_style: c.voice_style ?? null, reference_image_url: null, created_at: ts,
     }));
     const story = {
       id, user_id: mockDb.profile.id, title: concept.title, idea, logline: concept.logline, genre: 'Fruit Drama',

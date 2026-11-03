@@ -7,7 +7,7 @@ export interface StoryConcept {
   logline: string;
   tone: string;
   hook: string;
-  characters: Pick<Character, 'name' | 'species' | 'personality' | 'visual_description'>[];
+  characters: (Pick<Character, 'name' | 'species' | 'personality' | 'visual_description'> & { voice_style?: string | null })[];
 }
 
 /** Scene draft returned by the AI before persistence (Wizard phase 2). */

@@ -39,7 +39,7 @@ interface SceneRow {
   image_path: string | null; video_path: string | null; audio_path: string | null;
   operation: string | null; attempts: number; claimed_at: string | null;
 }
-interface Character { name: string; species: string; visual_description: string }
+interface Character { name: string; species: string; visual_description: string; voice_style: string | null }
 
 // ---------- Google helpers ----------
 
@@ -98,27 +98,33 @@ async function generateImage(scene: SceneRow, chars: Character[], reference: Uin
   return { bytes: b64ToBytes(img.data), mime: (img.mimeType as string) ?? 'image/png' };
 }
 
-function videoPrompt(scene: SceneRow) {
+function videoPrompt(scene: SceneRow, chars: Character[]) {
   const base = `Animate this image into a ${clipSeconds(scene)} second vertical 9:16 clip, 3D Pixar-style animation. ${scene.video_prompt}. Characters stay exactly on-model as in the image.`;
   if (VOICE_MODE !== 'native') return `${base} No text, no captions, no speech, no music.`;
   const speech = scene.dialogue
-    ? ` The character speaks this line on camera with accurate lip-sync, in the language it is written in, with the voice and emotion indicated: ${scene.dialogue}. Only that character speaks; no narrator.`
+    ? ` The character speaks this line on camera with accurate lip-sync, in the language it is written in, with the emotion indicated: ${scene.dialogue}. Only that character speaks; there is NO narrator and no voice-over describing the scene.${voices(chars)}`
     : ' No dialogue: expressive sounds only (gasps, sobs), no narrator.';
   return `${base}${speech} Natural sound effects, no background music, no on-screen text or subtitles.`;
 }
+
+/** Fixed voice per character so each one sounds the same in every clip. */
+const voices = (chars: Character[]) => {
+  const list = chars.filter((c) => c.voice_style).map((c) => `${c.name}: ${c.voice_style}`);
+  return list.length ? ` Character voices (keep them consistent): ${list.join('; ')}.` : '';
+};
 
 const sniffMime = (b: Uint8Array) =>
   b[0] === 0xff && b[1] === 0xd8 ? 'image/jpeg' : b[0] === 0x52 && b[1] === 0x49 ? 'image/webp' : 'image/png';
 const clipSeconds = (scene: SceneRow) => Math.min(Math.max(Math.round(scene.duration_seconds || CLIP_MIN_S), CLIP_MIN_S), CLIP_MAX_S);
 
 /** Starts a background image-to-video interaction; returns its id. */
-async function submitVideo(scene: SceneRow, image: Uint8Array) {
+async function submitVideo(scene: SceneRow, image: Uint8Array, chars: Character[]) {
   const out = await google('interactions', {
     model: VIDEO_MODEL,
     background: true,
     response_modalities: ['video'],
     input: [
-      { type: 'text', text: videoPrompt(scene) },
+      { type: 'text', text: videoPrompt(scene, chars) },
       { type: 'image', data: bytesToB64(image), mime_type: sniffMime(image) },
     ],
   });
@@ -198,7 +204,7 @@ async function advance(admin: SupabaseClient, scene: SceneRow, base: string, cha
     }
     case 'video_submit': {
       const img = await download(admin, scene.image_path!);
-      Object.assign(patch, { operation: await submitVideo(scene, img), stage: NEXT.video_submit, attempts: 0 });
+      Object.assign(patch, { operation: await submitVideo(scene, img, chars), stage: NEXT.video_submit, attempts: 0 });
       break;
     }
     case 'video_wait': {
@@ -241,7 +247,7 @@ async function tick(admin: SupabaseClient, userId: string, storyId: string) {
   const left = () => BUDGET_MS - (Date.now() - started);
   const base = `${userId}/${storyId}`;
 
-  const { data: chars } = await admin.from('characters').select('name, species, visual_description').eq('story_id', storyId);
+  const { data: chars } = await admin.from('characters').select('name, species, visual_description, voice_style').eq('story_id', storyId);
   let refCache: Uint8Array | null | undefined;
   const reference = async () => {
     if (refCache !== undefined) return refCache;

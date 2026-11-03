@@ -95,7 +95,7 @@ export function createSupabaseRepository(db: SupabaseClient<Database>): Reposito
       }).select().single());
 
       const characters = required(await db.from('characters').insert(
-        concept.characters.map((c) => ({ ...c, story_id: story.id, voice_style: null, reference_image_url: null })),
+        concept.characters.map((c) => ({ ...c, story_id: story.id, voice_style: c.voice_style ?? null, reference_image_url: null })),
       ).select());
 
       unwrap(await db.from('scenes').insert(
