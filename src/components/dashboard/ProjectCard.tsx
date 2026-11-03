@@ -6,7 +6,7 @@ import { ProgressBar, ScenePoster, StatusBadge } from '../ui';
 export function ProjectCard({ story }: { story: StoryWithScenes }) {
   const done = story.scenes.filter((s) => s.status === 'generated').length;
   return (
-    <Link to={`/app/stories/${story.id}`} className="surface group flex items-center gap-4 p-4 transition hover:border-white/15">
+    <Link to={`/app/stories/${story.id}`} className="surface group flex items-center gap-4 p-4 transition hover:border-line/15">
       <div className="aspect-[9/16] w-12 shrink-0 overflow-hidden rounded-lg"><ScenePoster species={story.characters[0]?.species} seed={story.episode_number + 2} /></div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">

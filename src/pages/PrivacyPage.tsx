@@ -74,7 +74,7 @@ export default function PrivacyPage() {
           <div className="overflow-x-auto">
             <table className="mt-2 w-full min-w-[480px] text-left">
               <thead className="label"><tr><th className="pb-2 font-medium">Provider</th><th className="pb-2 font-medium">Purpose</th><th className="pb-2 font-medium">Policy</th></tr></thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-line/5">
                 {PROCESSORS.map(([name, purpose, url]) => (
                   <tr key={name}><td className="py-2.5 pr-4 text-zinc-200">{name}</td><td className="py-2.5 pr-4">{purpose}</td><td className="py-2.5"><a href={`https://${url}`} target="_blank" rel="noreferrer">{url}</a></td></tr>
                 ))}

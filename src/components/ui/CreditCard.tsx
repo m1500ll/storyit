@@ -13,7 +13,7 @@ export function CreditCard() {
       <p className="label flex items-center gap-1.5"><Coins className="h-3 w-3" /> Story Credits</p>
       <p className="mt-2 font-display text-5xl text-zinc-50 tabular-nums">{balance}</p>
       <p className="mt-1 text-xs text-zinc-500">≈ {episodesLeft} full episodes remaining</p>
-      <ul className="mt-5 space-y-2 border-t border-white/5 pt-4">
+      <ul className="mt-5 space-y-2 border-t border-line/5 pt-4">
         {transactions.slice(0, 3).map((t) => (
           <li key={t.id} className="flex items-center justify-between text-xs">
             <span className="flex items-center gap-2 truncate text-zinc-400">

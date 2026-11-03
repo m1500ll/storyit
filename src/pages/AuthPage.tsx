@@ -1,7 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Button, Card, Logo } from '@/components/ui';
+import { Button, Card, Logo, ThemeToggle } from '@/components/ui';
 import { GoogleIcon } from '@/components/ui/GoogleIcon';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -70,6 +70,7 @@ export default function AuthPage() {
   return (
     <div className="grid min-h-screen place-items-center bg-ink-950 px-4 py-10">
       <div className="pointer-events-none fixed left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]" />
+      <ThemeToggle className="fixed right-4 top-4" />
       <Card className="relative w-full max-w-sm p-8">
         <Logo />
         <h1 className="mt-8 font-display text-3xl text-zinc-50">{copy.title}</h1>
@@ -89,7 +90,7 @@ export default function AuthPage() {
               <GoogleIcon />{loading === 'google' ? 'Redirecting to Google…' : 'Continue with Google'}
             </button>
             <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-widest text-zinc-600">
-              <span className="h-px flex-1 bg-white/10" />or with email<span className="h-px flex-1 bg-white/10" />
+              <span className="h-px flex-1 bg-line/10" />or with email<span className="h-px flex-1 bg-line/10" />
             </div>
           </>
         )}

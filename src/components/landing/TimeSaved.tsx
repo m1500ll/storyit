@@ -28,13 +28,13 @@ export function TimeSaved() {
       <div className="surface mt-12 hidden overflow-x-auto p-0 md:block">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead>
-            <tr className="border-b border-white/[0.06]">
+            <tr className="border-b border-line/[0.06]">
               <th className="label px-5 py-4 font-medium">Step</th>
               <th className="label px-5 py-4 font-medium">By hand</th>
               <th className="px-5 py-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-violet-300">With Storyit</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.05]">
+          <tbody className="divide-y divide-line/[0.05]">
             {ROWS.map(([step, before, after]) => (
               <tr key={step}>
                 <td className="px-5 py-3.5 font-medium text-zinc-200">{step}</td>

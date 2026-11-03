@@ -27,10 +27,10 @@ export function PlanPicker({ currentPlan, compact }: { currentPlan?: string; com
           const current = p.id === currentPlan;
           const featured = 'featured' in p && p.featured;
           return (
-            <div key={p.id} className={cn('rounded-xl border p-4', featured ? 'border-violet-500/40 bg-violet-500/[0.06]' : 'border-white/[0.08] bg-ink-850')}>
+            <div key={p.id} className={cn('rounded-xl border p-4', featured ? 'border-violet-500/40 bg-violet-500/[0.06]' : 'border-line/[0.08] bg-ink-850')}>
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-zinc-100">{p.name}</p>
-                {current && <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-zinc-300">Current</span>}
+                {current && <span className="rounded-full bg-line/10 px-2 py-0.5 text-[10px] text-zinc-300">Current</span>}
               </div>
               <p className="mt-2 font-display text-3xl text-zinc-50">${p.price}<span className="font-sans text-xs text-zinc-500">{p.period === 'month' ? '/mo' : ''}</span></p>
               <p className="text-xs text-violet-300">{p.credits} credits {p.period === 'month' ? '/ month' : 'to start'} · ≈ {episodesFor(p.credits)} episodes</p>
@@ -54,7 +54,7 @@ export function PlanPicker({ currentPlan, compact }: { currentPlan?: string; com
       <div className="grid gap-3 sm:grid-cols-2">
         {CREDIT_PACKS.map((pack) => (
           <button key={pack.id} onClick={() => buy(pack.id)} disabled={pending !== null}
-            className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-ink-850 px-4 py-3 text-left transition hover:border-violet-500/40 disabled:opacity-50">
+            className="flex items-center justify-between rounded-xl border border-line/[0.08] bg-ink-850 px-4 py-3 text-left transition hover:border-violet-500/40 disabled:opacity-50">
             <span className="flex items-center gap-2 text-sm text-zinc-100">
               <Coins className="h-4 w-4 text-violet-300" />{pack.credits} credits
               {'badge' in pack && <span className="rounded-full bg-coral-500/15 px-2 py-0.5 text-[10px] text-coral-300">{pack.badge}</span>}

@@ -17,7 +17,7 @@ export function Hero() {
     <section className="relative overflow-hidden">
       <div className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px]" />
       <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-20 text-center md:px-6 md:pt-28">
-        <p className="label mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1">
+        <p className="label mx-auto inline-flex items-center gap-2 rounded-full border border-line/10 px-3 py-1">
           <span className="h-1.5 w-1.5 rounded-full bg-coral-400" /> For TikTok · YouTube Shorts · Reels
         </p>
         <h1 className="mx-auto mt-6 max-w-4xl font-display text-5xl leading-[1.05] text-zinc-50 md:text-7xl">
@@ -41,7 +41,7 @@ export function Hero() {
           ))}
         </div>
         <ul className="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-2">
-          {OUTPUTS.map((o) => <li key={o} className="rounded-full border border-white/10 bg-white/[0.02] px-3 py-1 text-xs text-zinc-400">{o}</li>)}
+          {OUTPUTS.map((o) => <li key={o} className="rounded-full border border-line/10 bg-line/[0.02] px-3 py-1 text-xs text-zinc-400">{o}</li>)}
         </ul>
       </div>
       <VideoLightbox video={open} onClose={() => setOpen(null)} />

@@ -38,7 +38,7 @@ export default function SceneEditorPage() {
       {render.error && story.status === 'generating' && <div className="mb-4"><LoadState loading={false} error={`Render paused: ${render.error}. It will resume automatically.`} /></div>}
       <div className="mb-6 flex flex-wrap gap-2">
         {story.characters.map((c) => (
-          <span key={c.id} className="rounded-full border border-white/10 px-3 py-1 text-xs text-zinc-400"><span className="text-zinc-200">{c.name}</span> · {c.species}</span>
+          <span key={c.id} className="rounded-full border border-line/10 px-3 py-1 text-xs text-zinc-400"><span className="text-zinc-200">{c.name}</span> · {c.species}</span>
         ))}
       </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">

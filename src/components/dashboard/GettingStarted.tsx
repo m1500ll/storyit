@@ -45,7 +45,7 @@ export function GettingStarted({ stories }: { stories: StoryWithScenes[] }) {
           <p className="text-sm font-semibold text-zinc-100">Your first episode is ready to post 🎉</p>
           <p className="text-xs text-zinc-400">Post daily to grow faster — your next idea is one sentence away.</p>
         </div>
-        <button onClick={dismiss} aria-label="Hide checklist" className="rounded-lg p-1.5 text-zinc-500 hover:bg-white/5 hover:text-zinc-200"><X className="h-4 w-4" /></button>
+        <button onClick={dismiss} aria-label="Hide checklist" className="rounded-lg p-1.5 text-zinc-500 hover:bg-line/5 hover:text-zinc-200"><X className="h-4 w-4" /></button>
       </div>
     );
   }
@@ -57,7 +57,7 @@ export function GettingStarted({ stories }: { stories: StoryWithScenes[] }) {
           <p className="text-sm font-semibold text-zinc-100">Getting started</p>
           <p className="text-xs text-zinc-500">{completed} of {steps.length} done — you’re on your way.</p>
         </div>
-        <button onClick={dismiss} aria-label="Hide checklist" className="rounded-lg p-1.5 text-zinc-500 hover:bg-white/5 hover:text-zinc-200"><X className="h-4 w-4" /></button>
+        <button onClick={dismiss} aria-label="Hide checklist" className="rounded-lg p-1.5 text-zinc-500 hover:bg-line/5 hover:text-zinc-200"><X className="h-4 w-4" /></button>
       </div>
       <div className="mt-3"><ProgressBar value={completed} max={steps.length} /></div>
       <ol className="mt-4 space-y-1">
@@ -66,7 +66,7 @@ export function GettingStarted({ stories }: { stories: StoryWithScenes[] }) {
           const body = (
             <>
               <span className={cn('grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[10px]',
-                s.done ? 'border-violet-500 bg-violet-500 text-white' : isNext ? 'border-violet-400' : 'border-white/15')}>
+                s.done ? 'border-violet-500 bg-violet-500 text-white' : isNext ? 'border-violet-400' : 'border-line/15')}>
                 {s.done && <Check className="h-3 w-3" />}
               </span>
               <span className={cn('flex-1 text-sm', s.done ? 'text-zinc-500 line-through' : isNext ? 'font-medium text-zinc-100' : 'text-zinc-400')}>{s.label}</span>

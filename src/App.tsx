@@ -4,6 +4,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { RequireAuth } from '@/components/layout/RequireAuth';
 import { ToastProvider } from '@/components/ui';
 import { AuthProvider } from '@/lib/auth';
+import { ThemeProvider } from '@/lib/theme';
 
 const LandingPage = lazy(() => import('@/pages/LandingPage'));
 const AuthPage = lazy(() => import('@/pages/AuthPage'));
@@ -17,6 +18,7 @@ const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 
 export default function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <ToastProvider>
       <BrowserRouter>
@@ -39,5 +41,6 @@ export default function App() {
       </BrowserRouter>
       </ToastProvider>
     </AuthProvider>
+    </ThemeProvider>
   );
 }

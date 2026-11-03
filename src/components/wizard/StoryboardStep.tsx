@@ -8,7 +8,7 @@ export function StoryboardStep({ scenes, onBack, onConfirm, loading }: Props) {
   const total = scenes.reduce((sum, s) => sum + s.duration_seconds, 0);
   return (
     <div>
-      <Card className="divide-y divide-white/5 p-0">
+      <Card className="divide-y divide-line/5 p-0">
         {scenes.map((s) => (
           <div key={s.position} className="flex gap-4 px-5 py-3.5">
             <span className="w-6 shrink-0 pt-0.5 text-xs tabular-nums text-zinc-600">{String(s.position).padStart(2, '0')}</span>

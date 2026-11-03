@@ -32,22 +32,22 @@ export function GeneratingState({ kind }: { kind: keyof typeof COPY }) {
         <div className="grid gap-4 md:grid-cols-3">
           {[0, 1, 2].map((n) => (
             <div key={n} className="surface space-y-3 p-5" style={{ animationDelay: `${n * 150}ms` }}>
-              <div className="h-2.5 w-20 animate-pulse rounded bg-white/[0.06]" />
-              <div className="h-6 w-3/4 animate-pulse rounded bg-white/[0.08]" />
-              <div className="h-3 w-full animate-pulse rounded bg-white/[0.05]" />
-              <div className="h-3 w-5/6 animate-pulse rounded bg-white/[0.05]" />
+              <div className="h-2.5 w-20 animate-pulse rounded bg-line/[0.06]" />
+              <div className="h-6 w-3/4 animate-pulse rounded bg-line/[0.08]" />
+              <div className="h-3 w-full animate-pulse rounded bg-line/[0.05]" />
+              <div className="h-3 w-5/6 animate-pulse rounded bg-line/[0.05]" />
               <div className="h-3 w-2/3 animate-pulse rounded bg-coral-500/10" />
             </div>
           ))}
         </div>
       ) : (
-        <div className="surface divide-y divide-white/5 p-0">
+        <div className="surface divide-y divide-line/5 p-0">
           {Array.from({ length: 6 }, (_, n) => (
             <div key={n} className="flex gap-4 px-5 py-4">
-              <div className="h-3 w-5 animate-pulse rounded bg-white/[0.06]" />
+              <div className="h-3 w-5 animate-pulse rounded bg-line/[0.06]" />
               <div className="flex-1 space-y-2">
-                <div className={cn('h-3 animate-pulse rounded bg-white/[0.08]', n % 2 ? 'w-1/3' : 'w-1/2')} />
-                <div className="h-2.5 w-4/5 animate-pulse rounded bg-white/[0.05]" />
+                <div className={cn('h-3 animate-pulse rounded bg-line/[0.08]', n % 2 ? 'w-1/3' : 'w-1/2')} />
+                <div className="h-2.5 w-4/5 animate-pulse rounded bg-line/[0.05]" />
               </div>
             </div>
           ))}

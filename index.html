@@ -1,11 +1,20 @@
 <!doctype html>
-<html lang="en" class="dark" style="color-scheme: dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Storyit — Turn one idea into an entire video series</title>
     <meta name="description" content="AI studio for vertical short-form series. One idea becomes a 15-scene TikTok episode with consistent characters and a human approval gate." />
     <meta name="theme-color" content="#0a0a0c" />
+    <script>
+      // Apply the theme before first paint (no flash). Mirrors src/lib/theme.tsx.
+      (function () {
+        var t;
+        try { t = localStorage.getItem('storyit:theme'); } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Storyit — Turn one idea into an entire video series" />

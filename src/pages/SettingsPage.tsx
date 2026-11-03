@@ -15,7 +15,7 @@ function CheckoutBanner() {
   if (!status) return null;
   const ok = status === 'success';
   return (
-    <div className={`mb-6 flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm ${ok ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-white/10 bg-white/5 text-zinc-300'}`}>
+    <div className={`mb-6 flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm ${ok ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-line/10 bg-line/5 text-zinc-300'}`}>
       <span className="flex items-center gap-2">{ok && <CheckCircle2 className="h-4 w-4" />}
         {ok ? 'Payment confirmed — your credits will appear in a few seconds.' : 'Checkout cancelled. No charge was made.'}</span>
       <button onClick={() => setParams({})} aria-label="Dismiss"><X className="h-4 w-4" /></button>
@@ -82,7 +82,7 @@ export default function SettingsPage() {
           <CardHeader title="Credit history" />
           <table className="w-full min-w-[480px] text-left text-sm">
             <thead className="label"><tr><th className="pb-3 font-medium">Date</th><th className="pb-3 font-medium">Description</th><th className="pb-3 text-right font-medium">Amount</th><th className="pb-3 text-right font-medium">Balance</th></tr></thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-line/5">
               {transactions.map((t) => (
                 <tr key={t.id}>
                   <td className="py-2.5 text-xs text-zinc-500">{new Date(t.created_at).toLocaleDateString()}</td>

@@ -33,7 +33,7 @@ export default function LandingPage() {
       <Pricing />
       <FAQ />
       <FinalCTA />
-      <footer className="border-t border-white/[0.05] py-10">
+      <footer className="border-t border-line/[0.05] py-10">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 text-xs text-zinc-600 md:px-6">
           <Logo />
           <nav className="flex gap-5">

@@ -62,10 +62,10 @@ export function Monetization() {
       <div className="mt-6 grid gap-6 rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-600/10 via-ink-900 to-coral-500/5 p-6 md:grid-cols-[1fr_auto] md:items-center md:p-10">
         <div>
           <p className="label">Revenue simulator</p>
-          <div className="mt-4 inline-flex rounded-xl border border-white/10 p-1" role="tablist" aria-label="Platform">
+          <div className="mt-4 inline-flex rounded-xl border border-line/10 p-1" role="tablist" aria-label="Platform">
             {(['tiktok', 'youtube'] as const).map((id) => (
               <button key={id} role="tab" aria-selected={platformId === id} onClick={() => setPlatformId(id)}
-                className={cn('rounded-lg px-3 py-1.5 text-xs font-medium transition', platformId === id ? 'bg-white/10 text-zinc-50' : 'text-zinc-500 hover:text-zinc-300')}>
+                className={cn('rounded-lg px-3 py-1.5 text-xs font-medium transition', platformId === id ? 'bg-line/10 text-zinc-50' : 'text-zinc-500 hover:text-zinc-300')}>
                 {id === 'tiktok' ? 'TikTok' : 'YouTube Shorts'}
               </button>
             ))}
@@ -80,7 +80,7 @@ export function Monetization() {
             Estimate only, using rates creators publicly report ({fmt(rpm.min)}–{fmt(rpm.max)} {rpm.label}).{platformId === 'tiktok' && ' Only part of your views qualify: views from ineligible countries, short watches and repeat views don’t count — often well under half of total views.'} Real payouts vary a lot by country, audience, watch time and niche. Not a promise of earnings.
           </p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-ink-950/60 px-8 py-6 text-center md:min-w-[260px]">
+        <div className="rounded-2xl border border-line/10 bg-ink-950/60 px-8 py-6 text-center md:min-w-[260px]">
           <p className="label">Estimated monthly payout</p>
           <p className="mt-2 font-display text-5xl tabular-nums text-zinc-50" aria-live="polite">{fmt(low)}<span className="text-zinc-500"> – </span>{fmt(high)}</p>
           <p className="mt-1 text-xs text-zinc-500">{platform.name} · {platform.program}</p>

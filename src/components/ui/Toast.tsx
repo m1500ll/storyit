@@ -26,7 +26,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map(({ id, kind, text }) => {
           const Icon = ICONS[kind];
           return (
-            <div key={id} role="status" className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl border border-white/10 bg-ink-800/95 px-4 py-3 text-sm text-zinc-100 shadow-2xl backdrop-blur animate-[fadein_.2s_ease]">
+            <div key={id} role="status" className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl border border-line/10 bg-ink-800/95 px-4 py-3 text-sm text-zinc-100 shadow-2xl backdrop-blur animate-[fadein_.2s_ease]">
               <Icon className={cn('h-4 w-4 shrink-0', COLORS[kind])} />
               <span className="flex-1">{text}</span>
               <button onClick={() => dismiss(id)} aria-label="Dismiss" className="text-zinc-500 hover:text-zinc-200"><X className="h-3.5 w-3.5" /></button>

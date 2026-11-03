@@ -15,7 +15,7 @@ export function HowItWorks() {
       <ol className="mt-12 grid gap-4 md:grid-cols-4">
         {steps.map(({ icon: Icon, title, body }, i) => (
           <li key={title} className="surface relative p-6">
-            <span className="absolute right-5 top-4 font-display text-4xl text-white/[0.06]">{i + 1}</span>
+            <span className="absolute right-5 top-4 font-display text-4xl text-line/[0.07]">{i + 1}</span>
             <Icon className="h-5 w-5 text-coral-400" />
             <h3 className="mt-4 text-sm font-semibold text-zinc-100">{title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-zinc-500">{body}</p>

@@ -25,7 +25,7 @@ export function FirstRun({ balance }: { balance: number }) {
       <ol className="mt-5 max-w-md space-y-2">
         {steps.map((s, i) => (
           <li key={s} className="flex items-center gap-3 text-sm text-zinc-400">
-            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-white/10 text-xs text-zinc-300">{i + 1}</span>{s}
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-line/10 text-xs text-zinc-300">{i + 1}</span>{s}
           </li>
         ))}
       </ol>
@@ -33,7 +33,7 @@ export function FirstRun({ balance }: { balance: number }) {
       <div className="flex flex-col gap-2">
         {IDEAS.map((idea) => (
           <Link key={idea} to={`/app/new?idea=${encodeURIComponent(idea)}`}
-            className="group flex items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-ink-850 px-4 py-3 text-sm text-zinc-300 transition hover:border-violet-500/40 hover:text-zinc-100">
+            className="group flex items-center justify-between gap-3 rounded-xl border border-line/[0.08] bg-ink-850 px-4 py-3 text-sm text-zinc-300 transition hover:border-violet-500/40 hover:text-zinc-100">
             <span className="min-w-0">{idea}</span><ArrowRight className="h-4 w-4 shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-violet-300" />
           </Link>
         ))}

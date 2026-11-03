@@ -17,7 +17,7 @@ export function FAQ() {
     <section id="faq" className="mx-auto max-w-3xl px-4 py-20 md:px-6">
       <p className="label text-center">FAQ</p>
       <h2 className="mt-3 text-center font-display text-4xl text-zinc-50">Questions, answered</h2>
-      <div className="mt-10 divide-y divide-white/[0.06] rounded-2xl border border-white/[0.06] bg-ink-900">
+      <div className="mt-10 divide-y divide-line/[0.06] rounded-2xl border border-line/[0.06] bg-ink-900">
         {faqs.map(({ q, a }) => (
           <details key={q} className="group px-6 py-4">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-zinc-100">

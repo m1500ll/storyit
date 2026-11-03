@@ -36,7 +36,7 @@ export function SceneCard({ scene, species, onSave, onRetry }: Props) {
           : scene.status === 'generated' ? <ScenePoster species={species} seed={scene.position} className="absolute inset-0" />
           : scene.status === 'generating' ? <div className="absolute inset-0 animate-pulse bg-gradient-to-b from-violet-500/20 to-transparent" />
           : <ImageIcon className="h-5 w-5 text-zinc-600" />}
-        <span className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 text-[10px] tabular-nums text-zinc-300">{scene.position}</span>
+        <span className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 text-[10px] tabular-nums text-white">{scene.position}</span>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
