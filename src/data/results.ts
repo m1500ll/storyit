@@ -10,4 +10,7 @@ export interface ResultProof {
   period: string;     // e.g. '30 days'
 }
 
-export const RESULTS: ResultProof[] = [];
+export const RESULTS: ResultProof[] = [
+  { image: '/results/tiktok-6290.jpg', platform: 'TikTok', caption: 'Creator Rewards — $6,290 from 8.2M qualified views (RPM $0.76)', period: '30 days' },
+  { image: '/results/tiktok-2479.jpg', platform: 'TikTok', caption: 'Creator Rewards — $2,479 from 3M qualified views (RPM $0.83)', period: '30 days' },
+];
