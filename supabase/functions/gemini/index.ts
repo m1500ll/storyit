@@ -4,7 +4,7 @@
 // Single-file on purpose so it can be pasted into the Supabase dashboard editor.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.5-flash';
+const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.8-flash';
 const COSTS = { concepts: 1, scenes: 2 } as const;
 
 const cors = {
