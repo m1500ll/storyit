@@ -44,7 +44,8 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec(SUPABASE_STUB);
   const dir = join(__dirname, '../../supabase/migrations');
-  for (const f of readdirSync(dir).filter((f) => f.endsWith('.sql')).sort()) await db.exec(readFileSync(join(dir, f), 'utf8'));
+  // 0007 only schedules the worker with pg_cron/pg_net (Supabase infrastructure, not available in PGlite).
+  for (const f of readdirSync(dir).filter((f) => f.endsWith('.sql') && !f.includes('_cron')).sort()) await db.exec(readFileSync(join(dir, f), 'utf8'));
   await service(`insert into auth.users (id, email) values ($1, 'a@x.test'), ($2, 'b@x.test')`, [A, B]);
   // Accounts are created by the OAuth callback (service role): 3 TikTok + 3 Instagram for A, 1 for B.
   for (const [i, p] of ['tiktok', 'tiktok', 'tiktok', 'instagram', 'instagram', 'instagram'].entries()) {
