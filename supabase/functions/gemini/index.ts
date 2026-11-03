@@ -5,6 +5,10 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.8-flash';
+// Used when the main model stays overloaded. Set GEMINI_FALLBACK_MODEL to "none" to disable.
+const FALLBACK_MODEL = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? 'gemini-3.8-flash-lite';
+const RETRYABLE = new Set([429, 500, 503, 504]);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const COSTS = { concepts: 1, scenes: 2 } as const;
 
 const cors = {
@@ -76,10 +80,14 @@ const scenesSchema = {
   required: ['scenes'],
 };
 
-async function callGemini<T>(prompt: string, schema: unknown): Promise<T> {
-  const key = Deno.env.get('GEMINI_API_KEY');
-  if (!key) throw new Error('GEMINI_API_KEY secret is not set');
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+class GeminiHttpError extends Error {
+  constructor(public status: number, body: string) {
+    super(`Gemini error ${status}: ${body.slice(0, 300)}`);
+  }
+}
+
+async function requestGemini<T>(model: string, prompt: string, schema: unknown, key: string): Promise<T> {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({
@@ -87,11 +95,41 @@ async function callGemini<T>(prompt: string, schema: unknown): Promise<T> {
       generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 1 },
     }),
   });
-  if (!res.ok) throw new Error(`Gemini error ${res.status}: ${(await res.text()).slice(0, 300)}`);
+  if (!res.ok) throw new GeminiHttpError(res.status, await res.text());
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error('Gemini returned an empty response');
   return JSON.parse(text) as T;
+}
+
+/** Retries transient errors (overload / rate limit) with backoff, then tries the fallback model. */
+async function callGemini<T>(prompt: string, schema: unknown): Promise<T> {
+  const key = Deno.env.get('GEMINI_API_KEY');
+  if (!key) throw new Error('GEMINI_API_KEY secret is not set');
+
+  const models = FALLBACK_MODEL && FALLBACK_MODEL !== 'none' && FALLBACK_MODEL !== MODEL ? [MODEL, FALLBACK_MODEL] : [MODEL];
+  let lastError: unknown;
+  for (const model of models) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await requestGemini<T>(model, prompt, schema, key);
+      } catch (e) {
+        lastError = e;
+        const retryable = e instanceof GeminiHttpError ? RETRYABLE.has(e.status) : e instanceof SyntaxError;
+        if (!retryable) {
+          // A missing/retired fallback model should not hide the real overload error.
+          if (model !== MODEL && e instanceof GeminiHttpError && e.status === 404) break;
+          throw e;
+        }
+        console.warn(`Gemini ${model} attempt ${attempt + 1} failed:`, e instanceof Error ? e.message : e);
+        await sleep(1000 * 2 ** attempt + Math.random() * 500);
+      }
+    }
+  }
+  if (lastError instanceof GeminiHttpError && RETRYABLE.has(lastError.status)) {
+    throw new Error('Gemini is overloaded right now. Please try again in a minute — no credits were used.');
+  }
+  throw lastError;
 }
 
 // ---------- Handler ----------
