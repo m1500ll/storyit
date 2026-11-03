@@ -86,7 +86,7 @@ const characterSheet = (chars: Character[]) =>
 
 async function generateImage(scene: SceneRow, chars: Character[], reference: Uint8Array | null) {
   const parts: unknown[] = [{
-    text: `Vertical 9:16 keyframe for a short AI story video. Keep characters EXACTLY consistent with this character sheet${reference ? ' and with the reference image' : ''}:\n${characterSheet(chars)}\n\nScene ${scene.position}: ${scene.image_prompt}\nNo text, no captions, no watermark.`,
+    text: `Vertical 9:16 still from a 3D Pixar/Disney-style animated movie. Characters are full-body anthropomorphic fruits/vegetables with big expressive cartoon eyes, a mouth, arms, hands, legs and clothes, acting in a detailed real environment. Keep characters EXACTLY consistent with this character sheet${reference ? ' and with the reference image' : ''}:\n${characterSheet(chars)}\n\nScene ${scene.position}: ${scene.image_prompt}\nNo text, no captions, no watermark.`,
   }];
   if (reference) parts.push({ inlineData: { mimeType: sniffMime(reference), data: bytesToB64(reference) } });
   const out = await google(`models/${IMAGE_MODEL}:generateContent`, {
@@ -99,12 +99,12 @@ async function generateImage(scene: SceneRow, chars: Character[], reference: Uin
 }
 
 function videoPrompt(scene: SceneRow, chars: Character[]) {
-  const base = `Animate this image into a ${clipSeconds(scene)} second vertical 9:16 clip, 3D Pixar-style animation. ${scene.video_prompt}. Characters stay exactly on-model as in the image.`;
+  const base = `Animate this image into a ${clipSeconds(scene)} second vertical 9:16 clip, 3D Pixar-style animation. ${scene.video_prompt}. Characters stay exactly on-model as in the image and move with full-body acting (walking, gesturing, interacting with objects and each other); dynamic cinematic camera.`;
   if (VOICE_MODE !== 'native') return `${base} No text, no captions, no speech, no music.`;
   const speech = scene.dialogue
     ? ` The character speaks this line on camera with accurate lip-sync, in the language it is written in, with the emotion indicated: ${scene.dialogue}. Only that character speaks; there is NO narrator and no voice-over describing the scene.${voices(chars)}`
     : ' No dialogue: expressive sounds only (gasps, sobs), no narrator.';
-  return `${base}${speech} Natural sound effects, no background music, no on-screen text or subtitles.`;
+  return `${base}${speech} Rich ambient sound of the location and foley for every action (footsteps, doors, rain, traffic, crowd, objects), like a real animated film. No background music, no on-screen text or subtitles.`;
 }
 
 /** Fixed voice per character so each one sounds the same in every clip. */

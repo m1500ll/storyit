@@ -27,7 +27,9 @@ const json = (body: unknown, status = 200) =>
 
 const STYLE_GUIDE = `Genre: "Fruit Drama" — hyper-dramatic, viral 60s+ TikTok stories starring anthropomorphic 3D fruit/vegetable characters (abusive pears, innocent broccoli, heroic peaches, scheming apples).
 Tone: high drama, extreme emotional contrast — betrayal, heartbreak, sacrifice, revenge, redemption, bizarre humour, suspense.
-Visual style for every image/video prompt: 3D Pixar/Disney-style animation, ultra-detailed organic textures, cinematic studio lighting, extreme facial expressions (sobbing, rage, greed, compassion), vertical 9:16.
+Visual style for every image/video prompt: 3D Pixar/Disney-style animated movie still, ultra-detailed organic textures, cinematic studio lighting, vertical 9:16.
+Characters are REAL animated characters, not plain fruit with a face: full-body anthropomorphic fruits/vegetables with big expressive cartoon eyes, eyebrows, a mouth that can talk, arms, hands, legs and feet, wearing clothes and accessories that fit their role (apron, suit, hospital gown, jewellery…), with extreme facial expressions and body language (sobbing, rage, greed, compassion).
+Every scene is alive: characters move, walk, gesture and interact with objects and each other; real environments full of detail (props, background extras, weather).
 The story must travel through 6 to 8 different locations (e.g. living room → street curb → luxury car → busy downtown → hospital → outdoor wedding). Never pad: no run of similar scenes in the same room; every scene advances the plot.
 The characters speak for themselves on screen (lip-synced). There is NO narrator.
 Keep content brand-safe (no gore, no sexual content).`;
@@ -38,7 +40,7 @@ const characterSchema = {
     name: { type: 'STRING' },
     species: { type: 'STRING', description: 'The fruit or vegetable, e.g. Strawberry' },
     personality: { type: 'STRING' },
-    visual_description: { type: 'STRING', description: 'Stable visual traits reused in every scene for consistency' },
+    visual_description: { type: 'STRING', description: 'Full-body Pixar character design reused in every scene: fruit/vegetable body, colours, eyes, limbs, outfit, accessories' },
     voice_style: { type: 'STRING', description: 'Distinct voice used in every scene: gender, age, pitch, accent, speaking manner (e.g. "high-pitched young woman, fast and sassy, Parisian accent"). Each character must sound clearly different.' },
   },
   required: ['name', 'species', 'personality', 'visual_description', 'voice_style'],
@@ -77,7 +79,7 @@ const scenesSchema = {
           narration: { type: 'STRING', description: 'Location + what happens, one sentence. Stage direction only — never spoken aloud' },
           dialogue: { type: 'STRING', nullable: true, description: 'Format: Name (voice tone/emotion): "line". ONE character speaking on screen, max 12 words, with gasps/sobs/shouts as punctuation. Null only for a silent reaction shot.' },
           image_prompt: { type: 'STRING', description: 'Self-contained English prompt: location, each visible character with their full visual traits and clothing, facial expression, body language, background, colour palette' },
-          video_prompt: { type: 'STRING', description: 'English: precise camera motion (push-in, whip-pan, tracking…) and character action / micro-expressions / mouth movement for a 4-6s clip' },
+          video_prompt: { type: 'STRING', description: 'English: precise camera motion (push-in, whip-pan, tracking…), full-body character action and interaction, micro-expressions, mouth movement, plus the ambient sounds and foley of the place (rain, traffic, crowd, footsteps, objects) for a 4-6s clip' },
           duration_seconds: { type: 'INTEGER', description: 'Between 4 and 6 — long enough to say the line' },
         },
         required: ['title', 'narration', 'image_prompt', 'video_prompt', 'duration_seconds'],
