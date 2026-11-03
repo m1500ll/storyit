@@ -8,7 +8,7 @@ create table if not exists plan_limits (
   max_social_accounts integer,
   max_media_assets integer,
   max_pending_publications integer,
-  max_upload_mb integer not null default 250
+  max_upload_mb integer not null default 50   -- must not exceed the Supabase Storage global file size limit (50 MB on the Free plan)
 );
 insert into plan_limits (plan, max_social_accounts, max_media_assets, max_pending_publications) values
   ('free', 2, 20, 50), ('creator', 10, 500, 2000), ('studio', null, null, null)

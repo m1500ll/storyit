@@ -44,7 +44,7 @@ export default function LibraryPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const toast = useToast();
-  const maxMb = limits?.max_upload_mb ?? 250;
+  const maxMb = limits?.max_upload_mb ?? 50;
 
   const byMedia = useMemo(() => {
     const m = new Map<string, typeof pubs>();
@@ -63,7 +63,7 @@ export default function LibraryPage() {
       const name = file.name;
       const fail = (msg: string) => setUploads((u) => [...u.filter((x) => x.name !== name), { name, pct: 0, error: msg }]);
       if (!ACCEPTED.includes(file.type)) { fail('Unsupported format: use MP4, MOV or WebM'); continue; }
-      if (file.size > maxMb * 1024 * 1024) { fail(`File is larger than ${maxMb} MB`); continue; }
+      if (file.size > maxMb * 1024 * 1024) { fail(`File is ${Math.round(file.size / 1048576)} MB: the current limit is ${maxMb} MB per video. Export it shorter or more compressed.`); continue; }
       setUploads((u) => [...u.filter((x) => x.name !== name), { name, pct: 0 }]);
       try {
         const meta = await probe(file);
