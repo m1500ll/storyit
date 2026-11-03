@@ -1,4 +1,5 @@
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
+import { buildAss, speechSpan, timeWords } from './captions';
 
 export interface AssemblyScene {
   clipUrl: string;
@@ -27,6 +28,15 @@ function loadFFmpeg(): Promise<FFmpeg> {
     return ff;
   })().catch((e) => { instance = null; throw e; });
   return instance;
+}
+
+/** Runs an ffmpeg command and returns everything it logged (used to read silencedetect results). */
+async function captureLog(ff: FFmpeg, args: string[]) {
+  let out = '';
+  const onLog = ({ message }: { message: string }) => { out += message + '\n'; };
+  ff.on('log', onLog);
+  try { await ff.exec(args); } finally { ff.off('log', onLog); }
+  return out;
 }
 
 async function fetchBytes(url: string) {
@@ -96,9 +106,18 @@ export async function assembleEpisode(scenes: AssemblyScene[], onProgress: (p: A
     }
     // No separate voice-over: the clip carries the characters' own voices (native mode). Play it once, no loop.
 
+    let captionFilter = `drawtext=fontfile=caption.otf:textfile=cap${i}.txt:fontcolor=white:fontsize=46:borderw=5:bordercolor=black@0.85:line_spacing=10:x=(w-text_w)/2:y=h*0.70`;
+    if (!s.audioUrl) {
+      // Characters speak inside the clip: animated word-by-word captions timed on the clip's own audio.
+      const log = await captureLog(ff, ['-i', clip, '-af', 'silencedetect=noise=-32dB:d=0.25', '-f', 'null', '-']);
+      const dur = log.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
+      const clipSeconds = dur ? Number(dur[1]) * 3600 + Number(dur[2]) * 60 + Number(dur[3]) : s.duration;
+      const span = speechSpan(log, clipSeconds);
+      await ff.writeFile(`cap${i}.ass`, buildAss(timeWords(s.caption, span.start, span.end), W, H));
+      captionFilter = `ass=cap${i}.ass:fontsdir=.`;
+    }
     const video = [
-      `scale=${W}:${H}:force_original_aspect_ratio=increase`, `crop=${W}:${H}`, 'fps=30', 'setsar=1',
-      `drawtext=fontfile=caption.otf:textfile=cap${i}.txt:fontcolor=white:fontsize=46:borderw=5:bordercolor=black@0.85:line_spacing=10:x=(w-text_w)/2:y=h*0.70`,
+      `scale=${W}:${H}:force_original_aspect_ratio=increase`, `crop=${W}:${H}`, 'fps=30', 'setsar=1', captionFilter,
     ].join(',');
     const code = await ff.exec([
       ...(s.audioUrl ? ['-stream_loop', '-1', '-i', clip, ...audioArgs, '-t', duration.toFixed(2)] : ['-i', clip]),
