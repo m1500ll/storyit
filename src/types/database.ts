@@ -72,6 +72,25 @@ export interface Database {
         Update: Partial<Omit<Database['public']['Tables']['scenes']['Row'], 'id' | 'story_id'>>;
         Relationships: [];
       };
+      publish_packs: {
+        Row: {
+          story_id: UUID; user_id: UUID; content: Record<string, unknown>; status: 'empty' | 'generating' | 'ready' | 'error';
+          error_message: string | null; selected_title: string | null; edited_caption: string | null;
+          selected_thumbnail_id: UUID | null; approved_hash: string | null; updated_at: Timestamp;
+        };
+        Insert: never;
+        Update: { selected_title?: string | null; edited_caption?: string | null; selected_thumbnail_id?: UUID | null };
+        Relationships: [];
+      };
+      thumbnails: {
+        Row: {
+          id: UUID; story_id: UUID; user_id: UUID; aspect_ratio: '9:16' | '16:9'; prompt: Record<string, unknown>;
+          image_path: string | null; status: 'generating' | 'ready' | 'error'; error_message: string | null; created_at: Timestamp;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       credit_transactions: {
         Row: {
           id: UUID; user_id: UUID; type: CreditTransactionType; amount: number; balance_after: number;

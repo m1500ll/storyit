@@ -3,17 +3,20 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ApprovalPanel } from '@/components/scenes/ApprovalPanel';
 import { ExportPanel } from '@/components/scenes/ExportPanel';
+import { ProductionPhases } from '@/components/scenes/ProductionPhases';
+import { productionPhases } from '@/lib/publishPack';
 import { FinalVideoPanel } from '@/components/scenes/FinalVideoPanel';
 import { useRenderLoop } from '@/hooks/useRenderLoop';
 import { SceneCard } from '@/components/scenes/SceneCard';
 import { LoadState, PageHeader, StatusBadge, useToast } from '@/components/ui';
-import { useStory } from '@/hooks/useStore';
+import { usePublishPack, useStory } from '@/hooks/useStore';
 import { approvalService, productionService } from '@/services/production';
 import { repository } from '@/services/repository';
 
 export default function SceneEditorPage() {
   const { storyId } = useParams();
   const { data: story, loading, error } = useStory(storyId);
+  const { data: packData } = usePublishPack(storyId);
   const render = useRenderLoop(storyId, story?.status === 'generating');
   const [actionError, setActionError] = useState<string | null>(null);
   const toast = useToast();
@@ -34,6 +37,7 @@ export default function SceneEditorPage() {
       <Link to="/app/review" className="mb-4 inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300"><ArrowLeft className="h-3 w-3" /> Review queue</Link>
       <PageHeader eyebrow={`${story.genre} · ${story.aspect_ratio} · Episode ${story.episode_number}`} title={story.title} description={story.logline ?? undefined}
         actions={<StatusBadge status={story.status} className="text-xs" />} />
+      <ProductionPhases phases={productionPhases(story, packData?.pack)} publishHref={`/app/stories/${story.id}/publish`} />
       {actionError && <div className="mb-4"><LoadState loading={false} error={actionError} /></div>}
       {render.error && story.status === 'generating' && <div className="mb-4"><LoadState loading={false} error={`Render paused: ${render.error}. It will resume automatically.`} /></div>}
       <div className="mb-6 flex flex-wrap gap-2">

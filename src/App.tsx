@@ -13,6 +13,7 @@ const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const CreateStoryWizardPage = lazy(() => import('@/pages/CreateStoryWizardPage'));
 const SceneEditorPage = lazy(() => import('@/pages/SceneEditorPage'));
+const PublishPage = lazy(() => import('@/pages/PublishPage'));
 const ReviewQueuePage = lazy(() => import('@/pages/ReviewQueuePage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
 const EpisodesPage = lazy(() => import('@/pages/EpisodesPage'));
@@ -39,6 +40,7 @@ export default function App() {
               <Route path="new" element={<CreateStoryWizardPage />} />
               <Route path="review" element={<ReviewQueuePage />} />
               <Route path="stories/:storyId" element={<SceneEditorPage />} />
+              <Route path="stories/:storyId/publish" element={<PublishPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="episodes" element={<EpisodesPage />} />
               <Route path="characters" element={<CharactersPage />} />

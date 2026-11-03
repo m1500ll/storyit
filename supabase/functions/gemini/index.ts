@@ -12,7 +12,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // Supabase stops a function after ~150s (free plan) without a usable response, so stay well below it.
 const TOTAL_BUDGET_MS = 100_000;
 const REQUEST_TIMEOUT_MS = 45_000;
-const COSTS = { concepts: 1, scenes: 2 } as const;
+const COSTS = { concepts: 1, scenes: 2, publish_pack: 1 } as const;
+type Task = keyof typeof COSTS;
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -27,7 +28,7 @@ const json = (body: unknown, status = 200) =>
 
 const STYLE_GUIDE = `Genre: "Fruit Drama" — hyper-dramatic, viral 60s+ TikTok stories starring anthropomorphic 3D fruit/vegetable characters (abusive pears, innocent broccoli, heroic peaches, scheming apples).
 Tone: high drama, extreme emotional contrast — betrayal, heartbreak, sacrifice, revenge, redemption, bizarre humour, suspense.
-Visual style for every image/video prompt: 3D Pixar/Disney-style animated movie still, ultra-detailed organic textures, cinematic studio lighting, vertical 9:16.
+Visual style for every image/video prompt: stylized cinematic 3D animated film still (original art direction), ultra-detailed organic textures, cinematic studio lighting, vertical 9:16.
 Characters are REAL animated characters, not plain fruit with a face: full-body anthropomorphic fruits/vegetables with big expressive cartoon eyes, eyebrows, a mouth that can talk, arms, hands, legs and feet, wearing clothes and accessories that fit their role (apron, suit, hospital gown, jewellery…), with extreme facial expressions and body language (sobbing, rage, greed, compassion).
 Every scene is alive: characters move, walk, gesture and interact with objects and each other; real environments full of detail (props, background extras, weather).
 The story must travel through 6 to 8 different locations (e.g. living room → street curb → luxury car → busy downtown → hospital → outdoor wedding). Never pad: no run of similar scenes in the same room; every scene advances the plot.
@@ -40,7 +41,7 @@ const characterSchema = {
     name: { type: 'STRING' },
     species: { type: 'STRING', description: 'The fruit or vegetable, e.g. Strawberry' },
     personality: { type: 'STRING' },
-    visual_description: { type: 'STRING', description: 'Full-body Pixar character design reused in every scene: fruit/vegetable body, colours, eyes, limbs, outfit, accessories' },
+    visual_description: { type: 'STRING', description: 'Full-body stylized 3D character design reused in every scene: fruit/vegetable body, colours, eyes, limbs, outfit, accessories' },
     voice_style: { type: 'STRING', description: 'Distinct voice used in every scene: gender, age, pitch, accent, speaking manner (e.g. "high-pitched young woman, fast and sassy, Parisian accent"). Each character must sound clearly different.' },
   },
   required: ['name', 'species', 'personality', 'visual_description', 'voice_style'],
@@ -88,6 +89,72 @@ const scenesSchema = {
   },
   required: ['scenes'],
 };
+
+// Phase 5 — thumbnail prompt + social SEO pack, generated from the episode actually produced.
+const PLATFORM_LIMITS = 'TikTok caption ≤ 2200 characters. Instagram Reels caption ≤ 2200 characters and at most 30 hashtags (5–10 is better). YouTube Shorts title ≤ 100 characters, description ≤ 5000 characters, tags ≤ 500 characters in total, 3–5 hashtags.';
+const str = (description: string) => ({ type: 'STRING', description });
+const strList = (description: string) => ({ type: 'ARRAY', items: { type: 'STRING' }, description });
+const publishPackSchema = {
+  type: 'OBJECT',
+  properties: {
+    titles: {
+      type: 'ARRAY',
+      description: 'Exactly 5 titles, each a different narrative angle, faithful to the episode, no false claims',
+      items: { type: 'OBJECT', properties: { angle: { type: 'STRING', enum: ['emotion', 'conflict', 'sacrifice', 'suspense', 'curiosity'] }, text: str('Title in the episode language') }, required: ['angle', 'text'] },
+    },
+    caption: str('Shared caption: presents the conflict without spoiling the ending, sparks emotion or curiosity, invites comments naturally, emojis in moderation, no claims about views or virality'),
+    platforms: {
+      type: 'OBJECT',
+      properties: {
+        tiktok: { type: 'OBJECT', properties: { caption: str('TikTok caption including hashtags at the end'), hook: str('Short on-screen hook / title'), hashtags: strList('3-6 relevant hashtags with #') }, required: ['caption', 'hook', 'hashtags'] },
+        instagram: { type: 'OBJECT', properties: { caption: str('Reels caption'), hashtags: strList('5-10 relevant hashtags with #') }, required: ['caption', 'hashtags'] },
+        youtube: { type: 'OBJECT', properties: { title: str('Shorts title, max 100 characters'), description: str('Description, a few lines'), hashtags: strList('3-5 hashtags with #'), tags: strList('Search keywords without #') }, required: ['title', 'description', 'hashtags', 'tags'] },
+      },
+      required: ['tiktok', 'instagram', 'youtube'],
+    },
+    thumbnail: {
+      type: 'OBJECT',
+      properties: {
+        thumbnail_type: str('e.g. split emotional contrast, single close-up reaction, before/after'),
+        style: str('Art direction: original stylized cinematic 3D animation'),
+        prompt: str('Self-contained English image prompt built from the strongest emotional moment, repeating each character\'s full visual traits; readable at small size; no text'),
+        negative_prompt: str('What to avoid (text, watermark, extra limbs, off-model characters, clutter…)'),
+        characters: strList('Names of the characters shown'),
+        emotional_hook: str('The one emotion/contrast the image sells'),
+        composition: str('Framing, focal point, contrast, lighting'),
+      },
+      required: ['thumbnail_type', 'style', 'prompt', 'negative_prompt', 'characters', 'emotional_hook', 'composition'],
+    },
+  },
+  required: ['titles', 'caption', 'platforms', 'thumbnail'],
+};
+
+const clip = (v: unknown, max: number) => String(v ?? '').trim().slice(0, max);
+const tags = (v: unknown, max: number) => [...new Set((Array.isArray(v) ? v : []).map((t) => '#' + String(t).replace(/^#+/, '').replace(/\s+/g, '')).filter((t) => t.length > 1))].slice(0, max);
+
+/** Clamps the model output to each platform's limits so the UI never shows unusable text. */
+function normalizePack(raw: Record<string, any>) {
+  const p = raw.platforms ?? {};
+  return {
+    titles: (raw.titles ?? []).slice(0, 5).map((t: Record<string, unknown>) => ({ angle: clip(t.angle, 20), text: clip(t.text, 150) })),
+    caption: clip(raw.caption, 2000),
+    platforms: {
+      tiktok: { caption: clip(p.tiktok?.caption, 2200), hook: clip(p.tiktok?.hook, 100), hashtags: tags(p.tiktok?.hashtags, 6) },
+      instagram: { caption: clip(p.instagram?.caption, 2000), hashtags: tags(p.instagram?.hashtags, 10) },
+      youtube: {
+        title: clip(p.youtube?.title, 100), description: clip(p.youtube?.description, 4500), hashtags: tags(p.youtube?.hashtags, 5),
+        tags: (Array.isArray(p.youtube?.tags) ? p.youtube.tags : []).map((t: unknown) => clip(t, 30)).filter(Boolean)
+          .reduce((acc: string[], t: string) => (acc.join(',').length + t.length < 480 ? [...acc, t] : acc), []),
+      },
+    },
+    thumbnail: {
+      ...Object.fromEntries(['thumbnail_type', 'style', 'prompt', 'negative_prompt', 'emotional_hook', 'composition'].map((k) => [k, clip(raw.thumbnail?.[k], 2000)])),
+      characters: (raw.thumbnail?.characters ?? []).map((c: unknown) => clip(c, 60)).slice(0, 4),
+      aspect_ratio: '9:16',
+      platform_targets: { tiktok: '9:16 cover (1080x1920)', instagram: '9:16 cover (1080x1920)', youtube: 'Shorts use a frame or 9:16 cover; 16:9 variant (1280x720) for long-form surfaces' },
+    },
+  };
+}
 
 class GeminiHttpError extends Error {
   constructor(public status: number, body: string) {
@@ -161,18 +228,41 @@ Deno.serve(async (req) => {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return json({ error: 'Please sign in again.' }, 401);
 
-  let body: { task?: string; idea?: string; concept?: Record<string, unknown>; count?: number };
+  let body: { task?: string; idea?: string; concept?: Record<string, unknown>; count?: number; story_id?: string };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON body' }, 400); }
 
   const task = body.task;
-  if (task !== 'concepts' && task !== 'scenes') return json({ error: 'Unknown task' }, 400);
+  if (task !== 'concepts' && task !== 'scenes' && task !== 'publish_pack') return json({ error: 'Unknown task' }, 400);
 
   const { data: profile } = await supabase.from('profiles').select('credit_balance').eq('id', auth.user.id).single();
   if (!profile || profile.credit_balance < COSTS[task]) return json({ error: 'Not enough Story Credits.' }, 402);
 
   try {
     let result: unknown;
-    if (task === 'concepts') {
+    if (task === 'publish_pack') {
+      // Ownership via RLS: the user client only sees its own story.
+      const { data: story } = await supabase.from('stories')
+        .select('id, title, logline, genre, approved_hash, characters(name, species, personality, visual_description, voice_style), scenes(position, title, narration, dialogue)')
+        .eq('id', String(body.story_id ?? '')).maybeSingle();
+      if (!story) return json({ error: 'Story not found' }, 404);
+      const scenes = [...(story.scenes ?? [])].sort((a, b) => a.position - b.position);
+      const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      await admin.from('publish_packs').upsert({ story_id: story.id, user_id: auth.user.id, status: 'generating', error_message: null });
+      try {
+        const raw = await callGemini<Record<string, any>>(
+          `${STYLE_GUIDE}\n\nYou are preparing the publication of this finished episode. Use ONLY what happens in it; never invent events, never promise virality or view counts.\n` +
+          `Episode: ${JSON.stringify({ title: story.title, logline: story.logline, characters: story.characters, scenes }).slice(0, 12000)}\n\n` +
+          `Produce: 5 distinct titles (emotion, conflict, sacrifice, suspense, curiosity), a shared caption, per-platform metadata, and one high-impact thumbnail concept built on the episode's strongest emotional moment or contrast (e.g. despair vs relief), readable at small size, with no text in the image. ` +
+          `Pick hashtags that really match the content, language and platform (mix niche, story and language tags; do not force generic ones). Platform limits: ${PLATFORM_LIMITS} Write titles, captions and hashtags in the language of the episode dialogue; write the thumbnail fields in English.`,
+          publishPackSchema,
+        );
+        result = normalizePack(raw);
+        await admin.from('publish_packs').upsert({ story_id: story.id, user_id: auth.user.id, content: result, status: 'ready', error_message: null, approved_hash: story.approved_hash, selected_title: null });
+      } catch (e) {
+        await admin.from('publish_packs').upsert({ story_id: story.id, user_id: auth.user.id, status: 'error', error_message: (e instanceof Error ? e.message : String(e)).slice(0, 300) });
+        throw e;
+      }
+    } else if (task === 'concepts') {
       const idea = String(body.idea ?? '').trim().slice(0, 400);
       if (idea.length < 10) return json({ error: 'Idea is too short.' }, 400);
       const out = await callGemini<{ concepts: Record<string, unknown>[] }>(
@@ -198,7 +288,8 @@ Deno.serve(async (req) => {
 
     // Charge only after a successful generation.
     const { error } = await supabase.rpc('consume_credits', {
-      p_amount: COSTS[task], p_story_id: null, p_description: task === 'concepts' ? 'AI concepts (Gemini)' : 'AI scene breakdown (Gemini)',
+      p_amount: COSTS[task], p_story_id: task === 'publish_pack' ? String(body.story_id) : null,
+      p_description: ({ concepts: 'AI concepts (Gemini)', scenes: 'AI scene breakdown (Gemini)', publish_pack: 'Publish pack: titles, captions, hashtags, thumbnail prompt' } satisfies Record<Task, string>)[task],
     });
     if (error) return json({ error: error.message.includes('insufficient') ? 'Not enough Story Credits.' : error.message }, 402);
 

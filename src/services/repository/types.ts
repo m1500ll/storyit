@@ -1,5 +1,6 @@
 import type { CreditTransaction, Profile, Scene, StoryStatus } from '@/types/database';
 import type { SceneDraft, StoryConcept, StoryWithScenes } from '@/types/domain';
+import type { PublishPack, Thumbnail } from '@/lib/publishPack';
 
 export type SceneEditableFields = Pick<Scene, 'narration' | 'dialogue' | 'image_prompt' | 'video_prompt'>;
 
@@ -25,6 +26,14 @@ export interface Repository {
   tickRender(storyId: string): Promise<RenderProgress>;
   /** Free retry of one scene; `fromStart` regenerates the image too (after an edit). */
   retryScene(storyId: string, sceneId: string, fromStart?: boolean): Promise<RenderProgress>;
+
+  // Phase 5 — thumbnail & SEO pack
+  getPublishPack(storyId: string): Promise<{ pack: PublishPack | null; thumbnails: Thumbnail[] }>;
+  /** Writes 5 titles, captions, hashtags, per-platform metadata and the thumbnail prompt (costs credits). */
+  generatePublishPack(storyId: string): Promise<void>;
+  /** Renders one thumbnail variant from the pack prompt (costs credits, refunded on failure). */
+  generateThumbnail(storyId: string, aspect: '9:16' | '16:9'): Promise<void>;
+  savePublishChoices(storyId: string, choices: Partial<Pick<PublishPack, 'selected_title' | 'edited_caption' | 'selected_thumbnail_id'>>): Promise<void>;
 }
 
 export interface RenderProgress { finished: boolean; done: number; failed: number; total: number }

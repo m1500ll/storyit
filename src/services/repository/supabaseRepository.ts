@@ -4,6 +4,7 @@ import type { StoryWithScenes } from '@/types/domain';
 import { store } from '../store';
 import { InsufficientCreditsError } from '../errors';
 import type { RenderProgress, Repository } from './types';
+import type { PublishPack, Thumbnail } from '@/lib/publishPack';
 
 const STORY_SELECT = '*, scenes(*), characters(*)';
 
@@ -36,8 +37,8 @@ async function withMediaUrls(db: SupabaseClient<Database>, stories: StoryWithSce
   }));
 }
 
-async function invokeRender(db: SupabaseClient<Database>, body: Record<string, unknown>): Promise<RenderProgress> {
-  const { data, error } = await db.functions.invoke<RenderProgress>('render', { body });
+async function invokeRender(db: SupabaseClient<Database>, body: Record<string, unknown>, fn = 'render'): Promise<RenderProgress> {
+  const { data, error } = await db.functions.invoke<RenderProgress>(fn, { body });
   if (error) {
     const ctx = (error as { context?: Response }).context;
     const msg = ctx && typeof ctx.json === 'function' ? ((await ctx.json().catch(() => ({}))) as { error?: string }).error : undefined;
@@ -128,6 +129,28 @@ export function createSupabaseRepository(db: SupabaseClient<Database>): Reposito
     tickRender: (storyId) => invokeRender(db, { action: 'tick', story_id: storyId }),
     retryScene: (storyId, sceneId, fromStart) => invokeRender(db, { action: 'retry', story_id: storyId, scene_id: sceneId, from_start: fromStart }),
 
+    async getPublishPack(storyId) {
+      const pack = unwrap(await db.from('publish_packs').select('*').eq('story_id', storyId).maybeSingle()) as unknown as PublishPack | null;
+      const rows = (required(await db.from("thumbnails").select("*").eq("story_id", storyId).order("created_at", { ascending: false })) as unknown as Thumbnail[]);
+      const paths = rows.map((t) => t.image_path).filter((p): p is string => Boolean(p));
+      const { data } = paths.length ? await db.storage.from('renders').createSignedUrls(paths, SIGNED_TTL) : { data: [] };
+      const url = new Map((data ?? []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
+      return { pack, thumbnails: rows.map((t) => ({ ...t, image_url: t.image_path ? url.get(t.image_path) ?? null : null })) };
+    },
+
+    async generatePublishPack(storyId) {
+      await invokeRender(db, { task: 'publish_pack', story_id: storyId }, 'gemini');
+    },
+
+    async generateThumbnail(storyId, aspect) {
+      await invokeRender(db, { action: 'thumbnail', story_id: storyId, aspect_ratio: aspect });
+    },
+
+    async savePublishChoices(storyId, choices) {
+      unwrap(await db.from('publish_packs').update(choices).eq('story_id', storyId));
+      store.notify();
+    },
+
     async approveStory(id, hash) {
       unwrap(await db.from('stories').update({ approved_hash: hash, approved_at: new Date().toISOString(), status: 'approved' }).eq('id', id));
       store.notify();
@@ -138,7 +161,7 @@ export function createSupabaseRepository(db: SupabaseClient<Database>): Reposito
 /** Pushes DB changes (e.g. from a render worker or another tab) into the UI. */
 export function subscribeToRealtime(db: SupabaseClient<Database>) {
   const channel = db.channel('storyit-changes');
-  for (const table of ['stories', 'scenes', 'profiles', 'credit_transactions'] as const) {
+  for (const table of ['stories', 'scenes', 'profiles', 'credit_transactions', 'publish_packs', 'thumbnails'] as const) {
     channel.on('postgres_changes', { event: '*', schema: 'public', table }, () => store.notify());
   }
   channel.subscribe();

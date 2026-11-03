@@ -6,6 +6,8 @@ export const CREDIT_COSTS = {
   sceneBreakdown: 2,
   sceneRender: 20, // keyframe image + 4–6s talking clip; real cost ≈ $0.47–0.67 (Nov 2026), see README
   sceneRetry: 0,
+  publishPack: 1, // titles, captions, hashtags, platform variants, thumbnail prompt
+  thumbnail: 2, // one image variant; refunded if generation fails
 } as const;
 
 /** Plans differ only by credits today — perks must stay true to what the product does. */

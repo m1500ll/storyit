@@ -39,3 +39,7 @@ export function useStories() {
 export function useStory(id: string | undefined) {
   return useLiveQuery(() => (id ? repository.getStory(id) : Promise.resolve(null)), `story:${id}`);
 }
+
+export function usePublishPack(storyId: string | undefined) {
+  return useLiveQuery(() => (storyId ? repository.getPublishPack(storyId) : Promise.resolve({ pack: null, thumbnails: [] })), `pack:${storyId}`);
+}

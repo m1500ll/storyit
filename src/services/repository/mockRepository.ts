@@ -3,6 +3,10 @@ import { hashScenes } from '@/lib/approval';
 import { delay, store } from '../store';
 import { InsufficientCreditsError } from '../errors';
 import type { Repository } from './types';
+import { CREDIT_COSTS } from '../credits';
+import type { PublishPack } from '@/lib/publishPack';
+
+const demoPacks = new Map<string, PublishPack>();
 
 const findScene = (sceneId: string) => {
   for (const story of mockDb.stories) {
@@ -82,7 +86,7 @@ export const mockRepository: Repository = {
     const story = mockDb.stories.find((s) => s.id === storyId);
     if (!story) throw new Error('Story not found');
     if (story.status !== 'generating') {
-      await this.consumeCredits(story.scenes.length * 3, storyId, `${story.title} — ${story.scenes.length} scene renders`);
+      await this.consumeCredits(story.scenes.length * CREDIT_COSTS.sceneRender, storyId, `${story.title} — ${story.scenes.length} scene renders`);
       story.status = 'generating';
       story.scenes.forEach((s) => Object.assign(s, { status: 'queued', stage: 'image' }));
       store.notify();
@@ -116,6 +120,48 @@ export const mockRepository: Repository = {
     if (story) story.status = 'generating';
     store.notify();
     return this.tickRender(storyId);
+  },
+
+  getPublishPack: async (storyId) => ({ pack: demoPacks.get(storyId) ?? null, thumbnails: [] }),
+
+  /** Demo mode: a pack assembled from the story itself (no AI call), clearly labelled as demo. */
+  async generatePublishPack(storyId) {
+    const story = mockDb.stories.find((s) => s.id === storyId);
+    if (!story) throw new Error('Story not found');
+    await this.consumeCredits(CREDIT_COSTS.publishPack, storyId, 'Publish pack (demo)');
+    await delay(800);
+    const names = story.characters.map((c) => c.name);
+    const tags = ['#FruitDrama', '#AIFruit', '#Animation3D'];
+    demoPacks.set(storyId, {
+      story_id: storyId, status: 'ready', error_message: null, selected_title: null, edited_caption: null,
+      selected_thumbnail_id: null, approved_hash: story.approved_hash, updated_at: new Date().toISOString(),
+      content: {
+        titles: (['emotion', 'conflict', 'sacrifice', 'suspense', 'curiosity'] as const).map((angle) => ({ angle, text: `[Demo · ${angle}] ${story.title}` })),
+        caption: `[Demo] ${story.logline ?? story.title} — what would you have done? 👇`,
+        platforms: {
+          tiktok: { caption: `[Demo] ${story.logline ?? ''}`, hook: story.title, hashtags: tags },
+          instagram: { caption: `[Demo] ${story.logline ?? ''}`, hashtags: tags },
+          youtube: { title: story.title.slice(0, 100), description: `[Demo] ${story.logline ?? ''}`, hashtags: tags.slice(0, 3), tags: ['fruit drama', ...names] },
+        },
+        thumbnail: {
+          thumbnail_type: 'split emotional contrast', aspect_ratio: '9:16', style: 'stylized cinematic 3D animation',
+          prompt: `[Demo] ${names.join(' and ')} at the most emotional moment of “${story.title}”.`, negative_prompt: 'text, watermark, off-model characters',
+          characters: names, emotional_hook: 'despair vs relief', composition: 'two halves, faces large, strong contrast',
+          platform_targets: { tiktok: '9:16 cover', instagram: '9:16 cover', youtube: '16:9 variant' },
+        },
+      },
+    });
+    store.notify();
+  },
+
+  async generateThumbnail() {
+    throw new Error('Thumbnail images need the live backend — demo mode does not generate images.');
+  },
+
+  async savePublishChoices(storyId, choices) {
+    const pack = demoPacks.get(storyId);
+    if (pack) Object.assign(pack, choices);
+    await changed(undefined);
   },
 
   async approveStory(id, hash) {

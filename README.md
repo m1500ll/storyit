@@ -61,3 +61,20 @@ supabase/migrations/0001_init.sql   schema + RLS + consume_credits() + approval-
   - ≈ $0.57/scene, plus ~20% for free retries ≈ $0.68 → a 15-scene, ~75 s episode costs us ≈ $8–10
   - cheapest credit sold = Studio, $99 / 1200 = $0.0825 → 20 credits ≈ $1.65 → ~55–60% gross margin after Stripe fees
   - TikTok pays only for 60 s+ videos, so ≈ $6 of video per episode is the floor at API prices. Recheck https://ai.google.dev/gemini-api/docs/pricing when Google changes prices.
+
+## Production workflow (Phases 1–5)
+Every episode page shows the 5 phases with their real status (`src/lib/publishPack.ts → productionPhases`).
+1. **Concept**: `gemini` function, `task: concepts` (3 concepts, characters with a fixed `voice_style`).
+2. **Script & characters**: `task: scenes` (one spoken line per scene, no narrator, 6–8 locations). Characters are stored in `characters` and reused by every image/video prompt.
+3. **Images**: `render` function, keyframe per scene (scene 1 image = visual reference for the others). Per-scene retry is free.
+4. **Video & audio**: Gemini Omni clip from the keyframe, characters speaking in-clip (native audio), then browser assembly (ffmpeg.wasm) with animated word-by-word captions (`src/lib/captions.ts`).
+5. **Thumbnail & SEO pack**: `/app/stories/:id/publish`.
+   - `gemini` `task: publish_pack` (1 credit): 5 titles (emotion/conflict/sacrifice/suspense/curiosity), caption, per-platform metadata (TikTok, Reels, Shorts) clamped to platform limits, structured thumbnail prompt. Saved in `publish_packs`.
+   - `render` `action: thumbnail` (2 credits, refunded on failure): image variant (9:16 or 16:9) saved in `thumbnails` + `renders` bucket.
+   - Users may only change their choices (title, caption, selected thumbnail): enforced by the `publish_packs_guard` trigger.
+   - Publishing: no social account is connected yet. The review tab only exports a ready-to-paste kit, and only after the episode is approved. Nothing is ever posted automatically.
+
+Migration: `supabase/migrations/0005_publish_pack.sql`.
+
+## Tests
+`npm test` (Vitest): captions timing/ASS, platform copy & limits, phase status, mock-repository workflow (concept → characters → scenes, credit debits, approval revocation, publish pack, no fake thumbnails in demo).

@@ -86,7 +86,7 @@ const characterSheet = (chars: Character[]) =>
 
 async function generateImage(scene: SceneRow, chars: Character[], reference: Uint8Array | null) {
   const parts: unknown[] = [{
-    text: `Vertical 9:16 still from a 3D Pixar/Disney-style animated movie. Characters are full-body anthropomorphic fruits/vegetables with big expressive cartoon eyes, a mouth, arms, hands, legs and clothes, acting in a detailed real environment. Keep characters EXACTLY consistent with this character sheet${reference ? ' and with the reference image' : ''}:\n${characterSheet(chars)}\n\nScene ${scene.position}: ${scene.image_prompt}\nNo text, no captions, no watermark.`,
+    text: `Vertical 9:16 still from a stylized cinematic 3D animated film (original art direction). Characters are full-body anthropomorphic fruits/vegetables with big expressive cartoon eyes, a mouth, arms, hands, legs and clothes, acting in a detailed real environment. Keep characters EXACTLY consistent with this character sheet${reference ? ' and with the reference image' : ''}:\n${characterSheet(chars)}\n\nScene ${scene.position}: ${scene.image_prompt}\nNo text, no captions, no watermark.`,
   }];
   if (reference) parts.push({ inlineData: { mimeType: sniffMime(reference), data: bytesToB64(reference) } });
   const out = await google(`models/${IMAGE_MODEL}:generateContent`, {
@@ -99,7 +99,7 @@ async function generateImage(scene: SceneRow, chars: Character[], reference: Uin
 }
 
 function videoPrompt(scene: SceneRow, chars: Character[]) {
-  const base = `Animate this image into a ${clipSeconds(scene)} second vertical 9:16 clip, 3D Pixar-style animation. ${scene.video_prompt}. Characters stay exactly on-model as in the image and move with full-body acting (walking, gesturing, interacting with objects and each other); dynamic cinematic camera.`;
+  const base = `Animate this image into a ${clipSeconds(scene)} second vertical 9:16 clip, stylized cinematic 3D animation. ${scene.video_prompt}. Characters stay exactly on-model as in the image and move with full-body acting (walking, gesturing, interacting with objects and each other); dynamic cinematic camera.`;
   if (VOICE_MODE !== 'native') return `${base} No text, no captions, no speech, no music.`;
   const speech = scene.dialogue
     ? ` The character speaks this line on camera with accurate lip-sync, in the language it is written in, with the emotion indicated: ${scene.dialogue}. Only that character speaks; there is NO narrator and no voice-over describing the scene.${voices(chars)}`
@@ -164,6 +164,54 @@ async function generateVoice(scene: SceneRow) {
   const bytes = b64ToBytes(inline.data);
   // Newer TTS models return a ready WAV; older ones return raw PCM (audio/L16).
   return String(inline.mimeType ?? '').includes('wav') ? bytes : pcmToWav(bytes);
+}
+
+// ---------- Phase 5: thumbnail ----------
+
+const THUMBNAIL_CREDITS = Number(Deno.env.get('THUMBNAIL_CREDITS') ?? 2); // ≈ $0.07 image at our cheapest credit price
+
+/** Generates one thumbnail variant from the publish pack prompt. Credits are refunded if Google returns no image. */
+async function thumbnail(admin: SupabaseClient, userClient: SupabaseClient, userId: string, storyId: string, aspect: '9:16' | '16:9') {
+  const { data: pack } = await admin.from('publish_packs').select('content, status').eq('story_id', storyId).maybeSingle();
+  const spec = pack?.status === 'ready' ? pack.content?.thumbnail : null;
+  if (!spec?.prompt) return json({ error: 'Generate the publish pack first.' }, 409);
+
+  const { error: debit } = await userClient.rpc('consume_credits', { p_amount: THUMBNAIL_CREDITS, p_story_id: storyId, p_description: `Thumbnail (${aspect})` });
+  if (debit) return json({ error: debit.message.includes('insufficient') ? 'Not enough Story Credits.' : debit.message }, 402);
+
+  const prompt = { ...spec, aspect_ratio: aspect };
+  const { data: row } = await admin.from('thumbnails').insert({ story_id: storyId, user_id: userId, aspect_ratio: aspect, prompt, status: 'generating' }).select('id').single();
+  try {
+    const { data: chars } = await admin.from('characters').select('name, species, visual_description, voice_style').eq('story_id', storyId);
+    // Approved scene images are the visual references, so the thumbnail stays on-model.
+    const { data: refs } = await admin.from('scenes').select('image_path').eq('story_id', storyId).not('image_path', 'is', null).order('position').limit(2);
+    const parts: unknown[] = [{
+      text: `Thumbnail / cover image, ${aspect === '9:16' ? 'vertical 9:16' : 'horizontal 16:9'}. ${spec.style}. ${spec.thumbnail_type}. Composition: ${spec.composition}. Emotional hook: ${spec.emotional_hook}.\n` +
+        `Characters must match EXACTLY this character sheet and the reference images:\n${characterSheet((chars ?? []) as Character[])}\n\n${spec.prompt}\n` +
+        `Big readable faces and silhouettes, strong contrast, readable when small. Avoid: ${spec.negative_prompt}. No text, no letters, no logo, no watermark.`,
+    }];
+    for (const r of refs ?? []) {
+      const bytes = await download(admin, r.image_path!).catch(() => null);
+      if (bytes) parts.push({ inlineData: { mimeType: sniffMime(bytes), data: bytesToB64(bytes) } });
+    }
+    const out = await google(`models/${IMAGE_MODEL}:generateContent`, {
+      contents: [{ role: 'user', parts }],
+      generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: aspect } },
+    });
+    const img = out?.candidates?.[0]?.content?.parts?.find((p: { inlineData?: { data: string } }) => p.inlineData)?.inlineData;
+    if (!img?.data) throw new Error('The image model returned no image (it may have been blocked by safety filters)');
+    const bytes = b64ToBytes(img.data);
+    const path = `${userId}/${storyId}/thumb-${row!.id}.${sniffMime(bytes) === 'image/jpeg' ? 'jpg' : 'png'}`;
+    await upload(admin, path, bytes, sniffMime(bytes));
+    await admin.from('thumbnails').update({ image_path: path, status: 'ready' }).eq('id', row!.id);
+    return json({ id: row!.id, status: 'ready' });
+  } catch (e) {
+    const message = (e instanceof Error ? e.message : String(e)).slice(0, 300);
+    await admin.from('thumbnails').update({ status: 'error', error_message: message }).eq('id', row!.id);
+    // Refund policy: Google does not bill a failed image, so neither do we.
+    await admin.rpc('grant_credits', { p_user_id: userId, p_amount: THUMBNAIL_CREDITS, p_type: 'refund', p_description: 'Thumbnail failed — refunded' });
+    return json({ error: `${message} — credits refunded.` }, 502);
+  }
 }
 
 // ---------- Pipeline ----------
@@ -297,7 +345,7 @@ Deno.serve(async (req) => {
   if (!auth.user) return json({ error: 'Please sign in again.' }, 401);
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-  let body: { action?: string; story_id?: string; scene_id?: string; from_start?: boolean };
+  let body: { action?: string; story_id?: string; scene_id?: string; from_start?: boolean; aspect_ratio?: string };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
   if (!body.story_id) return json({ error: 'story_id is required' }, 400);
 
@@ -317,6 +365,8 @@ Deno.serve(async (req) => {
         await admin.from('stories').update({ status: 'generating', render_started_at: new Date().toISOString() }).eq('id', story.id);
         return json(await tick(admin, auth.user.id, story.id));
       }
+      case 'thumbnail':
+        return await thumbnail(admin, userClient, auth.user.id, story.id, body.aspect_ratio === '16:9' ? '16:9' : '9:16');
       case 'tick':
         return json(await tick(admin, auth.user.id, story.id));
       case 'retry': {
