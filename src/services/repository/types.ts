@@ -1,0 +1,20 @@
+import type { CreditTransaction, Profile, Scene, StoryStatus } from '@/types/database';
+import type { SceneDraft, StoryConcept, StoryWithScenes } from '@/types/domain';
+
+export type SceneEditableFields = Pick<Scene, 'narration' | 'dialogue' | 'image_prompt' | 'video_prompt'>;
+
+/** Persistence port. Implemented by an in-memory mock and by Supabase. */
+export interface Repository {
+  getProfile(): Promise<Profile | null>;
+  listTransactions(): Promise<CreditTransaction[]>;
+  consumeCredits(amount: number, storyId: string, description: string): Promise<number>;
+
+  listStories(): Promise<StoryWithScenes[]>;
+  getStory(id: string): Promise<StoryWithScenes | null>;
+  createStory(idea: string, concept: StoryConcept, drafts: SceneDraft[]): Promise<StoryWithScenes>;
+  setStoryStatus(id: string, status: StoryStatus): Promise<void>;
+  /** Content edit. Revokes the story approval if it changes approved content. */
+  updateScene(storyId: string, sceneId: string, patch: Partial<SceneEditableFields>): Promise<void>;
+  setSceneStatus(sceneId: string, status: Scene['status']): Promise<void>;
+  approveStory(id: string, hash: string): Promise<void>;
+}

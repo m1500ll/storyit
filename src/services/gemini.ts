@@ -36,4 +36,5 @@ const edgeAI: StoryAI = {
   },
 };
 
-export const storyAI: StoryAI = supabase ? edgeAI : mockAI;
+const useEdge = supabase !== null && import.meta.env.VITE_USE_GEMINI_EDGE === 'true';
+export const storyAI: StoryAI = useEdge ? edgeAI : mockAI;

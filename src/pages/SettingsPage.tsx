@@ -1,12 +1,12 @@
 import { Button, Card, CardHeader, PageHeader } from '@/components/ui';
-import { mockDb } from '@/data/mockDb';
-import { useCredits } from '@/hooks/useStore';
+import { useCredits, useProfile } from '@/hooks/useStore';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { PLANS } from '@/services/credits';
 
 export default function SettingsPage() {
   const { balance, transactions } = useCredits();
-  const plan = PLANS.find((p) => p.id === mockDb.profile.plan);
+  const { data: profile } = useProfile();
+  const plan = PLANS.find((p) => p.id === profile?.plan);
 
   return (
     <>
@@ -15,7 +15,7 @@ export default function SettingsPage() {
         <Card>
           <CardHeader title="Profile" />
           <label className="label" htmlFor="name">Display name</label>
-          <input id="name" className="input mt-2" defaultValue={mockDb.profile.display_name ?? ''} />
+          <input id="name" className="input mt-2" key={profile?.id} defaultValue={profile?.display_name ?? ''} />
           <p className="mt-4 text-xs text-zinc-500">Backend: {isSupabaseConfigured ? <span className="text-emerald-300">Supabase connected</span> : <span className="text-amber-300">Mock mode (set VITE_SUPABASE_URL)</span>}</p>
         </Card>
         <Card>

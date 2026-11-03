@@ -9,7 +9,13 @@ npm install
 npm run dev
 ```
 
-Without `.env`, every service runs on in-memory mocks (`src/data`). Copy `.env.example` → `.env` to use Supabase.
+Without `.env`, everything runs on in-memory demo data. To use Supabase:
+
+1. In the Supabase **SQL Editor**, run `supabase/migrations/0001_init.sql`, then `0002_auth_profiles_realtime.sql`.
+2. `cp .env.example .env`, then restart `npm run dev`.
+3. Sign up at `/login`; each new account gets 30 free Story Credits.
+
+AI output stays in demo mode until the `gemini` Edge Function exists (`VITE_USE_GEMINI_EDGE=true`).
 
 ## Structure
 
@@ -23,7 +29,7 @@ src/
     wizard/      WizardSteps, IdeaStep, ConceptStep, StoryboardStep
     scenes/      SceneCard (edit/retry), ApprovalPanel (human gate)
   pages/         Landing, Dashboard, CreateStoryWizard, SceneEditor, ReviewQueue, Settings
-  services/      gemini (StoryAI adapter), credits, stories, production (render queue), store
+  services/      repository/ (Repository port: mock + Supabase), gemini (StoryAI adapter), credits, production, store
   lib/           supabase client, approval hash, cn
   types/         database.ts (Supabase schema types), domain.ts
 supabase/migrations/0001_init.sql   schema + RLS + consume_credits() + approval-revocation trigger

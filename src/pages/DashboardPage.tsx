@@ -1,12 +1,12 @@
 import { Clapperboard, Clock, Plus, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
-import { Button, Card, CardHeader, CreditCard, PageHeader } from '@/components/ui';
-import { mockDb } from '@/data/mockDb';
-import { useStories } from '@/hooks/useStore';
+import { Button, Card, CardHeader, CreditCard, LoadState, PageHeader } from '@/components/ui';
+import { useProfile, useStories } from '@/hooks/useStore';
 
 export default function DashboardPage() {
-  const stories = useStories();
+  const { data: stories = [], loading, error } = useStories();
+  const { data: profile } = useProfile();
   const navigate = useNavigate();
   const inProgress = stories.filter((s) => s.status === 'generating').length;
   const toReview = stories.filter((s) => s.status === 'in_review').length;
@@ -18,7 +18,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Overview" title={`Good to see you, ${mockDb.profile.display_name?.split(' ')[0]}`}
+      <PageHeader eyebrow="Overview" title={profile?.display_name ? `Good to see you, ${profile.display_name.split(' ')[0]}` : 'Your studio'}
         description="Your series at a glance. Episodes awaiting review need your sign-off before publication."
         actions={<Button onClick={() => navigate('/app/new')}><Plus className="h-4 w-4" /> Create episode</Button>} />
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -34,6 +34,10 @@ export default function DashboardPage() {
           </div>
           <section>
             <CardHeader title="Projects" subtitle="Most recent first" />
+            <LoadState loading={loading} error={error} />
+            {!loading && stories.length === 0 && (
+              <Card className="text-center text-sm text-zinc-500">No episodes yet. <button onClick={() => navigate('/app/new')} className="text-violet-300 hover:text-violet-200">Create your first one →</button></Card>
+            )}
             <div className="space-y-3">{stories.map((s) => <ProjectCard key={s.id} story={s} />)}</div>
           </section>
         </div>

@@ -7,7 +7,7 @@ import { StoryboardStep } from '@/components/wizard/StoryboardStep';
 import { WizardSteps } from '@/components/wizard/WizardSteps';
 import { storyAI } from '@/services/gemini';
 import { productionService } from '@/services/production';
-import { storyService } from '@/services/stories';
+import { repository } from '@/services/repository';
 import type { SceneDraft, StoryConcept } from '@/types/domain';
 
 const STEPS = ['Idea', 'Concept', 'Storyboard'];
@@ -44,7 +44,7 @@ export default function CreateStoryWizardPage() {
 
       {step === 2 && selected && <StoryboardStep scenes={scenes} onBack={() => setStep(1)} loading={loading}
         onConfirm={() => run(async () => {
-          const story = storyService.create(idea, selected, scenes);
+          const story = await repository.createStory(idea, selected, scenes);
           await productionService.startEpisode(story.id);
           navigate(`/app/stories/${story.id}`);
         })} />}

@@ -1,0 +1,52 @@
+import { useState, type FormEvent } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Button, Card, Logo } from '@/components/ui';
+import { useAuth } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+
+export default function AuthPage() {
+  const { session } = useAuth();
+  const navigate = useNavigate();
+  const from = (useLocation().state as { from?: string } | null)?.from ?? '/app';
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
+
+  if (!supabase || session) return <Navigate to={from} replace />;
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+    const { data, error } = mode === 'signin'
+      ? await supabase!.auth.signInWithPassword({ email, password })
+      : await supabase!.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/app` } });
+    setLoading(false);
+    if (error) return setMessage({ kind: 'error', text: error.message });
+    if (data.session) return navigate(from, { replace: true });
+    setMessage({ kind: 'info', text: 'Check your inbox to confirm your email, then sign in.' });
+  };
+
+  return (
+    <div className="grid min-h-screen place-items-center bg-ink-950 px-4">
+      <div className="pointer-events-none fixed left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]" />
+      <Card className="relative w-full max-w-sm p-8">
+        <Logo />
+        <h1 className="mt-8 font-display text-3xl text-zinc-50">{mode === 'signin' ? 'Welcome back' : 'Create your studio'}</h1>
+        <p className="mt-1 text-sm text-zinc-500">{mode === 'signin' ? 'Sign in to continue your series.' : '30 free Story Credits to start.'}</p>
+        <form onSubmit={submit} className="mt-6 space-y-3">
+          <input className="input" type="email" required autoComplete="email" placeholder="you@studio.com" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email" />
+          <input className="input" type="password" required minLength={6} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+            placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} aria-label="Password" />
+          {message && <p className={message.kind === 'error' ? 'text-xs text-coral-300' : 'text-xs text-emerald-300'}>{message.text}</p>}
+          <Button type="submit" className="w-full" loading={loading}>{mode === 'signin' ? 'Sign in' : 'Create account'}</Button>
+        </form>
+        <button onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setMessage(null); }} className="mt-5 w-full text-center text-xs text-zinc-500 hover:text-zinc-300">
+          {mode === 'signin' ? 'No account? Create one' : 'Already have an account? Sign in'}
+        </button>
+      </Card>
+    </div>
+  );
+}

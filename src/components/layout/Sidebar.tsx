@@ -28,8 +28,8 @@ export function Sidebar() {
       </nav>
       <div className="mt-auto surface p-4">
         <Film className="h-4 w-4 text-coral-400" />
-        <p className="mt-2 text-xs font-medium text-zinc-200">Series: Zest & Jealousy</p>
-        <p className="text-[11px] text-zinc-500">3 episodes · 9:16</p>
+        <p className="mt-2 text-xs font-medium text-zinc-200">Fruit Drama</p>
+        <p className="text-[11px] text-zinc-500">Vertical 9:16 · 15 scenes</p>
       </div>
     </aside>
   );

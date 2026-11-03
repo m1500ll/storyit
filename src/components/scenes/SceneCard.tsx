@@ -1,7 +1,7 @@
 import { ImageIcon, RotateCcw, Video } from 'lucide-react';
 import { useState } from 'react';
 import type { Scene } from '@/types/database';
-import type { SceneEditableFields } from '@/services/stories';
+import type { SceneEditableFields } from '@/services/repository';
 import { Button, StatusBadge } from '../ui';
 
 interface Props {
