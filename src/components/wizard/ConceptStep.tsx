@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn';
+import { CREDIT_COSTS } from '@/services/credits';
 import type { StoryConcept } from '@/types/domain';
 import { Button } from '../ui';
 
@@ -32,7 +33,7 @@ export function ConceptStep({ concepts, selectedId, onSelect, onBack, onSubmit, 
       </div>
       <div className="mt-8 flex justify-between">
         <Button variant="ghost" onClick={onBack}>Back</Button>
-        <Button onClick={onSubmit} disabled={!selectedId} loading={loading}>Break into 15 scenes</Button>
+        <Button onClick={onSubmit} disabled={!selectedId} loading={loading}>Break into 15 scenes · {CREDIT_COSTS.sceneBreakdown} credits</Button>
       </div>
     </div>
   );

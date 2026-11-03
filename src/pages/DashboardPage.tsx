@@ -1,12 +1,14 @@
 import { Clapperboard, Clock, Plus, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { FirstRun } from '@/components/dashboard/FirstRun';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
 import { Button, Card, CardHeader, CreditCard, LoadState, PageHeader } from '@/components/ui';
-import { useProfile, useStories } from '@/hooks/useStore';
+import { useCredits, useProfile, useStories } from '@/hooks/useStore';
 
 export default function DashboardPage() {
   const { data: stories = [], loading, error } = useStories();
   const { data: profile } = useProfile();
+  const { balance } = useCredits();
   const navigate = useNavigate();
   const inProgress = stories.filter((s) => s.status === 'generating').length;
   const toReview = stories.filter((s) => s.status === 'in_review').length;
@@ -35,9 +37,7 @@ export default function DashboardPage() {
           <section>
             <CardHeader title="Projects" subtitle="Most recent first" />
             <LoadState loading={loading} error={error} />
-            {!loading && stories.length === 0 && (
-              <Card className="text-center text-sm text-zinc-500">No episodes yet. <button onClick={() => navigate('/app/new')} className="text-violet-300 hover:text-violet-200">Create your first one →</button></Card>
-            )}
+            {!loading && stories.length === 0 && <FirstRun balance={balance} />}
             <div className="space-y-3">{stories.map((s) => <ProjectCard key={s.id} story={s} />)}</div>
           </section>
         </div>

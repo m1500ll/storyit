@@ -4,7 +4,11 @@
 
 @layer base {
   ::selection { @apply bg-violet-500/40 text-white; }
-  body { font-feature-settings: 'cv11', 'ss01'; }
+  body { font-feature-settings: 'cv11', 'ss01'; -webkit-tap-highlight-color: transparent; }
+  h1, h2, h3 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+  button, a, input, textarea, summary { touch-action: manipulation; }
+  [id] { scroll-margin-top: 5rem; }
 }
 
 @layer components {

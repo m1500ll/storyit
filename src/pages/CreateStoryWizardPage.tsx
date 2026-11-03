@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { GeneratingState } from '@/components/wizard/GeneratingState';
 import { PageHeader } from '@/components/ui';
 import { ConceptStep } from '@/components/wizard/ConceptStep';
 import { IdeaStep } from '@/components/wizard/IdeaStep';
@@ -18,14 +19,24 @@ const STEPS = ['Idea', 'Concept', 'Storyboard'];
 export default function CreateStoryWizardPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [idea, setIdea] = useState('');
+  const [params] = useSearchParams();
+  const [idea, setIdea] = useState(() => params.get('idea') ?? '');
   const [concepts, setConcepts] = useState<StoryConcept[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [scenes, setScenes] = useState<SceneDraft[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [pending, setPending] = useState<'concepts' | 'scenes' | null>(null);
   const openPaywall = usePaywall();
+
+  // Warn before losing AI output that was already paid for.
+  useEffect(() => {
+    if (step === 0) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [step]);
   const { balance, loading: creditsLoading } = useCredits();
 
   /** Runs a paid step: opens the paywall up-front (or on a server-side credit refusal) instead of failing. */
@@ -50,13 +61,15 @@ export default function CreateStoryWizardPage() {
     <>
       <PageHeader eyebrow="New episode" title="From idea to storyboard" description="Phase 1 picks the concept, phase 2 validates the 15-scene breakdown." />
       <WizardSteps steps={STEPS} current={step} />
-      {error && <p className="mb-4 rounded-xl border border-coral-500/30 bg-coral-500/10 px-4 py-3 text-sm text-coral-300">{error}</p>}
+      {error && <p role="alert" className="mb-4 rounded-xl border border-coral-500/30 bg-coral-500/10 px-4 py-3 text-sm text-coral-300">{error}</p>}
 
-      {step === 0 && <IdeaStep idea={idea} onChange={setIdea} loading={loading}
-        onSubmit={() => run(CREDIT_COSTS.conceptGeneration, async () => { setConcepts(await storyAI.generateConcepts(idea)); setStep(1); })} />}
+      {pending && <GeneratingState kind={pending} />}
 
-      {step === 1 && <ConceptStep concepts={concepts} selectedId={selectedId} onSelect={setSelectedId} onBack={() => setStep(0)} loading={loading}
-        onSubmit={() => run(CREDIT_COSTS.sceneBreakdown, async () => { if (selected) { setScenes(await storyAI.generateScenes(selected)); setStep(2); } })} />}
+      {!pending && step === 0 && <IdeaStep idea={idea} onChange={setIdea} loading={loading}
+        onSubmit={() => run(CREDIT_COSTS.conceptGeneration, async () => { setPending('concepts'); try { setConcepts(await storyAI.generateConcepts(idea)); setStep(1); } finally { setPending(null); } })} />}
+
+      {!pending && step === 1 && <ConceptStep concepts={concepts} selectedId={selectedId} onSelect={setSelectedId} onBack={() => setStep(0)} loading={loading}
+        onSubmit={() => run(CREDIT_COSTS.sceneBreakdown, async () => { if (selected) { setPending('scenes'); try { setScenes(await storyAI.generateScenes(selected)); setStep(2); } finally { setPending(null); } } })} />}
 
       {step === 2 && selected && <StoryboardStep scenes={scenes} onBack={() => setStep(1)} loading={loading}
         onConfirm={() => run(estimateEpisodeCost(scenes.length), async () => {

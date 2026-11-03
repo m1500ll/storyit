@@ -1,5 +1,5 @@
 import { Sparkles } from 'lucide-react';
-import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useProfile } from '@/hooks/useStore';
 import { PlanPicker } from './PlanPicker';
 
@@ -12,11 +12,18 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
   const open = useCallback((s: PaywallState = {}) => setState(s), []);
   const { data: profile } = useProfile();
 
+  useEffect(() => {
+    if (!state) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setState(null);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [state]);
+
   return (
     <PaywallContext.Provider value={open}>
       {children}
       {state && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Get more Story Credits">
+        <div className="fixed inset-0 z-50 flex overscroll-contain items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Get more Story Credits">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setState(null)} />
           <div className="surface relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-b-none p-6 sm:rounded-2xl md:p-8">
             <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-96 -translate-x-1/2 rounded-full bg-violet-600/25 blur-3xl" />

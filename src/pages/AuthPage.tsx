@@ -37,10 +37,10 @@ export default function AuthPage() {
         <h1 className="mt-8 font-display text-3xl text-zinc-50">{mode === 'signin' ? 'Welcome back' : 'Create your studio'}</h1>
         <p className="mt-1 text-sm text-zinc-500">{mode === 'signin' ? 'Sign in to continue your series.' : '30 free Story Credits to start.'}</p>
         <form onSubmit={submit} className="mt-6 space-y-3">
-          <input className="input" type="email" required autoComplete="email" placeholder="you@studio.com" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email" />
-          <input className="input" type="password" required minLength={6} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+          <input className="input" type="email" name="email" required autoComplete="email" spellCheck={false} placeholder="you@studio.com…" value={email} onChange={(e) => setEmail(e.target.value)} aria-label="Email" />
+          <input className="input" type="password" name="password" required minLength={6} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
             placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} aria-label="Password" />
-          {message && <p className={message.kind === 'error' ? 'text-xs text-coral-300' : 'text-xs text-emerald-300'}>{message.text}</p>}
+          <div aria-live="polite">{message && <p className={message.kind === 'error' ? 'text-xs text-coral-300' : 'text-xs text-emerald-300'}>{message.text}</p>}</div>
           <Button type="submit" className="w-full" loading={loading}>{mode === 'signin' ? 'Sign in' : 'Create account'}</Button>
         </form>
         <button onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setMessage(null); }} className="mt-5 w-full text-center text-xs text-zinc-500 hover:text-zinc-300">

@@ -19,7 +19,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center overscroll-contain p-4" role="dialog" aria-modal="true" aria-label={title}>
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div className="surface relative w-full max-w-lg p-6 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
