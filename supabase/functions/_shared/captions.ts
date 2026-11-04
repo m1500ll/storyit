@@ -69,7 +69,13 @@ export async function generateVariant(apiKey: string, model: string, platform: P
       generationConfig: { responseMimeType: 'application/json', responseSchema: variantSchema, temperature: 0.9 },
     }),
   });
-  if (!res.ok) throw new Error(`AI unavailable (${res.status}): ${(await res.text()).slice(0, 160)}`);
+  if (!res.ok) {
+    const why = res.status === 402 || res.status === 429 ? 'AI credits are used up for now'
+      : res.status === 503 ? 'the AI service is overloaded'
+      : res.status === 401 || res.status === 403 ? 'the AI key is not valid'
+      : `the AI service answered ${res.status}`;
+    throw new Error(`AI captions are unavailable (${why}). Write the caption yourself, or try again later.`);
+  }
   const text = (await res.json())?.candidates?.[0]?.content?.parts?.find((p: { text?: string }) => p.text)?.text;
   if (!text) throw new Error('AI returned an empty answer');
   return normalizeVariant(platform, JSON.parse(text), ed);
