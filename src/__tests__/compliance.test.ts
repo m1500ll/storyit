@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { checkState, oauthError, STATE_TTL_MS } from '@shared/oauth.ts';
+import { checkState, oauthError, safeReturnOrigin, STATE_TTL_MS } from '@shared/oauth.ts';
 import { checkVideo, tiktokDeclaration, tiktokReadiness, type CreatorInfo } from '@shared/platformSpecs.ts';
 import { decrypt, encrypt } from '@shared/social.ts';
 import { refreshDecision } from '@shared/tokens.ts';
@@ -50,6 +50,15 @@ describe('OAuth callback state (CSRF)', () => {
     expect(checkState({ platform: 'instagram', created_at: '2026-11-04T09:55:00Z' }, 'tiktok', now).ok).toBe(false);
     expect(checkState(null, 'tiktok', now).ok).toBe(false); // unknown or already used
     expect(checkState({ platform: 'tiktok', created_at: new Date(now - STATE_TTL_MS - 1).toISOString() }, 'tiktok', now).ok).toBe(false);
+  });
+  it('sends the user back to the Storyit site they came from, never to another site', () => {
+    const app = 'https://storyit.fun';
+    expect(safeReturnOrigin('https://storyit-v2jb.vercel.app', app)).toBe('https://storyit-v2jb.vercel.app');
+    expect(safeReturnOrigin('http://localhost:5173', app)).toBe('http://localhost:5173');
+    expect(safeReturnOrigin('https://www.storyit.fun', app)).toBe('https://www.storyit.fun');
+    for (const evil of ['https://evil.com', 'https://storyit.fun.evil.com', 'https://evil.vercel.app', 'https://storyit-v2jb-git-evil.vercel.app', 'javascript:alert(1)', 'not a url', null]) {
+      expect(safeReturnOrigin(evil as string | null, app)).toBe('https://storyit.fun');
+    }
   });
   it('bounds platform error text', () => expect(oauthError(new URLSearchParams({ error_description: 'x'.repeat(500) }))).toHaveLength(160));
 });

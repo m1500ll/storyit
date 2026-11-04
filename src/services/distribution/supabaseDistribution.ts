@@ -52,7 +52,7 @@ export function createSupabaseDistribution(db: SupabaseClient): DistributionRepo
     },
 
     listAccounts: async () => check(await any.from('social_accounts').select('*').neq('status', 'disconnected').order('platform').order('created_at')) as SocialAccount[],
-    startConnect: async (platform) => (await invoke<{ url: string }>('social', { action: 'start', platform })).url,
+    startConnect: async (platform) => (await invoke<{ url: string }>('social', { action: 'start', platform, return_origin: window.location.origin })).url,
     verifyAccount: async (id) => done(void (await invoke('social', { action: 'verify', account_id: id }))),
     disconnectAccount: async (id) => done(void (await invoke('social', { action: 'disconnect', account_id: id }))),
     updateAccount: async (id, patch) => done(void check(await any.from('social_accounts').update(patch).eq('id', id))),

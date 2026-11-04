@@ -29,9 +29,11 @@ async function call(url: string, init: RequestInit & { sent?: boolean } = {}) {
   try { body = text ? JSON.parse(text) : {}; } catch { /* non-JSON */ }
   // TikTok returns 200 with error.code != "ok" for some failures.
   const ttErr = body?.error && typeof body.error === 'object' && body.error.code && body.error.code !== 'ok' ? body.error : null;
-  if (!res.ok || ttErr) {
-    const msg = ttErr?.message || body?.error?.message || body?.error_description || body?.error_message || text.slice(0, 200);
-    throw new PlatformError(String(msg), res.ok ? 400 : res.status, Boolean(init.sent), ttErr?.code ?? body?.error?.code);
+  // OAuth token endpoints may answer 200 with { error: "invalid_grant", error_description }.
+  const oauthErr = typeof body?.error === 'string' && body.error && !body.access_token ? body.error : null;
+  if (!res.ok || ttErr || oauthErr) {
+    const msg = ttErr?.message || body?.error?.message || body?.error_description || body?.error_message || oauthErr || text.slice(0, 200) || `HTTP ${res.status}`;
+    throw new PlatformError(String(msg), res.ok ? 400 : res.status, Boolean(init.sent), ttErr?.code ?? body?.error?.code ?? oauthErr ?? undefined);
   }
   return body;
 }
@@ -124,7 +126,9 @@ export const tiktok = {
     } satisfies CreatorInfo;
   },
   async profile(token: string, scopes: string[]): Promise<Profile> {
-    const b = await call(`${TT}/user/info/?fields=open_id,avatar_url,display_name,username`, { headers: { Authorization: `Bearer ${token}` } });
+    // `username` needs user.info.profile; users can untick optional scopes on TikTok's consent screen.
+    const fields = ['open_id', 'avatar_url', 'display_name', ...(scopes.includes('user.info.profile') ? ['username'] : [])].join(',');
+    const b = await call(`${TT}/user/info/?fields=${fields}`, { headers: { Authorization: `Bearer ${token}` } });
     const u = b.data?.user ?? {};
     const hasPublish = scopes.includes('video.publish');
     const audited = env('TIKTOK_APP_AUDITED') === 'true';

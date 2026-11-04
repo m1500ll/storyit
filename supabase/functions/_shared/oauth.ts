@@ -13,3 +13,19 @@ export function checkState(row: { platform: string; created_at: string } | null,
 /** Error text from the platform redirect, without echoing arbitrary long input. */
 export const oauthError = (q: URLSearchParams) =>
   (q.get('error_description') || q.get('error_reason') || q.get('error') || 'Connection cancelled.').slice(0, 160);
+
+/**
+ * Where to send the browser back after OAuth: the site the user started from, if it is one of ours
+ * (production domain, Vercel deployments of this project, local dev). Anything else falls back to APP_URL,
+ * so the callback can never be used as an open redirect.
+ */
+export function safeReturnOrigin(requested: string | null | undefined, appUrl: string): string {
+  const fallback = new URL(appUrl).origin;
+  if (!requested) return fallback;
+  let origin: string;
+  try { origin = new URL(requested).origin; } catch { return fallback; }
+  // Exact origins only: a wildcard on *.vercel.app would let anyone create a look-alike deployment.
+  const allowed = [fallback, 'https://storyit.fun', 'https://www.storyit.fun', 'https://storyit-v2jb.vercel.app', 'http://localhost:5173', 'http://localhost:4173'];
+  if (allowed.includes(origin)) return origin;
+  return fallback;
+}

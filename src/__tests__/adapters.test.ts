@@ -82,6 +82,33 @@ describe('TikTok Direct Post', () => {
   });
 });
 
+describe('OAuth & profile robustness', () => {
+  it('treats a 200 OAuth answer with a string error as a failure (no false connection)', async () => {
+    mockFetch([ok({ error: 'invalid_grant', error_description: 'Authorization code is expired.' })]);
+    await expect(tiktok.exchange('code', 'https://cb')).rejects.toThrow(/expired/);
+  });
+  it('does not ask for username when the user unticked the profile scope', async () => {
+    const calls = mockFetch([ok({ data: { user: { open_id: 'o1', display_name: 'Hamza' } }, error: { code: 'ok' } })]);
+    const p = await tiktok.profile('t', ['user.info.basic']);
+    expect(calls[0]!.url).not.toContain('username');
+    expect(p).toMatchObject({ external_id: 'o1', can_publish: false, publish_restriction: expect.stringMatching(/video.publish/) });
+  });
+  it('lists TikTok publishing rights from creator info', async () => {
+    const calls = mockFetch([
+      ok({ data: { user: { open_id: 'o1', username: 'hamza', display_name: 'Hamza' } }, error: { code: 'ok' } }),
+      ok({ data: { privacy_level_options: ['SELF_ONLY'] }, error: { code: 'ok' } }),
+    ]);
+    const p = await tiktok.profile('t', ['user.info.basic', 'user.info.profile', 'video.publish']);
+    expect(calls[0]!.url).toContain('username');
+    expect(p).toMatchObject({ username: 'hamza', can_publish: true, publish_restriction: expect.stringMatching(/not audited/) });
+  });
+  it('Instagram code exchange: short-lived then long-lived token, permissions as array or string', async () => {
+    mockFetch([ok({ data: [{ access_token: 's', user_id: 1, permissions: 'instagram_business_basic,instagram_business_content_publish' }] }), ok({ access_token: 'long', expires_in: 5184000 })]);
+    const t = await instagram.exchange('c', 'https://cb');
+    expect(t).toMatchObject({ access_token: 'long', scopes: ['instagram_business_basic', 'instagram_business_content_publish'] });
+  });
+});
+
 describe('Instagram Reels', () => {
   it('creates a REELS container from a temporary URL, waits for FINISHED, then publishes', async () => {
     const calls = mockFetch([ok({ id: 'c1' }), ok({ status_code: 'IN_PROGRESS' }), ok({ status_code: 'FINISHED' }), ok({ id: 'm1' }), ok({ permalink: 'https://instagram.com/reel/x' })]);

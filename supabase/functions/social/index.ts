@@ -4,7 +4,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { adapters, decrypt, instagram, tiktok, type Profile } from '../_shared/social.ts';
 import { accessToken, saveTokens } from '../_shared/tokens.ts';
-import { checkState, oauthError } from '../_shared/oauth.ts';
+import { checkState, oauthError, safeReturnOrigin } from '../_shared/oauth.ts';
 import type { Platform } from '../_shared/distribution.ts';
 
 const URL_BASE = Deno.env.get('SUPABASE_URL')!;
@@ -25,11 +25,15 @@ async function audit(userId: string, action: string, detail: Record<string, unkn
 }
 
 async function callback(platform: Platform, url: URL) {
-  const back = (q: Record<string, string>) => redirect(`${APP_URL}/app/accounts?${new URLSearchParams(q)}`);
   const state = url.searchParams.get('state') ?? '';
   const code = url.searchParams.get('code');
   // CSRF: the state must exist, match the platform, be < 10 min old, and is consumed once.
-  const { data: st } = await admin.from('oauth_states').delete().eq('state', state).select().maybeSingle();
+  const { data: st } = state ? await admin.from('oauth_states').delete().eq('state', state).select().maybeSingle() : { data: null };
+  const origin = safeReturnOrigin(st?.return_origin, APP_URL);
+  const back = (q: Record<string, string>) => redirect(`${origin}/app/accounts?${new URLSearchParams(q)}`);
+  const denied = url.searchParams.get('error') || url.searchParams.get('error_reason');
+  // The user cancelled or the platform refused: say so, even if the platform did not send the state back.
+  if (!code && denied) return back({ error: `${platform === 'tiktok' ? 'TikTok' : 'Instagram'}: ${oauthError(url.searchParams)}` });
   const valid = checkState(st, platform);
   if (!valid.ok) return back({ error: valid.reason });
   if (!code) return back({ error: oauthError(url.searchParams) });
@@ -76,7 +80,7 @@ Deno.serve(async (req) => {
   const userClient = createClient(URL_BASE, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } });
   const { data: auth } = await userClient.auth.getUser();
   if (!auth.user) return json({ error: 'Please sign in again.' }, 401);
-  let body: { action?: string; platform?: string; account_id?: string };
+  let body: { action?: string; platform?: string; account_id?: string; return_origin?: string };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
 
   switch (body.action) {
@@ -90,7 +94,7 @@ Deno.serve(async (req) => {
       }
       const state = crypto.randomUUID() + crypto.randomUUID().replaceAll('-', '');
       await admin.from('oauth_states').delete().lt('created_at', new Date(Date.now() - 3600_000).toISOString());
-      const { error } = await admin.from('oauth_states').insert({ state, user_id: auth.user.id, platform: body.platform });
+      const { error } = await admin.from('oauth_states').insert({ state, user_id: auth.user.id, platform: body.platform, return_origin: safeReturnOrigin(body.return_origin, APP_URL) });
       if (error) return json({ error: 'Could not start the connection' }, 500);
       return json({ url: adapters[body.platform].authorizeUrl(callbackUri(body.platform), state) });
     }
