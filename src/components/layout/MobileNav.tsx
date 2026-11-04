@@ -29,6 +29,11 @@ const sections = [
     { to: '/app/characters', label: 'Characters', icon: Users },
     { to: '/app/review', label: 'Review queue', icon: ClipboardCheck },
   ] },
+  { title: 'Episode studio · Soon', soon: true, items: [
+    { to: '/app/new', label: 'New episode', icon: Sparkles },
+    { to: '/app/episodes', label: 'Episodes', icon: Clapperboard },
+    { to: '/app/characters', label: 'Characters', icon: Users },
+  ] },
   { title: 'Grow', items: [
     { to: '/app/monetisation', label: 'Monetisation', icon: TrendingUp },
     { to: '/app/guide', label: 'Creator guide', icon: BookOpen },
@@ -52,7 +57,7 @@ export function MobileNav() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
-  const inMenu = sections.some((s) => s.items.some((i) => pathname.startsWith(i.to)));
+  const inMenu = sections.some((s) => !('soon' in s) && s.items.some((i) => pathname.startsWith(i.to)));
 
   return (
     <>
@@ -64,16 +69,22 @@ export function MobileNav() {
               <p className="text-sm font-semibold text-zinc-100">Menu</p>
               <button onClick={() => setOpen(false)} aria-label="Close menu" className="grid h-10 w-10 place-items-center rounded-full text-zinc-400 hover:bg-line/5"><X className="h-5 w-5" /></button>
             </div>
-            {sections.filter((s) => !('beta' in s) || beta).map((s) => (
+            {sections.filter((s) => ('beta' in s ? beta : 'soon' in s ? !beta : true)).map((s) => (
               <div key={s.title} className="mt-3">
                 <p className="label mb-1 px-2">{s.title}</p>
                 <ul>
                   {s.items.map(({ to, label, icon: Icon, ...rest }) => (
                     <li key={to}>
+                      {'soon' in s ? (
+                        <span aria-disabled="true" className="flex min-h-11 cursor-not-allowed items-center gap-3 rounded-xl px-3 text-[15px] text-zinc-600">
+                          <Icon className="h-5 w-5 shrink-0" /><span className="flex-1">{label}</span>
+                        </span>
+                      ) : (
                       <NavLink to={to} className={({ isActive }) => cn('flex min-h-11 items-center gap-3 rounded-xl px-3 text-[15px]', isActive ? 'bg-line/[0.07] text-zinc-50' : 'text-zinc-300')}>
                         <Icon className="h-5 w-5 shrink-0 text-zinc-500" /><span className="flex-1">{label}</span>
                         {'badge' in rest && <span className="rounded-full bg-violet-500/15 px-2 text-[11px] text-violet-300">{rest.badge}</span>}
                       </NavLink>
+                      )}
                     </li>
                   ))}
                 </ul>

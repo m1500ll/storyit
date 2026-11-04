@@ -83,12 +83,18 @@ Deno.serve(async (req) => {
   let body: { action?: string; platform?: string; account_id?: string; return_origin?: string };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
 
+  const socialOpen = () => Deno.env.get('SOCIAL_PUBLIC') === 'true';
   switch (body.action) {
     case 'status':
-      return json({ tiktok: tiktok.configured(), instagram: instagram.configured(), encryption: Boolean(Deno.env.get('TOKEN_ENCRYPTION_KEY')), ai: Boolean(Deno.env.get('GEMINI_API_KEY')) });
+      return json({ open: socialOpen(), tiktok: tiktok.configured(), instagram: instagram.configured(), encryption: Boolean(Deno.env.get('TOKEN_ENCRYPTION_KEY')), ai: Boolean(Deno.env.get('GEMINI_API_KEY')) });
 
     case 'start': {
       if (!isPlatform(body.platform)) return json({ error: 'Unknown platform' }, 400);
+      // Until TikTok/Meta approve the apps, only beta accounts may connect (set secret SOCIAL_PUBLIC=true to open to everyone).
+      if (!socialOpen()) {
+        const { data: p } = await userClient.from('profiles').select('beta_access').eq('id', auth.user.id).maybeSingle();
+        if (!p?.beta_access) return json({ error: 'Connecting TikTok and Instagram opens very soon: we are waiting for the platforms to approve Storyit.', code: 'social_soon' }, 403);
+      }
       if (!adapters[body.platform].configured() || !Deno.env.get('TOKEN_ENCRYPTION_KEY')) {
         return json({ error: `${body.platform === 'tiktok' ? 'TikTok' : 'Instagram'} connection is not configured on this Storyit server yet.` }, 503);
       }

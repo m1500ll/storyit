@@ -7,6 +7,7 @@ import { Button, Card, LoadState, Modal, PageHeader, useToast } from '@/componen
 import { useAccounts, useGroups, useIntegrations, usePlanLimits } from '@/hooks/useDistribution';
 import { cn } from '@/lib/cn';
 import { distribution, type Platform, type SocialAccount } from '@/services/distribution';
+import { useBetaAccess } from '@/hooks/useBeta';
 
 const STATUS: Record<SocialAccount['status'], { label: string; cls: string }> = {
   connected: { label: 'Connected', cls: 'text-emerald-300 bg-emerald-500/10' },
@@ -39,6 +40,9 @@ export default function AccountsPage() {
     try { await fn(); if (ok) toast(ok); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { setBusy(null); }
   };
   const connect = (p: Platform) => run(`connect-${p}`, async () => { window.location.assign(await distribution.startConnect(p)); });
+  const beta = useBetaAccess();
+  // Closed to customers until TikTok/Meta approve the apps (owner/beta accounts can still test).
+  const soon = integ?.live === true && integ.open !== true && beta !== true;
   const atLimit = limits?.max_social_accounts != null && accounts.length >= limits.max_social_accounts;
 
   return (
@@ -47,14 +51,15 @@ export default function AccountsPage() {
         description="Connect every TikTok and Instagram account you publish to. Storyit uses each platform's official login: we never ask for your passwords."
         actions={<div className="flex flex-wrap gap-2">
           {(['tiktok', 'instagram'] as const).map((p) => (
-            <Button key={p} variant={p === 'tiktok' ? 'primary' : 'secondary'} loading={busy === `connect-${p}`} disabled={atLimit || (integ?.live && !integ[p])} onClick={() => connect(p)}>
+            <Button key={p} variant={p === 'tiktok' ? 'primary' : 'secondary'} loading={busy === `connect-${p}`} disabled={soon || atLimit || (integ?.live && !integ[p])} onClick={() => connect(p)}>
               <Link2 className="h-4 w-4" /> Connect {PLATFORM_NAME[p]}
             </Button>
           ))}
         </div>} />
       <div className="mb-4 space-y-2" aria-live="polite">
+        {soon && <Notice>Coming soon: connecting TikTok and Instagram opens as soon as both platforms approve Storyit. Meanwhile you can import videos into your library and use the Prompt Studio.</Notice>}
         {integ && <ModeBanner {...integ} />}
-        {integ?.live && (integ.tiktok !== integ.instagram) && <Notice>{integ.tiktok ? 'Instagram' : 'TikTok'} connection is not configured on this server yet.</Notice>}
+        {!soon && integ?.live && (integ.tiktok !== integ.instagram) && <Notice>{integ.tiktok ? 'Instagram' : 'TikTok'} connection is not configured on this server yet.</Notice>}
         {atLimit && <UpgradeHint reason="accounts" message={`Your plan allows ${limits!.max_social_accounts} connected accounts. Upgrade to connect more.`} />}
         {err && (isPlanLimit(err) ? <UpgradeHint reason="accounts" message={err} /> : <Notice tone="error">{err}</Notice>)}
       </div>

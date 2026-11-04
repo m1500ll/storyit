@@ -11,9 +11,15 @@ import { useWizard } from '@/services/wizardStore';
 import { usePaywall } from '../billing/Paywall';
 import { Logo } from '../ui';
 
-interface Item { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean; badge?: React.ReactNode }
+interface Item { to: string; label: string; icon: typeof LayoutDashboard; end?: boolean; badge?: React.ReactNode; locked?: boolean }
 
-function NavItem({ to, label, icon: Icon, end, badge }: Item) {
+function NavItem({ to, label, icon: Icon, end, badge, locked }: Item) {
+  if (locked) return (
+    <span aria-disabled="true" title="Coming soon" className="flex cursor-not-allowed select-none items-center gap-3 rounded-xl px-3 py-2 text-sm text-zinc-600">
+      <Icon className="h-4 w-4 shrink-0" />
+      <span className="flex-1">{label}</span>
+    </span>
+  );
   return (
     <NavLink to={to} end={end}
       className={({ isActive }) => cn(
@@ -72,7 +78,14 @@ export function Sidebar() {
         { to: '/app/review', label: 'Review queue', icon: ClipboardCheck, badge: <Count n={toReview} tone="accent" /> },
       ],
     },
-    ] : []),
+    ] : [{
+      title: 'Episode studio · Soon',
+      items: [
+        { to: '/app/new', label: 'New episode', icon: Sparkles, locked: true },
+        { to: '/app/episodes', label: 'Episodes', icon: Clapperboard, locked: true },
+        { to: '/app/characters', label: 'Characters', icon: Users, locked: true },
+      ],
+    }]),
     {
       title: 'Grow',
       items: [

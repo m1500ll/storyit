@@ -38,7 +38,7 @@ export function createSupabaseDistribution(db: SupabaseClient): DistributionRepo
   return {
     async integrationStatus() {
       try {
-        const s = await invoke<{ tiktok: boolean; instagram: boolean; encryption: boolean; ai: boolean }>('social', { action: 'status' });
+        const s = await invoke<{ open?: boolean; tiktok: boolean; instagram: boolean; encryption: boolean; ai: boolean }>('social', { action: 'status' });
         return { ...s, live: true };
       } catch {
         return { tiktok: false, instagram: false, encryption: false, ai: false, live: true };

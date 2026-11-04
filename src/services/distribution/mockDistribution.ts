@@ -27,7 +27,7 @@ export function createMockDistribution(): DistributionRepository {
     db.events.push({ id: db.events.length + 1, publication_id: p.id, type, detail, created_at: now() });
 
   return {
-    integrationStatus: async () => ({ tiktok: false, instagram: false, encryption: false, ai: false, live: false }),
+    integrationStatus: async () => ({ open: true, tiktok: false, instagram: false, encryption: false, ai: false, live: false }),
     planLimits: async () => null,
 
     listAccounts: async () => db.accounts.filter((a) => a.status !== 'disconnected'),

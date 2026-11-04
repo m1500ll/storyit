@@ -29,7 +29,7 @@ export interface Campaign {
   config: Partial<RotationConfig> & { auto_approve?: boolean }; planned_until: string | null; alert: string | null; created_at: string; targets: { account_id: string; bucket: string | null }[];
 }
 export interface PublicationEvent { id: number; publication_id: string; type: string; detail: Record<string, unknown>; created_at: string }
-export interface IntegrationStatus { tiktok: boolean; instagram: boolean; encryption: boolean; ai: boolean; live: boolean }
+export interface IntegrationStatus { open?: boolean; tiktok: boolean; instagram: boolean; encryption: boolean; ai: boolean; live: boolean }
 export interface PlanLimits { plan: string; max_social_accounts: number | null; max_media_assets: number | null; max_pending_publications: number | null; max_upload_mb: number }
 
 /** Video lifecycle derived from its real publications (never a stored "published everywhere" flag). */
