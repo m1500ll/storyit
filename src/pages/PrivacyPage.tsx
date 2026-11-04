@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
 import { isTodo, LEGAL } from '@/data/legal';
+import { useSeo } from '@/lib/seo';
 
 function Field({ value }: { value: string }) {
   return isTodo(value)
@@ -27,6 +28,7 @@ const PROCESSORS = [
 ] as const;
 
 export default function PrivacyPage() {
+  useSeo({ title: 'Privacy Policy', description: 'What data Storyit collects, how TikTok and Instagram access is used, and how to delete your data.', path: '/privacy' });
   return (
     <div className="min-h-screen bg-ink-950">
       <MarketingNavbar />

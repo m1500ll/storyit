@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react';
 import { CREDIT_COSTS } from '@/services/credits';
 
-const faqs = [
+export const faqs = [
   { q: 'Which platforms does Storyit publish to?', a: 'TikTok and Instagram Reels, through their official APIs. You can connect several accounts on each.' },
   { q: 'Do you need my passwords?', a: 'No. You log in on TikTok’s and Instagram’s own pages and approve Storyit. You can disconnect an account at any time.' },
   { q: 'Which Instagram accounts work?', a: 'Professional accounts (Business or Creator). Switching a personal account to professional is free in the Instagram app.' },

@@ -1,11 +1,21 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { useSeo } from '@/lib/seo';
 import { PaywallProvider } from '../billing/Paywall';
 import { MobileNav } from './MobileNav';
 import { WizardNotifier } from './WizardNotifier';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 
+const TITLES: Record<string, string> = {
+  '/app': 'Overview', '/app/library': 'Video library', '/app/distribute': 'Distribute', '/app/calendar': 'Calendar', '/app/history': 'History',
+  '/app/accounts': 'Social accounts', '/app/billing': 'Plan & credits', '/app/settings': 'Settings', '/app/help': 'Help', '/app/new': 'New episode',
+  '/app/episodes': 'Episodes', '/app/characters': 'Characters', '/app/review': 'Review queue', '/app/monetisation': 'Monetisation', '/app/guide': 'Creator guide',
+};
+
 export function AppShell() {
+  const { pathname } = useLocation();
+  // The signed-in app is private: never indexed. Titles help people with many tabs open.
+  useSeo({ title: TITLES[pathname] ?? 'Studio', noindex: true });
   return (
     <PaywallProvider>
       <a href="#main" className="sr-only z-50 rounded-lg bg-violet-500 px-4 py-2 text-sm text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>

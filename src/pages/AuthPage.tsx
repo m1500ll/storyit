@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useSeo } from '@/lib/seo';
 import { Button, Card, Logo, ThemeToggle } from '@/components/ui';
 import { GoogleIcon } from '@/components/ui/GoogleIcon';
 import { useAuth } from '@/lib/auth';
@@ -36,6 +37,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState<'form' | 'google' | null>(null);
   const [message, setMessage] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   // Show "Continue with Google" only when the provider is really enabled on the auth server.
+  useSeo({ title: 'Sign in', path: '/login', noindex: true });
   const [googleEnabled, setGoogleEnabled] = useState(false);
   useEffect(() => {
     const url = import.meta.env.VITE_SUPABASE_URL;

@@ -19,7 +19,7 @@ export function VideoCard({ video, onOpen, className, compact }: { video: Showca
   }, [inView]);
 
   return (
-    <button ref={ref} onClick={onOpen} aria-label={`Watch “${video.title}” (${video.seconds}s)`}
+    <button ref={ref} onClick={onOpen}
       className={cn('group relative block aspect-[9/16] w-full overflow-hidden rounded-2xl border border-white/10 bg-ink-850 text-left shadow-2xl transition hover:border-violet-400/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60', className)}>
       <video ref={vid} src={previewSrc(video.slug)} poster={posterSrc(video.slug)} muted loop playsInline preload="none"
         className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]" />
@@ -29,6 +29,8 @@ export function VideoCard({ video, onOpen, className, compact }: { video: Showca
       <span className="absolute left-1/2 top-1/2 grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-ink-950 opacity-0 shadow-xl transition group-hover:opacity-100 group-focus-visible:opacity-100">
         <Play className="ml-0.5 h-5 w-5" />
       </span>
+      {/* Accessible name = visible text (format, duration, title) + the action. */}
+      <span className="sr-only">Watch {compact ? video.title : ''}</span>
       {!compact && (
         <div className="absolute inset-x-0 bottom-0 p-3">
           <p className="line-clamp-2 text-sm font-semibold leading-snug text-white">{video.title}</p>

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
 import { isTodo, LEGAL } from '@/data/legal';
+import { useSeo } from '@/lib/seo';
 
 const F = ({ v }: { v: string }) => (isTodo(v) ? <mark className="rounded bg-amber-500/15 px-1 text-amber-300">{v}</mark> : <>{v}</>);
 function S({ title, children }: { title: string; children: ReactNode }) {
@@ -14,6 +15,7 @@ function S({ title, children }: { title: string; children: ReactNode }) {
 }
 
 export default function TermsPage() {
+  useSeo({ title: 'Terms of Service', description: 'The rules for using Storyit to schedule and publish videos to TikTok and Instagram.', path: '/terms' });
   return (
     <div className="min-h-screen bg-ink-950">
       <MarketingNavbar />

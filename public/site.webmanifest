@@ -1,0 +1,13 @@
+{
+  "name": "Storyit",
+  "short_name": "Storyit",
+  "description": "Upload once, post on every TikTok and Instagram account.",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#0a0a0c",
+  "theme_color": "#0a0a0c",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/brand/storyit-icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ]
+}
