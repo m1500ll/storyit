@@ -29,7 +29,7 @@ export function Hero() {
           Storyit sends each video to all your TikTok and Instagram accounts on a schedule, writes a caption for each account, and never posts the same video twice to the same account. Your browser can stay closed.
         </p>
         <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-          <StartLink to="/app/library"><Button size="lg">Start free <ArrowRight className="h-4 w-4" /></Button></StartLink>
+          <StartLink to="/app"><Button size="lg">Start free <ArrowRight className="h-4 w-4" /></Button></StartLink>
           <a href="#how"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> See how it works</Button></a>
         </div>
         <p className="mt-4 text-xs text-zinc-400">Free plan with <strong className="text-zinc-200">30 credits</strong> to try the Prompt Studio. No card required.</p>

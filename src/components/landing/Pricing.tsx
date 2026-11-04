@@ -28,7 +28,7 @@ export function Pricing() {
                   <li key={perk} className="flex items-start gap-2 text-sm text-zinc-400"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-400" />{perk}</li>
                 ))}
               </ul>
-              <StartLink to={p.price === 0 ? '/app/library' : '/app/billing'} className="mt-8">
+              <StartLink to={p.price === 0 ? '/app' : '/app/billing'} className="mt-8">
                 <Button variant={featured ? 'primary' : 'secondary'} className="w-full">{p.price === 0 ? 'Start Free' : `Start with ${p.name}`}</Button>
               </StartLink>
             </div>

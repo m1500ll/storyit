@@ -30,8 +30,9 @@ export default function AuthPage() {
   const location = useLocation();
   const nextParam = new URLSearchParams(location.search).get('next');
   // Only same-site paths, never external URLs.
-  const from = (location.state as { from?: string } | null)?.from ?? (nextParam?.startsWith('/app') ? nextParam : '/app');
   const [mode, setMode] = useState<Mode>(() => (new URLSearchParams(window.location.search).get('mode') === 'signin' ? 'signin' : 'signup'));
+  // Everyone lands on Home (the overview, Prompt Studio first) unless a specific page was asked for.
+  const from = (location.state as { from?: string } | null)?.from ?? (nextParam?.startsWith('/app') ? nextParam : '/app');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState<'form' | 'google' | null>(null);
@@ -75,7 +76,7 @@ export default function AuthPage() {
     }
     const { data, error } = mode === 'signin'
       ? await supabase!.auth.signInWithPassword({ email, password })
-      : await supabase!.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/app` } });
+      : await supabase!.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}${from}` } });
     setLoading(null);
     if (error) return setMessage({ kind: 'error', text: friendly(error.message) });
     if (data.session) return navigate(from, { replace: true });
