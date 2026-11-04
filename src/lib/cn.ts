@@ -1,2 +1,5 @@
 import clsx, { type ClassValue } from 'clsx';
-export const cn = (...inputs: ClassValue[]) => clsx(inputs);
+import { twMerge } from 'tailwind-merge';
+
+/** Joins class names; later Tailwind utilities win over earlier conflicting ones (e.g. `w-full` then `w-auto`). */
+export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));

@@ -10,7 +10,7 @@ import { StartLink } from './StartLink';
 const FAN = [
   { tilt: -6, y: 18 }, { tilt: -3, y: 4 }, { tilt: 0, y: -6 }, { tilt: 3, y: 4 }, { tilt: 6, y: 18 },
 ];
-const OUTPUTS = ['Several TikTok & Instagram accounts', 'One video library', 'Calendar & rotation', 'A caption per account', 'No accidental duplicates'];
+const OUTPUTS = ['Several TikTok & Instagram accounts', 'One video library', 'Calendar & rotation', 'A caption per account', 'Prompt Studio for Fruit Drama'];
 
 export function Hero() {
   const [open, setOpen] = useState<ShowcaseVideo | null>(null);
@@ -32,7 +32,7 @@ export function Hero() {
           <StartLink to="/app/library"><Button size="lg">Start free <ArrowRight className="h-4 w-4" /></Button></StartLink>
           <a href="#how"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> See how it works</Button></a>
         </div>
-        <p className="mt-4 text-xs text-zinc-500">Free plan, no card required. You approve every post before it goes out.</p>
+        <p className="mt-4 text-xs text-zinc-400">Free plan with <strong className="text-zinc-200">30 credits</strong> to try the Prompt Studio. No card required.</p>
         <a href="#results" className="group mx-auto mt-6 flex max-w-fit flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] px-5 py-3 transition hover:border-emerald-500/40">
           {RESULT_HIGHLIGHTS.slice(0, 2).map((h) => (
             <span key={h.label} className="text-sm text-zinc-300"><strong className="font-display text-xl tabular-nums text-zinc-50">{h.value}</strong> {h.label}</span>

@@ -6,7 +6,7 @@ const features = [
   { icon: MessageSquareText, title: 'A caption per account', body: 'Each post gets its own caption and hashtags, written by AI or by you. Your edits are never overwritten.' },
   { icon: Copy, title: 'No accidental duplicates', body: 'A video is never sent twice to the same account. If a result is uncertain, Storyit asks you instead of reposting.' },
   { icon: History, title: 'Real status, full history', body: 'A post shows “Published” only when the platform confirms it. Every attempt and error is logged.' },
-  { icon: Sparkles, title: 'AI episode studio (beta)', body: 'Turn one idea into a 15-scene story script with prompts. Video rendering is still in beta.' },
+  { icon: Sparkles, title: 'Prompt Studio', body: 'Get a full 60-second Fruit Drama: 3 story options, a 15-20 scene script, and ready-to-paste image and video prompts. Images can be generated for you.' },
 ];
 
 export function FeatureGrid() {

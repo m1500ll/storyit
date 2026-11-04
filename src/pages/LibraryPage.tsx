@@ -2,6 +2,7 @@ import { Archive, CalendarPlus, Search, Upload } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { accountLabel, inputCls, ModeBanner, Notice, PubBadge } from '@/components/distribution/bits';
+import { isPlanLimit, UpgradeHint } from '@/components/billing/UpgradeHint';
 import { Button, Card, LoadState, Modal, PageHeader, ProgressBar, useToast } from '@/components/ui';
 import { useAccounts, useIntegrations, useMedia, usePlanLimits, usePublications } from '@/hooks/useDistribution';
 import { cn } from '@/lib/cn';
@@ -99,7 +100,7 @@ export default function LibraryPage() {
         </>} />
       <div className="mb-4 space-y-2">
         {integ && <ModeBanner {...integ} />}
-        {uploads.map((u) => (
+        {uploads.map((u) => isPlanLimit(u.error) ? <UpgradeHint key={u.name} reason="library" message={`${u.name}: ${u.error}`} /> : (
           <div key={u.name} className="surface px-4 py-3" aria-live="polite">
             <div className="flex justify-between gap-2 text-xs"><span className="truncate text-zinc-200">{u.name}</span><span className={u.error ? 'text-coral-300' : 'tabular-nums text-zinc-400'}>{u.error ?? `${u.label ? u.label + ' · ' : ''}${u.pct}%`}</span></div>
             {!u.error && <div className="mt-2"><ProgressBar value={u.pct} max={100} /></div>}

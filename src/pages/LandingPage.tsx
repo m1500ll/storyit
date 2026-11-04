@@ -12,6 +12,7 @@ import { Monetization } from '@/components/landing/Monetization';
 import { Results } from '@/components/landing/Results';
 import { Showcase } from '@/components/landing/Showcase';
 import { TimeSaved } from '@/components/landing/TimeSaved';
+import { StickyCTA } from '@/components/landing/StickyCTA';
 import { Link } from 'react-router-dom';
 import { faqs } from '@/components/landing/FAQ';
 import { useSeo } from '@/lib/seo';
@@ -39,7 +40,8 @@ export default function LandingPage() {
       <Pricing />
       <FAQ />
       <FinalCTA />
-      <footer className="border-t border-line/[0.05] py-10">
+      <StickyCTA />
+      <footer className="border-t border-line/[0.05] pb-28 pt-10 md:pb-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-xs text-zinc-600 sm:flex-row md:px-6">
           <Logo />
           <nav className="flex gap-5">

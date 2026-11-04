@@ -2,6 +2,7 @@ import { Repeat, Send } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { accountLabel, browserTz, Field, inputCls, ModeBanner, Notice, PlatformDot, TIMEZONES } from '@/components/distribution/bits';
+import { isPlanLimit, UpgradeHint } from '@/components/billing/UpgradeHint';
 import { Button, Card, PageHeader, useToast } from '@/components/ui';
 import { useAccounts, useGroups, useIntegrations, useMedia, usePublications } from '@/hooks/useDistribution';
 import { cn } from '@/lib/cn';
@@ -164,7 +165,7 @@ function Simultaneous({ initial }: { initial: string[] }) {
             <span>I agree to TikTok's Music Usage Confirmation and I own the rights to these videos.</span>
           </label>
         )}
-        {err && <p role="alert" className="mt-2 text-xs text-coral-300">{err}</p>}
+        {err && (isPlanLimit(err) ? <div className="mt-2"><UpgradeHint message={err} /></div> : <p role="alert" className="mt-2 text-xs text-coral-300">{err}</p>)}
         <Button className="mt-4 w-full" disabled={!total || !when || (hasTikTok && !consent)} loading={busy} onClick={submit}>Schedule {total || ''} publication{total > 1 ? 's' : ''}</Button>
       </Card>
     </div>
@@ -286,7 +287,7 @@ function Rotation() {
             <span>I agree to TikTok's Music Usage Confirmation for the videos posted on my TikTok accounts, and I own the rights to these videos.</span>
           </label>
         )}
-        {err && <p role="alert" className="mt-2 text-xs text-coral-300">{err}</p>}
+        {err && (isPlanLimit(err) ? <div className="mt-2"><UpgradeHint message={err} /></div> : <p role="alert" className="mt-2 text-xs text-coral-300">{err}</p>)}
         <Button className="mt-4 w-full" disabled={!ready} loading={busy} onClick={activate}>Activate campaign</Button>
         <p className="mt-2 text-[11px] text-zinc-500">You can pause it at any time from the Calendar.</p>
       </Card>

@@ -2,6 +2,7 @@ import { CheckCircle2, Link2, Plus, RefreshCw, Settings2, Trash2, Unplug } from 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { accountLabel, Field, inputCls, ModeBanner, Notice, PlatformDot, PLATFORM_NAME } from '@/components/distribution/bits';
+import { isPlanLimit, UpgradeHint } from '@/components/billing/UpgradeHint';
 import { Button, Card, LoadState, Modal, PageHeader, useToast } from '@/components/ui';
 import { useAccounts, useGroups, useIntegrations, usePlanLimits } from '@/hooks/useDistribution';
 import { cn } from '@/lib/cn';
@@ -54,8 +55,8 @@ export default function AccountsPage() {
       <div className="mb-4 space-y-2" aria-live="polite">
         {integ && <ModeBanner {...integ} />}
         {integ?.live && (integ.tiktok !== integ.instagram) && <Notice>{integ.tiktok ? 'Instagram' : 'TikTok'} connection is not configured on this server yet.</Notice>}
-        {atLimit && <Notice tone="warn">Your plan allows {limits!.max_social_accounts} connected accounts.</Notice>}
-        {err && <Notice tone="error">{err}</Notice>}
+        {atLimit && <UpgradeHint reason="accounts" message={`Your plan allows ${limits!.max_social_accounts} connected accounts. Upgrade to connect more.`} />}
+        {err && (isPlanLimit(err) ? <UpgradeHint reason="accounts" message={err} /> : <Notice tone="error">{err}</Notice>)}
       </div>
 
       {loading || error ? <LoadState loading={loading} error={error} /> : accounts.length === 0 ? (

@@ -1,6 +1,5 @@
 import { Clapperboard, Clock, Plus, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { LowCreditsBanner } from '@/components/billing/LowCreditsBanner';
 import { DistributionOverview } from '@/components/dashboard/DistributionOverview';
 import { FirstRun } from '@/components/dashboard/FirstRun';
 import { GettingStarted } from '@/components/dashboard/GettingStarted';
@@ -28,7 +27,6 @@ export default function DashboardPage() {
         actions={<Button onClick={() => navigate('/app/distribute')}><Plus className="h-4 w-4" /> Distribute videos</Button>} />
       <div className="mb-8"><DistributionOverview /></div>
       <p className="label mb-3">AI studio · Beta</p>
-      {stories.length > 0 && <LowCreditsBanner />}
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-6">
           {!loading && stories.length > 0 && <GettingStarted stories={stories} />}

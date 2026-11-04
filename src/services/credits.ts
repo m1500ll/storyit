@@ -12,9 +12,9 @@ export const CREDIT_COSTS = {
 
 /** Perks must stay true to what the product does. Account/video limits mirror the `plan_limits` table (server-enforced). */
 export const PLANS = [
-  { id: 'free', name: 'Starter', price: 0, credits: 30, period: 'once', perks: ['2 TikTok or Instagram accounts', '20 videos in your library', 'Calendar, per-account captions, history', '30 credits for the AI studio (beta)'] },
-  { id: 'creator', name: 'Creator', price: 29, credits: 300, period: 'month', perks: ['10 social accounts, grouped as you like', '500 videos in your library', 'Daily rotation campaigns', '300 AI studio credits / month'], featured: true },
-  { id: 'studio', name: 'Studio', price: 99, credits: 1200, period: 'month', perks: ['Unlimited accounts and videos', 'Everything in Creator', 'Built for agencies and account networks', '1,200 AI studio credits / month'] },
+  { id: 'free', name: 'Starter', price: 0, credits: 30, period: 'once', perks: ['2 TikTok or Instagram accounts', '20 videos in your library', 'Calendar, per-account captions, history', '30 free credits (≈ 6 Prompt Studio projects)'] },
+  { id: 'creator', name: 'Creator', price: 29, credits: 300, period: 'month', perks: ['10 social accounts, grouped as you like', '500 videos in your library', 'Daily rotation campaigns', '300 credits / month (≈ 60 Prompt Studio projects)'], featured: true },
+  { id: 'studio', name: 'Studio', price: 99, credits: 1200, period: 'month', perks: ['Unlimited accounts and videos', 'Everything in Creator', 'Built for agencies and account networks', '1,200 credits / month'] },
 ] as const;
 
 export const estimateEpisodeCost = (sceneCount: number) => sceneCount * CREDIT_COSTS.sceneRender;
@@ -29,3 +29,11 @@ export type ProductKey = 'creator' | 'studio' | (typeof CREDIT_PACKS)[number]['i
 /** Full episode = concepts + storyboard + render of every scene. */
 export const FULL_EPISODE_COST = CREDIT_COSTS.conceptGeneration + CREDIT_COSTS.sceneBreakdown + 15 * CREDIT_COSTS.sceneRender;
 export const episodesFor = (credits: number) => Math.floor(credits / FULL_EPISODE_COST);
+
+/** Below this balance the app nudges the user to top up (banner, amber counter). */
+export const LOW_CREDITS = 10;
+/** A full Prompt Studio project = 5 phases × 1 credit (free with the user's own Gemini key). */
+export const PROMPT_PROJECT_COST = 5;
+export const projectsFor = (credits: number) => Math.floor(credits / PROMPT_PROJECT_COST);
+export type CreditLevel = 'ok' | 'low' | 'empty';
+export const creditLevel = (balance: number): CreditLevel => (balance <= 0 ? 'empty' : balance <= LOW_CREDITS ? 'low' : 'ok');

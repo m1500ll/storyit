@@ -11,7 +11,7 @@ type Mode = 'signin' | 'signup' | 'forgot';
 
 const COPY: Record<Mode, { title: string; sub: string; cta: string }> = {
   signin: { title: 'Welcome back', sub: 'Sign in to continue your series.', cta: 'Sign In' },
-  signup: { title: 'Create your studio', sub: 'Free plan with 2 accounts. No card required.', cta: 'Create Account' },
+  signup: { title: 'Create your studio', sub: 'Free plan with 30 credits. No card required.', cta: 'Create Account' },
   forgot: { title: 'Reset your password', sub: 'We’ll email you a link to choose a new one.', cta: 'Send Reset Link' },
 };
 
@@ -93,7 +93,7 @@ export default function AuthPage() {
         <p className="mt-1 text-sm text-zinc-500">{copy.sub}</p>
         {mode === 'signup' && (
           <ul className="mt-4 space-y-1.5 text-xs text-zinc-400">
-            {['Connect your TikTok and Instagram accounts', 'Import each video once, post it everywhere', 'Free plan, no card, cancel anytime'].map((t) => (
+            {['30 free credits to try the Prompt Studio', 'Post each video on all your TikTok and Instagram accounts', 'Free plan, no card, cancel anytime'].map((t) => (
               <li key={t} className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-violet-400" />{t}</li>
             ))}
           </ul>

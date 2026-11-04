@@ -3,6 +3,7 @@ import {
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useCredits, useStories } from '@/hooks/useStore';
+import { creditLevel, projectsFor } from '@/services/credits';
 import { cn } from '@/lib/cn';
 
 import { useWizard } from '@/services/wizardStore';
@@ -31,6 +32,7 @@ const Count = ({ n, tone = 'muted' }: { n: number; tone?: 'muted' | 'accent' }) 
 export function Sidebar() {
   const { data: stories = [] } = useStories();
   const { balance } = useCredits();
+  const level = creditLevel(balance);
   const w = useWizard();
   const openPaywall = usePaywall();
   const toReview = stories.filter((s) => s.status === 'in_review').length;
@@ -91,12 +93,15 @@ export function Sidebar() {
         ))}
       </nav>
       <div className="mt-auto pt-6">
-        <div className="surface p-4">
-          <p className="label flex items-center gap-1.5 text-[10px]"><Coins className="h-3 w-3" /> AI studio credits</p>
-          <p className="mt-1 font-display text-3xl tabular-nums text-zinc-50">{balance}</p>
-          <p className="text-[11px] text-zinc-500">For the AI studio (beta)</p>
-          <button onClick={() => openPaywall()} className="mt-3 w-full rounded-lg bg-violet-500/15 py-1.5 text-xs font-medium text-violet-300 transition hover:bg-violet-500/25">
-            Get more credits
+        <div className={cn('surface p-4', level === 'low' && 'border-amber-500/40', level === 'empty' && 'border-coral-500/40')}>
+          <p className="label flex items-center gap-1.5 text-[10px]"><Coins className="h-3 w-3" /> Credits</p>
+          <p className={cn('mt-1 font-display text-3xl tabular-nums', level === 'ok' ? 'text-zinc-50' : level === 'low' ? 'text-amber-300' : 'text-coral-300')}>{balance}</p>
+          <p className="text-[11px] text-zinc-500">
+            {level === 'empty' ? 'Out of credits: top up to keep creating.' : level === 'low' ? 'Running low.' : `≈ ${projectsFor(balance)} Prompt Studio projects`}
+          </p>
+          <button onClick={() => openPaywall()}
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#c2410c] to-[#b45309] py-2 text-xs font-semibold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-400/60">
+            <Coins className="h-3.5 w-3.5" aria-hidden /> Buy credits
           </button>
         </div>
       </div>

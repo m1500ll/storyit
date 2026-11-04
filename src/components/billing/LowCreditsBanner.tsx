@@ -1,26 +1,43 @@
-import { Coins } from 'lucide-react';
+import { Coins, X } from 'lucide-react';
+import { useState } from 'react';
 import { useCredits } from '@/hooks/useStore';
-import { FULL_EPISODE_COST } from '@/services/credits';
+import { cn } from '@/lib/cn';
+import { creditLevel, LOW_CREDITS } from '@/services/credits';
 import { usePaywall } from './Paywall';
 
+const KEY = 'storyit:low-credits-dismissed-at';
+const DAY = 86_400_000;
+
 /**
- * Usage-limit nudge (paywalls skill): warn before the user hits the wall instead of blocking
- * mid-flow. Only shown when the balance can't cover a full episode.
+ * Usage nudge shown on every app page: warn before the user hits the wall, not mid-flow.
+ * Low (≤ LOW_CREDITS) can be dismissed for 24 h; empty stays until they top up.
  */
 export function LowCreditsBanner() {
   const { balance, loading } = useCredits();
   const openPaywall = usePaywall();
-  if (loading || balance >= FULL_EPISODE_COST) return null;
+  const [hidden, setHidden] = useState(() => { try { return Date.now() - Number(localStorage.getItem(KEY) ?? 0) < DAY; } catch { return false; } });
+  const level = creditLevel(balance);
+  if (loading || level === 'ok' || (level === 'low' && hidden)) return null;
+  const empty = level === 'empty';
   return (
-    <div className="mb-6 flex flex-col gap-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-4 py-3 sm:flex-row sm:items-center">
-      <Coins className="hidden h-4 w-4 shrink-0 text-amber-300 sm:block" />
-      <p className="flex-1 text-sm text-amber-100/90">
-        You have <strong className="tabular-nums">{balance}</strong> credits — enough for storyboards, but a full rendered episode needs about {FULL_EPISODE_COST}.
+    <div role="status" className={cn('mb-6 flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center',
+      empty ? 'border-coral-500/30 bg-coral-500/10' : 'border-amber-500/30 bg-amber-500/[0.08]')}>
+      <Coins className={cn('hidden h-4 w-4 shrink-0 sm:block', empty ? 'text-coral-300' : 'text-amber-300')} aria-hidden />
+      <p className="flex-1 text-sm text-zinc-200">
+        {empty
+          ? <>You’re out of credits. Top up to keep using the Prompt Studio and AI features. Publishing to your accounts keeps working.</>
+          : <>Only <strong className="tabular-nums">{balance}</strong> credit{balance > 1 ? 's' : ''} left (alert under {LOW_CREDITS}). Top up now so you’re not stopped mid-project.</>}
       </p>
-      <button onClick={() => openPaywall({ required: FULL_EPISODE_COST })}
-        className="shrink-0 rounded-lg bg-amber-400/15 px-3 py-1.5 text-xs font-medium text-amber-200 transition hover:bg-amber-400/25">
-        Get more credits
-      </button>
+      <div className="flex shrink-0 items-center gap-1">
+        <button onClick={() => openPaywall()}
+          className="rounded-lg bg-gradient-to-r from-[#c2410c] to-[#b45309] px-3.5 py-2 text-xs font-semibold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-400/60">
+          Buy credits
+        </button>
+        {!empty && (
+          <button aria-label="Hide for 24 hours" onClick={() => { setHidden(true); try { localStorage.setItem(KEY, String(Date.now())); } catch { /* private mode */ } }}
+            className="rounded-lg p-2 text-zinc-500 hover:bg-line/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><X className="h-4 w-4" /></button>
+        )}
+      </div>
     </div>
   );
 }

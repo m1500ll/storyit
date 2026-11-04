@@ -2,7 +2,7 @@ import { Check, Coins } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { billingService } from '@/services/billing';
-import { CREDIT_PACKS, episodesFor, PLANS, type ProductKey } from '@/services/credits';
+import { CREDIT_PACKS, PLANS, projectsFor, type ProductKey } from '@/services/credits';
 import { Button } from '../ui';
 
 export function PlanPicker({ currentPlan, compact }: { currentPlan?: string; compact?: boolean }) {
@@ -33,7 +33,7 @@ export function PlanPicker({ currentPlan, compact }: { currentPlan?: string; com
                 {current && <span className="rounded-full bg-line/10 px-2 py-0.5 text-[10px] text-zinc-300">Current</span>}
               </div>
               <p className="mt-2 font-display text-3xl text-zinc-50">${p.price}<span className="font-sans text-xs text-zinc-500">{p.period === 'month' ? '/mo' : ''}</span></p>
-              <p className="text-xs text-violet-300">{p.credits} credits {p.period === 'month' ? '/ month' : 'to start'} · ≈ {episodesFor(p.credits)} episodes</p>
+              <p className="text-xs text-violet-300">{p.credits} credits {p.period === 'month' ? '/ month' : 'to start'} · ≈ {projectsFor(p.credits)} Prompt Studio projects</p>
               {!compact && (
                 <ul className="mt-3 space-y-1.5">
                   {p.perks.map((k) => <li key={k} className="flex gap-1.5 text-xs text-zinc-400"><Check className="h-3.5 w-3.5 shrink-0 text-violet-400" />{k}</li>)}
@@ -59,7 +59,7 @@ export function PlanPicker({ currentPlan, compact }: { currentPlan?: string; com
               <Coins className="h-4 w-4 text-violet-300" />{pack.credits} credits
               {'badge' in pack && <span className="rounded-full bg-coral-500/15 px-2 py-0.5 text-[10px] text-coral-300">{pack.badge}</span>}
             </span>
-            <span className="text-sm font-semibold text-zinc-300">{pending === pack.id ? '…' : `$${pack.price}`}</span>
+            <span className="text-right"><span className="block text-sm font-semibold text-zinc-100">{pending === pack.id ? '…' : `$${pack.price}`}</span><span className="block text-[11px] text-zinc-500">≈ {projectsFor(pack.credits)} projects</span></span>
           </button>
         ))}
       </div>

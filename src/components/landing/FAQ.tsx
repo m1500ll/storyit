@@ -8,7 +8,7 @@ export const faqs = [
   { q: 'Will my TikTok posts be public?', a: 'You choose the visibility for each post. While TikTok is still reviewing an app, TikTok itself keeps posts private; Storyit shows this on the account before you post.' },
   { q: 'Can the same video be posted twice by mistake?', a: 'No. A video can go to many accounts, but only once per account. If a publication result is uncertain, Storyit asks you to check instead of reposting.' },
   { q: 'Who writes the captions?', a: 'You, or the AI, account by account. Each account can have its own tone, language and hashtags. Nothing is posted before you approve it.' },
-  { q: 'What is the AI studio?', a: `A beta feature that turns one idea into a 15-scene story script with image and motion prompts (${CREDIT_COSTS.conceptGeneration} credit for concepts, ${CREDIT_COSTS.sceneBreakdown} for the storyboard). Video rendering is still in beta.` },
+  { q: 'What is the Prompt Studio?', a: `A guided writer for 60-second Fruit Drama videos: 3 story options, a 15-20 scene script with dialogue, then one image prompt and one video prompt per scene, a thumbnail and hashtags. Each step costs ${CREDIT_COSTS.conceptGeneration} credit, or nothing if you connect your own Gemini key, which can also generate the images for you.` },
   { q: 'Can I cancel anytime?', a: 'Yes, from Plan & credits. You keep access until the end of the paid period.' },
 ];
 

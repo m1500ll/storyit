@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { useSeo } from '@/lib/seo';
+import { LowCreditsBanner } from '../billing/LowCreditsBanner';
 import { PaywallProvider } from '../billing/Paywall';
 import { MobileNav } from './MobileNav';
 import { WizardNotifier } from './WizardNotifier';
@@ -23,7 +24,7 @@ export function AppShell() {
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar />
-          <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-8 md:px-8 lg:pb-8"><Outlet /></main>
+          <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-8 md:px-8 lg:pb-8"><LowCreditsBanner /><Outlet /></main>
         </div>
         <MobileNav />
         <WizardNotifier />

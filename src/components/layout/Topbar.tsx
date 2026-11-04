@@ -1,4 +1,4 @@
-import { LogOut, Plus } from 'lucide-react';
+import { Coins, LogOut, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useProfile } from '@/hooks/useStore';
 import { usePaywall } from '../billing/Paywall';
@@ -18,8 +18,12 @@ export function Topbar() {
       <div className="hidden lg:block" />
       <div className="flex items-center gap-3">
         <ThemeToggle />
-        <button onClick={() => openPaywall()} aria-label="Get more credits" className="rounded-full transition hover:opacity-80"><CreditBalance /></button>
-        <Button size="sm" onClick={() => navigate('/app/distribute')} className="hidden sm:inline-flex"><Plus className="h-3.5 w-3.5" /> Distribute videos</Button>
+        <button onClick={() => openPaywall()} aria-label="Your credits — buy more" className="rounded-full transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><CreditBalance /></button>
+        <button onClick={() => openPaywall()}
+          className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#c2410c] to-[#b45309] px-3 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-400/60">
+          <Coins className="h-3.5 w-3.5" aria-hidden /><span className="hidden sm:inline">Buy credits</span><span className="sm:hidden">Buy</span>
+        </button>
+        <Button size="sm" variant="secondary" onClick={() => navigate('/app/distribute')} className="hidden lg:inline-flex"><Plus className="h-3.5 w-3.5" /> Distribute</Button>
         <div className="grid h-8 w-8 place-items-center rounded-full bg-ink-700 text-xs font-semibold text-zinc-200" title={name}>
           {name[0]?.toUpperCase()}
         </div>
