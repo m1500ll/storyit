@@ -1,14 +1,22 @@
-import { Download, ImageIcon, Loader2, RefreshCw, Square } from 'lucide-react';
+import { Download, ImageIcon, Loader2, Lock, RefreshCw, Square } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { usePaywall } from '@/components/billing/Paywall';
 import { Button, ProgressBar, useToast } from '@/components/ui';
+import { useCredits, useProfile } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
-import { promptStudio, type ImagePrompt, type KeyStatus, type PromptProject } from '@/services/promptStudio';
+import { IMAGE_COST } from '@/services/credits';
+import { promptStudio, type ImagePrompt, type PromptProject } from '@/services/promptStudio';
 
 /**
- * Automatic scene images on the user's own Gemini key. Scene 1 is generated first and used as the
- * visual reference for the others (same characters). One request per scene, so a failure never loses the rest.
+ * Automatic scene images (Creator and Studio plans, IMAGE_COST credits each, charged on success). Scene 1 is generated
+ * first and used as the visual reference for the others. One request per scene, so a failure never loses the rest.
  */
-export function SceneImages({ project, scenes, keyStatus }: { project: PromptProject; scenes: ImagePrompt[]; keyStatus: KeyStatus | undefined }) {
+export function SceneImages({ project, scenes }: { project: PromptProject; scenes: ImagePrompt[] }) {
+  const { data: profile } = useProfile();
+  const { balance } = useCredits();
+  const paywall = usePaywall();
+  const subscriber = Boolean(profile && profile.plan !== 'free');
   const files = project.data.image_files ?? {};
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<number | null>(null);
@@ -28,7 +36,12 @@ export function SceneImages({ project, scenes, keyStatus }: { project: PromptPro
   const one = async (n: number) => {
     setBusy(n); setErr(null);
     try { await promptStudio.generateImage(project.id, n); return true; }
-    catch (e) { setErr(`Scène ${n} : ${e instanceof Error ? e.message : String(e)}`); return false; }
+    catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/not enough story credits/i.test(msg)) { paywall({ required: missing * IMAGE_COST }); setErr('Plus assez de crédits pour les images.'); }
+      else setErr(`Scène ${n} : ${msg}`);
+      return false;
+    }
     finally { setBusy(null); }
   };
   const all = async () => {
@@ -47,7 +60,14 @@ export function SceneImages({ project, scenes, keyStatus }: { project: PromptPro
   };
 
   const missing = scenes.filter((s) => !files[String(s.scene_number)]).length;
-  const connected = keyStatus?.connected && keyStatus.status !== 'invalid';
+  const connected = subscriber;
+  if (!subscriber) return (
+    <div className="mb-6 flex flex-col gap-3 rounded-xl border border-violet-500/25 bg-violet-500/[0.06] px-4 py-3 sm:flex-row sm:items-center">
+      <Lock className="h-4 w-4 shrink-0 text-violet-300" aria-hidden />
+      <p className="flex-1 text-xs text-zinc-300">Génération automatique de toutes les images en un clic : incluse dans les abonnements Creator et Studio ({IMAGE_COST} crédits par image). Sinon, utilisez « Ouvrir dans Gemini » sur chaque scène ci-dessous.</p>
+      <Link to="/app/billing" className="inline-flex h-9 shrink-0 items-center rounded-lg bg-violet-600 px-3 text-xs font-medium text-white hover:bg-violet-500">Voir les abonnements</Link>
+    </div>
+  );
 
   return (
     <div className="mb-6">
@@ -56,7 +76,7 @@ export function SceneImages({ project, scenes, keyStatus }: { project: PromptPro
           <ImageIcon className="h-4 w-4" /> {missing === 0 ? 'Toutes les images sont prêtes' : `Générer ${missing === scenes.length ? 'toutes les' : `les ${missing}`} images`}
         </Button>
         {batch && <Button variant="secondary" onClick={() => { stop.current = true; }}><Square className="h-3.5 w-3.5" /> Arrêter après celle-ci</Button>}
-        <span className="text-xs text-zinc-500">{connected ? 'Sur votre clé Gemini : Google facture environ 0,04 à 0,07 $ par image.' : 'Connectez votre clé Gemini (en haut de la page Prompt Studio) pour générer les images ici.'}</span>
+        <span className="text-xs text-zinc-500">{`${IMAGE_COST} crédits par image, débités seulement si l'image est réussie · ${missing * IMAGE_COST} crédits pour tout générer (solde : ${balance}).`}</span>
       </div>
       {batch && (
         <div className="mb-3" role="status" aria-live="polite">

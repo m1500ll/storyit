@@ -22,7 +22,7 @@ export function PromptStudioHero() {
     <section aria-labelledby="ps-hero" className="relative mb-8 overflow-hidden rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-600/20 via-ink-950 to-coral-500/10 p-5 sm:p-7">
       <div className="flex items-center gap-2 text-xs font-medium text-violet-300"><Wand2 className="h-4 w-4" aria-hidden /> Prompt Studio</div>
       <h2 id="ps-hero" className="mt-2 font-display text-3xl leading-tight text-zinc-50 sm:text-4xl">Your next viral Fruit Drama, written for you</h2>
-      <p className="mt-2 max-w-2xl text-sm text-zinc-300">3 story options, a 60-second script with dialogue, then every image and video prompt ready to paste. {PROMPT_PROJECT_COST} credits for the whole project, or free with your own Gemini key.</p>
+      <p className="mt-2 max-w-2xl text-sm text-zinc-300">3 story options, a 60-second script with dialogue, then every image and video prompt ready to paste. {PROMPT_PROJECT_COST} credits for the whole project. Subscribers can also generate every scene image in one click.</p>
 
       <form className="mt-5 flex flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); go(); }}>
         <label htmlFor="hero-idea" className="sr-only">Your story idea (optional)</label>

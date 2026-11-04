@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react';
-import { CREDIT_COSTS } from '@/services/credits';
+import { IMAGE_COST, PROMPT_PROJECT_COST } from '@/services/credits';
 
 export const faqs = [
   { q: 'Which platforms does Storyit publish to?', a: 'TikTok and Instagram Reels, through their official APIs. You can connect several accounts on each.' },
@@ -8,7 +8,7 @@ export const faqs = [
   { q: 'Will my TikTok posts be public?', a: 'You choose the visibility for each post. While TikTok is still reviewing an app, TikTok itself keeps posts private; Storyit shows this on the account before you post.' },
   { q: 'Can the same video be posted twice by mistake?', a: 'No. A video can go to many accounts, but only once per account. If a publication result is uncertain, Storyit asks you to check instead of reposting.' },
   { q: 'Who writes the captions?', a: 'You, or the AI, account by account. Each account can have its own tone, language and hashtags. Nothing is posted before you approve it.' },
-  { q: 'What is the Prompt Studio?', a: `A guided writer for 60-second Fruit Drama videos: 3 story options, a 15-20 scene script with dialogue, then one image prompt and one video prompt per scene, a thumbnail and hashtags. Each step costs ${CREDIT_COSTS.conceptGeneration} credit, or nothing if you connect your own Gemini key, which can also generate the images for you.` },
+  { q: 'What is the Prompt Studio?', a: `A guided writer for 60-second Fruit Drama videos: 3 story options, a 15-20 scene script with dialogue, then one image prompt and one video prompt per scene, a thumbnail and hashtags. A full project costs ${PROMPT_PROJECT_COST} credits. On the Creator and Studio plans, Storyit can also generate every scene image for you (${IMAGE_COST} credits per image).` },
   { q: 'Can I cancel anytime?', a: 'Yes, from Plan & credits. You keep access until the end of the paid period.' },
 ];
 

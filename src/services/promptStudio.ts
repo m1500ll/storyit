@@ -57,7 +57,7 @@ export const promptStudio = {
     store.notify();
     return project;
   },
-  /** One scene image, generated on the user's own Gemini key (Google bills the user). */
+  /** One scene image (subscribers only, IMAGE_COST credits, charged on success). */
   async generateImage(projectId: string, scene: number): Promise<PromptProject> {
     const { project } = await call<{ project: PromptProject }>({ action: 'image', project_id: projectId, scene });
     store.notify();

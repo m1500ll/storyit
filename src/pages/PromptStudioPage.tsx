@@ -1,7 +1,6 @@
-import { Check, ChevronLeft, Copy, Loader2, RefreshCw, Sparkles, Trash2 } from 'lucide-react';
+import { Check, ChevronLeft, Copy, ExternalLink, Loader2, RefreshCw, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { GeminiKeyCard } from '@/components/prompts/GeminiKeyCard';
 import { SceneImages } from '@/components/prompts/SceneImages';
 import { Button, Card, LoadState, PageHeader, useToast } from '@/components/ui';
 import { usePaywall } from '@/components/billing/Paywall';
@@ -19,11 +18,9 @@ const STEPS: { key: PhaseKey; label: string; waiting: string }[] = [
   { key: 'pack', label: 'Miniature & SEO', waiting: 'Écriture de la miniature, des titres et des hashtags…' },
 ];
 const pretty = (o: unknown) => JSON.stringify(o, null, 2);
-/** A project costs PROMPT_PROJECT_COST credits once, at the start; with the user's own Gemini key it is free. */
+/** A project costs PROMPT_PROJECT_COST credits once, at the start. */
 function useCost() {
-  const { data: key } = useLiveQuery(() => promptStudio.keyStatus(), 'gemini-key');
-  const own = Boolean(key?.connected && key.status !== 'invalid');
-  return { key, own, label: own ? 'gratuit avec votre clé' : `${PROMPT_PROJECT_COST} crédits` };
+  return { label: `${PROMPT_PROJECT_COST} crédits` };
 }
 
 function CopyBtn({ text, label = 'Copier' }: { text: string; label?: string }) {
@@ -36,11 +33,22 @@ function CopyBtn({ text, label = 'Copier' }: { text: string; label?: string }) {
   );
 }
 
-function JsonBlock({ title, value }: { title: string; value: unknown }) {
+/** Copies a ready-to-paste prompt, then opens the tool in a new tab: the user generates on their own account (their Gemini or Grok plan). */
+function OpenBtn({ text, url, label }: { text: string; url: string; label: string }) {
+  const [done, setDone] = useState(false);
+  return (
+    <button onClick={() => { void navigator.clipboard.writeText(text).catch(() => undefined); window.open(url, '_blank', 'noopener'); setDone(true); setTimeout(() => setDone(false), 2500); }}
+      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-violet-500/15 px-2.5 text-xs font-medium text-violet-200 hover:bg-violet-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
+      {done ? <Check className="h-3.5 w-3.5 text-emerald-300" /> : <ExternalLink className="h-3.5 w-3.5" />}{done ? 'Copié, collez-le' : label}
+    </button>
+  );
+}
+
+function JsonBlock({ title, value, open }: { title: string; value: unknown; open?: { text: string; url: string; label: string } }) {
   const text = pretty(value);
   return (
     <div className="surface overflow-hidden">
-      <div className="flex items-center justify-between border-b border-line/[0.06] px-4 py-2"><span className="text-xs font-medium text-zinc-200">{title}</span><CopyBtn text={text} /></div>
+      <div className="flex flex-wrap items-center justify-between gap-1 border-b border-line/[0.06] px-4 py-2"><span className="text-xs font-medium text-zinc-200">{title}</span><span className="flex gap-1">{open && <OpenBtn {...open} />}<CopyBtn text={text} /></span></div>
       <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words p-4 text-[12px] leading-relaxed text-zinc-300">{text}</pre>
     </div>
   );
@@ -89,7 +97,6 @@ function Start() {
       <PageHeader eyebrow="Studio IA · Bêta" title="Prompt Studio"
         description="Storyit écrit avec vous une histoire Fruit Drama de plus d'une minute, étape par étape, puis vous donne les prompts JSON à coller dans Gemini (images) et Grok Imagine (vidéos)." />
       {!promptStudio.available && <div className="mb-4"><LoadState loading={false} error="Le Prompt Studio a besoin du serveur Storyit (mode démo)." /></div>}
-      <div className="mb-4"><GeminiKeyCard /></div>
       {busy ? <Waiting text={STEPS[0]!.waiting} /> : (
         <Card>
           <label htmlFor="idea" className="text-sm font-medium text-zinc-100">Une idée de départ ? <span className="font-normal text-zinc-500">(facultatif)</span></label>
@@ -99,7 +106,7 @@ function Start() {
             <Button disabled={!promptStudio.available} onClick={async () => { const p = await run({ phase: 'concepts', idea }); if (p) navigate(`/app/prompts/${p.id}`); }}>
               <Sparkles className="h-4 w-4" /> Générer un prompt complet · {cost.label}
             </Button>
-            <span className="text-xs text-zinc-500">{cost.own ? '5 étapes, sur votre compte Google : 0 crédit Storyit.' : `${PROMPT_PROJECT_COST} crédits pour le projet complet, débités une seule fois au démarrage. Les 5 étapes et les régénérations sont incluses.`}</span>
+            <span className="text-xs text-zinc-500">{`${PROMPT_PROJECT_COST} crédits pour le projet complet, débités une seule fois au démarrage. Les 5 étapes et les régénérations sont incluses.`}</span>
           </div>
           {error && <p role="alert" className="mt-3 text-xs text-coral-300">{error}</p>}
         </Card>
@@ -126,7 +133,6 @@ function Start() {
 function Project({ id }: { id: string }) {
   const { data: project, loading, error: loadError } = useLiveQuery(() => promptStudio.get(id), `prompt-project:${id}`);
   const { run, busy, error } = useGenerate();
-  const cost = useCost();
   const [view, setView] = useState<PhaseKey | null>(null);
   const [feedback, setFeedback] = useState('');
   const d = project?.data ?? {};
@@ -212,16 +218,18 @@ function Project({ id }: { id: string }) {
           )}
           {shown === 'images' && d.images && (
             <>
-              <SceneImages project={project} scenes={d.images} keyStatus={cost.key} />
-              <Guide text="Sans clé connectée : collez chaque bloc dans Gemini (création d'image), un par scène." all={d.images} />
-              <div className="grid gap-3 md:grid-cols-2">{d.images.map((p) => <JsonBlock key={p.scene_number} title={`Scène ${p.scene_number} · ${p.location_environment}`} value={p} />)}</div>
+              <SceneImages project={project} scenes={d.images} />
+              <Guide text="Avec votre compte Gemini : « Ouvrir dans Gemini » copie le prompt de la scène et ouvre Gemini, il ne reste qu'à coller (Cmd/Ctrl + V) et envoyer." all={d.images} />
+              <div className="grid gap-3 md:grid-cols-2">{d.images.map((p) => <JsonBlock key={p.scene_number} title={`Scène ${p.scene_number} · ${p.location_environment}`} value={p}
+                open={{ label: 'Ouvrir dans Gemini', url: 'https://gemini.google.com/app', text: `Crée une image verticale 9:16, style ${p.style}. Lieu : ${p.location_environment}. ${p.prompt} Aucun texte ni filigrane sur l'image.` }} />)}</div>
               {adjust('images', <Button onClick={() => next('videos')}>Valider → prompts vidéo</Button>)}
             </>
           )}
           {shown === 'videos' && d.videos && (
             <>
-              <Guide text="Sur grok.com → Imagine : importez l'image de la scène, collez le texte du champ « prompt » du bloc correspondant, choisissez le format vertical (9:16), puis générez. Recommencez pour chaque scène." all={d.videos} />
-              <div className="grid gap-3 md:grid-cols-2">{d.videos.map((p) => <JsonBlock key={p.scene_number} title={`Scène ${p.scene_number}`} value={p} />)}</div>
+              <Guide text="« Ouvrir dans Grok » copie le prompt et ouvre Grok Imagine : importez l'image de la scène, collez (Cmd/Ctrl + V), choisissez le format vertical 9:16, puis générez." all={d.videos} />
+              <div className="grid gap-3 md:grid-cols-2">{d.videos.map((p) => <JsonBlock key={p.scene_number} title={`Scène ${p.scene_number}`} value={p}
+                open={{ label: 'Ouvrir dans Grok', url: 'https://grok.com/imagine', text: p.prompt }} />)}</div>
               {adjust('videos', <Button onClick={() => next('pack')}>Valider → miniature & SEO</Button>)}
             </>
           )}
