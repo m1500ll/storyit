@@ -54,7 +54,7 @@ const imagesSchema = obj({
 });
 
 const videosSchema = obj({
-  scenes: arr(obj({ scene_number: { type: 'INTEGER' }, aspect_ratio: S('9:16'), camera_motion: S(), character_action: S(), dialogue, prompt: S('Prompt vidéo complet pour un générateur vidéo IA') })),
+  scenes: arr(obj({ scene_number: { type: 'INTEGER' }, aspect_ratio: S('9:16'), camera_motion: S(), character_action: S(), dialogue, prompt: S('Prompt vidéo complet pour Grok Imagine (image vers vidéo)') })),
 });
 
 const packSchema = obj({
@@ -84,7 +84,8 @@ export function buildPhasePrompt(phase: PhaseKey, ctx: Record<string, any>): str
     case 'images':
       return `ÉTAPE 3 — PROMPTS IMAGE 3D, UN PAR SCÈNE. Script validé : ${JSON.stringify(ctx.script)}\nPour CHAQUE scène, un objet avec scene_number, aspect_ratio "9:16", location_environment, style ("animation 3D style Pixar, textures très détaillées, éclairage studio cinématographique éclatant") et un prompt détaillé (espèce, vêtements, expression, langage corporel, décor, palette). Répète la description complète des personnages présents dans chaque prompt.${tweak}`;
     case 'videos':
-      return `ÉTAPE 4 — PROMPTS D'ANIMATION ET DE VIDÉO AVEC DIALOGUES, UN PAR SCÈNE. Script validé : ${JSON.stringify(ctx.script)}\nPrompts image validés : ${JSON.stringify(ctx.images)}\nPour CHAQUE scène : scene_number, aspect_ratio "9:16", camera_motion précis, character_action (micro-expressions, mouvements de bouche, pleurs, déplacements), dialogue (personnage, ton de voix, réplique exacte) et un prompt vidéo complet cohérent avec l'image de la scène.${tweak}`;
+      return `ÉTAPE 4 — PROMPTS D'ANIMATION ET DE VIDÉO AVEC DIALOGUES, UN PAR SCÈNE. Script validé : ${JSON.stringify(ctx.script)}\nPrompts image validés : ${JSON.stringify(ctx.images)}\nPour CHAQUE scène : scene_number, aspect_ratio "9:16", camera_motion précis, character_action (micro-expressions, mouvements de bouche, pleurs, déplacements), dialogue (personnage, ton de voix, réplique exacte) et un prompt vidéo complet cohérent avec l'image de la scène.
+Le prompt vidéo est destiné à GROK IMAGINE en mode image vers vidéo (grok.com → Imagine) : l'image de la scène est importée comme première image, donc le prompt ne redécrit pas tout le décor, il décrit ce qui BOUGE et ce qu'on ENTEND. Rédige-le en un paragraphe fluide et concret (6 à 10 secondes d'action, 500 caractères maximum), dans cet ordre : le mouvement de caméra ; l'action et les micro-expressions des personnages (rappelle en quelques mots qui est qui : fruit, couleur, vêtement) ; la réplique exacte entre guillemets, précédée du personnage qui parle, de son ton de voix et de « en français » ; l'ambiance sonore (bruits, musique). Style : animation 3D type Pixar, format vertical 9:16. Pas de texte ni de sous-titres à l'écran, pas de changement de plan à l'intérieur d'un clip.${tweak}`;
     case 'pack':
       return `ÉTAPE 5 — MINIATURE ET PACK SEO. Script validé : ${JSON.stringify(ctx.script)}\nDonne : un prompt de miniature 9:16 à fort taux de clic (émotion extrême, contraste, effet choc), 5 titres viraux pour TikTok/Shorts/Reels, une légende dramatique avec appel à l'action, et 8 à 15 hashtags de niche et tendance (#AIFruit #FruitDrama…), un par élément de la liste.${tweak}`;
   }

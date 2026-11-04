@@ -86,7 +86,7 @@ function Start() {
   return (
     <>
       <PageHeader eyebrow="Studio IA · Bêta" title="Prompt Studio"
-        description="Storyit écrit avec vous une histoire Fruit Drama de plus d'une minute, étape par étape, puis vous donne les prompts JSON à coller dans Gemini (images) et Google Flow (vidéos)." />
+        description="Storyit écrit avec vous une histoire Fruit Drama de plus d'une minute, étape par étape, puis vous donne les prompts JSON à coller dans Gemini (images) et Grok Imagine (vidéos)." />
       {!promptStudio.available && <div className="mb-4"><LoadState loading={false} error="Le Prompt Studio a besoin du serveur Storyit (mode démo)." /></div>}
       <div className="mb-4"><GeminiKeyCard /></div>
       {busy ? <Waiting text={STEPS[0]!.waiting} /> : (
@@ -219,7 +219,7 @@ function Project({ id }: { id: string }) {
           )}
           {shown === 'videos' && d.videos && (
             <>
-              <Guide text="Dans Google Flow : importez l'image de la scène, collez le bloc correspondant, générez. Recommencez pour chaque scène." all={d.videos} />
+              <Guide text="Sur grok.com → Imagine : importez l'image de la scène, collez le texte du champ « prompt » du bloc correspondant, choisissez le format vertical (9:16), puis générez. Recommencez pour chaque scène." all={d.videos} />
               <div className="grid gap-3 md:grid-cols-2">{d.videos.map((p) => <JsonBlock key={p.scene_number} title={`Scène ${p.scene_number}`} value={p} />)}</div>
               {adjust('videos', <Button onClick={() => next('pack')}>Valider → miniature & SEO</Button>)}
             </>
