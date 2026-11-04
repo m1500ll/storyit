@@ -15,6 +15,7 @@ const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const CreateStoryWizardPage = lazy(() => import('@/pages/CreateStoryWizardPage'));
 const SceneEditorPage = lazy(() => import('@/pages/SceneEditorPage'));
 const PublishPage = lazy(() => import('@/pages/PublishPage'));
+const PromptStudioPage = lazy(() => import('@/pages/PromptStudioPage'));
 const AccountsPage = lazy(() => import('@/pages/AccountsPage'));
 const LibraryPage = lazy(() => import('@/pages/LibraryPage'));
 const DistributePage = lazy(() => import('@/pages/DistributePage'));
@@ -48,6 +49,8 @@ export default function App() {
               <Route path="stories/:storyId" element={<SceneEditorPage />} />
               <Route path="stories/:storyId/publish" element={<PublishPage />} />
               <Route path="accounts" element={<AccountsPage />} />
+              <Route path="prompts" element={<PromptStudioPage />} />
+              <Route path="prompts/:projectId" element={<PromptStudioPage />} />
               <Route path="library" element={<LibraryPage />} />
               <Route path="distribute" element={<DistributePage />} />
               <Route path="calendar" element={<PublicationsPage />} />

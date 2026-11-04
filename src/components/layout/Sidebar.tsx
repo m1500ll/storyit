@@ -1,5 +1,5 @@
 import {
-  BookOpen, CalendarDays, ClipboardCheck, Clapperboard, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Loader2, Send, Settings, Sparkles, TrendingUp, Users,
+  BookOpen, CalendarDays, ClipboardCheck, Clapperboard, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Loader2, Send, Settings, Sparkles, TrendingUp, Users, Wand2,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useCredits, useStories } from '@/hooks/useStore';
@@ -51,6 +51,7 @@ export function Sidebar() {
     {
       title: 'AI studio · Beta',
       items: [
+        { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[10px] text-violet-300">New</span> },
         {
           to: '/app/new', label: 'New episode', icon: Sparkles,
           badge: w.pending ? <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-300" aria-label="Generating" />

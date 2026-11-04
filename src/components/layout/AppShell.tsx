@@ -8,7 +8,7 @@ import { Topbar } from './Topbar';
 
 const TITLES: Record<string, string> = {
   '/app': 'Overview', '/app/library': 'Video library', '/app/distribute': 'Distribute', '/app/calendar': 'Calendar', '/app/history': 'History',
-  '/app/accounts': 'Social accounts', '/app/billing': 'Plan & credits', '/app/settings': 'Settings', '/app/help': 'Help', '/app/new': 'New episode',
+  '/app/accounts': 'Social accounts', '/app/billing': 'Plan & credits', '/app/settings': 'Settings', '/app/help': 'Help', '/app/new': 'New episode', '/app/prompts': 'Prompt Studio',
   '/app/episodes': 'Episodes', '/app/characters': 'Characters', '/app/review': 'Review queue', '/app/monetisation': 'Monetisation', '/app/guide': 'Creator guide',
 };
 
