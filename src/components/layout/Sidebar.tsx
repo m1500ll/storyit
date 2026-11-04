@@ -4,6 +4,7 @@ import {
 import { NavLink } from 'react-router-dom';
 import { useCredits, useStories } from '@/hooks/useStore';
 import { creditLevel, projectsFor } from '@/services/credits';
+import { useBetaAccess } from '@/hooks/useBeta';
 import { cn } from '@/lib/cn';
 
 import { useWizard } from '@/services/wizardStore';
@@ -32,6 +33,7 @@ const Count = ({ n, tone = 'muted' }: { n: number; tone?: 'muted' | 'accent' }) 
 export function Sidebar() {
   const { data: stories = [] } = useStories();
   const { balance } = useCredits();
+  const beta = useBetaAccess();
   const level = creditLevel(balance);
   const w = useWizard();
   const openPaywall = usePaywall();
@@ -51,9 +53,15 @@ export function Sidebar() {
       ],
     },
     {
-      title: 'AI studio · Beta',
+      title: 'Create',
       items: [
         { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[10px] text-violet-300">New</span> },
+      ],
+    },
+    ...(beta ? [
+    {
+      title: 'Episode studio · Beta',
+      items: [
         {
           to: '/app/new', label: 'New episode', icon: Sparkles,
           badge: w.pending ? <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-300" aria-label="Generating" />
@@ -64,6 +72,7 @@ export function Sidebar() {
         { to: '/app/review', label: 'Review queue', icon: ClipboardCheck, badge: <Count n={toReview} tone="accent" /> },
       ],
     },
+    ] : []),
     {
       title: 'Grow',
       items: [

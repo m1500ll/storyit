@@ -5,6 +5,7 @@ import {
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/cn';
+import { useBetaAccess } from '@/hooks/useBeta';
 
 const tabs = [
   { to: '/app', label: 'Home', icon: LayoutDashboard, end: true },
@@ -19,8 +20,10 @@ const sections = [
     { to: '/app/history', label: 'History', icon: History },
     { to: '/app/accounts', label: 'Social accounts', icon: Link2 },
   ] },
-  { title: 'AI studio · Beta', items: [
+  { title: 'Create', items: [
     { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2, badge: 'New' },
+  ] },
+  { title: 'Episode studio · Beta', beta: true, items: [
     { to: '/app/new', label: 'New episode', icon: Sparkles },
     { to: '/app/episodes', label: 'Episodes', icon: Clapperboard },
     { to: '/app/characters', label: 'Characters', icon: Users },
@@ -39,6 +42,7 @@ const sections = [
 
 /** Bottom tab bar for phones (the sidebar is hidden below lg) + a full menu sheet. */
 export function MobileNav() {
+  const beta = useBetaAccess();
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   useEffect(() => setOpen(false), [pathname]);
@@ -60,7 +64,7 @@ export function MobileNav() {
               <p className="text-sm font-semibold text-zinc-100">Menu</p>
               <button onClick={() => setOpen(false)} aria-label="Close menu" className="grid h-10 w-10 place-items-center rounded-full text-zinc-400 hover:bg-line/5"><X className="h-5 w-5" /></button>
             </div>
-            {sections.map((s) => (
+            {sections.filter((s) => !('beta' in s) || beta).map((s) => (
               <div key={s.title} className="mt-3">
                 <p className="label mb-1 px-2">{s.title}</p>
                 <ul>

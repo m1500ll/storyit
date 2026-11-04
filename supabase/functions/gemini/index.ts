@@ -228,6 +228,10 @@ Deno.serve(async (req) => {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return json({ error: 'Please sign in again.' }, 401);
 
+  // The AI episode studio is in private beta: invited accounts only (profiles.beta_access, not editable by users).
+  const { data: beta } = await supabase.from('profiles').select('beta_access').eq('id', auth.user.id).maybeSingle();
+  if (!beta?.beta_access) return json({ error: 'The AI episode studio is in private beta and not available on your account yet. No credits were used.', code: 'beta_only' }, 403);
+
   let body: { task?: string; idea?: string; concept?: Record<string, unknown>; count?: number; story_id?: string };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON body' }, 400); }
 

@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BetaGate } from '@/components/layout/BetaGate';
 import { AppShell } from '@/components/layout/AppShell';
 import { RequireAuth } from '@/components/layout/RequireAuth';
 import { ToastProvider } from '@/components/ui';
@@ -44,10 +45,10 @@ export default function App() {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/app" element={<RequireAuth><AppShell /></RequireAuth>}>
               <Route index element={<DashboardPage />} />
-              <Route path="new" element={<CreateStoryWizardPage />} />
-              <Route path="review" element={<ReviewQueuePage />} />
-              <Route path="stories/:storyId" element={<SceneEditorPage />} />
-              <Route path="stories/:storyId/publish" element={<PublishPage />} />
+              <Route path="new" element={<BetaGate><CreateStoryWizardPage /></BetaGate>} />
+              <Route path="review" element={<BetaGate><ReviewQueuePage /></BetaGate>} />
+              <Route path="stories/:storyId" element={<BetaGate><SceneEditorPage /></BetaGate>} />
+              <Route path="stories/:storyId/publish" element={<BetaGate><PublishPage /></BetaGate>} />
               <Route path="accounts" element={<AccountsPage />} />
               <Route path="prompts" element={<PromptStudioPage />} />
               <Route path="prompts/:projectId" element={<PromptStudioPage />} />
@@ -56,8 +57,8 @@ export default function App() {
               <Route path="calendar" element={<PublicationsPage />} />
               <Route path="history" element={<PublicationsPage history />} />
               <Route path="settings" element={<SettingsPage />} />
-              <Route path="episodes" element={<EpisodesPage />} />
-              <Route path="characters" element={<CharactersPage />} />
+              <Route path="episodes" element={<BetaGate><EpisodesPage /></BetaGate>} />
+              <Route path="characters" element={<BetaGate><CharactersPage /></BetaGate>} />
               <Route path="billing" element={<BillingPage />} />
               <Route path="monetisation" element={<MonetisationPage />} />
               <Route path="guide" element={<GuidePage />} />

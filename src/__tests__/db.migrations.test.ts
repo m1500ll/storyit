@@ -211,6 +211,15 @@ describe('migrations & constraints (PostgreSQL)', () => {
     expect((await as(B, `delete from prompt_projects where id = $1 returning id`, [id])).rows).toEqual([]);
   });
 
+  it('the episode studio is beta-only and users cannot grant themselves access', async () => {
+    const story = `insert into stories (user_id, title, idea) values ($1, 'T', 'idea') returning id`;
+    await expect(as(B, story, [B])).rejects.toThrow(/row-level security/);
+    await expect(as(B, `update profiles set beta_access = true where id = $1`, [B])).rejects.toThrow(/permission denied/);
+    await service(`update profiles set beta_access = true where id = $1`, [B]);
+    expect((await as(B, story, [B])).rows).toHaveLength(1);
+    await service(`update profiles set beta_access = false where id = $1`, [B]);
+  });
+
   it('rejects uploads outside the customer folder', async () => {
     await expect(as(A, `insert into media_assets (user_id, title, storage_path, mime, size_bytes) values ($1, 't', $2, 'video/mp4', 1)`, [A, `${B}/x.mp4`])).rejects.toThrow(/invalid storage path/);
   });

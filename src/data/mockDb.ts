@@ -38,7 +38,7 @@ function story(id: string, title: string, status: StoryWithScenes['status'], ep:
 }
 
 export const mockDb = {
-  profile: { id: USER_ID, display_name: 'Ana Studio', plan: 'creator', credit_balance: 184, created_at: iso(60 * 24 * 30) } as Profile,
+  profile: { id: USER_ID, display_name: 'Ana Studio', plan: 'creator', credit_balance: 184, created_at: iso(60 * 24 * 30), beta_access: true } as Profile,
   stories: [
     story('st-3', 'Zest & Jealousy — Ep. 3', 'in_review', 3, sceneStatuses, 90),
     story('st-2', 'Zest & Jealousy — Ep. 2', 'generating', 2, Array(15).fill('generated').fill('generating', 9).fill('queued', 11), 60 * 26),

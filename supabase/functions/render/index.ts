@@ -343,6 +343,10 @@ Deno.serve(async (req) => {
   });
   const { data: auth } = await userClient.auth.getUser();
   if (!auth.user) return json({ error: 'Please sign in again.' }, 401);
+
+  // The AI episode studio is in private beta: invited accounts only (profiles.beta_access, not editable by users).
+  const { data: beta } = await userClient.from('profiles').select('beta_access').eq('id', auth.user.id).maybeSingle();
+  if (!beta?.beta_access) return json({ error: 'The AI episode studio is in private beta and not available on your account yet. No credits were used.', code: 'beta_only' }, 403);
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
   let body: { action?: string; story_id?: string; scene_id?: string; from_start?: boolean; aspect_ratio?: string };
