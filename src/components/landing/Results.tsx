@@ -36,7 +36,7 @@ export function Results() {
           {RESULTS.map((r) => (
             <figure key={r.image} className="surface group overflow-hidden p-0">
               <button onClick={() => setZoom(r)} className="relative block w-full" aria-label={`Enlarge: ${r.caption}`}>
-                <img src={r.image} alt={`${r.platform} dashboard — ${r.caption}`} loading="lazy" className="aspect-[9/14] w-full bg-black object-cover object-top" />
+                <picture><source srcSet={r.image.replace(/\.jpg$/, '.avif')} type="image/avif" /><source srcSet={r.image.replace(/\.jpg$/, '.webp')} type="image/webp" /><img src={r.image} alt={`${r.platform} dashboard — ${r.caption}`} loading="lazy" decoding="async" className="aspect-[9/14] w-full bg-black object-cover object-top" /></picture>
                 <span className="absolute inset-0 grid place-items-center bg-black/0 opacity-0 transition group-hover:bg-black/30 group-hover:opacity-100">
                   <ZoomIn className="h-6 w-6 text-white" />
                 </span>
@@ -52,7 +52,7 @@ export function Results() {
 
       {zoom && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center overscroll-contain bg-black/90 p-4" role="dialog" aria-modal="true" aria-label={zoom.caption} onClick={() => setZoom(null)}>
-          <img src={zoom.image} alt={zoom.caption} className="max-h-[90vh] max-w-full rounded-xl" />
+          <img src={zoom.image.replace(/\.jpg$/, '.webp')} alt={zoom.caption} className="max-h-[90vh] max-w-full rounded-xl" />
           <button onClick={() => setZoom(null)} aria-label="Close" className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white text-ink-950"><X className="h-4 w-4" /></button>
         </div>
       )}

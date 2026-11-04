@@ -19,4 +19,4 @@ export const SHOWCASE: ShowcaseVideo[] = [
 
 export const videoSrc = (slug: string) => `/showcase/${slug}.mp4`;
 export const previewSrc = (slug: string) => `/showcase/${slug}-preview.mp4`;
-export const posterSrc = (slug: string) => `/showcase/${slug}.jpg`;
+export const posterSrc = (slug: string) => `/showcase/${slug}.webp`;

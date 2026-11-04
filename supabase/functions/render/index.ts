@@ -146,7 +146,7 @@ async function pollVideo(id: string): Promise<Uint8Array | null> {
   const video = outputs.find((c) => c.type === 'video');
   if (video?.data) return b64ToBytes(video.data);
   if (video?.uri) {
-    const dl = await fetch(video.uri, { headers: { 'x-goog-api-key': key() }, redirect: 'follow' });
+    const dl = await fetch(video.uri, { headers: { 'x-goog-api-key': key() }, redirect: 'follow', signal: AbortSignal.timeout(120_000) });
     if (!dl.ok) throw new Error(`Could not download clip (${dl.status})`);
     return new Uint8Array(await dl.arrayBuffer());
   }

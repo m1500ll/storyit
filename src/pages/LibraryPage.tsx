@@ -8,6 +8,7 @@ import { useAccounts, useIntegrations, useMedia, usePlanLimits, usePublications 
 import { cn } from '@/lib/cn';
 import { compressVideo } from '@/lib/compress';
 import { distribution, VIDEO_STATE_LABEL, videoState, type MediaAsset, type VideoState } from '@/services/distribution';
+import { useDebounced } from '@/hooks/useDebounced';
 
 const ACCEPTED = ['video/mp4', 'video/quicktime', 'video/webm'];
 const STATE_CLS: Record<VideoState, string> = {
@@ -38,6 +39,7 @@ export default function LibraryPage() {
   const { data: integ } = useIntegrations();
   const { data: limits } = usePlanLimits();
   const [q, setQ] = useState('');
+  const qd = useDebounced(q);
   const [stateFilter, setStateFilter] = useState<VideoState | ''>('');
   const [tag, setTag] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -56,7 +58,7 @@ export default function LibraryPage() {
   const tags = [...new Set(media.flatMap((m) => m.tags))].sort();
   const rows = media
     .map((m) => ({ m, state: m.status === 'available' || m.status === 'archived' ? videoState(m, byMedia.get(m.id) ?? []) : null }))
-    .filter(({ m, state }) => (!q || `${m.title} ${m.notes ?? ''} ${m.tags.join(' ')}`.toLowerCase().includes(q.toLowerCase()))
+    .filter(({ m, state }) => (!qd || `${m.title} ${m.notes ?? ''} ${m.tags.join(' ')}`.toLowerCase().includes(qd.toLowerCase()))
       && (!stateFilter || state === stateFilter) && (!tag || m.tags.includes(tag)) && (stateFilter === 'archived' || state !== 'archived'));
 
   const onFiles = async (files: FileList | null) => {

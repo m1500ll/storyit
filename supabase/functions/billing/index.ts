@@ -26,6 +26,7 @@ async function stripe(path: string, params: Record<string, string>) {
     method: 'POST',
     headers: { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}`, 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams(params),
+    signal: AbortSignal.timeout(15_000),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.error?.message ?? `Stripe error ${res.status}`);

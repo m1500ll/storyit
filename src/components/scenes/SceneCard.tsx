@@ -32,7 +32,7 @@ export function SceneCard({ scene, species, onSave, onRetry }: Props) {
           <video src={scene.video_url} poster={scene.image_url ?? undefined} muted loop playsInline preload="metadata"
             onMouseEnter={(e) => void e.currentTarget.play().catch(() => {})} onMouseLeave={(e) => e.currentTarget.pause()}
             className="absolute inset-0 h-full w-full object-cover" aria-label={`Clip for scene ${scene.position}`} />
-        ) : scene.image_url ? <img src={scene.image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        ) : scene.image_url ? <img src={scene.image_url} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
           : scene.status === 'generated' ? <ScenePoster species={species} seed={scene.position} className="absolute inset-0" />
           : scene.status === 'generating' ? <div className="absolute inset-0 animate-pulse bg-gradient-to-b from-violet-500/20 to-transparent" />
           : <ImageIcon className="h-5 w-5 text-zinc-600" />}

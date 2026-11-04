@@ -120,6 +120,13 @@ export function createSupabaseDistribution(db: SupabaseClient): DistributionRepo
       const user = await uid();
       let created = 0;
       let duplicates = 0;
+      const all = rows.map((r) => ({ ...r, user_id: user, status: 'scheduled' }));
+      // Fast path: one request for the whole batch. Only if a row clashes do we fall back to row by row to count duplicates.
+      if (all.length > 1) {
+        const bulk = await any.from('scheduled_publications').insert(all);
+        if (!bulk.error) return done({ created: all.length, duplicates: 0 });
+        if (bulk.error.code !== '23505') throw new Error(friendly(bulk.error.message));
+      }
       for (const r of rows) {
         const { error } = await any.from('scheduled_publications').insert({ ...r, user_id: user, status: 'scheduled' });
         if (!error) created++;

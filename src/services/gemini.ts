@@ -2,6 +2,7 @@ import { FRUIT_DRAMA_CONCEPTS, FRUIT_DRAMA_SCENES } from '@/data/fruitDrama';
 import { supabase } from '@/lib/supabase';
 import { SCENES_PER_EPISODE, type SceneDraft, type StoryConcept } from '@/types/domain';
 import { delay, store } from './store';
+import { dedupe } from '@/lib/dedupe';
 
 /**
  * Text-generation adapter. The Gemini API key lives server-side only:
@@ -35,7 +36,11 @@ async function edgeError(error: unknown): Promise<Error> {
   return error instanceof Error ? error : new Error('AI generation failed');
 }
 
-async function invoke<T>(body: Record<string, unknown>): Promise<T> {
+function invoke<T>(body: Record<string, unknown>): Promise<T> {
+  return dedupe(`gemini:${JSON.stringify(body)}`, () => invokeOnce<T>(body));
+}
+
+async function invokeOnce<T>(body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase!.functions.invoke<T>('gemini', { body });
   if (error) throw await edgeError(error);
   if (!data) throw new Error('Empty AI response');

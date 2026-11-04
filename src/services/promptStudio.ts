@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { InsufficientCreditsError } from './errors';
 import { store } from './store';
 import type { PhaseKey } from '@shared/promptStudio.ts';
+import { dedupe } from '@/lib/dedupe';
 
 export type { PhaseKey };
 export interface Concept { title: string; synopsis: string; characters: { name: string; fruit: string; role: string; look: string }[]; locations: string[]; themes: string[] }
@@ -19,7 +20,11 @@ const DEMO = 'Le Prompt Studio a besoin du serveur Storyit (mode démo).';
 
 export interface KeyStatus { connected: boolean; hint: string | null; status: 'valid' | 'invalid' | 'no_billing' | null; last_error: string | null; checked_at: string | null }
 
-async function call<T>(body: Record<string, unknown>): Promise<T> {
+function call<T>(body: Record<string, unknown>): Promise<T> {
+  return dedupe(`prompts:${JSON.stringify(body)}`, () => callOnce<T>(body));
+}
+
+async function callOnce<T>(body: Record<string, unknown>): Promise<T> {
   if (!supabase) throw new Error(DEMO);
   const { data, error } = await supabase.functions.invoke<T>('prompts', { body });
   if (error) {
@@ -33,9 +38,10 @@ async function call<T>(body: Record<string, unknown>): Promise<T> {
 
 export const promptStudio = {
   available: Boolean(supabase),
+  /** List view: only the columns the cards show (the heavy `data` JSON is loaded when a project opens). */
   async list(): Promise<PromptProject[]> {
     if (!supabase) return [];
-    const { data, error } = await supabase.from('prompt_projects' as never).select('*').order('updated_at', { ascending: false }).limit(50);
+    const { data, error } = await supabase.from('prompt_projects' as never).select('id, title, idea, phase, created_at, updated_at').order('updated_at', { ascending: false }).limit(50);
     if (error) throw new Error(error.message);
     return (data ?? []) as unknown as PromptProject[];
   },

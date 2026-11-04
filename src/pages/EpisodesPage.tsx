@@ -6,6 +6,7 @@ import { Button, Card, LoadState, PageHeader } from '@/components/ui';
 import { useStories } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
 import type { StoryStatus } from '@/types/database';
+import { useDebounced } from '@/hooks/useDebounced';
 
 const FILTERS: { id: 'all' | StoryStatus; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -19,10 +20,11 @@ export default function EpisodesPage() {
   const { data: stories = [], loading, error } = useStories();
   const [filter, setFilter] = useState<(typeof FILTERS)[number]['id']>('all');
   const [query, setQuery] = useState('');
+  const q = useDebounced(query);
 
   const shown = useMemo(() => stories.filter((s) =>
     (filter === 'all' || s.status === filter)
-    && (!query || `${s.title} ${s.logline ?? ''} ${s.idea}`.toLowerCase().includes(query.toLowerCase()))), [stories, filter, query]);
+    && (!q || `${s.title} ${s.logline ?? ''} ${s.idea}`.toLowerCase().includes(q.toLowerCase()))), [stories, filter, q]);
 
   return (
     <>

@@ -12,7 +12,7 @@ import { instagram, tiktok } from '../_shared/social.ts';
 import { accessToken, refreshDueTokens } from '../_shared/tokens.ts';
 import { poll, start, type WorkerDeps } from '../_shared/worker.ts';
 
-const deps: WorkerDeps = { accessToken, tiktok, instagram, fetchFile: (url, range) => fetch(url, range ? { headers: { Range: range } } : undefined) };
+const deps: WorkerDeps = { accessToken, tiktok, instagram, fetchFile: (url, range) => fetch(url, { ...(range ? { headers: { Range: range } } : {}), signal: AbortSignal.timeout(120_000) }) };
 
 const BUDGET_MS = 100_000;
 const WORKER = `w-${crypto.randomUUID().slice(0, 8)}`;
@@ -38,10 +38,13 @@ async function planCampaigns(db: SupabaseClient) {
     if (day > horizon) continue;
     const cfg = c.config as RotationConfig & { auto_approve?: boolean };
 
-    const { data: targets } = await db.from('campaign_targets').select('bucket, social_accounts!inner(id, platform, status, can_publish, username, editorial)').eq('campaign_id', c.id);
+    // Independent reads in parallel.
+    const [{ data: targets }, { data: lib }] = await Promise.all([
+      db.from('campaign_targets').select('bucket, social_accounts!inner(id, platform, status, can_publish, username, editorial)').eq('campaign_id', c.id),
+      db.from('media_assets').select('id, created_at, tags, title, notes').eq('user_id', c.user_id).eq('status', 'available'),
+    ]);
     const accounts = (targets ?? []).map((t: any) => ({ ...t.social_accounts, bucket: t.bucket }))
       .filter((a: any) => a.status === 'connected');
-    const { data: lib } = await db.from('media_assets').select('id, created_at, tags, title, notes').eq('user_id', c.user_id).eq('status', 'available');
     const ids = accounts.map((a: any) => a.id);
     const { data: prior } = ids.length
       ? await db.from('scheduled_publications').select('media_id, account_id').in('account_id', ids).in('status', BLOCKING)
