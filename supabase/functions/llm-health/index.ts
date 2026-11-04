@@ -25,7 +25,11 @@ Deno.serve(async (req) => {
     const t2 = Date.now();
     const sc = await backupText(b, MASTER_PROMPT, buildPhasePrompt('script', data), PHASES.script.schema, 90_000);
     const script = sc ? normalizePhase('script', sc) : null;
-    return json({ model: b.model, concepts_ms: t2 - t, concepts: (data.concepts as any[])?.map?.((x) => x.title), script_ms: Date.now() - t2, scenes: script?.scenes?.length ?? null, sample: script?.scenes?.[0] ?? sc });
+    data.script = script;
+    const t3 = Date.now();
+    const im = script ? await backupText(b, MASTER_PROMPT, buildPhasePrompt('images', data), PHASES.images.schema, 90_000).catch((e) => ({ error: String(e) })) : null;
+    let images: any = null; if (im && (im as any).error) images = im; else try { images = im ? normalizePhase('images', im) : null; } catch (e) { images = { invalid: String(e), keys: im && Object.keys(im) }; }
+    return json({ images_ms: Date.now() - t3, images_count: Array.isArray(images) ? images.length : images, image_sample: Array.isArray(images) ? images[0] : null, model: b.model, concepts_ms: t2 - t, concepts: (data.concepts as any[])?.map?.((x) => x.title), script_ms: Date.now() - t2, scenes: script?.scenes?.length ?? null, sample: script?.scenes?.[0] ?? sc });
   }
   const schema = { type: 'OBJECT', properties: { titre: { type: 'STRING' } }, required: ['titre'] };
   const report = await Promise.all(backups().map(async (b) => {

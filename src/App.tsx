@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { BetaGate } from '@/components/layout/BetaGate';
+import { SubscriberGate } from '@/components/layout/SubscriberGate';
 // Eager: it is the first page most visitors see, so it ships with the main bundle (no extra round trip before the hero paints).
 import LandingPage from '@/pages/LandingPage';
 import { AppShell } from '@/components/layout/AppShell';
@@ -50,13 +51,13 @@ export default function App() {
               <Route path="review" element={<BetaGate><ReviewQueuePage /></BetaGate>} />
               <Route path="stories/:storyId" element={<BetaGate><SceneEditorPage /></BetaGate>} />
               <Route path="stories/:storyId/publish" element={<BetaGate><PublishPage /></BetaGate>} />
-              <Route path="accounts" element={<AccountsPage />} />
+              <Route path="accounts" element={<SubscriberGate><AccountsPage /></SubscriberGate>} />
               <Route path="prompts" element={<PromptStudioPage />} />
               <Route path="prompts/:projectId" element={<PromptStudioPage />} />
-              <Route path="library" element={<LibraryPage />} />
-              <Route path="distribute" element={<DistributePage />} />
-              <Route path="calendar" element={<PublicationsPage />} />
-              <Route path="history" element={<PublicationsPage history />} />
+              <Route path="library" element={<SubscriberGate><LibraryPage /></SubscriberGate>} />
+              <Route path="distribute" element={<SubscriberGate><DistributePage /></SubscriberGate>} />
+              <Route path="calendar" element={<SubscriberGate><PublicationsPage /></SubscriberGate>} />
+              <Route path="history" element={<SubscriberGate><PublicationsPage history /></SubscriberGate>} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="episodes" element={<BetaGate><EpisodesPage /></BetaGate>} />
               <Route path="characters" element={<BetaGate><CharactersPage /></BetaGate>} />

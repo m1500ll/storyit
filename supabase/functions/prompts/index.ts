@@ -43,7 +43,7 @@ async function callGemini(key: string, model: string, body: unknown, timeoutMs: 
 }
 
 /** Text phase: one long attempt on the main model, then the fallback; stays under the Edge Function limit. */
-async function generateText(key: string, prompt: string, schema: unknown, allowBackup = false) {
+async function generateText(key: string, prompt: string, schema: unknown, allowBackup = false, check: (raw: unknown) => unknown = (r) => r) {
   const started = Date.now();
   let last: GeminiError = new GeminiError('other', 0);
   for (const model of [TEXT_MODEL, TEXT_FALLBACK]) {
@@ -57,7 +57,7 @@ async function generateText(key: string, prompt: string, schema: unknown, allowB
       }, Math.min(left - 5_000, 110_000));
       const text = out?.candidates?.[0]?.content?.parts?.filter((p: { text?: string }) => p.text).map((p: { text: string }) => p.text).join('');
       if (!text) throw new GeminiError('other', 200);
-      return JSON.parse(text);
+      return check(JSON.parse(text));
     } catch (e) {
       last = e instanceof GeminiError ? e : new GeminiError('other', 0);
       // Only a bad key makes the fallback pointless. Quotas are per model (the free tier of Flash-Lite is separate
@@ -70,7 +70,8 @@ async function generateText(key: string, prompt: string, schema: unknown, allowB
       const left = 140_000 - (Date.now() - started);
       if (left < 15_000) break;
       const out = await backupText(bk, MASTER_PROMPT, prompt, schema, left - 5_000).catch(() => null);
-      if (out) return out;
+      if (!out) continue;
+      try { return check(out); } catch (e) { console.error('backup llm invalid', bk.model, e instanceof Error ? e.message : e); }
     }
   }
   throw last;
@@ -192,20 +193,21 @@ Deno.serve(async (req) => {
   const idea = String(body.idea ?? project?.idea ?? '').trim().slice(0, 600);
   try {
     const phasePrompt = buildPhasePrompt(phase, { ...data, idea, feedback: String(body.feedback ?? '').slice(0, 600) });
+    const valid = (r: unknown) => normalizePhase(phase, r);
     let raw;
     if (ownKey) {
       // The user's key first (their quota). If Google refuses it (no billing, quota, overload), the user still gets their
       // story: Storyit's own chain takes over at no cost to them (free tiers / backup providers).
-      try { raw = await generateText(ownKey, phasePrompt, PHASES[phase].schema); } catch (e) {
+      try { raw = await generateText(ownKey, phasePrompt, PHASES[phase].schema, false, valid); } catch (e) {
         const g = e instanceof GeminiError ? e : null;
         if (g?.problem === 'blocked') throw e;
         if (g?.problem === 'invalid' || g?.problem === 'no_billing') await flag(g.problem, g.message);
-        raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true);
+        raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true, valid);
       }
     } else {
-      raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true);
+      raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true, valid);
     }
-    data[PHASES[phase].key] = normalizePhase(phase, raw);
+    data[PHASES[phase].key] = raw; // already normalized and checked by `valid`
     for (const later of PHASES[phase].invalidates) delete data[later];
     if (phase === 'concepts' || phase === 'script' || phase === 'images') delete data.image_files; // images no longer match
 

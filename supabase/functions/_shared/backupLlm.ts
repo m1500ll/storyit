@@ -22,7 +22,7 @@ export async function backupText(b: { base: string; key: string; model: string }
       ],
     }),
   });
-  if (!res.ok) { console.error('backup llm', b.model, res.status, (await res.text()).slice(0, 300)); return null; }
+  if (!res.ok) { const t = (await res.text()).slice(0, 300); console.error('backup llm', b.model, res.status, t); throw new Error(`${res.status} ${t}`); }
   const text = (await res.json())?.choices?.[0]?.message?.content;
   try { return text ? JSON.parse(String(text).replace(/^```(?:json)?\s*|\s*```$/g, '')) : null; } catch { return null; }
 }

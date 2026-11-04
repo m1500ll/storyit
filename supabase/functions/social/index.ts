@@ -98,6 +98,8 @@ Deno.serve(async (req) => {
       if (!adapters[body.platform].configured() || !Deno.env.get('TOKEN_ENCRYPTION_KEY')) {
         return json({ error: `${body.platform === 'tiktok' ? 'TikTok' : 'Instagram'} connection is not configured on this Storyit server yet.` }, 503);
       }
+      const { data: maxAccounts } = await admin.rpc('plan_limit', { p_user: auth.user.id, p_field: 'max_social_accounts' });
+      if (maxAccounts === 0) return json({ error: 'Connecting accounts is included in the Creator and Studio plans.', code: 'plan_limit' }, 402);
       const state = crypto.randomUUID() + crypto.randomUUID().replaceAll('-', '');
       await admin.from('oauth_states').delete().lt('created_at', new Date(Date.now() - 3600_000).toISOString());
       const { error } = await admin.from('oauth_states').insert({ state, user_id: auth.user.id, platform: body.platform, return_origin: safeReturnOrigin(body.return_origin, APP_URL) });

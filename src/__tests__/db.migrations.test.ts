@@ -47,6 +47,8 @@ beforeAll(async () => {
   // 0007 only schedules the worker with pg_cron/pg_net (Supabase infrastructure, not available in PGlite).
   for (const f of readdirSync(dir).filter((f) => f.endsWith('.sql') && !f.includes('_cron')).sort()) await db.exec(readFileSync(join(dir, f), 'utf8'));
   await service(`insert into auth.users (id, email) values ($1, 'a@x.test'), ($2, 'b@x.test')`, [A, B]);
+  // Distribution is for paying plans (0015): the test customers are on Creator.
+  await service(`update profiles set plan = 'creator' where id in ($1, $2)`, [A, B]);
   // Accounts are created by the OAuth callback (service role): 3 TikTok + 3 Instagram for A, 1 for B.
   for (const [i, p] of ['tiktok', 'tiktok', 'tiktok', 'instagram', 'instagram', 'instagram'].entries()) {
     await service(`insert into social_accounts (id, user_id, platform, external_id, username, can_publish) values ($1, $2, $3, $4, $5, true)`,
@@ -184,9 +186,15 @@ describe('migrations & constraints (PostgreSQL)', () => {
   });
 
   it('enforces plan limits server-side', async () => {
-    await service(`update plan_limits set max_media_assets = (select count(*) from media_assets where user_id = $1 and status <> 'archived') where plan = 'free'`, [A]);
+    await service(`update plan_limits set max_media_assets = (select count(*) from media_assets where user_id = $1 and status <> 'archived') where plan = 'creator'`, [A]);
     await expect(video(A)).rejects.toThrow(/plan_limit/);
-    await service(`update plan_limits set max_media_assets = 20 where plan = 'free'`);
+    await service(`update plan_limits set max_media_assets = 500 where plan = 'creator'`);
+  });
+
+  it('the free plan cannot import videos (distribution is for subscribers)', async () => {
+    await service(`update profiles set plan = 'free' where id = $1`, [B]);
+    await expect(video(B)).rejects.toThrow(/plan_limit/);
+    await service(`update profiles set plan = 'creator' where id = $1`, [B]);
   });
 
   it('customers can delete their failed uploads only', async () => {

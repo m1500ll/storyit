@@ -94,27 +94,44 @@ Le prompt vidéo est destiné à GROK IMAGINE en mode image vers vidéo (grok.co
 const str = (v: unknown, max = 4000) => String(v ?? '').trim().slice(0, max);
 
 /** Enforces the contract whatever the model returned: 9:16, numbered scenes, sane counts. */
+/** Models other than Gemini sometimes rename the list ("images", "prompts"…) or return it bare: find it anyway. */
+function listOf(raw: any, key: string): any[] {
+  if (Array.isArray(raw?.[key])) return raw[key];
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === 'object') {
+    for (const v of Object.values(raw)) if (Array.isArray(v) && v.some((x) => x && typeof x === 'object')) return v as any[];
+    for (const v of Object.values(raw)) if (v && typeof v === 'object' && !Array.isArray(v)) { const inner = listOf(v, key); if (inner.length) return inner; }
+  }
+  return [];
+}
+
 export function normalizePhase(phase: PhaseKey, raw: any): any {
   const scenes = (list: any[]) => (Array.isArray(list) ? list : []).slice(0, 20).map((s, i) => ({ ...s, scene_number: i + 1, ...(phase === 'images' || phase === 'videos' ? { aspect_ratio: '9:16' } : {}) }));
   switch (phase) {
     case 'concepts': {
-      const list = (Array.isArray(raw?.concepts) ? raw.concepts : []).slice(0, 3);
+      const list = listOf(raw, 'concepts').slice(0, 3);
       if (list.length === 0) throw new Error('Aucun concept reçu. Réessayez.');
       return list;
     }
     case 'script': {
-      const s = { characters: raw?.characters ?? [], locations: raw?.locations ?? [], scenes: scenes(raw?.scenes) };
+      const s = { characters: raw?.characters ?? [], locations: raw?.locations ?? [], scenes: scenes(Array.isArray(raw?.scenes) ? raw.scenes : listOf(raw, 'scenes').filter((x) => x && (x.action || x.dialogue || x.location))) };
       if (s.scenes.length < 10) throw new Error('Script trop court reçu. Réessayez.');
       return s;
     }
-    case 'images':
-      return scenes(raw?.scenes).map((s) => ({ scene_number: s.scene_number, aspect_ratio: '9:16', location_environment: str(s.location_environment, 200), style: str(s.style, 300), prompt: str(s.prompt) }));
-    case 'videos':
-      return scenes(raw?.scenes).map((s) => ({
+    case 'images': {
+      const out = scenes(listOf(raw, 'scenes')).map((s) => ({ scene_number: s.scene_number, aspect_ratio: '9:16', location_environment: str(s.location_environment, 200), style: str(s.style, 300), prompt: str(s.prompt ?? s.image_prompt ?? s.description) })).filter((s) => s.prompt);
+      if (out.length < 8) throw new Error('Prompts image incomplets reçus. Réessayez.');
+      return out;
+    }
+    case 'videos': {
+      const out = scenes(listOf(raw, 'scenes')).map((s) => ({
         scene_number: s.scene_number, aspect_ratio: '9:16', camera_motion: str(s.camera_motion, 300), character_action: str(s.character_action, 600),
         dialogue: (Array.isArray(s.dialogue) ? s.dialogue : []).map((d: any) => ({ character: str(d.character, 80), voice_accent_tone: str(d.voice_accent_tone, 200), line: str(d.line, 400) })),
-        prompt: str(s.prompt),
-      }));
+        prompt: str(s.prompt ?? s.video_prompt ?? s.description),
+      })).filter((s) => s.prompt);
+      if (out.length < 8) throw new Error('Prompts vidéo incomplets reçus. Réessayez.');
+      return out;
+    }
     case 'pack':
       return {
         thumbnail: { aspect_ratio: '9:16', style: str(raw?.thumbnail?.style, 300), prompt: str(raw?.thumbnail?.prompt) },

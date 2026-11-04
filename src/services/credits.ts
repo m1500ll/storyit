@@ -12,7 +12,7 @@ export const CREDIT_COSTS = {
 
 /** Perks must stay true to what the product does. Account/video limits mirror the `plan_limits` table (server-enforced). */
 export const PLANS = [
-  { id: 'free', name: 'Starter', price: 0, credits: 30, period: 'once', perks: ['2 TikTok or Instagram accounts', '20 videos in your library', 'Calendar, per-account captions, history', '30 free credits (2 Prompt Studio projects)'] },
+  { id: 'free', name: 'Starter', price: 0, credits: 30, period: 'once', perks: ['Prompt Studio: script, image and video prompts', '30 free credits (2 full projects)', 'Use your own Gemini key for free', 'Posting to TikTok and Instagram: Creator plan'] },
   { id: 'creator', name: 'Creator', price: 29, credits: 300, period: 'month', perks: ['10 social accounts, grouped as you like', '500 videos in your library', 'Daily rotation campaigns', '300 credits / month (20 Prompt Studio projects)'], featured: true },
   { id: 'studio', name: 'Studio', price: 99, credits: 1200, period: 'month', perks: ['Unlimited accounts and videos', 'Everything in Creator', 'Built for agencies and account networks', '1,200 credits / month'] },
 ] as const;
