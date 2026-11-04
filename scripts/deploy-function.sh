@@ -5,7 +5,7 @@
 set -euo pipefail
 fn="${1:?usage: scripts/deploy-function.sh <function>}"
 case "$fn" in
-  publisher|social|stripe-webhook|notify-signup) flag=--no-verify-jwt ;;
+  publisher|social|stripe-webhook|notify-signup|llm-health) flag=--no-verify-jwt ;;
   *) flag= ;;
 esac
 npx supabase functions deploy "$fn" --project-ref hubkgvfiiszthzqyfguf $flag --yes

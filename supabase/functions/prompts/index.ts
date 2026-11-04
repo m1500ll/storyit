@@ -9,6 +9,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { MASTER_PROMPT, PHASES, buildPhasePrompt, normalizePhase, type PhaseKey } from '../_shared/promptStudio.ts';
 import { classifyGeminiError, GeminiError, KEY_MESSAGES, keyHint, looksLikeGeminiKey } from '../_shared/geminiKey.ts';
 import { decrypt, encrypt } from '../_shared/social.ts';
+import { backups, backupText } from '../_shared/backupLlm.ts';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
 const TEXT_MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
@@ -41,32 +42,6 @@ async function callGemini(key: string, model: string, body: unknown, timeoutMs: 
   return await res.json();
 }
 
-/**
- * Free backup providers when Storyit's Gemini key is out of quota: OpenAI-compatible APIs with a free tier, tried in order.
- * Each one is set with secrets BACKUP_LLM_URL / BACKUP_LLM_KEY / BACKUP_LLM_MODEL (then _2, _3 for more).
- * Not used for users' own Gemini keys.
- */
-const backups = () => ['', '_2', '_3'].map((n) => ({
-  base: Deno.env.get(`BACKUP_LLM_URL${n}`), key: Deno.env.get(`BACKUP_LLM_KEY${n}`), model: Deno.env.get(`BACKUP_LLM_MODEL${n}`),
-})).filter((b) => b.base && b.key && b.model) as { base: string; key: string; model: string }[];
-
-async function backupText(b: { base: string; key: string; model: string }, prompt: string, schema: unknown, timeoutMs: number) {
-  const res = await fetch(`${b.base.replace(/\/$/, '')}/chat/completions`, {
-    method: 'POST', signal: AbortSignal.timeout(timeoutMs),
-    headers: { Authorization: `Bearer ${b.key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: b.model, temperature: 1, max_tokens: 16000, response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: `${MASTER_PROMPT}\n\nRéponds UNIQUEMENT avec un objet JSON valide qui respecte ce schéma (types Gemini : OBJECT, ARRAY, STRING, INTEGER) :\n${JSON.stringify(schema)}` },
-        { role: 'user', content: prompt },
-      ],
-    }),
-  });
-  if (!res.ok) { console.error('backup llm', b.model, res.status, (await res.text()).slice(0, 300)); return null; }
-  const text = (await res.json())?.choices?.[0]?.message?.content;
-  try { return text ? JSON.parse(String(text).replace(/^```(?:json)?\s*|\s*```$/g, '')) : null; } catch { return null; }
-}
-
 /** Text phase: one long attempt on the main model, then the fallback; stays under the Edge Function limit. */
 async function generateText(key: string, prompt: string, schema: unknown, allowBackup = false) {
   const started = Date.now();
@@ -94,7 +69,7 @@ async function generateText(key: string, prompt: string, schema: unknown, allowB
     for (const bk of backups()) {
       const left = 140_000 - (Date.now() - started);
       if (left < 15_000) break;
-      const out = await backupText(bk, prompt, schema, left - 5_000).catch(() => null);
+      const out = await backupText(bk, MASTER_PROMPT, prompt, schema, left - 5_000).catch(() => null);
       if (out) return out;
     }
   }
@@ -216,7 +191,20 @@ Deno.serve(async (req) => {
 
   const idea = String(body.idea ?? project?.idea ?? '').trim().slice(0, 600);
   try {
-    const raw = await generateText(ownKey ?? Deno.env.get('GEMINI_API_KEY') ?? '', buildPhasePrompt(phase, { ...data, idea, feedback: String(body.feedback ?? '').slice(0, 600) }), PHASES[phase].schema, !ownKey);
+    const phasePrompt = buildPhasePrompt(phase, { ...data, idea, feedback: String(body.feedback ?? '').slice(0, 600) });
+    let raw;
+    if (ownKey) {
+      // The user's key first (their quota). If Google refuses it (no billing, quota, overload), the user still gets their
+      // story: Storyit's own chain takes over at no cost to them (free tiers / backup providers).
+      try { raw = await generateText(ownKey, phasePrompt, PHASES[phase].schema); } catch (e) {
+        const g = e instanceof GeminiError ? e : null;
+        if (g?.problem === 'blocked') throw e;
+        if (g?.problem === 'invalid' || g?.problem === 'no_billing') await flag(g.problem, g.message);
+        raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true);
+      }
+    } else {
+      raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true);
+    }
     data[PHASES[phase].key] = normalizePhase(phase, raw);
     for (const later of PHASES[phase].invalidates) delete data[later];
     if (phase === 'concepts' || phase === 'script' || phase === 'images') delete data.image_files; // images no longer match
@@ -233,8 +221,7 @@ Deno.serve(async (req) => {
     return json({ project: saved.data, billed_to: ownKey ? 'your_gemini_key' : billable ? 'storyit_credits' : 'included' });
   } catch (e) {
     const g = e instanceof GeminiError ? e : null;
-    if (ownKey && (g?.problem === 'invalid' || g?.problem === 'no_billing')) await flag(g.problem, g.message);
-    const msg = g ? (ownKey ? g.message : g.problem === 'no_billing' || g.problem === 'quota' ? 'Les crédits IA de Storyit sont épuisés pour le moment. Connectez votre propre clé Gemini ou réessayez plus tard.' : g.message)
+    const msg = g ? (g.problem === 'no_billing' || g.problem === 'quota' ? 'Le service de génération est très demandé en ce moment. Réessayez dans quelques minutes.' : g.message)
       : (e instanceof Error ? e.message : 'Échec de la génération');
     console.error('prompts', phase, msg);
     return json({ error: `${msg} Aucun crédit Storyit n’a été utilisé.` }, 502);
