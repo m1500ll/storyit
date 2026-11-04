@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Button, Card, Logo, ThemeToggle } from '@/components/ui';
 import { GoogleIcon } from '@/components/ui/GoogleIcon';
@@ -10,7 +10,7 @@ type Mode = 'signin' | 'signup' | 'forgot';
 
 const COPY: Record<Mode, { title: string; sub: string; cta: string }> = {
   signin: { title: 'Welcome back', sub: 'Sign in to continue your series.', cta: 'Sign In' },
-  signup: { title: 'Create your studio', sub: '30 free Story Credits to start. No card required.', cta: 'Create Account' },
+  signup: { title: 'Create your studio', sub: 'Free plan with 2 accounts. No card required.', cta: 'Create Account' },
   forgot: { title: 'Reset your password', sub: 'We’ll email you a link to choose a new one.', cta: 'Send Reset Link' },
 };
 
@@ -35,6 +35,17 @@ export default function AuthPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState<'form' | 'google' | null>(null);
   const [message, setMessage] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
+  // Show "Continue with Google" only when the provider is really enabled on the auth server.
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  useEffect(() => {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!url || !key) return;
+    fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { external?: { google?: boolean } } | null) => setGoogleEnabled(Boolean(d?.external?.google)))
+      .catch(() => setGoogleEnabled(false));
+  }, []);
 
   if (!supabase || session) return <Navigate to={from} replace />;
 
@@ -80,13 +91,13 @@ export default function AuthPage() {
         <p className="mt-1 text-sm text-zinc-500">{copy.sub}</p>
         {mode === 'signup' && (
           <ul className="mt-4 space-y-1.5 text-xs text-zinc-400">
-            {['Your idea turned into 3 story concepts', 'A 15-scene storyboard in about a minute', 'Free credits, no card, cancel anytime'].map((t) => (
+            {['Connect your TikTok and Instagram accounts', 'Import each video once, post it everywhere', 'Free plan, no card, cancel anytime'].map((t) => (
               <li key={t} className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-violet-400" />{t}</li>
             ))}
           </ul>
         )}
 
-        {mode !== 'forgot' && (
+        {mode !== 'forgot' && googleEnabled && (
           <>
             <button onClick={google} disabled={loading !== null}
               className="mt-6 flex h-11 w-full items-center justify-center gap-3 rounded-xl bg-white text-sm font-medium text-zinc-900 transition hover:bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-60">

@@ -50,6 +50,8 @@ export interface DistributionRepository {
   // library
   listMedia(): Promise<MediaAsset[]>;
   uploadMedia(file: File, meta: { title: string; notes?: string; tags: string[]; duration?: number | null; width?: number | null; height?: number | null }, onProgress: (pct: number) => void): Promise<MediaAsset>;
+  /** Removes a failed or interrupted upload (row + file). */
+  deleteFailedMedia(id: string): Promise<void>;
   updateMedia(id: string, patch: Partial<Pick<MediaAsset, 'title' | 'notes' | 'tags' | 'status'>>): Promise<void>;
   // publications
   listPublications(filter?: { from?: string; to?: string; mediaId?: string; accountId?: string }): Promise<Publication[]>;

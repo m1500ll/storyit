@@ -10,7 +10,7 @@ import { StartLink } from './StartLink';
 const FAN = [
   { tilt: -6, y: 18 }, { tilt: -3, y: 4 }, { tilt: 0, y: -6 }, { tilt: 3, y: 4 }, { tilt: 6, y: 18 },
 ];
-const OUTPUTS = ['Story script', '15 timed scenes', 'Image & motion prompts', 'Consistent characters', 'Subtitles'];
+const OUTPUTS = ['Several TikTok & Instagram accounts', 'One video library', 'Calendar & rotation', 'A caption per account', 'No accidental duplicates'];
 
 export function Hero() {
   const [open, setOpen] = useState<ShowcaseVideo | null>(null);
@@ -20,19 +20,19 @@ export function Hero() {
       <div className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px]" />
       <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-20 text-center md:px-6 md:pt-28">
         <p className="label mx-auto inline-flex items-center gap-2 rounded-full border border-line/10 px-3 py-1">
-          <span className="h-1.5 w-1.5 rounded-full bg-coral-400" /> For TikTok · YouTube Shorts · Reels
+          <span className="h-1.5 w-1.5 rounded-full bg-coral-400" /> For TikTok and Instagram Reels
         </p>
         <h1 className="mx-auto mt-6 max-w-4xl font-display text-5xl leading-[1.05] text-zinc-50 md:text-7xl">
-          Make money with <em className="bg-gradient-to-r from-violet-300 to-coral-300 bg-clip-text italic text-transparent">AI story videos</em>
+          Upload once. Post on every account.
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-base text-zinc-400 md:text-lg">
-          Create the 60-second story episodes that TikTok, YouTube Shorts &amp; Reels pay creators for — written, storyboarded and prompted in minutes. Post every day and turn your views into income.
+          Storyit sends each video to all your TikTok and Instagram accounts on a schedule, writes a caption for each account, and never posts the same video twice to the same account. Your browser can stay closed.
         </p>
         <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-          <StartLink><Button size="lg">Start free — 30 credits <ArrowRight className="h-4 w-4" /></Button></StartLink>
-          <a href="#examples"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> Watch episodes</Button></a>
+          <StartLink to="/app/library"><Button size="lg">Start free <ArrowRight className="h-4 w-4" /></Button></StartLink>
+          <a href="#how"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> See how it works</Button></a>
         </div>
-        <p className="mt-4 text-xs text-zinc-500">No card required · Cancel anytime</p>
+        <p className="mt-4 text-xs text-zinc-500">Free plan, no card required. You approve every post before it goes out.</p>
         <a href="#results" className="group mx-auto mt-6 flex max-w-fit flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] px-5 py-3 transition hover:border-emerald-500/40">
           {RESULT_HIGHLIGHTS.slice(0, 2).map((h) => (
             <span key={h.label} className="text-sm text-zinc-300"><strong className="font-display text-xl tabular-nums text-zinc-50">{h.value}</strong> {h.label}</span>

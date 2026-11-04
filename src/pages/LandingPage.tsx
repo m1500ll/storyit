@@ -22,10 +22,10 @@ export default function LandingPage() {
       <Hero />
       <Showcase />
       <Results />
-      <InlineCTA title="Want episodes like these for your account?" sub="No card required · Cancel anytime" />
+      <InlineCTA title="Want videos like these on all your accounts?" sub="Free plan, no card required" />
       <TimeSaved />
       <Monetization />
-      <InlineCTA title="Start building your series today." sub="30 free credits · no card required" />
+      <InlineCTA title="Start posting on every account today." sub="Free plan, no card required" />
       <HowItWorks />
       <DemoVideo />
       <FeatureGrid />
@@ -34,15 +34,16 @@ export default function LandingPage() {
       <FAQ />
       <FinalCTA />
       <footer className="border-t border-line/[0.05] py-10">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 text-xs text-zinc-600 md:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 text-xs text-zinc-600 sm:flex-row md:px-6">
           <Logo />
           <nav className="flex gap-5">
             <a href="#pricing" className="hover:text-zinc-300">Pricing</a>
             <a href="#faq" className="hover:text-zinc-300">FAQ</a>
             <Link to="/privacy" className="hover:text-zinc-300">Privacy</Link>
-            <a href="mailto:hello@storyit.io" className="hover:text-zinc-300">Contact</a>
+            <Link to="/terms" className="hover:text-zinc-300">Terms</Link>
+            <a href="mailto:hello@storyit.fun" className="hover:text-zinc-300">Contact</a>
           </nav>
-          <span>© {new Date().getFullYear()} Storyit.io</span>
+          <span>© {new Date().getFullYear()} Storyit</span>
         </div>
       </footer>
     </div>

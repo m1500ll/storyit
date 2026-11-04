@@ -1,18 +1,16 @@
 import { ArrowDownRight, ArrowUpRight, Coins } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCredits } from '@/hooks/useStore';
-import { episodesFor } from '@/services/credits';
 import { Card } from './Card';
 
 export function CreditCard() {
   const { balance, transactions } = useCredits();
-  const episodesLeft = episodesFor(balance);
   return (
     <Card className="relative overflow-hidden">
       <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
-      <p className="label flex items-center gap-1.5"><Coins className="h-3 w-3" /> Story Credits</p>
+      <p className="label flex items-center gap-1.5"><Coins className="h-3 w-3" /> AI studio credits</p>
       <p className="mt-2 font-display text-5xl text-zinc-50 tabular-nums">{balance}</p>
-      <p className="mt-1 text-xs text-zinc-500">≈ {episodesLeft} full episodes remaining</p>
+      <p className="mt-1 text-xs text-zinc-500">Used only by the AI studio (beta). Publishing is included in your plan.</p>
       <ul className="mt-5 space-y-2 border-t border-line/5 pt-4">
         {transactions.slice(0, 3).map((t) => (
           <li key={t.id} className="flex items-center justify-between text-xs">

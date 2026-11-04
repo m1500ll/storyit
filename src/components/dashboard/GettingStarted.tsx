@@ -22,7 +22,7 @@ export function GettingStarted({ stories }: { stories: StoryWithScenes[] }) {
   const rendered = stories.some((s) => s.scenes.length > 0 && s.scenes.every((sc) => sc.status === 'generated'));
   const approved = stories.some((s) => Boolean(s.approved_at) || s.status === 'published');
   const steps: Step[] = [
-    { label: 'Create your studio', done: true, hint: '30 free credits added' },
+    { label: 'Create your studio', done: true, hint: 'Free plan active' },
     { label: 'Turn an idea into a storyboard', done: stories.length > 0, to: '/app/new', hint: '≈ 1 minute' },
     { label: 'Render your first episode', done: rendered, to: latest ? `/app/stories/${latest.id}` : '/app/new', hint: 'Clips + voice-over' },
     { label: 'Approve & download the MP4', done: approved, to: latest ? `/app/stories/${latest.id}` : '/app/new', hint: 'Ready to post' },

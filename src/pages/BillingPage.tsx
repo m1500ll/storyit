@@ -5,7 +5,7 @@ import { PlanPicker } from '@/components/billing/PlanPicker';
 import { Button, Card, CardHeader, PageHeader } from '@/components/ui';
 import { useCredits, useProfile } from '@/hooks/useStore';
 import { billingService } from '@/services/billing';
-import { episodesFor, PLANS } from '@/services/credits';
+import { PLANS } from '@/services/credits';
 
 function CheckoutBanner() {
   const [params, setParams] = useSearchParams();
@@ -36,7 +36,7 @@ export default function BillingPage() {
         <Card>
           <p className="label">Balance</p>
           <p className="mt-2 font-display text-4xl tabular-nums text-zinc-50">{balance}</p>
-          <p className="text-xs text-zinc-500">≈ {episodesFor(balance)} full episodes</p>
+          <p className="text-xs text-zinc-500">Used only by the AI studio (beta)</p>
         </Card>
         <Card>
           <p className="label">Current plan</p>

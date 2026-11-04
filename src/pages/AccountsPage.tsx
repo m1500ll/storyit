@@ -79,11 +79,12 @@ export default function AccountsPage() {
               <dl className="mt-4 space-y-1.5 text-xs">
                 <div className="flex justify-between gap-2"><dt className="text-zinc-500">Publishing</dt>
                   <dd className={cn('text-right', a.can_publish ? 'text-emerald-300' : 'text-amber-300')}>{a.can_publish ? <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3 w-3" /> Allowed</span> : 'Not available'}</dd></div>
-                {a.publish_restriction && <dd className="text-[11px] text-amber-200/90">{a.publish_restriction}</dd>}
-                {a.last_error && <dd className="text-[11px] text-coral-300">{a.last_error}</dd>}
+
                 <div className="flex justify-between gap-2"><dt className="text-zinc-500">Permissions</dt><dd className="truncate text-right text-zinc-300">{a.scopes.length ? a.scopes.join(', ') : '—'}</dd></div>
                 <div className="flex justify-between gap-2"><dt className="text-zinc-500">Last check</dt><dd className="text-zinc-300">{a.last_verified_at ? new Date(a.last_verified_at).toLocaleString() : 'Never'}</dd></div>
               </dl>
+              {a.publish_restriction && <p className="mt-1.5 text-[11px] text-amber-300">{a.publish_restriction}</p>}
+              {a.last_error && <p className="mt-1 text-[11px] text-coral-300">{a.last_error}</p>}
               <div className="mt-3">
                 <label htmlFor={`g-${a.id}`} className="sr-only">Group</label>
                 <select id={`g-${a.id}`} value={a.group_id ?? ''} onChange={(e) => run('group', () => distribution.updateAccount(a.id, { group_id: e.target.value || null }))} className={cn(inputCls, 'h-9 text-xs')}>

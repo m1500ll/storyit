@@ -60,6 +60,12 @@ export function createMockDistribution(): DistributionRepository {
       db.media.unshift(m);
       return changed(m);
     },
+    async deleteFailedMedia(id) {
+      const m = db.media.find((x) => x.id === id);
+      if (!m || !['error', 'uploading'].includes(m.status)) throw new Error('Only failed uploads can be removed. Archive the video instead.');
+      db.media = db.media.filter((x) => x.id !== id);
+      changed(undefined);
+    },
     async updateMedia(id, patch) { Object.assign(db.media.find((m) => m.id === id) ?? {}, patch); changed(undefined); },
 
     async listPublications(f = {}) {

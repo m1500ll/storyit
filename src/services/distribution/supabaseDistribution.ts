@@ -98,6 +98,14 @@ export function createSupabaseDistribution(db: SupabaseClient): DistributionRepo
         throw e;
       }
     },
+    async deleteFailedMedia(id) {
+      const row = check(await any.from('media_assets').select('storage_path, status').eq('id', id).maybeSingle()) as { storage_path: string; status: string };
+      if (!row?.storage_path) throw new Error('Video not found');
+      if (!['error', 'uploading'].includes(row.status)) throw new Error('Only failed uploads can be removed. Archive the video instead.');
+      await db.storage.from('library').remove([row.storage_path]).catch(() => undefined);
+      check(await any.from('media_assets').delete().eq('id', id));
+      store.notify();
+    },
     updateMedia: async (id, patch) => done(void check(await any.from('media_assets').update(patch).eq('id', id))),
 
     async listPublications(f = {}) {

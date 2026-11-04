@@ -49,6 +49,15 @@ describe('distribution flows (demo repository)', () => {
     expect(pubs.find((p) => p.account_id === b!.id)!.status).toBe('scheduled');
   });
 
+  it('only failed uploads can be removed', async () => {
+    const d = createMockDistribution();
+    const ok = await d.uploadMedia(file('ok.mp4'), { title: 'OK', tags: [] }, () => {});
+    await expect(d.deleteFailedMedia(ok.id)).rejects.toThrow(/Only failed uploads/);
+    await d.updateMedia(ok.id, { status: 'error' });
+    await d.deleteFailedMedia(ok.id);
+    expect(await d.listMedia()).toEqual([]);
+  });
+
   it('cannot connect real accounts or publish in demo mode', async () => {
     const d = createMockDistribution();
     await expect(d.startConnect('tiktok')).rejects.toThrow(/Demo mode/);

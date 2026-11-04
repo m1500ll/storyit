@@ -2,14 +2,14 @@ import { ChevronDown } from 'lucide-react';
 import { CREDIT_COSTS } from '@/services/credits';
 
 const faqs = [
-  { q: 'What is a Story Credit?', a: `One currency for everything: ${CREDIT_COSTS.conceptGeneration} credit to generate concepts, ${CREDIT_COSTS.sceneBreakdown} for a 15-scene breakdown, ${CREDIT_COSTS.sceneRender} per rendered scene. Retrying a failed scene is free.` },
-  { q: 'Do unused credits roll over?', a: 'Monthly plan credits reset each billing cycle. Top-up packs never expire.' },
-  { q: 'Can AI story videos really be monetised?', a: 'Yes, if they follow each platform’s rules: original content, over one minute on TikTok, and labelled as AI-generated. Earnings are never guaranteed — they depend on your views, audience and consistency. See the monetisation section above for each program’s requirements.' },
-  { q: 'Does Storyit render the final video?', a: 'Storyit writes the story, splits it into 15 timed scenes and generates image & motion prompts plus subtitles today. Built-in rendering (keyframe → animated clip → voice-over → captioned 9:16 MP4) is in early access and rolling out to accounts progressively.' },
-  { q: 'Who owns the videos?', a: 'You do. You can use everything you generate commercially, including on monetised TikTok, Reels and Shorts accounts.' },
-  { q: 'Why do I have to approve each episode?', a: 'AI makes mistakes. The approval gate guarantees a human reviewed every scene. If anything changes after approval, it is automatically revoked.' },
-  { q: 'Is it only for fruit?', a: 'Fruit Drama is our first format because it performs extremely well. More formats (pets, objects, mini-sitcoms) are on the roadmap.' },
-  { q: 'Can I cancel anytime?', a: 'Yes, from Settings → Billing. You keep access until the end of the paid period.' },
+  { q: 'Which platforms does Storyit publish to?', a: 'TikTok and Instagram Reels, through their official APIs. You can connect several accounts on each.' },
+  { q: 'Do you need my passwords?', a: 'No. You log in on TikTok’s and Instagram’s own pages and approve Storyit. You can disconnect an account at any time.' },
+  { q: 'Which Instagram accounts work?', a: 'Professional accounts (Business or Creator). Switching a personal account to professional is free in the Instagram app.' },
+  { q: 'Will my TikTok posts be public?', a: 'You choose the visibility for each post. While TikTok is still reviewing an app, TikTok itself keeps posts private; Storyit shows this on the account before you post.' },
+  { q: 'Can the same video be posted twice by mistake?', a: 'No. A video can go to many accounts, but only once per account. If a publication result is uncertain, Storyit asks you to check instead of reposting.' },
+  { q: 'Who writes the captions?', a: 'You, or the AI, account by account. Each account can have its own tone, language and hashtags. Nothing is posted before you approve it.' },
+  { q: 'What is the AI studio?', a: `A beta feature that turns one idea into a 15-scene story script with image and motion prompts (${CREDIT_COSTS.conceptGeneration} credit for concepts, ${CREDIT_COSTS.sceneBreakdown} for the storyboard). Video rendering is still in beta.` },
+  { q: 'Can I cancel anytime?', a: 'Yes, from Plan & credits. You keep access until the end of the paid period.' },
 ];
 
 export function FAQ() {

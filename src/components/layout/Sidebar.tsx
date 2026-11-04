@@ -4,7 +4,7 @@ import {
 import { NavLink } from 'react-router-dom';
 import { useCredits, useStories } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
-import { episodesFor } from '@/services/credits';
+
 import { useWizard } from '@/services/wizardStore';
 import { usePaywall } from '../billing/Paywall';
 import { Logo } from '../ui';
@@ -91,9 +91,9 @@ export function Sidebar() {
       </nav>
       <div className="mt-auto pt-6">
         <div className="surface p-4">
-          <p className="label flex items-center gap-1.5 text-[10px]"><Coins className="h-3 w-3" /> Story Credits</p>
+          <p className="label flex items-center gap-1.5 text-[10px]"><Coins className="h-3 w-3" /> AI studio credits</p>
           <p className="mt-1 font-display text-3xl tabular-nums text-zinc-50">{balance}</p>
-          <p className="text-[11px] text-zinc-500">≈ {episodesFor(balance)} full episodes</p>
+          <p className="text-[11px] text-zinc-500">For the AI studio (beta)</p>
           <button onClick={() => openPaywall()} className="mt-3 w-full rounded-lg bg-violet-500/15 py-1.5 text-xs font-medium text-violet-300 transition hover:bg-violet-500/25">
             Get more credits
           </button>

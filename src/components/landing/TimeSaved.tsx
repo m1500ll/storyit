@@ -1,21 +1,20 @@
 import { Check, X } from 'lucide-react';
 
 const ROWS = [
-  ['Find a story idea that hooks', 'Hours of scrolling for inspiration', 'Type one sentence, get 3 angles'],
-  ['Write a 60–100s script with a twist', 'Blank page, rewrites', 'Hook → escalation → twist → cliffhanger, structured'],
-  ['Split it into scenes', 'Manual shot list', '15 timed scenes, ready to edit'],
-  ['Write image & motion prompts', '30 prompts typed by hand', 'Generated per scene, with camera moves'],
-  ['Keep characters consistent', 'Re-describe them every prompt', 'Character sheet reused in every prompt'],
-  ['Subtitles', 'Typed and timed manually', 'One-click .srt export'],
-  ['Quality control', 'Hope nothing slips through', 'Mandatory human approval before publishing'],
+  ['Post one video on 6 accounts', 'Upload it 6 times, switch accounts 6 times', 'Upload once, pick the accounts'],
+  ['Write the captions', 'Copy-paste the same text everywhere', 'A caption per account and platform'],
+  ['Post every day at the right time', 'Set alarms, post from your phone', 'A calendar the server follows'],
+  ['Know what went where', 'Notes, screenshots, memory', 'History per video and per account'],
+  ['Avoid reposting the same video', 'Hope you remember', 'Blocked automatically per account'],
+  ['Handle a failed post', 'Notice it days later', 'Clear error, safe retry'],
 ];
 
 export function TimeSaved() {
   return (
     <section id="time" className="mx-auto max-w-6xl px-4 py-20 md:px-6">
       <p className="label text-center">Time</p>
-      <h2 className="mt-3 text-center font-display text-4xl text-zinc-50 md:text-5xl">Stop spending your evenings on pre-production</h2>
-      <p className="mx-auto mt-3 max-w-xl text-center text-sm text-zinc-400">Posting daily is what grows an account. Writing, storyboarding and prompting every episode by hand is what makes creators quit. Storyit does the repetitive part.</p>
+      <h2 className="mt-3 text-center font-display text-4xl text-zinc-50 md:text-5xl">Stop spending your evenings re-uploading the same video</h2>
+      <p className="mx-auto mt-3 max-w-xl text-center text-sm text-zinc-400">Posting daily on several accounts is what grows a network. Doing it by hand is what makes creators quit. Storyit does the repetitive part.</p>
       <ul className="mt-10 space-y-3 md:hidden">
         {ROWS.map(([step, before, after]) => (
           <li key={step} className="surface p-4">

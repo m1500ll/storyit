@@ -189,6 +189,14 @@ describe('migrations & constraints (PostgreSQL)', () => {
     await service(`update plan_limits set max_media_assets = 20 where plan = 'free'`);
   });
 
+  it('customers can delete their failed uploads only', async () => {
+    const bad = (await as(A, `insert into media_assets (user_id, title, storage_path, mime, size_bytes, status) values ($1, 'x', $2, 'video/mp4', 1, 'error') returning id`, [A, `${A}/bad.mp4`])).rows[0]!.id;
+    const good = await video(A);
+    expect((await as(A, `delete from media_assets where id = $1 returning id`, [good])).rows).toEqual([]);
+    expect((await as(B, `delete from media_assets where id = $1 returning id`, [bad])).rows).toEqual([]);
+    expect((await as(A, `delete from media_assets where id = $1 returning id`, [bad])).rows).toHaveLength(1);
+  });
+
   it('rejects uploads outside the customer folder', async () => {
     await expect(as(A, `insert into media_assets (user_id, title, storage_path, mime, size_bytes) values ($1, 't', $2, 'video/mp4', 1)`, [A, `${B}/x.mp4`])).rejects.toThrow(/invalid storage path/);
   });

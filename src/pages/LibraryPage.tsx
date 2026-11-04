@@ -94,7 +94,7 @@ export default function LibraryPage() {
     <>
       <PageHeader eyebrow="Distribution" title="Video library" description="Import each video once, then send it to any of your accounts. Nothing is published from here."
         actions={<>
-          <input ref={fileRef} type="file" accept={ACCEPTED.join(',')} multiple className="sr-only" id="upload" onChange={(e) => onFiles(e.target.files)} />
+          <input ref={fileRef} type="file" accept={ACCEPTED.join(',')} multiple className="sr-only" id="upload" aria-label="Import videos" tabIndex={-1} onChange={(e) => onFiles(e.target.files)} />
           <Button onClick={() => fileRef.current?.click()}><Upload className="h-4 w-4" /> Import videos</Button>
         </>} />
       <div className="mb-4 space-y-2">
@@ -167,6 +167,10 @@ export default function LibraryPage() {
                       <button aria-label={`Archive ${m.title}`} onClick={() => distribution.updateMedia(m.id, { status: 'archived' })} className="ml-auto rounded p-1 text-zinc-500 hover:bg-line/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><Archive className="h-3.5 w-3.5" /></button>
                     )}
                     {state === 'archived' && <button onClick={() => distribution.updateMedia(m.id, { status: 'available' })} className="ml-auto rounded px-1.5 py-1 text-[11px] text-zinc-400 hover:text-zinc-100">Restore</button>}
+                    {(m.status === 'error' || m.status === 'uploading') && (
+                      <button onClick={() => distribution.deleteFailedMedia(m.id).then(() => toast('Failed upload removed.'), (e: Error) => toast(e.message))}
+                        className="ml-auto rounded px-1.5 py-1 text-[11px] text-coral-300 hover:bg-coral-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">Remove</button>
+                    )}
                   </div>
                 </div>
               </li>

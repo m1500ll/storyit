@@ -1,7 +1,9 @@
-import { AlertTriangle, CalendarDays, CheckCircle2, FolderOpen, Link2 } from 'lucide-react';
+import { AlertTriangle, CalendarDays, Check, CheckCircle2, FolderOpen, Link2, X } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { accountLabel, ModeBanner, PlatformDot, PubBadge } from '@/components/distribution/bits';
-import { Card, CardHeader } from '@/components/ui';
+import { Card, CardHeader, ProgressBar } from '@/components/ui';
+import { cn } from '@/lib/cn';
 import { useAccounts, useCampaigns, useIntegrations, useMedia, usePublications } from '@/hooks/useDistribution';
 
 const WEEK = 7 * 86_400_000;
@@ -27,9 +29,16 @@ export function DistributionOverview() {
     { label: 'Published · 7 days', value: published7, icon: CheckCircle2, to: '/app/history' },
     { label: 'Need attention', value: attention, icon: AlertTriangle, to: '/app/history' },
   ];
+  const steps = [
+    { label: 'Connect a TikTok or Instagram account', done: connected.length > 0, to: '/app/accounts' },
+    { label: 'Import a video into your library', done: media.some((m) => m.status === 'available'), to: '/app/library' },
+    { label: 'Schedule it and approve the caption', done: pubs.some((p) => p.metadata_approved), to: '/app/distribute' },
+    { label: 'See your first post confirmed by the platform', done: pubs.some((p) => p.status === 'published'), to: '/app/calendar' },
+  ];
   return (
     <div className="space-y-3">
       {integ && <ModeBanner {...integ} />}
+      <Onboarding steps={steps} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {stats.map(({ label, value, icon: Icon, to }) => (
           <Link key={label} to={to} className="surface p-3 transition-colors hover:border-line/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 sm:p-4">
@@ -64,3 +73,37 @@ export function DistributionOverview() {
     </div>
   );
 }
+
+const DISMISS_KEY = 'storyit:distribution-onboarding-dismissed';
+/** Activation checklist from real data; hidden once complete or dismissed. */
+function Onboarding({ steps }: { steps: { label: string; done: boolean; to: string }[] }) {
+  const [dismissed, setDismissed] = useState(() => { try { return localStorage.getItem(DISMISS_KEY) === '1'; } catch { return false; } });
+  const done = steps.filter((s) => s.done).length;
+  const next = steps.find((s) => !s.done);
+  if (dismissed || !next) return null;
+  return (
+    <Card>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold text-zinc-100">Get your first post out</p>
+          <p className="text-xs text-zinc-500">{done} of {steps.length} done</p>
+        </div>
+        <button onClick={() => { setDismissed(true); try { localStorage.setItem(DISMISS_KEY, '1'); } catch { /* private mode */ } }}
+          aria-label="Hide checklist" className="rounded-lg p-1.5 text-zinc-500 hover:bg-line/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><X className="h-4 w-4" /></button>
+      </div>
+      <div className="mt-3"><ProgressBar value={done} max={steps.length} label="Onboarding progress" /></div>
+      <ol className="mt-4 space-y-1.5">
+        {steps.map((s) => (
+          <li key={s.label}>
+            <Link to={s.to} className={cn('flex items-center gap-3 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-line/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50', s === next ? 'text-zinc-100' : 'text-zinc-500')}>
+              <span className={cn('grid h-5 w-5 shrink-0 place-items-center rounded-full border', s.done ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-line/15')}>{s.done && <Check className="h-3 w-3" />}</span>
+              <span className={cn('flex-1', s.done && 'line-through decoration-zinc-600')}>{s.label}</span>
+              {s === next && <span className="text-xs text-violet-300">Start</span>}
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </Card>
+  );
+}
+

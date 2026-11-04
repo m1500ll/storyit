@@ -56,7 +56,7 @@ export default function SettingsPage() {
         </Card>
         {isSupabaseConfigured && (
           <Card>
-            <CardHeader title="Session" subtitle={`Need to delete your account? Email hello@storyit.io.`} />
+            <CardHeader title="Session" subtitle={`Need to delete your account? Email hello@storyit.fun.`} />
             <Button variant="danger" onClick={() => signOut().then(() => navigate('/'))}><LogOut className="h-4 w-4" /> Sign out</Button>
           </Card>
         )}

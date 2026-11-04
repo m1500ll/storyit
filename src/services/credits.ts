@@ -10,11 +10,11 @@ export const CREDIT_COSTS = {
   thumbnail: 2, // one image variant; refunded if generation fails
 } as const;
 
-/** Plans differ only by credits today — perks must stay true to what the product does. */
+/** Perks must stay true to what the product does. Account/video limits mirror the `plan_limits` table (server-enforced). */
 export const PLANS = [
-  { id: 'free', name: 'Starter', price: 0, credits: 30, period: 'once', perks: ['30 credits on signup, no card', 'Try ideas, concepts & storyboards', 'All exports included'] },
-  { id: 'creator', name: 'Creator', price: 29, credits: 300, period: 'month', perks: ['Everything in Starter', 'Free scene retries', 'Top up anytime with credit packs'], featured: true },
-  { id: 'studio', name: 'Studio', price: 99, credits: 1200, period: 'month', perks: ['Everything in Creator', 'Lowest cost per episode', 'Built for daily posting on several accounts'] },
+  { id: 'free', name: 'Starter', price: 0, credits: 30, period: 'once', perks: ['2 TikTok or Instagram accounts', '20 videos in your library', 'Calendar, per-account captions, history', '30 credits for the AI studio (beta)'] },
+  { id: 'creator', name: 'Creator', price: 29, credits: 300, period: 'month', perks: ['10 social accounts, grouped as you like', '500 videos in your library', 'Daily rotation campaigns', '300 AI studio credits / month'], featured: true },
+  { id: 'studio', name: 'Studio', price: 99, credits: 1200, period: 'month', perks: ['Unlimited accounts and videos', 'Everything in Creator', 'Built for agencies and account networks', '1,200 AI studio credits / month'] },
 ] as const;
 
 export const estimateEpisodeCost = (sceneCount: number) => sceneCount * CREDIT_COSTS.sceneRender;
