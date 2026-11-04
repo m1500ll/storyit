@@ -27,6 +27,12 @@ describe('mode A — simultaneous', () => {
     expect(planned).toHaveLength(5);
     expect(skipped).toEqual([{ account_id: 'tt2', reason: expect.stringMatching(/Already/) }]);
   });
+
+  it('gives a new schedule a fresh key, so re-scheduling after a cancel is not taken for a duplicate', () => {
+    const first = planSimultaneous('v1', [accounts[0]!], 'x', new Set(), {}, 'a').planned[0]!;
+    const again = planSimultaneous('v1', [accounts[0]!], 'x', new Set(), {}, 'b').planned[0]!;
+    expect(first.idempotency_key).not.toBe(again.idempotency_key);
+  });
 });
 
 describe('mode B — rotation', () => {

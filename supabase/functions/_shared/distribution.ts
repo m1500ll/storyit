@@ -96,12 +96,15 @@ export function isValidTimeZone(tz: string) {
 export function planSimultaneous(
   mediaId: string, accounts: TargetAccount[], defaultAt: string, existing: Set<DestinationKey>,
   times: Record<string, string> = {},
+  // Per-request nonce: a cancelled or failed publication keeps its key, so a fresh schedule must not reuse it.
+  // Real duplicates are still blocked by `existing` and the partial unique index on (media_id, account_id).
+  batch: string = Date.now().toString(36),
 ): { planned: PlannedPublication[]; skipped: { account_id: string; reason: string }[] } {
   const planned: PlannedPublication[] = [];
   const skipped: { account_id: string; reason: string }[] = [];
   for (const a of uniqueById(accounts)) {
     if (existing.has(destKey(mediaId, a.id))) { skipped.push({ account_id: a.id, reason: 'Already published or scheduled on this account' }); continue; }
-    planned.push({ media_id: mediaId, account_id: a.id, platform: a.platform, scheduled_at: times[a.id] ?? defaultAt, idempotency_key: `once:${mediaId}:${a.id}` });
+    planned.push({ media_id: mediaId, account_id: a.id, platform: a.platform, scheduled_at: times[a.id] ?? defaultAt, idempotency_key: `once:${mediaId}:${a.id}:${batch}` });
   }
   return { planned, skipped };
 }
