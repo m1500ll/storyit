@@ -1,6 +1,7 @@
-import { Clapperboard, Clock, Plus, Sparkles, Wand2 } from 'lucide-react';
+import { Clapperboard, Clock, Plus, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DistributionOverview } from '@/components/dashboard/DistributionOverview';
+import { PromptStudioHero } from '@/components/dashboard/PromptStudioHero';
 import { FirstRun } from '@/components/dashboard/FirstRun';
 import { GettingStarted } from '@/components/dashboard/GettingStarted';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
@@ -25,8 +26,9 @@ export default function DashboardPage() {
   return (
     <>
       <PageHeader eyebrow="Overview" title={profile?.display_name ? `Good to see you, ${profile.display_name.split(' ')[0]}` : 'Your studio'}
-        description="Your distribution at a glance. The AI episode studio below is in beta."
-        actions={<Button onClick={() => navigate('/app/distribute')}><Plus className="h-4 w-4" /> Distribute videos</Button>} />
+        description="Write your next story, then post it everywhere."
+        actions={<Button variant="secondary" onClick={() => navigate('/app/distribute')}><Plus className="h-4 w-4" /> Distribute videos</Button>} />
+      <PromptStudioHero />
       <div className="mb-8"><DistributionOverview /></div>
       {beta ? (
         <>
@@ -53,16 +55,7 @@ export default function DashboardPage() {
         <CreditCard />
       </div>
         </>
-      ) : (
-        <Card className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Wand2 className="h-5 w-5 shrink-0 text-violet-300" aria-hidden />
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-zinc-100">Write your next Fruit Drama with the Prompt Studio</p>
-            <p className="text-xs text-zinc-400">3 story options, a full script, and ready-to-paste image and video prompts. 15 credits per project, or free with your own Gemini key.</p>
-          </div>
-          <Button onClick={() => navigate('/app/prompts')}>Open the Prompt Studio</Button>
-        </Card>
-      )}
+      ) : null}
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { Check, ChevronLeft, Copy, Loader2, RefreshCw, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { GeminiKeyCard } from '@/components/prompts/GeminiKeyCard';
 import { SceneImages } from '@/components/prompts/SceneImages';
 import { Button, Card, LoadState, PageHeader, useToast } from '@/components/ui';
@@ -79,7 +79,8 @@ function Waiting({ text }: { text: string }) {
 
 function Start() {
   const cost = useCost();
-  const [idea, setIdea] = useState('');
+  const [params] = useSearchParams();
+  const [idea, setIdea] = useState(() => params.get('idea')?.slice(0, 600) ?? ''); // prefilled from the dashboard
   const { run, busy, error } = useGenerate();
   const navigate = useNavigate();
   const { data: projects = [], loading } = useLiveQuery(() => promptStudio.list(), 'prompt-projects');
