@@ -32,7 +32,12 @@ async function call(url: string, init: RequestInit & { sent?: boolean } = {}) {
   // OAuth token endpoints may answer 200 with { error: "invalid_grant", error_description }.
   const oauthErr = typeof body?.error === 'string' && body.error && !body.access_token ? body.error : null;
   if (!res.ok || ttErr || oauthErr) {
-    const msg = ttErr?.message || body?.error?.message || body?.error_description || body?.error_message || oauthErr || text.slice(0, 200) || `HTTP ${res.status}`;
+    const TT_HINTS: Record<string, string> = {
+      unaudited_client_can_only_post_to_private_accounts: 'TikTok only accepts posts to PRIVATE accounts until the Storyit app is audited. In the TikTok app: Profile → ☰ → Settings and privacy → Privacy → turn on "Private account", then retry.',
+      spam_risk_too_many_posts: 'TikTok daily posting limit reached for this account. Try again tomorrow.',
+    };
+    const hint = ttErr?.code ? TT_HINTS[String(ttErr.code)] : undefined;
+    const msg = hint || ttErr?.message || body?.error?.message || body?.error_description || body?.error_message || oauthErr || text.slice(0, 200) || `HTTP ${res.status}`;
     throw new PlatformError(String(msg), res.ok ? 400 : res.status, Boolean(init.sent), ttErr?.code ?? body?.error?.code ?? oauthErr ?? undefined);
   }
   return body;
