@@ -33,7 +33,11 @@ async function callGemini(key: string, model: string, body: unknown, timeoutMs: 
   } catch {
     throw new GeminiError('overloaded', 0);
   }
-  if (!res.ok) throw new GeminiError(classifyGeminiError(res.status, await res.text()), res.status);
+  if (!res.ok) {
+    const text = await res.text();
+    console.error('gemini', model, res.status, text.slice(0, 400)); // Google's reason (never contains the key)
+    throw new GeminiError(classifyGeminiError(res.status, text), res.status);
+  }
   return await res.json();
 }
 
