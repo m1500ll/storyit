@@ -41,8 +41,32 @@ async function callGemini(key: string, model: string, body: unknown, timeoutMs: 
   return await res.json();
 }
 
+/**
+ * Last-resort text provider when Storyit's Gemini key is out of quota: any OpenAI-compatible API with a free tier
+ * (Groq, Cerebras, OpenRouter…). Secrets: BACKUP_LLM_URL (base, e.g. https://api.groq.com/openai/v1), BACKUP_LLM_KEY, BACKUP_LLM_MODEL.
+ * Not used for users' own Gemini keys.
+ */
+async function backupText(prompt: string, schema: unknown, timeoutMs: number) {
+  const base = Deno.env.get('BACKUP_LLM_URL'), key = Deno.env.get('BACKUP_LLM_KEY'), model = Deno.env.get('BACKUP_LLM_MODEL');
+  if (!base || !key || !model) return null;
+  const res = await fetch(`${base.replace(/\/$/, '')}/chat/completions`, {
+    method: 'POST', signal: AbortSignal.timeout(timeoutMs),
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model, temperature: 1, max_tokens: 16000, response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: `${MASTER_PROMPT}\n\nRéponds UNIQUEMENT avec un objet JSON valide qui respecte ce schéma (types Gemini : OBJECT, ARRAY, STRING, INTEGER) :\n${JSON.stringify(schema)}` },
+        { role: 'user', content: prompt },
+      ],
+    }),
+  });
+  if (!res.ok) { console.error('backup llm', res.status, (await res.text()).slice(0, 300)); return null; }
+  const text = (await res.json())?.choices?.[0]?.message?.content;
+  try { return text ? JSON.parse(String(text).replace(/^```(?:json)?\s*|\s*```$/g, '')) : null; } catch { return null; }
+}
+
 /** Text phase: one long attempt on the main model, then the fallback; stays under the Edge Function limit. */
-async function generateText(key: string, prompt: string, schema: unknown) {
+async function generateText(key: string, prompt: string, schema: unknown, allowBackup = false) {
   const started = Date.now();
   let last: GeminiError = new GeminiError('other', 0);
   for (const model of [TEXT_MODEL, TEXT_FALLBACK]) {
@@ -59,7 +83,16 @@ async function generateText(key: string, prompt: string, schema: unknown) {
       return JSON.parse(text);
     } catch (e) {
       last = e instanceof GeminiError ? e : new GeminiError('other', 0);
-      if (['invalid', 'no_billing'].includes(last.problem)) break; // switching model won't help
+      // Only a bad key makes the fallback pointless. Quotas are per model (the free tier of Flash-Lite is separate
+      // and larger than Flash), so a 429 "free_tier" on the main model must still try the fallback.
+      if (last.problem === 'invalid') break;
+    }
+  }
+  if (allowBackup && last.problem !== 'blocked') {
+    const left = 140_000 - (Date.now() - started);
+    if (left > 15_000) {
+      const out = await backupText(prompt, schema, left - 5_000).catch(() => null);
+      if (out) return out;
     }
   }
   throw last;
@@ -180,7 +213,7 @@ Deno.serve(async (req) => {
 
   const idea = String(body.idea ?? project?.idea ?? '').trim().slice(0, 600);
   try {
-    const raw = await generateText(ownKey ?? Deno.env.get('GEMINI_API_KEY') ?? '', buildPhasePrompt(phase, { ...data, idea, feedback: String(body.feedback ?? '').slice(0, 600) }), PHASES[phase].schema);
+    const raw = await generateText(ownKey ?? Deno.env.get('GEMINI_API_KEY') ?? '', buildPhasePrompt(phase, { ...data, idea, feedback: String(body.feedback ?? '').slice(0, 600) }), PHASES[phase].schema, !ownKey);
     data[PHASES[phase].key] = normalizePhase(phase, raw);
     for (const later of PHASES[phase].invalidates) delete data[later];
     if (phase === 'concepts' || phase === 'script' || phase === 'images') delete data.image_files; // images no longer match
