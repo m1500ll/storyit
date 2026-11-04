@@ -10,6 +10,7 @@ import { MASTER_PROMPT, PHASES, buildPhasePrompt, normalizePhase, type PhaseKey 
 import { classifyGeminiError, GeminiError, KEY_MESSAGES, keyHint, looksLikeGeminiKey } from '../_shared/geminiKey.ts';
 import { decrypt, encrypt } from '../_shared/social.ts';
 import { backups, backupText } from '../_shared/backupLlm.ts';
+import { reserveAi } from '../_shared/aiBudget.ts';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
 const TEXT_MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
@@ -27,6 +28,7 @@ const cors = {
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
 
 async function callGemini(key: string, model: string, body: unknown, timeoutMs: number) {
+  try { await reserveAi(model === IMAGE_MODEL ? 'image' : 'text'); } catch { throw new GeminiError('quota', 429); } // daily ceiling: behaves like a quota
   let res: Response;
   try {
     res = await fetch(`${API}/models/${model}:generateContent`, {

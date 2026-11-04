@@ -205,6 +205,15 @@ describe('migrations & constraints (PostgreSQL)', () => {
     expect((await as(A, `delete from media_assets where id = $1 returning id`, [bad])).rows).toHaveLength(1);
   });
 
+  it('caps the daily AI spend and refuses once the ceiling is reached', async () => {
+    const r = async (usd: number) => (await service(`select reserve_ai_spend('image', $1, 1) ok`, [usd])).rows[0]!.ok;
+    expect(await r(0.6)).toBe(true);
+    expect(await r(0.3)).toBe(true);
+    expect(await r(0.2)).toBe(false); // 0.9 + 0.2 > 1
+    await expect(as(A, `select reserve_ai_spend('image', 0, 100)`)).rejects.toThrow(/permission denied/);
+    await expect(as(A, `select * from ai_spend`)).resolves.toMatchObject({ rows: [] });
+  });
+
   it('Gemini keys are never readable or writable by customers, not even their own', async () => {
     await service(`insert into user_ai_keys (user_id, key_enc, key_hint) values ($1, 'v1:enc', 'abcd')`, [A]);
     await expect(as(A, `select * from user_ai_keys`)).rejects.toThrow(/permission denied/);

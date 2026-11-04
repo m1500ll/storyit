@@ -3,6 +3,7 @@
 // Secrets required: GEMINI_API_KEY. Optional: GEMINI_MODEL (default below).
 // Single-file on purpose so it can be pasted into the Supabase dashboard editor.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { reserveAi } from '../_shared/aiBudget.ts';
 
 const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
 // Used when the main model stays overloaded. Set GEMINI_FALLBACK_MODEL to "none" to disable.
@@ -163,6 +164,7 @@ class GeminiHttpError extends Error {
 }
 
 async function requestGemini<T>(model: string, prompt: string, schema: unknown, key: string, timeoutMs: number): Promise<T> {
+  await reserveAi('text');
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     signal: AbortSignal.timeout(timeoutMs),

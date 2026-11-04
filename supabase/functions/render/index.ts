@@ -6,6 +6,7 @@
 // Secrets: GEMINI_API_KEY (required). Optional model overrides (Google renames models often):
 //   GEMINI_IMAGE_MODEL, VIDEO_MODEL, GEMINI_TTS_MODEL, TTS_VOICE, RENDER_CREDITS_PER_SCENE
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
+import { type AiKind, reserveAi } from '../_shared/aiBudget.ts';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
 const IMAGE_MODEL = Deno.env.get('GEMINI_IMAGE_MODEL') ?? 'gemini-3.1-flash-image';
@@ -50,6 +51,12 @@ const key = () => {
 };
 
 async function google(path: string, body?: unknown) {
+  if (body) {
+    const kind: AiKind = path === 'interactions' ? 'video_clip' : path.includes(TTS_MODEL) ? 'tts' : path.includes(IMAGE_MODEL) ? 'image' : 'text';
+    // Video clips are the expensive part: off unless explicitly enabled (secret VIDEO_RENDER_ENABLED=true).
+    if (kind === 'video_clip' && Deno.env.get('VIDEO_RENDER_ENABLED') !== 'true') throw new Error('La génération vidéo est désactivée pour le moment.');
+    await reserveAi(kind);
+  }
   const res = await fetch(`${API}/${path}`, {
     method: body ? 'POST' : 'GET',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key() },

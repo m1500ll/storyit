@@ -2,6 +2,7 @@
 // Manual edits are never overwritten unless the user explicitly forces a regeneration of that one post.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { generateVariant } from '../_shared/captions.ts';
+import { reserveAi } from '../_shared/aiBudget.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +32,7 @@ Deno.serve(async (req) => {
     if (!['draft', 'scheduled', 'failed'].includes(p.status)) { results.push({ id: p.id, ok: false, skipped: 'Already being published' }); continue; }
     if (p.caption_edited && !body.force) { results.push({ id: p.id, ok: false, skipped: 'Kept your manual edit' }); continue; }
     try {
+      await reserveAi('caption');
       const v = await generateVariant(key, MODEL, p.platform, p.media_assets, p.social_accounts?.editorial ?? {}, p.social_accounts ?? {});
       const { error } = await db.from('scheduled_publications').update({
         caption: v.caption, hook: v.hook, hashtags: v.hashtags, title: v.title, metadata_warnings: v.warnings, metadata_source: 'ai', caption_edited: false, metadata_approved: false,

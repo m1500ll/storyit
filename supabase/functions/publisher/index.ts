@@ -11,6 +11,7 @@ import { generateVariant } from '../_shared/captions.ts';
 import { instagram, tiktok } from '../_shared/social.ts';
 import { accessToken, refreshDueTokens } from '../_shared/tokens.ts';
 import { poll, start, type WorkerDeps } from '../_shared/worker.ts';
+import { reserveAi } from '../_shared/aiBudget.ts';
 
 const deps: WorkerDeps = { accessToken, tiktok, instagram, fetchFile: (url, range) => fetch(url, { ...(range ? { headers: { Range: range } } : {}), signal: AbortSignal.timeout(120_000) }) };
 
@@ -64,6 +65,7 @@ async function planCampaigns(db: SupabaseClient) {
           row.metadata_warnings = ['TikTok: confirm visibility, disclosure and declaration, then approve this post'];
         } else if (cfg.auto_approve) {
           try {
+            await reserveAi('caption');
             const v = await generateVariant(Deno.env.get('GEMINI_API_KEY') ?? '', Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash', p.platform,
               { title: video.title, notes: video.notes, tags: video.tags }, account.editorial ?? {}, account);
             Object.assign(row, { caption: v.caption, hook: v.hook, hashtags: v.hashtags, title: v.title, metadata_warnings: v.warnings, metadata_source: 'ai', metadata_approved: true });
