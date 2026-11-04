@@ -92,7 +92,14 @@ export default function PublicationsPage({ history = false }: { history?: boolea
       </div>
 
       {loading || error ? <LoadState loading={loading} error={error} /> : rows.length === 0 ? (
-        <Card className="py-10 text-center text-sm text-zinc-400">{history ? 'No publication attempt yet.' : 'Nothing scheduled in this period.'}</Card>
+        <Card className="py-10 text-center text-sm text-zinc-400">
+          {platform || account || video || status ? (
+            <>
+              <p>Nothing matches these filters.</p>
+              <button type="button" className="mt-2 text-violet-300 hover:text-violet-200" onClick={() => { setPlatform(''); setAccount(''); setVideo(''); setStatus(''); }}>Show all publications</button>
+            </>
+          ) : history ? 'No publication attempt yet.' : 'Nothing scheduled in this period.'}
+        </Card>
       ) : (
         <div className="space-y-5">
           {[...byDay.entries()].map(([day, list]) => (
