@@ -34,5 +34,6 @@ describe('Prompt Studio', () => {
     expect(pack.titles).toHaveLength(5);
     expect(pack.hashtags).toEqual(['#AIFruit', '#FruitDrama']);
     expect(pack.thumbnail.aspect_ratio).toBe('9:16');
+    expect(normalizePhase('pack', { hashtags: ['#FruitDrama #AIFruit #PixarStyle', 'DrameFamilial'] }).hashtags).toEqual(['#FruitDrama', '#AIFruit', '#PixarStyle', '#DrameFamilial']);
   });
 });

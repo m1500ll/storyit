@@ -1,6 +1,8 @@
 import { Check, ChevronLeft, Copy, Loader2, RefreshCw, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { GeminiKeyCard } from '@/components/prompts/GeminiKeyCard';
+import { SceneImages } from '@/components/prompts/SceneImages';
 import { Button, Card, LoadState, PageHeader, useToast } from '@/components/ui';
 import { usePaywall } from '@/components/billing/Paywall';
 import { useLiveQuery } from '@/hooks/useStore';
@@ -16,6 +18,12 @@ const STEPS: { key: PhaseKey; label: string; waiting: string }[] = [
   { key: 'pack', label: 'Miniature & SEO', waiting: 'Écriture de la miniature, des titres et des hashtags…' },
 ];
 const pretty = (o: unknown) => JSON.stringify(o, null, 2);
+/** With the user's own Gemini key, phases cost no Storyit credits. */
+function useCost() {
+  const { data: key } = useLiveQuery(() => promptStudio.keyStatus(), 'gemini-key');
+  const own = Boolean(key?.connected && key.status !== 'invalid');
+  return { key, label: own ? 'gratuit avec votre clé' : '1 crédit' };
+}
 
 function CopyBtn({ text, label = 'Copier' }: { text: string; label?: string }) {
   const [done, setDone] = useState(false);
@@ -69,6 +77,7 @@ function Waiting({ text }: { text: string }) {
 }
 
 function Start() {
+  const cost = useCost();
   const [idea, setIdea] = useState('');
   const { run, busy, error } = useGenerate();
   const navigate = useNavigate();
@@ -78,6 +87,7 @@ function Start() {
       <PageHeader eyebrow="Studio IA · Bêta" title="Prompt Studio"
         description="Storyit écrit avec vous une histoire Fruit Drama de plus d'une minute, étape par étape, puis vous donne les prompts JSON à coller dans Gemini (images) et Google Flow (vidéos)." />
       {!promptStudio.available && <div className="mb-4"><LoadState loading={false} error="Le Prompt Studio a besoin du serveur Storyit (mode démo)." /></div>}
+      <div className="mb-4"><GeminiKeyCard /></div>
       {busy ? <Waiting text={STEPS[0]!.waiting} /> : (
         <Card>
           <label htmlFor="idea" className="text-sm font-medium text-zinc-100">Une idée de départ ? <span className="font-normal text-zinc-500">(facultatif)</span></label>
@@ -85,9 +95,9 @@ function Start() {
             className="mt-2 w-full rounded-xl border border-line/10 bg-transparent p-3 text-sm text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" />
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <Button disabled={!promptStudio.available} onClick={async () => { const p = await run({ phase: 'concepts', idea }); if (p) navigate(`/app/prompts/${p.id}`); }}>
-              <Sparkles className="h-4 w-4" /> Générer un prompt complet · 1 crédit
+              <Sparkles className="h-4 w-4" /> Générer un prompt complet · {cost.label}
             </Button>
-            <span className="text-xs text-zinc-500">5 étapes, 1 crédit chacune, débité seulement si l'étape réussit.</span>
+            <span className="text-xs text-zinc-500">{cost.label === '1 crédit' ? "5 étapes, 1 crédit chacune, débité seulement si l'étape réussit." : '5 étapes, sur votre compte Google : 0 crédit Storyit.'}</span>
           </div>
           {error && <p role="alert" className="mt-3 text-xs text-coral-300">{error}</p>}
         </Card>
@@ -114,6 +124,7 @@ function Start() {
 function Project({ id }: { id: string }) {
   const { data: project, loading, error: loadError } = useLiveQuery(() => promptStudio.get(id), `prompt-project:${id}`);
   const { run, busy, error } = useGenerate();
+  const cost = useCost();
   const [view, setView] = useState<PhaseKey | null>(null);
   const [feedback, setFeedback] = useState('');
   const d = project?.data ?? {};
@@ -134,7 +145,7 @@ function Project({ id }: { id: string }) {
         className="mt-1.5 h-10 w-full rounded-xl border border-line/10 bg-transparent px-3 text-sm text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" />
       <div className="mt-3 flex flex-wrap gap-2">
         {children}
-        <Button variant="ghost" onClick={() => redo(phase)} disabled={Boolean(busy)}><RefreshCw className="h-4 w-4" /> Régénérer cette étape · 1 crédit</Button>
+        <Button variant="ghost" onClick={() => redo(phase)} disabled={Boolean(busy)}><RefreshCw className="h-4 w-4" /> Régénérer cette étape · {cost.label}</Button>
       </div>
     </Card>
   );
@@ -170,7 +181,7 @@ function Project({ id }: { id: string }) {
                     <ul className="mt-1 space-y-1 text-xs text-zinc-300">{c.characters.map((p) => <li key={p.name}><strong className="text-zinc-100">{p.name}</strong> ({p.fruit}) · {p.role}</li>)}</ul>
                     <p className="mt-3 text-xs text-zinc-500">Lieux</p>
                     <p className="mt-1 text-xs text-zinc-300">{c.locations.join(' → ')}</p>
-                    <Button className="mt-4 w-full" onClick={() => next('script', { choice: i })}>Choisir l'option {i + 1} · 1 crédit</Button>
+                    <Button className="mt-4 w-full" onClick={() => next('script', { choice: i })}>Choisir l'option {i + 1} · {cost.label}</Button>
                   </Card>
                 ))}
               </div>
@@ -194,21 +205,22 @@ function Project({ id }: { id: string }) {
                   <Card><p className="text-xs text-zinc-500">Feuille de route des lieux</p><p className="mt-2 text-xs text-zinc-300">{d.script.locations.join(' → ')}</p></Card>
                 </div>
               </div>
-              {adjust('script', <Button onClick={() => next('images')}>Valider le script → prompts image · 1 crédit</Button>)}
+              {adjust('script', <Button onClick={() => next('images')}>Valider le script → prompts image · {cost.label}</Button>)}
             </>
           )}
           {shown === 'images' && d.images && (
             <>
-              <Guide text="Collez chaque bloc dans Gemini (création d'image), un par scène, et téléchargez les images." all={d.images} />
+              <SceneImages project={project} scenes={d.images} keyStatus={cost.key} />
+              <Guide text="Sans clé connectée : collez chaque bloc dans Gemini (création d'image), un par scène." all={d.images} />
               <div className="grid gap-3 md:grid-cols-2">{d.images.map((p) => <JsonBlock key={p.scene_number} title={`Scène ${p.scene_number} · ${p.location_environment}`} value={p} />)}</div>
-              {adjust('images', <Button onClick={() => next('videos')}>Valider → prompts vidéo · 1 crédit</Button>)}
+              {adjust('images', <Button onClick={() => next('videos')}>Valider → prompts vidéo · {cost.label}</Button>)}
             </>
           )}
           {shown === 'videos' && d.videos && (
             <>
               <Guide text="Dans Google Flow : importez l'image de la scène, collez le bloc correspondant, générez. Recommencez pour chaque scène." all={d.videos} />
               <div className="grid gap-3 md:grid-cols-2">{d.videos.map((p) => <JsonBlock key={p.scene_number} title={`Scène ${p.scene_number}`} value={p} />)}</div>
-              {adjust('videos', <Button onClick={() => next('pack')}>Valider → miniature & SEO · 1 crédit</Button>)}
+              {adjust('videos', <Button onClick={() => next('pack')}>Valider → miniature & SEO · {cost.label}</Button>)}
             </>
           )}
           {shown === 'pack' && d.pack && (

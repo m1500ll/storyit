@@ -197,6 +197,20 @@ describe('migrations & constraints (PostgreSQL)', () => {
     expect((await as(A, `delete from media_assets where id = $1 returning id`, [bad])).rows).toHaveLength(1);
   });
 
+  it('Gemini keys are never readable or writable by customers, not even their own', async () => {
+    await service(`insert into user_ai_keys (user_id, key_enc, key_hint) values ($1, 'v1:enc', 'abcd')`, [A]);
+    await expect(as(A, `select * from user_ai_keys`)).rejects.toThrow(/permission denied/);
+    await expect(as(A, `update user_ai_keys set key_hint = 'x'`)).rejects.toThrow(/permission denied/);
+    await expect(as(B, `insert into user_ai_keys (user_id, key_enc, key_hint) values ($1, 'x', 'x')`, [B])).rejects.toThrow(/permission denied/);
+  });
+
+  it('prompt projects are private to their owner', async () => {
+    const id = (await service(`insert into prompt_projects (user_id, title, data) values ($1, 'Fraise', '{}') returning id`, [A])).rows[0]!.id;
+    expect((await as(A, `select id from prompt_projects where id = $1`, [id])).rows).toHaveLength(1);
+    expect((await as(B, `select id from prompt_projects where id = $1`, [id])).rows).toEqual([]);
+    expect((await as(B, `delete from prompt_projects where id = $1 returning id`, [id])).rows).toEqual([]);
+  });
+
   it('rejects uploads outside the customer folder', async () => {
     await expect(as(A, `insert into media_assets (user_id, title, storage_path, mime, size_bytes) values ($1, 't', $2, 'video/mp4', 1)`, [A, `${B}/x.mp4`])).rejects.toThrow(/invalid storage path/);
   });

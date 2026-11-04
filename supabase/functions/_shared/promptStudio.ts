@@ -61,7 +61,7 @@ const packSchema = obj({
   thumbnail: obj({ aspect_ratio: S('9:16'), style: S(), prompt: S('Émotion extrême, contraste fort, effet choc') }),
   titles: arr(S(), '5 titres viraux'),
   caption: S('Légende dramatique avec appel à l’action'),
-  hashtags: arr(S(), 'Hashtags de niche et tendance'),
+  hashtags: arr(S('Un seul hashtag par élément, avec #'), 'Entre 8 et 15 hashtags de niche et tendance, chacun dans un élément séparé'),
 });
 
 export const PHASES: Record<PhaseKey, { number: 1 | 2 | 3 | 4 | 5; key: string; label: string; schema: unknown; requires: string[]; invalidates: string[] }> = {
@@ -86,7 +86,7 @@ export function buildPhasePrompt(phase: PhaseKey, ctx: Record<string, any>): str
     case 'videos':
       return `ÉTAPE 4 — PROMPTS D'ANIMATION ET DE VIDÉO AVEC DIALOGUES, UN PAR SCÈNE. Script validé : ${JSON.stringify(ctx.script)}\nPrompts image validés : ${JSON.stringify(ctx.images)}\nPour CHAQUE scène : scene_number, aspect_ratio "9:16", camera_motion précis, character_action (micro-expressions, mouvements de bouche, pleurs, déplacements), dialogue (personnage, ton de voix, réplique exacte) et un prompt vidéo complet cohérent avec l'image de la scène.${tweak}`;
     case 'pack':
-      return `ÉTAPE 5 — MINIATURE ET PACK SEO. Script validé : ${JSON.stringify(ctx.script)}\nDonne : un prompt de miniature 9:16 à fort taux de clic (émotion extrême, contraste, effet choc), 5 titres viraux pour TikTok/Shorts/Reels, une légende dramatique avec appel à l'action, et des hashtags de niche et tendance (#AIFruit #FruitDrama…).${tweak}`;
+      return `ÉTAPE 5 — MINIATURE ET PACK SEO. Script validé : ${JSON.stringify(ctx.script)}\nDonne : un prompt de miniature 9:16 à fort taux de clic (émotion extrême, contraste, effet choc), 5 titres viraux pour TikTok/Shorts/Reels, une légende dramatique avec appel à l'action, et 8 à 15 hashtags de niche et tendance (#AIFruit #FruitDrama…), un par élément de la liste.${tweak}`;
   }
 }
 
@@ -119,7 +119,11 @@ export function normalizePhase(phase: PhaseKey, raw: any): any {
         thumbnail: { aspect_ratio: '9:16', style: str(raw?.thumbnail?.style, 300), prompt: str(raw?.thumbnail?.prompt) },
         titles: (Array.isArray(raw?.titles) ? raw.titles : []).slice(0, 5).map((t: unknown) => str(t, 150)),
         caption: str(raw?.caption, 2200),
-        hashtags: [...new Set((Array.isArray(raw?.hashtags) ? raw.hashtags : []).map((h: unknown) => '#' + str(h, 60).replace(/^#+/, '').replace(/\s+/g, '')))].filter((h): h is string => typeof h === 'string' && h.length > 1).slice(0, 15),
+        // Accept "#A #B" in one item too: split on spaces/commas before cleaning.
+        hashtags: [...new Set((Array.isArray(raw?.hashtags) ? raw.hashtags : [])
+          .flatMap((h: unknown) => str(h, 400).split(/[\s,]+(?=#)|,\s*/))
+          .map((h: string) => '#' + h.trim().replace(/^#+/, '').replace(/\s+/g, '').slice(0, 60)))]
+          .filter((h): h is string => typeof h === 'string' && h.length > 1).slice(0, 15),
       };
   }
 }
