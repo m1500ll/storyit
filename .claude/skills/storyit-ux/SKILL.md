@@ -8,6 +8,7 @@ description: UX/UI quality bar for Storyit.io. Use before building or reviewing 
 Sources: Vercel Web Interface Guidelines (github.com/vercel-labs/web-interface-guidelines),
 r/SaaS landing-page threads (secondhand summaries), first-run/empty-state guidance for AI tools.
 Run the checklist at the end before calling UI work done.
+Full rule set: `references/web-interface-guidelines.md` (Vercel, MUST/SHOULD/NEVER). For visual direction on new pages, also follow the `frontend-design` skill.
 
 ## Brand & visual system
 - Dark studio: `bg-ink-950` page, `surface` cards, borders `white/[0.06]`. Accents: violet (primary action), coral (secondary highlight). Never add new colours ad hoc — extend `tailwind.config.js`.
@@ -57,4 +58,6 @@ Run the checklist at the end before calling UI work done.
 - [ ] Empty, loading, error and success states all designed.
 - [ ] Every paid action shows its cost; out-of-credits path leads to the paywall.
 - [ ] No fake social proof.
+- [ ] Inputs are ≥16px on mobile (no iOS zoom); hit targets ≥24px (≥44px on touch).
+- [ ] Features that are not live (beta, not configured) say so explicitly.
 - [ ] `npm run build` passes; screenshot desktop + iPhone in Playwright.
