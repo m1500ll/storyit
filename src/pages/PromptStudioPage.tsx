@@ -8,6 +8,7 @@ import { usePaywall } from '@/components/billing/Paywall';
 import { useLiveQuery } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
 import { InsufficientCreditsError } from '@/services/errors';
+import { PROMPT_PROJECT_COST } from '@/services/credits';
 import { promptStudio, type PhaseKey } from '@/services/promptStudio';
 
 const STEPS: { key: PhaseKey; label: string; waiting: string }[] = [
@@ -18,11 +19,11 @@ const STEPS: { key: PhaseKey; label: string; waiting: string }[] = [
   { key: 'pack', label: 'Miniature & SEO', waiting: 'Écriture de la miniature, des titres et des hashtags…' },
 ];
 const pretty = (o: unknown) => JSON.stringify(o, null, 2);
-/** With the user's own Gemini key, phases cost no Storyit credits. */
+/** A project costs PROMPT_PROJECT_COST credits once, at the start; with the user's own Gemini key it is free. */
 function useCost() {
   const { data: key } = useLiveQuery(() => promptStudio.keyStatus(), 'gemini-key');
   const own = Boolean(key?.connected && key.status !== 'invalid');
-  return { key, label: own ? 'gratuit avec votre clé' : '1 crédit' };
+  return { key, own, label: own ? 'gratuit avec votre clé' : `${PROMPT_PROJECT_COST} crédits` };
 }
 
 function CopyBtn({ text, label = 'Copier' }: { text: string; label?: string }) {
@@ -97,7 +98,7 @@ function Start() {
             <Button disabled={!promptStudio.available} onClick={async () => { const p = await run({ phase: 'concepts', idea }); if (p) navigate(`/app/prompts/${p.id}`); }}>
               <Sparkles className="h-4 w-4" /> Générer un prompt complet · {cost.label}
             </Button>
-            <span className="text-xs text-zinc-500">{cost.label === '1 crédit' ? "5 étapes, 1 crédit chacune, débité seulement si l'étape réussit." : '5 étapes, sur votre compte Google : 0 crédit Storyit.'}</span>
+            <span className="text-xs text-zinc-500">{cost.own ? '5 étapes, sur votre compte Google : 0 crédit Storyit.' : `${PROMPT_PROJECT_COST} crédits pour le projet complet, débités une seule fois au démarrage. Les 5 étapes et les régénérations sont incluses.`}</span>
           </div>
           {error && <p role="alert" className="mt-3 text-xs text-coral-300">{error}</p>}
         </Card>
@@ -145,7 +146,7 @@ function Project({ id }: { id: string }) {
         className="mt-1.5 h-10 w-full rounded-xl border border-line/10 bg-transparent px-3 text-sm text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" />
       <div className="mt-3 flex flex-wrap gap-2">
         {children}
-        <Button variant="ghost" onClick={() => redo(phase)} disabled={Boolean(busy)}><RefreshCw className="h-4 w-4" /> Régénérer cette étape · {cost.label}</Button>
+        <Button variant="ghost" onClick={() => redo(phase)} disabled={Boolean(busy)}><RefreshCw className="h-4 w-4" /> Régénérer cette étape</Button>
       </div>
     </Card>
   );
@@ -181,7 +182,7 @@ function Project({ id }: { id: string }) {
                     <ul className="mt-1 space-y-1 text-xs text-zinc-300">{c.characters.map((p) => <li key={p.name}><strong className="text-zinc-100">{p.name}</strong> ({p.fruit}) · {p.role}</li>)}</ul>
                     <p className="mt-3 text-xs text-zinc-500">Lieux</p>
                     <p className="mt-1 text-xs text-zinc-300">{c.locations.join(' → ')}</p>
-                    <Button className="mt-4 w-full" onClick={() => next('script', { choice: i })}>Choisir l'option {i + 1} · {cost.label}</Button>
+                    <Button className="mt-4 w-full" onClick={() => next('script', { choice: i })}>Choisir l'option {i + 1}</Button>
                   </Card>
                 ))}
               </div>
@@ -205,7 +206,7 @@ function Project({ id }: { id: string }) {
                   <Card><p className="text-xs text-zinc-500">Feuille de route des lieux</p><p className="mt-2 text-xs text-zinc-300">{d.script.locations.join(' → ')}</p></Card>
                 </div>
               </div>
-              {adjust('script', <Button onClick={() => next('images')}>Valider le script → prompts image · {cost.label}</Button>)}
+              {adjust('script', <Button onClick={() => next('images')}>Valider le script → prompts image</Button>)}
             </>
           )}
           {shown === 'images' && d.images && (
@@ -213,14 +214,14 @@ function Project({ id }: { id: string }) {
               <SceneImages project={project} scenes={d.images} keyStatus={cost.key} />
               <Guide text="Sans clé connectée : collez chaque bloc dans Gemini (création d'image), un par scène." all={d.images} />
               <div className="grid gap-3 md:grid-cols-2">{d.images.map((p) => <JsonBlock key={p.scene_number} title={`Scène ${p.scene_number} · ${p.location_environment}`} value={p} />)}</div>
-              {adjust('images', <Button onClick={() => next('videos')}>Valider → prompts vidéo · {cost.label}</Button>)}
+              {adjust('images', <Button onClick={() => next('videos')}>Valider → prompts vidéo</Button>)}
             </>
           )}
           {shown === 'videos' && d.videos && (
             <>
               <Guide text="Dans Google Flow : importez l'image de la scène, collez le bloc correspondant, générez. Recommencez pour chaque scène." all={d.videos} />
               <div className="grid gap-3 md:grid-cols-2">{d.videos.map((p) => <JsonBlock key={p.scene_number} title={`Scène ${p.scene_number}`} value={p} />)}</div>
-              {adjust('videos', <Button onClick={() => next('pack')}>Valider → miniature & SEO · {cost.label}</Button>)}
+              {adjust('videos', <Button onClick={() => next('pack')}>Valider → miniature & SEO</Button>)}
             </>
           )}
           {shown === 'pack' && d.pack && (

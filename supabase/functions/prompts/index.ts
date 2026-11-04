@@ -1,7 +1,8 @@
 // Supabase Edge Function: `prompts` — Prompt Studio + bring-your-own Gemini key.
 // - Phases (concepts → script → image JSON → video JSON → pack): the master prompt never leaves the server.
 //   With the user's own Gemini key they run on the user's Google account and cost no Storyit credits;
-//   otherwise they use Storyit's key and cost 1 credit each (charged only on success).
+//   otherwise a whole project costs PROJECT_COST credits, charged once when it is created (first concepts, on success);
+//   every later step and regeneration of that project is included.
 // - Scene images: generated with the user's key only (Google bills the user), stored privately in `renders`.
 // - Keys: AES-GCM encrypted (TOKEN_ENCRYPTION_KEY), never returned to the browser.
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -13,7 +14,7 @@ const API = 'https://generativelanguage.googleapis.com/v1beta';
 const TEXT_MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
 const TEXT_FALLBACK = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? 'gemini-3.5-flash-lite';
 const IMAGE_MODEL = Deno.env.get('GEMINI_IMAGE_MODEL') ?? 'gemini-3.1-flash-image';
-const COST = 1;
+const PROJECT_COST = 15;
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -160,9 +161,10 @@ Deno.serve(async (req) => {
   if (!project && phase !== 'concepts') return json({ error: 'Commencez par les concepts' }, 400);
 
   const ownKey = await userKey();
-  if (!ownKey) {
+  const billable = !ownKey && !project; // only a brand-new project is charged
+  if (billable) {
     const { data: profile } = await user.from('profiles').select('credit_balance').eq('id', uid).single();
-    if (!profile || profile.credit_balance < COST) return json({ error: 'Not enough Story Credits.' }, 402);
+    if (!profile || profile.credit_balance < PROJECT_COST) return json({ error: 'Not enough Story Credits.' }, 402);
   }
 
   const data: Record<string, any> = { ...(project?.data ?? {}) };
@@ -187,8 +189,8 @@ Deno.serve(async (req) => {
     if (saved.error) throw new Error('Impossible d’enregistrer le projet');
 
     // Text works on Google's free tier too, so a text success says nothing about image billing: status unchanged.
-    if (!ownKey) await user.rpc('consume_credits', { p_amount: COST, p_story_id: null, p_description: `Prompt Studio — ${PHASES[phase].label}` });
-    return json({ project: saved.data, billed_to: ownKey ? 'your_gemini_key' : 'storyit_credits' });
+    if (billable) await user.rpc('consume_credits', { p_amount: PROJECT_COST, p_story_id: null, p_description: 'Prompt Studio — new project' });
+    return json({ project: saved.data, billed_to: ownKey ? 'your_gemini_key' : billable ? 'storyit_credits' : 'included' });
   } catch (e) {
     const g = e instanceof GeminiError ? e : null;
     if (ownKey && (g?.problem === 'invalid' || g?.problem === 'no_billing')) await flag(g.problem, g.message);

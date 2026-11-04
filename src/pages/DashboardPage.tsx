@@ -58,7 +58,7 @@ export default function DashboardPage() {
           <Wand2 className="h-5 w-5 shrink-0 text-violet-300" aria-hidden />
           <div className="flex-1">
             <p className="text-sm font-semibold text-zinc-100">Write your next Fruit Drama with the Prompt Studio</p>
-            <p className="text-xs text-zinc-400">3 story options, a full script, and ready-to-paste image and video prompts. 5 credits per project, or free with your own Gemini key.</p>
+            <p className="text-xs text-zinc-400">3 story options, a full script, and ready-to-paste image and video prompts. 15 credits per project, or free with your own Gemini key.</p>
           </div>
           <Button onClick={() => navigate('/app/prompts')}>Open the Prompt Studio</Button>
         </Card>

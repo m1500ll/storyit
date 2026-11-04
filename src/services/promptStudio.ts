@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { InsufficientCreditsError } from './errors';
 import { store } from './store';
 import type { PhaseKey } from '@shared/promptStudio.ts';
+import { PROMPT_PROJECT_COST } from '@/services/credits';
 import { dedupe } from '@/lib/dedupe';
 
 export type { PhaseKey };
@@ -30,7 +31,7 @@ async function callOnce<T>(body: Record<string, unknown>): Promise<T> {
   if (error) {
     const ctx = (error as { context?: Response }).context;
     const msg = ctx && typeof ctx.json === 'function' ? ((await ctx.json().catch(() => ({}))) as { error?: string }).error : undefined;
-    if (msg && /not enough story credits/i.test(msg)) throw new InsufficientCreditsError(1, 0);
+    if (msg && /not enough story credits/i.test(msg)) throw new InsufficientCreditsError(PROMPT_PROJECT_COST, 0);
     throw new Error(msg ?? error.message);
   }
   return data as T;
