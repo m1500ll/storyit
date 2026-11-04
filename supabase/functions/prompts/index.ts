@@ -42,25 +42,27 @@ async function callGemini(key: string, model: string, body: unknown, timeoutMs: 
 }
 
 /**
- * Last-resort text provider when Storyit's Gemini key is out of quota: any OpenAI-compatible API with a free tier
- * (Groq, Cerebras, OpenRouter…). Secrets: BACKUP_LLM_URL (base, e.g. https://api.groq.com/openai/v1), BACKUP_LLM_KEY, BACKUP_LLM_MODEL.
+ * Free backup providers when Storyit's Gemini key is out of quota: OpenAI-compatible APIs with a free tier, tried in order.
+ * Each one is set with secrets BACKUP_LLM_URL / BACKUP_LLM_KEY / BACKUP_LLM_MODEL (then _2, _3 for more).
  * Not used for users' own Gemini keys.
  */
-async function backupText(prompt: string, schema: unknown, timeoutMs: number) {
-  const base = Deno.env.get('BACKUP_LLM_URL'), key = Deno.env.get('BACKUP_LLM_KEY'), model = Deno.env.get('BACKUP_LLM_MODEL');
-  if (!base || !key || !model) return null;
-  const res = await fetch(`${base.replace(/\/$/, '')}/chat/completions`, {
+const backups = () => ['', '_2', '_3'].map((n) => ({
+  base: Deno.env.get(`BACKUP_LLM_URL${n}`), key: Deno.env.get(`BACKUP_LLM_KEY${n}`), model: Deno.env.get(`BACKUP_LLM_MODEL${n}`),
+})).filter((b) => b.base && b.key && b.model) as { base: string; key: string; model: string }[];
+
+async function backupText(b: { base: string; key: string; model: string }, prompt: string, schema: unknown, timeoutMs: number) {
+  const res = await fetch(`${b.base.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST', signal: AbortSignal.timeout(timeoutMs),
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+    headers: { Authorization: `Bearer ${b.key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model, temperature: 1, max_tokens: 16000, response_format: { type: 'json_object' },
+      model: b.model, temperature: 1, max_tokens: 16000, response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: `${MASTER_PROMPT}\n\nRéponds UNIQUEMENT avec un objet JSON valide qui respecte ce schéma (types Gemini : OBJECT, ARRAY, STRING, INTEGER) :\n${JSON.stringify(schema)}` },
         { role: 'user', content: prompt },
       ],
     }),
   });
-  if (!res.ok) { console.error('backup llm', res.status, (await res.text()).slice(0, 300)); return null; }
+  if (!res.ok) { console.error('backup llm', b.model, res.status, (await res.text()).slice(0, 300)); return null; }
   const text = (await res.json())?.choices?.[0]?.message?.content;
   try { return text ? JSON.parse(String(text).replace(/^```(?:json)?\s*|\s*```$/g, '')) : null; } catch { return null; }
 }
@@ -89,9 +91,10 @@ async function generateText(key: string, prompt: string, schema: unknown, allowB
     }
   }
   if (allowBackup && last.problem !== 'blocked') {
-    const left = 140_000 - (Date.now() - started);
-    if (left > 15_000) {
-      const out = await backupText(prompt, schema, left - 5_000).catch(() => null);
+    for (const bk of backups()) {
+      const left = 140_000 - (Date.now() - started);
+      if (left < 15_000) break;
+      const out = await backupText(bk, prompt, schema, left - 5_000).catch(() => null);
       if (out) return out;
     }
   }
