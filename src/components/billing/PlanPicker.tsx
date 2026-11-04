@@ -5,6 +5,9 @@ import { billingService } from '@/services/billing';
 import { CREDIT_PACKS, PLANS, projectsFor, type ProductKey } from '@/services/credits';
 import { Button } from '../ui';
 
+const RANKS: Record<string, number> = { free: 0, creator: 1, studio: 2 };
+const rank = (plan?: string) => RANKS[plan ?? 'free'] ?? 0;
+
 export function PlanPicker({ currentPlan, compact }: { currentPlan?: string; compact?: boolean }) {
   const [pending, setPending] = useState<ProductKey | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -23,8 +26,11 @@ export function PlanPicker({ currentPlan, compact }: { currentPlan?: string; com
   return (
     <div>
       <div className={cn('grid gap-3', compact ? 'sm:grid-cols-2' : 'md:grid-cols-3')}>
-        {PLANS.filter((p) => !compact || p.id !== 'free').map((p) => {
+        {/* In the compact paywall, only show plans above the current one (Studio customers just see the top-up packs). */}
+        {PLANS.filter((p) => !compact || (p.id !== 'free' && rank(p.id) > rank(currentPlan))).map((p) => {
           const current = p.id === currentPlan;
+          // Never offer a lower plan as an "upgrade" (a Studio customer must not see "Upgrade to Creator").
+          const included = !current && rank(p.id) < rank(currentPlan);
           const featured = 'featured' in p && p.featured;
           return (
             <div key={p.id} className={cn('rounded-xl border p-4', featured ? 'border-violet-500/40 bg-violet-500/[0.06]' : 'border-line/[0.08] bg-ink-850')}>
@@ -40,9 +46,9 @@ export function PlanPicker({ currentPlan, compact }: { currentPlan?: string; com
                 </ul>
               )}
               {p.id !== 'free' && (
-                <Button size="sm" className="mt-4 w-full" variant={featured ? 'primary' : 'secondary'} disabled={current}
+                <Button size="sm" className="mt-4 w-full" variant={featured && !included ? 'primary' : 'secondary'} disabled={current || included}
                   loading={pending === p.id} onClick={() => buy(p.id as ProductKey)}>
-                  {current ? 'Your plan' : `Upgrade to ${p.name}`}
+                  {current ? 'Your plan' : included ? 'Included in your plan' : `Upgrade to ${p.name}`}
                 </Button>
               )}
             </div>

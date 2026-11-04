@@ -55,7 +55,9 @@ export default function BillingPage() {
         </Card>
       </div>
       <Card className="mt-6">
-        <CardHeader title="Upgrade or top up" subtitle="Plans renew monthly. Top-up packs never expire." />
+        {profile?.plan === 'studio'
+          ? <CardHeader title="Top up credits" subtitle="You're on Studio, our top plan. Top-up packs never expire." />
+          : <CardHeader title="Upgrade or top up" subtitle="Plans renew monthly. Top-up packs never expire." />}
         <PlanPicker currentPlan={profile?.plan} />
       </Card>
       <Card className="mt-6 overflow-x-auto">
