@@ -53,7 +53,7 @@ export default function TermsPage() {
           <p>You can delete your account at any time (see the <Link to="/privacy#data-deletion">Privacy Policy</Link>). We may suspend accounts that seriously break these terms, after notice when possible.</p>
         </S>
         <S title="8. Contact and law">
-          <p>Questions: <strong><F v={LEGAL.contactEmail} /></strong>. These terms are governed by French law; the competent courts are those provided by law.</p>
+          <p>Questions: <strong><F v={LEGAL.contactEmail} /></strong>. These terms are governed by the laws of the Emirate of Dubai and the United Arab Emirates. If you are a consumer, you also keep the protection of the mandatory rules of the country where you live.</p>
         </S>
       </main>
     </div>

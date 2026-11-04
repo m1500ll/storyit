@@ -47,7 +47,7 @@ export default function LandingPage() {
             <a href="#faq" className="hover:text-zinc-300">FAQ</a>
             <Link to="/privacy" className="hover:text-zinc-300">Privacy</Link>
             <Link to="/terms" className="hover:text-zinc-300">Terms</Link>
-            <a href="mailto:hello@storyit.fun" className="hover:text-zinc-300">Contact</a>
+            <a href="mailto:support@storyit.fun" className="hover:text-zinc-300">Contact</a>
           </nav>
           <span>© {new Date().getFullYear()} Storyit</span>
         </div>

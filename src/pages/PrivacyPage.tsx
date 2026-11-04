@@ -115,7 +115,7 @@ export default function PrivacyPage() {
         <Section id="retention" title="8. How long we keep it">
           <ul>
             <li>Account and content: for as long as your account exists. To delete your account, email us (address above); we delete your data within 30 days, and backups roll over within a further 30 days.</li>
-            <li>Billing records: as long as accounting law requires (up to 10 years in France).</li>
+            <li>Billing records: as long as accounting law requires.</li>
             <li>Social account tokens: deleted as soon as you disconnect the account or delete your Storyit account.</li>
             <li>Server logs: kept by our providers for a limited period, typically under 90 days.</li>
           </ul>
