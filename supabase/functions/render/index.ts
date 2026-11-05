@@ -5,6 +5,8 @@
 //
 // Secrets: GEMINI_API_KEY (required). Optional model overrides (Google renames models often):
 //   GEMINI_IMAGE_MODEL, VEO_MODEL, GEMINI_TTS_MODEL, TTS_VOICE, RENDER_CREDITS_PER_SCENE
+// Voice-over uses ElevenLabs when ELEVENLABS_API_KEY is set (optional: ELEVENLABS_VOICE_ID, ELEVENLABS_MODEL),
+// otherwise falls back to Gemini TTS.
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
@@ -12,6 +14,9 @@ const IMAGE_MODEL = Deno.env.get('GEMINI_IMAGE_MODEL') ?? 'gemini-2.5-flash-imag
 const VEO_MODEL = Deno.env.get('VEO_MODEL') ?? 'veo-3.0-fast-generate-001';
 const TTS_MODEL = Deno.env.get('GEMINI_TTS_MODEL') ?? 'gemini-2.5-flash-preview-tts';
 const TTS_VOICE = Deno.env.get('TTS_VOICE') ?? 'Kore';
+const ELEVEN_KEY = Deno.env.get('ELEVENLABS_API_KEY');
+const ELEVEN_VOICE = Deno.env.get('ELEVENLABS_VOICE_ID') ?? 'jhQTaVBI6hnd0ESpmfIu';
+const ELEVEN_MODEL = Deno.env.get('ELEVENLABS_MODEL') ?? 'eleven_multilingual_v2';
 const CREDITS_PER_SCENE = Number(Deno.env.get('RENDER_CREDITS_PER_SCENE') ?? 3); // keep in sync with src/services/credits.ts
 const BUDGET_MS = 95_000;
 const MAX_ATTEMPTS = 3;
@@ -116,8 +121,20 @@ async function pollVideo(operation: string): Promise<Uint8Array | null> {
   return new Uint8Array(await res.arrayBuffer());
 }
 
+/** ElevenLabs returns raw 16-bit mono PCM at 24 kHz with this output format, so the same WAV wrapper works. */
+async function elevenLabsVoice(line: string) {
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${ELEVEN_VOICE}?output_format=pcm_24000`, {
+    method: 'POST',
+    headers: { 'xi-api-key': ELEVEN_KEY!, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: line, model_id: ELEVEN_MODEL }),
+  });
+  if (!res.ok) throw new Error(`ElevenLabs ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  return pcmToWav(new Uint8Array(await res.arrayBuffer()));
+}
+
 async function generateVoice(scene: SceneRow) {
   const line = [scene.narration, scene.dialogue].filter(Boolean).join(' ');
+  if (ELEVEN_KEY) return elevenLabsVoice(line);
   const out = await google(`models/${TTS_MODEL}:generateContent`, {
     contents: [{ role: 'user', parts: [{ text: `Read this like an expressive storyteller for a dramatic short video, in the language it is written in:\n${line}` }] }],
     generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: TTS_VOICE } } } },
