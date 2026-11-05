@@ -1,0 +1,100 @@
+--- /tmp/claude-0/-home-user-storyit/6a0d4a55-22be-5c6a-b677-0a50222b1319/scratchpad/claude-animated-shorts/templates/audio/mix.py	2026-11-05 00:21:46.701276990 +0000
++++ hammersmith-short/audio/mix.py	2026-11-05 07:53:50.872538870 +0000
+@@ -1,6 +1,4 @@
+-# Final mix of "The Bridge That Fell for a Song": the voice (gain only) + original march score (ducked under speech,
+-# per-section level automation relative to the voice) + synthesized SFX stem. Master gain to -15 LUFS integrated,
+-# own 4x-oversampled look-ahead limiter for <= -1 dBTP, exactly 67.500 s / 48 kHz / stereo / 24-bit.
+-# Writes mix.wav + stem_voice/music/sfx.wav (at mix gain, pre-limiter), cues.md (every SFX event, music map,
+-# loudness report). Rendered stems are cached in _cache/ so a crash never costs a full re-render.
++# Final mix of "The Bridge Everyone Leaned On" (adapted from the bridge template's mix.py): the voice (gain only) +
++# original regatta score (ducked under speech, per-section level automation relative to the voice) + synthesized SFX
++# stem. Master gain to -15 LUFS integrated, 4x-oversampled look-ahead limiter for <= -1 dBTP, exactly 60.000 s / 48 kHz.
+ import os
+@@ -18,3 +16,3 @@
+ CACHE = os.path.join(HERE, "_cache")
+-N = ns(T.DUR)                    # 3,240,000 samples = 67.500 s
++N = ns(T.DUR)                    # 2,880,000 samples = 60.000 s
+ TARGET_LUFS = -15.0
+@@ -26,17 +24,14 @@
+ # for the hammer blows and the strolling footsteps)
+-MUSIC_TARGET = {"hook": -9.5, "town": -10.5, "march": -10.0, "bounce": -10.0, "whistle": -9.5, "tension": -10.0,
+-                "sway": -12.0, "swing": -11.5, "march2": -10.5, "rule": -11.5, "tourists": -11.0}
++# owner feedback 2026-11-05: background music too loud -> every section 4 dB lower than v1
++MUSIC_TARGET = {"hook": -13.5, "story": -14.5, "race": -13.5, "sway": -15.0, "relief": -13.0, "explain": -15.5, "rowboat": -15.0,
++                "callback": -16.5, "rebuild": -14.0, "today": -15.0, "end": -12.0}
++
++# music rides (start, end, dB): keep quiet sentence-final words on top
++DIPS = [(4.4, 5.6, -2.0),       # hook droop under "...not thrilled about it."
++        (21.3, 22.0, -2.0)]     # race crescendo under "...to see."
+ 
+-# music rides (start, end, dB): keep the quiet sentence-final words on top; the band blooms again in the gap after them
+-DIPS = [(3.65, 4.30, -3.0),     # hook fill under "...walking across it."
+-        (26.95, 27.36, -2.0),   # whistling column under "...every step."
+-        (32.20, 32.77, -4.0),   # tension crescendo under "...breaks step." -> blooms into the dead stop before "Then,"
+-        (61.25, 61.98, -3.0)]   # rule roll under "...in step." 
+-
+-# report sections = shots
+ _s = lambda i: T.shot_t(i)
+-REPORT = [("hook (1)", 0.0, _s(1)[1]), ("town (2)", *_s(2)), ("march (3)", *_s(3)), ("bounce (4-5)", _s(4)[0], _s(5)[1]),
+-          ("whistle (6)", *_s(6)), ("groan (7)", *_s(7)), ("snap+fall (8)", *_s(8)), ("water (9-10)", _s(9)[0], _s(10)[1]),
+-          ("sway (11)", *_s(11)), ("swing (12)", *_s(12)), ("march2 (13)", *_s(13)), ("rule (14)", *_s(14)),
+-          ("tourists (15)", _s(15)[0], T.DUR)]
++REPORT = [("hook (1)", 0.0, _s(1)[1]), ("town (2)", *_s(2)), ("fill (3)", *_s(3)), ("rush (4)", *_s(4)), ("sway (5)", *_s(5)),
++          ("luckily (6)", *_s(6)), ("owners (7)", *_s(7)), ("explain (8)", *_s(8)), ("rowboat (9)", *_s(9)), ("edge (10)", *_s(10)),
++          ("rebuilt (11-12)", _s(11)[0], _s(12)[1]), ("today (13)", _s(13)[0], T.DUR)]
+ 
+@@ -101,3 +96,3 @@
+     for name, a, b in secs:
+-        if name == "dropout":
++        if name in music.SILENT:
+             continue
+@@ -105,17 +100,13 @@
+         Lm, Lv = integrated(m_ducked[:, seg]), integrated(v[:, seg])
++        if name == "end" or not np.isfinite(Lv) or Lv < -60:
++            Lv = integrated(v)  # no speech in the tail: level the deadpan notes against the whole voice
+         gains[name] = (Lv + MUSIC_TARGET[name] - Lm) if np.isfinite(Lm) else 0.0
+-    gains["dropout"] = gains["tension"]          # the dead stop's hall tail decays at the tension level
+-    # switch points: music is silent at the flash cut and at the end of the dropout, so those switch instantly
+-    pts = []
+-    for i, (name, a, b) in enumerate(secs):
+-        pts.append((a, gains[name]))
++    gains["deadpan"] = gains["relief"]           # the tuba wah-wah sits at the relief level
+     curve = np.zeros(N)
+     t = np.arange(N) / SR
+-    for i, (a, g) in enumerate(pts):
+-        a_eff = 43.1 if secs[i][0] == "sway" else a
+-        curve[t >= a_eff] = g
+-    # smooth the steps that fall inside music (0.4 s), keep the silent ones (flash, end of dropout) hard
++    for name, a, b in secs:
++        curve[t >= a] = gains[name]
+     sm = ndimage.uniform_filter1d(curve, ns(0.4), mode="nearest")
+     hard = np.zeros(N, bool)
+-    for tb in (T.FLASH, 43.1):
++    for tb in (T.FLASH, 22.5, 43.1, 56.42):    # switches that fall in silence or on a dead stop stay hard
+         hard[ns(tb - 0.25): ns(tb + 0.25)] = True
+@@ -287,3 +278,3 @@
+     w = L.append
+-    w("# The Bridge That Fell for a Song - soundtrack cue sheet")
++    w("# The Bridge Everyone Leaned On - soundtrack cue sheet")
+     w("")
+@@ -295,3 +286,3 @@
+     w("|---|---|")
+-    w("| `mix.wav` | final mix, 48 kHz, stereo, 24-bit, 3,240,000 samples = 67.500 s |")
++    w("| `mix.wav` | final mix, 48 kHz, stereo, 24-bit, 2,880,000 samples = 60.000 s |")
+     w("| `stem_voice.wav` / `stem_music.wav` / `stem_sfx.wav` | stems at mix gain (they sum to the mix before the master limiter) |")
+@@ -322,3 +313,3 @@
+     w("")
+-    w("## Music map (original march, Bb major, 120 bpm: quarter note = footfall)")
++    w("## Music map (original regatta march, Bb major, 120 bpm)")
+     w("Music target per section, LU under the voice (after a -3 dB speech duck keyed from words.json): " +
+@@ -328,4 +319,3 @@
+     w("Rides (music only, dB): " + ", ".join(f"{a:.2f}-{b:.2f} s {db:+.1f}" for a, b, db in DIPS) +
+-      " - so quiet sentence-final words stay on top and the band blooms in the gaps after them. "
+-      "The hook's last two footfalls (3.5, 4.0) are also 3 dB lower in the SFX for '...walking across it.'")
++      " - so quiet sentence-final words stay on top.")
+     w("")
+@@ -340,3 +330,3 @@
+       f"'mix LUFS' = the event's max momentary loudness in the final mix (voice stem = {vI:.1f} LUFS integrated). "
+-      f"Column sounds also get the camera-distance low-pass and more valley reverb.")
++      f"Oar sounds also get a camera-distance gain and low-pass.")
+     w("")

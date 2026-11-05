@@ -1,0 +1,48 @@
+--- /tmp/claude-0/-home-user-storyit/6a0d4a55-22be-5c6a-b677-0a50222b1319/scratchpad/claude-animated-shorts/templates/bridge/toon.ts	2026-11-05 00:21:46.702004608 +0000
++++ shorts/src/videos/hammersmith/toon.ts	2026-11-05 00:46:58.392747585 +0000
+@@ -909 +909,45 @@
+ };
++
++// ---------------- Hammersmith short additions ----------------
++/** the bridge owners: stout gentlemen in top hats with moustaches */
++export const OWNER = (v = 0): Outfit => ({ jacket: v ? "#2f3b52" : "#4a2f3a", pants: "#2e2a36", boots: INK, hat: "tophat", buttons: "#e8c45a",
++  moustache: v ? "#d9d3c7" : "#4a3020", skin: SKINS[v ? 0 : 2], build: "stout" });
++/** a rower in the crew's colours (bare-headed, short hair) */
++export const ROWER = (kit: string, v = 0): Outfit => ({ jacket: kit, pants: "#f4f1ea", boots: "#f4f1ea", hat: "hair", hair: ["#5a3b2a", "#2a201a", "#c08a4a", "#7a4a2a"][v % 4], skin: SKINS[v % 4] });
++/** today's strollers: no hats, bright casual colours */
++export const modern = (v = 0): Outfit => {
++  const tops = ["#e2453c", "#3f6fb5", "#f0b43c", "#2f8a4f", "#7b5ac9", "#f4f1ea", "#e86e9a"];
++  const hair = ["#5a3b2a", "#2a201a", "#c08a4a", "#7a4a2a", "#e0b860"];
++  return v % 5 === 3 ? { jacket: tops[v % 7], pants: "#3b5b9a", boots: "#f4f1ea", hat: "cap", cap: tops[(v + 3) % 7], skin: SKINS[v % 4] }
++    : { jacket: tops[v % 7], pants: v % 2 ? "#3b5b9a" : "#3b3f52", boots: v % 3 ? "#f4f1ea" : "#4a3426", hat: "hair", hair: hair[v % 5], skin: SKINS[(v + 1) % 4] };
++};
++
++/** UK "no motor vehicles" roundel on a 700 x 520 canvas (circle 500 px; the corners stay transparent) */
++export const fxNoCars = (p: Pen) => {
++  const cx = 350, cy = 260;
++  p.ell(cx, cy, 246, 246, "#d42f2f", 10);
++  p.ell(cx, cy, 196, 196, "#ffffff", 8);
++  // car side view: body, cabin, wheels
++  p.poly(rrect(208, 250, 492, 318, 26), "#1d1b22", 0);
++  p.poly([[262, 252], [300, 196], [408, 196], [446, 252]], "#1d1b22", 0);
++  p.poly([[284, 248], [310, 210], [348, 210], [348, 248]], "#ffffff", 0);
++  p.poly([[362, 248], [362, 210], [398, 210], [426, 248]], "#ffffff", 0);
++  for (const x of [270, 430]) { p.ell(x, 320, 34, 34, "#1d1b22", 0); p.ell(x, 320, 14, 14, "#ffffff", 0); }
++};
++
++/** zigzag crack with chips on a 400 x 400 canvas; t 0..1 grows it */
++export const fxCrack = (p: Pen, t: number) => {
++  const e = Math.min(1, t), pts: [number, number][] = [[200, 30], [182, 92], [214, 140], [176, 206], [206, 262], [168, 322], [190, 372]];
++  const n = Math.max(2, Math.round(2 + e * (pts.length - 2)));
++  p.stroke(pts.slice(0, n), 14, "#241726");
++  if (e > 0.5) p.stroke([[214, 140], [262, 166], [292, 214]], 9, "#241726");
++  if (e > 0.75) p.stroke([[176, 206], [128, 222], [100, 262]], 8, "#241726");
++  if (e > 0.9) for (const [x, y, r] of [[236, 300, 10], [150, 120, 8], [262, 90, 7]]) p.poly([[x - r, y], [x, y - r], [x + r, y + r * 0.4]], "#b8aa97", 4);
++};
++
++/** a black top hat, alone (falls into the water) on a 200 x 200 canvas */
++export const fxTophat = (p: Pen) => {
++  p.poly([[58, 150], [142, 150], [146, 30], [54, 30]], "#2e2a36", 8);
++  p.poly([[56, 128], [144, 128], [144, 108], [56, 108]], "#8c3b4a", 0);
++  p.ell(100, 152, 72, 13, "#1d1b22", 7);
++};

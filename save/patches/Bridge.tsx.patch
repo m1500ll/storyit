@@ -1,0 +1,22 @@
+--- /tmp/claude-0/-home-user-storyit/6a0d4a55-22be-5c6a-b677-0a50222b1319/scratchpad/claude-animated-shorts/templates/bridge/Bridge.tsx	2026-11-05 00:21:46.701276990 +0000
++++ shorts/src/videos/hammersmith/Bridge.tsx	2026-11-05 00:43:17.767468907 +0000
+@@ -11,2 +11,3 @@
+ import { AbsoluteFill, continueRender, delayRender, getInputProps, useCurrentFrame } from "remotion";
++
+ import { ThreeCanvas } from "@remotion/three";
+@@ -39,2 +40,11 @@
+ 
++/** COMPAT (test env, remotion 4.0.540 + @react-three/postprocessing 3.2): ThreeCanvas advances once before the
++ *  EffectComposer has its passes, so a freshly mounted canvas screenshots blank. Re-advance once after mount. */
++const Settle: React.FC = () => {
++  const { advance } = useThree();
++  const [h] = useState(() => delayRender("settle composer"));
++  useEffect(() => { requestAnimationFrame(() => { advance(performance.now()); requestAnimationFrame(() => continueRender(h)); }); }, [advance, h]);
++  return null;
++};
++
+ const fwd = new THREE.Vector3(), fpt = new THREE.Vector3();
+@@ -100,2 +110,3 @@
+       <Inner id={id} kit={kit} />
++      <Settle />
+     </ThreeCanvas>
