@@ -1,0 +1,2083 @@
+{
+ "version": 1,
+ "title": "The Bridge Everyone Leaned On",
+ "language": "en",
+ "script": [
+  "Twelve thousand people once tried to watch a boat race from the same bridge. The bridge was not thrilled about it.",
+  "London, eighteen seventy. Hammersmith Bridge is the first suspension bridge over the Thames, and the best free seat for the Oxford and Cambridge Boat Race.",
+  "So everybody comes early. First the footpaths fill up. Then the road. Then every last gap.",
+  "And when the two boats finally appear, twelve thousand people rush to the same side to see.",
+  "The chains creak. The whole deck starts to sway.",
+  "Luckily, the bridge held.",
+  "Unluckily, the owners were watching too.",
+  "You see, a bridge is built to carry weight spread out evenly. Stand in the middle, and both chains share the load. Crowd onto one side, and that side gets pushed down while the other side lifts.",
+  "Ever been in a rowing boat when everyone leans over the same side? Same boat, same people, but now it tips.",
+  "Twelve thousand people on one edge were doing that to a bridge.",
+  "So the old chain bridge came down, and a stronger one opened on the same piers in eighteen eighty-seven.",
+  "It's still standing today. But since twenty nineteen, it's been closed to cars. Cracks."
+ ],
+ "facts": [
+  {
+   "claim": "In 1870 about 11,000-12,000 people packed Hammersmith Bridge to watch the Boat Race",
+   "source": "Wikipedia: Hammersmith Bridge"
+  },
+  {
+   "claim": "Bazalgette's bridge, on the same piers, opened in June 1887",
+   "source": "Wikipedia: Hammersmith Bridge"
+  },
+  {
+   "claim": "Closed to motor vehicles since 2019 after cracks were found",
+   "source": "ITV News, 2026-07-01"
+  }
+ ],
+ "decor": {
+  "ground": "grass",
+  "river": true,
+  "bridge": {
+   "era": "old"
+  },
+  "town": {
+   "seed": 11
+  },
+  "pieces": [
+   {
+    "kind": "eights",
+    "lanes": [
+     -6.5,
+     6.0
+    ],
+    "colors": [
+     "#22306a",
+     "#7fb3dc"
+    ],
+    "pass": {
+     "line": 4,
+     "word": 3,
+     "offset": -0.03
+    }
+   },
+   {
+    "kind": "rowboat",
+    "at": [
+     26,
+     -16
+    ],
+    "lean": {
+     "line": 8,
+     "word": 8
+    },
+    "tip": {
+     "line": 8,
+     "word": 20
+    }
+   },
+   {
+    "kind": "barrier",
+    "z": -35.2,
+    "sign": true
+   }
+  ]
+ },
+ "groups": [
+  {
+   "id": "fpL",
+   "outfit": [
+    {
+     "name": "townsfolk",
+     "variant": 0
+    },
+    {
+     "name": "townsfolk",
+     "variant": 1
+    },
+    {
+     "name": "townsfolk",
+     "variant": 2
+    },
+    {
+     "name": "townsfolk",
+     "variant": 3
+    },
+    {
+     "name": "townsfolk",
+     "variant": 4
+    },
+    {
+     "name": "townsfolk",
+     "variant": 5
+    },
+    {
+     "name": "kid"
+    }
+   ],
+   "onDeck": true,
+   "count": 33,
+   "area": [
+    -2.1,
+    -23.4,
+    -1.8,
+    23.4
+   ],
+   "enter": {
+    "line": 2,
+    "word": 4
+   },
+   "actions": [
+    {
+     "from": {
+      "line": 3,
+      "word": 10
+     },
+     "do": "walk",
+     "to": "rail_minus_x",
+     "speed": 2.2,
+     "expr": [
+      "laugh",
+      "grin"
+     ]
+    },
+    {
+     "from": {
+      "line": 4,
+      "word": 0
+     },
+     "do": "stand",
+     "expr": [
+      "nervous",
+      "grin",
+      "nervous"
+     ]
+    },
+    {
+     "from": {
+      "line": 4,
+      "word": 3
+     },
+     "do": "stand",
+     "expr": [
+      "shock",
+      "nervous"
+     ]
+    },
+    {
+     "from": {
+      "line": 5,
+      "word": 0
+     },
+     "do": "cheer",
+     "expr": [
+      "relief",
+      "relief_open",
+      "laugh",
+      "grin"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "fpR",
+   "outfit": [
+    {
+     "name": "townsfolk",
+     "variant": 0
+    },
+    {
+     "name": "townsfolk",
+     "variant": 1
+    },
+    {
+     "name": "townsfolk",
+     "variant": 2
+    },
+    {
+     "name": "townsfolk",
+     "variant": 3
+    },
+    {
+     "name": "townsfolk",
+     "variant": 4
+    },
+    {
+     "name": "townsfolk",
+     "variant": 5
+    },
+    {
+     "name": "kid"
+    }
+   ],
+   "onDeck": true,
+   "count": 33,
+   "area": [
+    1.8,
+    -23.4,
+    2.1,
+    23.4
+   ],
+   "enter": {
+    "line": 2,
+    "word": 4,
+    "offset": 0.4
+   },
+   "actions": [
+    {
+     "from": {
+      "line": 3,
+      "word": 10
+     },
+     "do": "walk",
+     "to": "rail_minus_x",
+     "speed": 2.2,
+     "expr": [
+      "laugh",
+      "grin"
+     ]
+    },
+    {
+     "from": {
+      "line": 4,
+      "word": 0
+     },
+     "do": "stand",
+     "expr": [
+      "nervous",
+      "grin",
+      "nervous"
+     ]
+    },
+    {
+     "from": {
+      "line": 4,
+      "word": 3
+     },
+     "do": "stand",
+     "expr": [
+      "shock",
+      "nervous"
+     ]
+    },
+    {
+     "from": {
+      "line": 5,
+      "word": 0
+     },
+     "do": "cheer",
+     "expr": [
+      "relief",
+      "relief_open",
+      "laugh",
+      "grin"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "road",
+   "outfit": [
+    {
+     "name": "townsfolk",
+     "variant": 0
+    },
+    {
+     "name": "townsfolk",
+     "variant": 1
+    },
+    {
+     "name": "townsfolk",
+     "variant": 2
+    },
+    {
+     "name": "townsfolk",
+     "variant": 3
+    },
+    {
+     "name": "townsfolk",
+     "variant": 4
+    },
+    {
+     "name": "townsfolk",
+     "variant": 5
+    },
+    {
+     "name": "kid"
+    }
+   ],
+   "onDeck": true,
+   "count": 50,
+   "area": [
+    -0.9,
+    -22.8,
+    0.9,
+    22.8
+   ],
+   "enter": {
+    "line": 2,
+    "word": 9
+   },
+   "actions": [
+    {
+     "from": {
+      "line": 3,
+      "word": 10
+     },
+     "do": "walk",
+     "to": "rail_minus_x",
+     "speed": 2.2,
+     "expr": [
+      "laugh",
+      "grin"
+     ]
+    },
+    {
+     "from": {
+      "line": 4,
+      "word": 0
+     },
+     "do": "stand",
+     "expr": [
+      "nervous",
+      "grin",
+      "nervous"
+     ]
+    },
+    {
+     "from": {
+      "line": 4,
+      "word": 3
+     },
+     "do": "stand",
+     "expr": [
+      "shock",
+      "nervous"
+     ]
+    },
+    {
+     "from": {
+      "line": 5,
+      "word": 0
+     },
+     "do": "cheer",
+     "expr": [
+      "relief",
+      "relief_open",
+      "laugh",
+      "grin"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "gaps",
+   "outfit": [
+    {
+     "name": "townsfolk",
+     "variant": 0
+    },
+    {
+     "name": "townsfolk",
+     "variant": 1
+    },
+    {
+     "name": "townsfolk",
+     "variant": 2
+    },
+    {
+     "name": "townsfolk",
+     "variant": 3
+    },
+    {
+     "name": "townsfolk",
+     "variant": 4
+    },
+    {
+     "name": "townsfolk",
+     "variant": 5
+    },
+    {
+     "name": "kid"
+    }
+   ],
+   "onDeck": true,
+   "count": 15,
+   "area": [
+    -1.1,
+    -22,
+    1.1,
+    22
+   ],
+   "enter": {
+    "line": 2,
+    "word": 12
+   },
+   "actions": [
+    {
+     "from": {
+      "line": 3,
+      "word": 10
+     },
+     "do": "walk",
+     "to": "rail_minus_x",
+     "speed": 2.2,
+     "expr": [
+      "laugh",
+      "grin"
+     ]
+    },
+    {
+     "from": {
+      "line": 4,
+      "word": 0
+     },
+     "do": "stand",
+     "expr": [
+      "nervous",
+      "grin",
+      "nervous"
+     ]
+    },
+    {
+     "from": {
+      "line": 4,
+      "word": 3
+     },
+     "do": "stand",
+     "expr": [
+      "shock",
+      "nervous"
+     ]
+    },
+    {
+     "from": {
+      "line": 5,
+      "word": 0
+     },
+     "do": "cheer",
+     "expr": [
+      "relief",
+      "relief_open",
+      "laugh",
+      "grin"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "banksS",
+   "outfit": [
+    {
+     "name": "townsfolk",
+     "variant": 0
+    },
+    {
+     "name": "townsfolk",
+     "variant": 1
+    },
+    {
+     "name": "townsfolk",
+     "variant": 2
+    },
+    {
+     "name": "townsfolk",
+     "variant": 3
+    },
+    {
+     "name": "townsfolk",
+     "variant": 4
+    },
+    {
+     "name": "townsfolk",
+     "variant": 5
+    },
+    {
+     "name": "kid"
+    }
+   ],
+   "count": 13,
+   "area": [
+    -16,
+    -34.8,
+    16,
+    -31.6
+   ],
+   "actions": [
+    {
+     "from": {
+      "line": 1,
+      "word": 17,
+      "offset": -1.2
+     },
+     "do": "cheer"
+    },
+    {
+     "from": {
+      "line": 2,
+      "word": 0
+     },
+     "do": "stand"
+    },
+    {
+     "from": {
+      "line": 5,
+      "word": 0
+     },
+     "do": "cheer"
+    },
+    {
+     "from": {
+      "line": 6,
+      "word": 0
+     },
+     "do": "stand"
+    },
+    {
+     "from": {
+      "line": 10,
+      "word": 7
+     },
+     "do": "cheer"
+    }
+   ]
+  },
+  {
+   "id": "banksN",
+   "outfit": [
+    {
+     "name": "townsfolk",
+     "variant": 0
+    },
+    {
+     "name": "townsfolk",
+     "variant": 1
+    },
+    {
+     "name": "townsfolk",
+     "variant": 2
+    },
+    {
+     "name": "townsfolk",
+     "variant": 3
+    },
+    {
+     "name": "townsfolk",
+     "variant": 4
+    },
+    {
+     "name": "townsfolk",
+     "variant": 5
+    },
+    {
+     "name": "kid"
+    }
+   ],
+   "count": 13,
+   "area": [
+    -16,
+    31.6,
+    16,
+    34.8
+   ],
+   "actions": [
+    {
+     "from": {
+      "line": 1,
+      "word": 17,
+      "offset": -1.2
+     },
+     "do": "cheer"
+    },
+    {
+     "from": {
+      "line": 2,
+      "word": 0
+     },
+     "do": "stand"
+    },
+    {
+     "from": {
+      "line": 5,
+      "word": 0
+     },
+     "do": "cheer"
+    },
+    {
+     "from": {
+      "line": 6,
+      "word": 0
+     },
+     "do": "stand"
+    },
+    {
+     "from": {
+      "line": 10,
+      "word": 7
+     },
+     "do": "cheer"
+    }
+   ]
+  },
+  {
+   "id": "owners",
+   "outfit": [
+    {
+     "name": "owner",
+     "variant": 0
+    },
+    {
+     "name": "owner",
+     "variant": 1
+    }
+   ],
+   "count": 2,
+   "area": [
+    5.05,
+    -33.8,
+    6.15,
+    -33.5
+   ],
+   "actions": [
+    {
+     "from": {
+      "line": 0,
+      "word": 0
+     },
+     "do": "stand",
+     "expr": "neutral"
+    },
+    {
+     "from": {
+      "line": 6,
+      "word": 0,
+      "offset": 0.4
+     },
+     "do": "stand",
+     "expr": [
+      "stern",
+      "nervous"
+     ]
+    },
+    {
+     "from": {
+      "line": 6,
+      "word": 4
+     },
+     "do": "stand",
+     "expr": "shock"
+    }
+   ]
+  },
+  {
+   "id": "middle",
+   "outfit": [
+    {
+     "name": "townsfolk",
+     "variant": 0
+    },
+    {
+     "name": "townsfolk",
+     "variant": 1
+    },
+    {
+     "name": "townsfolk",
+     "variant": 2
+    },
+    {
+     "name": "townsfolk",
+     "variant": 3
+    },
+    {
+     "name": "townsfolk",
+     "variant": 4
+    },
+    {
+     "name": "townsfolk",
+     "variant": 5
+    },
+    {
+     "name": "kid"
+    }
+   ],
+   "onDeck": true,
+   "count": 18,
+   "area": [
+    -0.95,
+    -15.5,
+    0.95,
+    -9.1
+   ],
+   "enter": {
+    "line": 7,
+    "word": 12,
+    "offset": -0.6
+   },
+   "actions": [
+    {
+     "from": {
+      "line": 7,
+      "word": 22
+     },
+     "do": "walk",
+     "to": "rail_minus_x",
+     "speed": 1.3,
+     "expr": [
+      "smile",
+      "smile_closed",
+      "grin"
+     ]
+    },
+    {
+     "from": {
+      "line": 7,
+      "word": 29
+     },
+     "do": "stand",
+     "expr": [
+      "nervous",
+      "grin"
+     ]
+    },
+    {
+     "from": {
+      "line": 7,
+      "word": 36
+     },
+     "do": "stand",
+     "expr": [
+      "shock",
+      "nervous"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "strollers",
+   "outfit": [
+    {
+     "name": "townsfolk",
+     "variant": 0
+    },
+    {
+     "name": "townsfolk",
+     "variant": 1
+    },
+    {
+     "name": "townsfolk",
+     "variant": 2
+    },
+    {
+     "name": "townsfolk",
+     "variant": 3
+    },
+    {
+     "name": "townsfolk",
+     "variant": 4
+    },
+    {
+     "name": "townsfolk",
+     "variant": 5
+    },
+    {
+     "name": "kid"
+    }
+   ],
+   "onDeck": true,
+   "count": 26,
+   "area": [
+    -2,
+    -40,
+    2,
+    26
+   ],
+   "actions": [
+    {
+     "from": {
+      "line": 0,
+      "word": 0
+     },
+     "do": "stroll",
+     "speed": 0.8
+    }
+   ]
+  },
+  {
+   "id": "todayL",
+   "outfit": [
+    {
+     "name": "modern",
+     "variant": 0
+    },
+    {
+     "name": "modern",
+     "variant": 2
+    },
+    {
+     "name": "modern",
+     "variant": 4
+    },
+    {
+     "name": "modern",
+     "variant": 6
+    },
+    {
+     "name": "modern",
+     "variant": 8
+    },
+    {
+     "name": "modern",
+     "variant": 10
+    },
+    {
+     "name": "modern",
+     "variant": 12
+    }
+   ],
+   "onDeck": true,
+   "count": 13,
+   "area": [
+    -2.35,
+    -40,
+    -2.02,
+    26
+   ],
+   "actions": [
+    {
+     "from": {
+      "line": 0,
+      "word": 0
+     },
+     "do": "stroll",
+     "speed": 0.8
+    }
+   ]
+  },
+  {
+   "id": "todayR",
+   "outfit": [
+    {
+     "name": "modern",
+     "variant": 1
+    },
+    {
+     "name": "modern",
+     "variant": 3
+    },
+    {
+     "name": "modern",
+     "variant": 5
+    },
+    {
+     "name": "modern",
+     "variant": 7
+    },
+    {
+     "name": "modern",
+     "variant": 9
+    },
+    {
+     "name": "modern",
+     "variant": 11
+    },
+    {
+     "name": "modern",
+     "variant": 13
+    }
+   ],
+   "onDeck": true,
+   "count": 13,
+   "area": [
+    2.02,
+    -40,
+    2.35,
+    26
+   ],
+   "actions": [
+    {
+     "from": {
+      "line": 0,
+      "word": 0
+     },
+     "do": "stroll",
+     "speed": 0.8
+    }
+   ]
+  }
+ ],
+ "shots": [
+  {
+   "id": 1,
+   "start": {
+    "line": 0,
+    "word": 0
+   },
+   "light": "day",
+   "groups": [
+    "fpL",
+    "fpR",
+    "road",
+    "gaps"
+   ],
+   "show": [
+    "eights"
+   ],
+   "storyFrom": {
+    "line": 4,
+    "word": 0,
+    "offset": -0.93
+   },
+   "bridge": [
+    {
+     "from": {
+      "line": 3,
+      "word": 10,
+      "offset": -0.3
+     },
+     "roll": 0.03
+    },
+    {
+     "from": {
+      "line": 4,
+      "word": 3,
+      "offset": -1.1
+     },
+     "sway": 1,
+     "to": {
+      "line": 5,
+      "word": 0
+     }
+    }
+   ],
+   "cams": [
+    {
+     "at": {
+      "line": 0,
+      "word": 0
+     },
+     "framing": {
+      "pos": [
+       -15.5,
+       2.4,
+       -10.5
+      ],
+      "look": [
+       0,
+       6.1,
+       -4
+      ],
+      "fov": 42,
+      "roll": 0
+     },
+     "push": 0.0025
+    },
+    {
+     "at": {
+      "line": 0,
+      "word": 18,
+      "offset": -0.93
+     },
+     "move": "cut",
+     "framing": {
+      "pos": [
+       -6.2,
+       10.4,
+       -15.5
+      ],
+      "look": [
+       -2.7,
+       9.3,
+       -10
+      ],
+      "fov": 38,
+      "roll": 0.04
+     },
+     "push": 0.003,
+     "punch": true
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 10,
+     "focus": "eights"
+    },
+    {
+     "at": {
+      "line": 0,
+      "word": 18,
+      "offset": -0.93
+     },
+     "cInf": 13
+    }
+   ],
+   "fx": [
+    {
+     "kind": "creak",
+     "from": {
+      "line": 0,
+      "word": 18,
+      "offset": -0.95
+     },
+     "to": {
+      "line": 1,
+      "word": 0
+     },
+     "at": [
+      -2.7,
+      10.0,
+      -10.5
+     ],
+     "size": 0.7
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "start": {
+    "line": 1,
+    "word": 0
+   },
+   "light": "day",
+   "groups": [
+    "fpL",
+    "fpR",
+    "road",
+    "gaps",
+    "banksS",
+    "banksN"
+   ],
+   "show": [
+    "eights"
+   ],
+   "cams": [
+    {
+     "at": {
+      "line": 1,
+      "word": 0
+     },
+     "framing": {
+      "pos": [
+       17,
+       13,
+       -52
+      ],
+      "look": [
+       0,
+       9,
+       4
+      ],
+      "fov": 44,
+      "roll": 0
+     },
+     "zoom": true,
+     "push": 0.002
+    },
+    {
+     "at": {
+      "line": 1,
+      "word": 3
+     },
+     "move": "glide",
+     "dur": 20,
+     "framing": {
+      "pos": [
+       10,
+       10.5,
+       -42
+      ],
+      "look": [
+       0,
+       8,
+       8
+      ],
+      "fov": 42,
+      "roll": 0
+     },
+     "zoom": true,
+     "push": 0.002,
+     "punch": true
+    },
+    {
+     "at": {
+      "line": 1,
+      "word": 20,
+      "offset": -0.2
+     },
+     "move": "cut",
+     "framing": {
+      "subject": "eights",
+      "dist": 15.1,
+      "azimuth": 34,
+      "elevation": 3.6,
+      "height": 0,
+      "fov": 40,
+      "roll": -0.03
+     },
+     "push": 0.0022
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 0
+    },
+    {
+     "at": {
+      "line": 1,
+      "word": 20,
+      "offset": -0.2
+     },
+     "cInf": 14,
+     "focus": "eights"
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "start": {
+    "line": 2,
+    "word": 0
+   },
+   "light": "day",
+   "groups": [
+    "fpL",
+    "fpR",
+    "road",
+    "gaps"
+   ],
+   "cams": [
+    {
+     "at": {
+      "line": 2,
+      "word": 0
+     },
+     "framing": {
+      "pos": [
+       8.5,
+       14.5,
+       -24
+      ],
+      "look": [
+       0,
+       6.6,
+       -6
+      ],
+      "fov": 42,
+      "roll": 0
+     },
+     "push": 0.002
+    },
+    {
+     "at": {
+      "line": 2,
+      "word": 9,
+      "offset": -0.13
+     },
+     "move": "cut",
+     "framing": {
+      "pos": [
+       2.0,
+       8.0,
+       -19.5
+      ],
+      "look": [
+       -0.2,
+       7.3,
+       -9.5
+      ],
+      "fov": 40,
+      "roll": -0.03
+     },
+     "push": 0.002,
+     "punch": true
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 0
+    },
+    {
+     "at": {
+      "line": 2,
+      "word": 9,
+      "offset": -0.13
+     },
+     "cInf": 11,
+     "focus": [
+      -0.4,
+      7.6,
+      -11.5
+     ]
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "start": {
+    "line": 3,
+    "word": 0
+   },
+   "light": "day",
+   "groups": [
+    "fpL",
+    "fpR",
+    "road",
+    "gaps"
+   ],
+   "show": [
+    "eights"
+   ],
+   "bridge": [
+    {
+     "from": {
+      "line": 3,
+      "word": 10,
+      "offset": -0.3
+     },
+     "roll": 0.03
+    }
+   ],
+   "cams": [
+    {
+     "at": {
+      "line": 3,
+      "word": 0
+     },
+     "framing": {
+      "pos": [
+       17,
+       1.6,
+       -13
+      ],
+      "look": [
+       -14,
+       2.2,
+       -1.5
+      ],
+      "fov": 40,
+      "roll": 0
+     },
+     "push": 0.0025
+    },
+    {
+     "at": {
+      "line": 3,
+      "word": 10,
+      "offset": -0.2
+     },
+     "move": "cut",
+     "framing": {
+      "pos": [
+       2.3,
+       7.8,
+       -14.5
+      ],
+      "look": [
+       -1.4,
+       7.35,
+       -6.5
+      ],
+      "fov": 40,
+      "roll": 0
+     },
+     "push": 0.0025,
+     "punch": true
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 0
+    },
+    {
+     "at": {
+      "line": 3,
+      "word": 10,
+      "offset": -0.2
+     },
+     "cInf": 10,
+     "focus": [
+      -1.2,
+      7.6,
+      -9
+     ]
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "start": {
+    "line": 4,
+    "word": 0
+   },
+   "light": "day",
+   "groups": [
+    "fpL",
+    "fpR",
+    "road",
+    "gaps"
+   ],
+   "show": [
+    "eights"
+   ],
+   "bridge": [
+    {
+     "from": {
+      "line": 3,
+      "word": 10,
+      "offset": -0.3
+     },
+     "roll": 0.03
+    },
+    {
+     "from": {
+      "line": 4,
+      "word": 3,
+      "offset": -1.1
+     },
+     "sway": 1,
+     "to": {
+      "line": 5,
+      "word": 0
+     }
+    }
+   ],
+   "cams": [
+    {
+     "at": {
+      "line": 4,
+      "word": 0
+     },
+     "framing": {
+      "pos": [
+       -6.4,
+       9.8,
+       2.5
+      ],
+      "look": [
+       -2.7,
+       9.0,
+       7.5
+      ],
+      "fov": 38,
+      "roll": -0.03
+     },
+     "push": 0.003
+    },
+    {
+     "at": {
+      "line": 4,
+      "word": 3,
+      "offset": -0.13
+     },
+     "move": "cut",
+     "framing": {
+      "pos": [
+       0,
+       10.5,
+       -52
+      ],
+      "look": [
+       0,
+       6.8,
+       0
+      ],
+      "fov": 30,
+      "roll": 0.035
+     },
+     "zoom": true,
+     "push": 0.0025,
+     "punch": true
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 13
+    },
+    {
+     "at": {
+      "line": 4,
+      "word": 3,
+      "offset": -0.13
+     },
+     "cInf": 0
+    }
+   ],
+   "fx": [
+    {
+     "kind": "creak",
+     "from": {
+      "line": 4,
+      "word": 0
+     },
+     "to": {
+      "line": 4,
+      "word": 3
+     },
+     "at": [
+      -2.7,
+      9.6,
+      7.5
+     ],
+     "size": 0.7
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "start": {
+    "line": 5,
+    "word": 0
+   },
+   "light": "day",
+   "groups": [
+    "fpL",
+    "fpR",
+    "road",
+    "gaps",
+    "banksS",
+    "banksN"
+   ],
+   "show": [
+    "eights"
+   ],
+   "bridge": [
+    {
+     "from": {
+      "line": 3,
+      "word": 10,
+      "offset": -0.3
+     },
+     "roll": 0.03
+    },
+    {
+     "from": {
+      "line": 4,
+      "word": 3,
+      "offset": -1.1
+     },
+     "sway": 1,
+     "to": {
+      "line": 5,
+      "word": 0
+     }
+    }
+   ],
+   "cams": [
+    {
+     "at": {
+      "line": 5,
+      "word": 0
+     },
+     "framing": {
+      "pos": [
+       30,
+       4.2,
+       14
+      ],
+      "look": [
+       0,
+       6.4,
+       -3
+      ],
+      "fov": 42,
+      "roll": 0
+     },
+     "push": 0.002
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 0
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "start": {
+    "line": 6,
+    "word": 0
+   },
+   "light": "day",
+   "groups": [
+    "owners",
+    "fpL",
+    "fpR",
+    "road",
+    "gaps"
+   ],
+   "cams": [
+    {
+     "at": {
+      "line": 6,
+      "word": 0
+     },
+     "framing": {
+      "pos": [
+       5.1,
+       7.05,
+       -39.0
+      ],
+      "look": [
+       5.6,
+       7.6,
+       -33.6
+      ],
+      "fov": 40,
+      "roll": 0.035
+     },
+     "push": 0.0025,
+     "punch": true
+    },
+    {
+     "at": {
+      "line": 6,
+      "word": 4,
+      "offset": -0.13
+     },
+     "move": "cut",
+     "framing": {
+      "pos": [
+       5.2,
+       7.15,
+       -37.9
+      ],
+      "look": [
+       5.6,
+       7.65,
+       -33.6
+      ],
+      "fov": 38,
+      "roll": -0.03
+     },
+     "push": 0.003
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 13,
+     "focus": [
+      5.6,
+      7.65,
+      -33.6
+     ]
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "start": {
+    "line": 7,
+    "word": 0
+   },
+   "light": "golden",
+   "xfade": 8,
+   "groups": [
+    "middle"
+   ],
+   "bridge": [
+    {
+     "from": {
+      "line": 7,
+      "word": 29,
+      "offset": -0.1
+     },
+     "roll": 0.17
+    }
+   ],
+   "cams": [
+    {
+     "at": {
+      "line": 7,
+      "word": 0
+     },
+     "framing": {
+      "pos": [
+       0,
+       10.6,
+       -49
+      ],
+      "look": [
+       0,
+       9.2,
+       0
+      ],
+      "fov": 36,
+      "roll": 0
+     },
+     "push": 0.0015
+    },
+    {
+     "at": {
+      "line": 7,
+      "word": 12,
+      "offset": -0.13
+     },
+     "move": "cut",
+     "framing": {
+      "pos": [
+       0,
+       8.7,
+       -37.5
+      ],
+      "look": [
+       0,
+       7.9,
+       -11
+      ],
+      "fov": 38,
+      "roll": 0
+     },
+     "push": 0.0016
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 0
+    },
+    {
+     "at": {
+      "line": 7,
+      "word": 12,
+      "offset": -0.13
+     },
+     "cInf": 6
+    }
+   ]
+  },
+  {
+   "id": 9,
+   "start": {
+    "line": 8,
+    "word": 0
+   },
+   "light": "golden",
+   "xfade": 8,
+   "groups": [],
+   "show": [
+    "rowboat"
+   ],
+   "cams": [
+    {
+     "at": {
+      "line": 8,
+      "word": 0
+     },
+     "framing": {
+      "pos": [
+       31.6,
+       1.45,
+       -15.1
+      ],
+      "look": [
+       26,
+       0.75,
+       -16
+      ],
+      "fov": 40,
+      "roll": 0
+     },
+     "push": 0.0022
+    },
+    {
+     "at": {
+      "line": 8,
+      "word": 13,
+      "offset": -0.13
+     },
+     "move": "cut",
+     "framing": {
+      "pos": [
+       31.0,
+       1.35,
+       -15.4
+      ],
+      "look": [
+       26,
+       0.8,
+       -16
+      ],
+      "fov": 40,
+      "roll": 0.035
+     },
+     "push": 0.0025
+    },
+    {
+     "at": {
+      "line": 8,
+      "word": 20,
+      "offset": -0.07
+     },
+     "move": "glide",
+     "dur": 18,
+     "framing": {
+      "pos": [
+       31.0,
+       1.35,
+       -15.4
+      ],
+      "look": [
+       26,
+       0.8,
+       -16
+      ],
+      "fov": 40,
+      "roll": -0.04
+     },
+     "push": 0.0025
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 9,
+     "focus": [
+      26.4,
+      1.1,
+      -16
+     ]
+    }
+   ],
+   "kicks": [
+    {
+     "at": {
+      "line": 8,
+      "word": 20,
+      "offset": 0.02
+     },
+     "amount": 0.8
+    }
+   ]
+  },
+  {
+   "id": 10,
+   "start": {
+    "line": 9,
+    "word": 0
+   },
+   "light": "golden",
+   "xfade": 8,
+   "groups": [
+    "fpL",
+    "fpR",
+    "road",
+    "gaps"
+   ],
+   "storyFrom": {
+    "line": 4,
+    "word": 0,
+    "offset": -0.4
+   },
+   "bridge": [
+    {
+     "from": {
+      "line": 0,
+      "word": 0
+     },
+     "roll": 0.06,
+     "sway": 0.25
+    }
+   ],
+   "cams": [
+    {
+     "at": {
+      "line": 9,
+      "word": 0
+     },
+     "framing": {
+      "pos": [
+       -15,
+       6.9,
+       -12
+      ],
+      "look": [
+       0,
+       7.8,
+       -5
+      ],
+      "fov": 40,
+      "roll": -0.03
+     },
+     "push": 0.0022,
+     "punch": true
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 7
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "start": {
+    "line": 10,
+    "word": 0
+   },
+   "light": "day",
+   "xfade": 8,
+   "bridgeEra": "gone",
+   "groups": [],
+   "cams": [
+    {
+     "at": {
+      "line": 10,
+      "word": 0
+     },
+     "framing": {
+      "pos": [
+       15,
+       10.5,
+       -48
+      ],
+      "look": [
+       -1,
+       9,
+       -4
+      ],
+      "fov": 40,
+      "roll": 0
+     },
+     "zoom": true,
+     "push": 0.0018
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 0
+    }
+   ]
+  },
+  {
+   "id": 12,
+   "start": {
+    "line": 10,
+    "word": 7
+   },
+   "light": "day",
+   "xfade": 14,
+   "bridgeEra": "new",
+   "groups": [
+    "strollers",
+    "banksS",
+    "banksN"
+   ],
+   "cams": [
+    {
+     "at": {
+      "line": 10,
+      "word": 7
+     },
+     "framing": {
+      "pos": [
+       15,
+       10.5,
+       -48
+      ],
+      "look": [
+       -1,
+       9,
+       -4
+      ],
+      "fov": 40,
+      "roll": 0
+     },
+     "zoom": true,
+     "push": 0.0018
+    },
+    {
+     "at": {
+      "line": 10,
+      "word": 16,
+      "offset": -0.2
+     },
+     "move": "glide",
+     "dur": 30,
+     "framing": {
+      "pos": [
+       15,
+       10.5,
+       -48
+      ],
+      "look": [
+       -1,
+       9.2,
+       2
+      ],
+      "fov": 38,
+      "roll": 0
+     },
+     "zoom": true,
+     "push": 0.002,
+     "punch": true
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 0
+    }
+   ]
+  },
+  {
+   "id": 13,
+   "start": {
+    "line": 11,
+    "word": 0
+   },
+   "light": "day",
+   "xfade": 8,
+   "bridgeEra": "new",
+   "groups": [
+    "todayL",
+    "todayR"
+   ],
+   "show": [
+    "barrier"
+   ],
+   "cams": [
+    {
+     "at": {
+      "line": 11,
+      "word": 0
+     },
+     "framing": {
+      "pos": [
+       1.7,
+       7.75,
+       -16
+      ],
+      "look": [
+       0,
+       7.5,
+       -9.5
+      ],
+      "fov": 40,
+      "roll": 0
+     },
+     "push": 0.0025
+    },
+    {
+     "at": {
+      "line": 11,
+      "word": 4,
+      "offset": -0.13
+     },
+     "move": "cut",
+     "framing": {
+      "pos": [
+       1.6,
+       7.55,
+       -44.7
+      ],
+      "look": [
+       0.2,
+       7.05,
+       -33.7
+      ],
+      "fov": 40,
+      "roll": 0
+     },
+     "push": 0.0025,
+     "punch": true
+    },
+    {
+     "at": {
+      "line": 11,
+      "word": 13,
+      "offset": -0.13
+     },
+     "move": "cut",
+     "framing": {
+      "pos": [
+       -2.25,
+       7.65,
+       -30.73
+      ],
+      "look": [
+       -3.3,
+       7.85,
+       -27.83
+      ],
+      "fov": 38,
+      "roll": 0.03
+     },
+     "push": 0.003,
+     "punch": true
+    },
+    {
+     "at": {
+      "line": 11,
+      "word": 13,
+      "offset": 1.2
+     },
+     "move": "glide",
+     "dur": 70,
+     "framing": {
+      "pos": [
+       18,
+       16,
+       -52
+      ],
+      "look": [
+       -1,
+       7,
+       -2
+      ],
+      "fov": 42,
+      "roll": 0
+     },
+     "push": 0.001
+    }
+   ],
+   "dof": [
+    {
+     "cInf": 0
+    },
+    {
+     "at": {
+      "line": 11,
+      "word": 4,
+      "offset": -0.13
+     },
+     "cInf": 9
+    },
+    {
+     "at": {
+      "line": 11,
+      "word": 13,
+      "offset": -0.13
+     },
+     "cInf": 14
+    },
+    {
+     "at": {
+      "line": 11,
+      "word": 13,
+      "offset": 1.2
+     },
+     "cInf": 0
+    }
+   ],
+   "fx": [
+    {
+     "kind": "crack",
+     "from": {
+      "line": 11,
+      "word": 13
+     },
+     "at": [
+      -3.35,
+      7.85,
+      -27.83
+     ]
+    }
+   ],
+   "kicks": [
+    {
+     "at": {
+      "line": 11,
+      "word": 13
+     },
+     "amount": 0.9
+    }
+   ]
+  }
+ ],
+ "flash": {
+  "line": 1,
+  "word": 0
+ },
+ "duration": 60
+}

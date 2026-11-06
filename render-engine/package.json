@@ -1,0 +1,29 @@
+{
+  "name": "storyit-render-engine",
+  "private": true,
+  "type": "module",
+  "description": "Animated 3D story shorts for Storyit (three.js inside Remotion), driven by a VideoSpec written by Claude",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "stills": "node scripts/stills.mjs",
+    "render": "node scripts/render.mjs"
+  },
+  "dependencies": {
+    "@react-three/fiber": "9.8.2",
+    "@react-three/postprocessing": "3.2.2",
+    "@remotion/bundler": "4.0.540",
+    "@remotion/cli": "4.0.540",
+    "@remotion/renderer": "4.0.540",
+    "@remotion/three": "4.0.540",
+    "postprocessing": "6.39.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "4.0.540",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/three": "0.187.0",
+    "typescript": "^5.6.0"
+  }
+}
