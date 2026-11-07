@@ -2,3 +2,4 @@
 audio/_cache/
 node_modules/
 out/
+__pycache__/
