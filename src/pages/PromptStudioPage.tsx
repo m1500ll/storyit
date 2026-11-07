@@ -1,7 +1,6 @@
 import { Check, ChevronLeft, Copy, ExternalLink, Loader2, RefreshCw, Sparkles, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { SceneImages } from '@/components/prompts/SceneImages';
 import { Button, Card, LoadState, PageHeader, useToast } from '@/components/ui';
 import { usePaywall } from '@/components/billing/Paywall';
 import { useLiveQuery } from '@/hooks/useStore';
@@ -218,7 +217,6 @@ function Project({ id }: { id: string }) {
           )}
           {shown === 'images' && d.images && (
             <>
-              <SceneImages project={project} scenes={d.images} />
               <Guide text="Avec votre compte Gemini : « Ouvrir dans Gemini » copie le prompt de la scène et ouvre Gemini, il ne reste qu'à coller (Cmd/Ctrl + V) et envoyer." all={d.images} />
               <div className="grid gap-3 md:grid-cols-2">{d.images.map((p) => <JsonBlock key={p.scene_number} title={`Scène ${p.scene_number} · ${p.location_environment}`} value={p}
                 open={{ label: 'Ouvrir dans Gemini', url: 'https://gemini.google.com/app', text: `Crée une image verticale 9:16, style ${p.style}. Lieu : ${p.location_environment}. ${p.prompt} Aucun texte ni filigrane sur l'image.` }} />)}</div>

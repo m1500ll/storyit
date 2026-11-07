@@ -1,6 +1,6 @@
 import {
-  BookOpen, CalendarDays, ClipboardCheck, Clapperboard, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Menu, Send,
-  Settings, Sparkles, TrendingUp, Users, Wand2, X,
+  BookOpen, CalendarDays, Clapperboard, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Menu, Send,
+  Settings, TrendingUp, Wand2, X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -21,18 +21,8 @@ const sections = [
     { to: '/app/accounts', label: 'Social accounts', icon: Link2 },
   ] },
   { title: 'Create', items: [
-    { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2, badge: 'New' },
-  ] },
-  { title: 'Episode studio · Beta', beta: true, items: [
-    { to: '/app/new', label: 'New episode', icon: Sparkles },
-    { to: '/app/episodes', label: 'Episodes', icon: Clapperboard },
-    { to: '/app/characters', label: 'Characters', icon: Users },
-    { to: '/app/review', label: 'Review queue', icon: ClipboardCheck },
-  ] },
-  { title: 'Episode studio · Soon', soon: true, items: [
-    { to: '/app/new', label: 'New episode', icon: Sparkles },
-    { to: '/app/episodes', label: 'Episodes', icon: Clapperboard },
-    { to: '/app/characters', label: 'Characters', icon: Users },
+    { to: '/app/studio', label: 'Animated Studio', icon: Clapperboard, badge: 'New' },
+    { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2 },
   ] },
   { title: 'Grow', items: [
     { to: '/app/monetisation', label: 'Monetisation', icon: TrendingUp },

@@ -34,8 +34,9 @@ export const episodesFor = (credits: number) => Math.floor(credits / FULL_EPISOD
 export const LOW_CREDITS = 15;
 /** A full Prompt Studio project, charged once at the start; every step after that is included. Must match PROJECT_COST in supabase/functions/prompts. */
 export const PROMPT_PROJECT_COST = 15;
-/** One automatic scene image (Creator and Studio only). Must match IMAGE_COST in supabase/functions/prompts. */
-export const IMAGE_COST = 2;
+/** One finished animated short (Animated Studio), charged once at "Generate" and refunded if the render fails.
+ *  Must match ANIMATED_CREDITS (default 60) in supabase/functions/_shared/animatedStudio.ts. */
+export const ANIMATED_SHORT_COST = 60;
 export const projectsFor = (credits: number) => Math.floor(credits / PROMPT_PROJECT_COST);
 export type CreditLevel = 'ok' | 'low' | 'empty';
 export const creditLevel = (balance: number): CreditLevel => (balance <= 0 ? 'empty' : balance <= LOW_CREDITS ? 'low' : 'ok');

@@ -1,27 +1,14 @@
-import { Clapperboard, Clock, Plus, Sparkles } from 'lucide-react';
+import { Clapperboard, Plus } from 'lucide-react';
+import { ANIMATED_SHORT_COST } from '@/services/credits';
 import { useNavigate } from 'react-router-dom';
 import { DistributionOverview } from '@/components/dashboard/DistributionOverview';
 import { PromptStudioHero } from '@/components/dashboard/PromptStudioHero';
-import { FirstRun } from '@/components/dashboard/FirstRun';
-import { GettingStarted } from '@/components/dashboard/GettingStarted';
-import { ProjectCard } from '@/components/dashboard/ProjectCard';
-import { Button, Card, CardHeader, CreditCard, LoadState, PageHeader } from '@/components/ui';
-import { useCredits, useProfile, useStories } from '@/hooks/useStore';
-import { useBetaAccess } from '@/hooks/useBeta';
+import { Button, Card, CreditCard, PageHeader } from '@/components/ui';
+import { useProfile } from '@/hooks/useStore';
 
 export default function DashboardPage() {
-  const beta = useBetaAccess();
-  const { data: stories = [], loading, error } = useStories();
   const { data: profile } = useProfile();
-  const { balance } = useCredits();
   const navigate = useNavigate();
-  const inProgress = stories.filter((s) => s.status === 'generating').length;
-  const toReview = stories.filter((s) => s.status === 'in_review').length;
-  const stats = [
-    { label: 'Episodes', value: stories.length, icon: Clapperboard },
-    { label: 'Rendering', value: inProgress, icon: Clock },
-    { label: 'Awaiting review', value: toReview, icon: Sparkles },
-  ];
 
   return (
     <>
@@ -30,32 +17,18 @@ export default function DashboardPage() {
         actions={<Button variant="secondary" onClick={() => navigate('/app/distribute')}><Plus className="h-4 w-4" /> Distribute videos</Button>} />
       <PromptStudioHero />
       <div className="mb-8"><DistributionOverview /></div>
-      {beta ? (
-        <>
-      <p className="label mb-3">Episode studio · Beta</p>
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <div className="min-w-0 space-y-6">
-          {!loading && stories.length > 0 && <GettingStarted stories={stories} />}
-          <div className="grid grid-cols-3 gap-3">
-            {stats.map(({ label, value, icon: Icon }) => (
-              <Card key={label} className="p-3 sm:p-4">
-                <Icon className="h-4 w-4 text-zinc-500" />
-                <p className="mt-3 font-display text-3xl text-zinc-50 tabular-nums">{value}</p>
-                <p className="truncate text-xs text-zinc-500">{label}</p>
-              </Card>
-            ))}
+        <Card className="min-w-0">
+          <p className="label mb-2">New · Animated Studio</p>
+          <h2 className="text-balance font-display text-2xl text-zinc-50">One idea, one finished animated short</h2>
+          <p className="mt-2 text-sm text-zinc-400">Chat with the studio to pick a true story and a decor. Storyit then produces a 60-second vertical video: painted 3D world, cartoon characters, narration, music and sound effects.</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button variant="secondary" onClick={() => navigate('/app/studio')}><Clapperboard className="h-4 w-4" /> Open the Animated Studio</Button>
+            <span className="text-xs text-zinc-500 tabular-nums">{ANIMATED_SHORT_COST} credits per video · refunded if the render fails</span>
           </div>
-          <section>
-            <CardHeader title="Projects" subtitle="Most recent first" />
-            <LoadState loading={loading} error={error} />
-            {!loading && stories.length === 0 && <FirstRun balance={balance} />}
-            <div className="space-y-3">{stories.map((s) => <ProjectCard key={s.id} story={s} />)}</div>
-          </section>
-        </div>
+        </Card>
         <CreditCard />
       </div>
-        </>
-      ) : null}
     </>
   );
 }

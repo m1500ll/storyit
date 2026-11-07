@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { BetaGate } from '@/components/layout/BetaGate';
 import { SubscriberGate } from '@/components/layout/SubscriberGate';
 // Eager: it is the first page most visitors see, so it ships with the main bundle (no extra round trip before the hero paints).
 import LandingPage from '@/pages/LandingPage';
@@ -15,18 +14,13 @@ const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
 const TermsPage = lazy(() => import('@/pages/TermsPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
-const CreateStoryWizardPage = lazy(() => import('@/pages/CreateStoryWizardPage'));
-const SceneEditorPage = lazy(() => import('@/pages/SceneEditorPage'));
-const PublishPage = lazy(() => import('@/pages/PublishPage'));
 const PromptStudioPage = lazy(() => import('@/pages/PromptStudioPage'));
+const AnimatedStudioPage = lazy(() => import('@/pages/AnimatedStudioPage'));
 const AccountsPage = lazy(() => import('@/pages/AccountsPage'));
 const LibraryPage = lazy(() => import('@/pages/LibraryPage'));
 const DistributePage = lazy(() => import('@/pages/DistributePage'));
 const PublicationsPage = lazy(() => import('@/pages/PublicationsPage'));
-const ReviewQueuePage = lazy(() => import('@/pages/ReviewQueuePage'));
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'));
-const EpisodesPage = lazy(() => import('@/pages/EpisodesPage'));
-const CharactersPage = lazy(() => import('@/pages/CharactersPage'));
 const BillingPage = lazy(() => import('@/pages/BillingPage'));
 const MonetisationPage = lazy(() => import('@/pages/MonetisationPage'));
 const GuidePage = lazy(() => import('@/pages/GuidePage'));
@@ -47,11 +41,11 @@ export default function App() {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/app" element={<RequireAuth><AppShell /></RequireAuth>}>
               <Route index element={<DashboardPage />} />
-              <Route path="new" element={<BetaGate><CreateStoryWizardPage /></BetaGate>} />
-              <Route path="review" element={<BetaGate><ReviewQueuePage /></BetaGate>} />
-              <Route path="stories/:storyId" element={<BetaGate><SceneEditorPage /></BetaGate>} />
-              <Route path="stories/:storyId/publish" element={<BetaGate><PublishPage /></BetaGate>} />
               <Route path="accounts" element={<SubscriberGate><AccountsPage /></SubscriberGate>} />
+              <Route path="studio" element={<AnimatedStudioPage />} />
+              <Route path="studio/:projectId" element={<AnimatedStudioPage />} />
+              {/* the old Gemini/Veo episode studio was replaced by the Animated Studio */}
+              {['new', 'review', 'episodes', 'characters', 'stories/*'].map((p) => <Route key={p} path={p} element={<Navigate to="/app/studio" replace />} />)}
               <Route path="prompts" element={<PromptStudioPage />} />
               <Route path="prompts/:projectId" element={<PromptStudioPage />} />
               <Route path="library" element={<SubscriberGate><LibraryPage /></SubscriberGate>} />
@@ -59,8 +53,6 @@ export default function App() {
               <Route path="calendar" element={<SubscriberGate><PublicationsPage /></SubscriberGate>} />
               <Route path="history" element={<SubscriberGate><PublicationsPage history /></SubscriberGate>} />
               <Route path="settings" element={<SettingsPage />} />
-              <Route path="episodes" element={<BetaGate><EpisodesPage /></BetaGate>} />
-              <Route path="characters" element={<BetaGate><CharactersPage /></BetaGate>} />
               <Route path="billing" element={<BillingPage />} />
               <Route path="monetisation" element={<MonetisationPage />} />
               <Route path="guide" element={<GuidePage />} />

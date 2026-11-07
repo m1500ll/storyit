@@ -44,6 +44,9 @@ create or replace function claim_animated_job(p_worker text) returns animated_pr
 language plpgsql security definer set search_path = public as $$
 declare j animated_projects;
 begin
+  -- a worker that died mid-job leaves its row behind: give it back to the queue after 90 minutes
+  update animated_projects set status = 'queued', worker_id = null
+    where status in ('writing', 'voicing', 'rendering') and started_at < now() - interval '90 minutes';
   select * into j from animated_projects where status = 'queued' order by created_at limit 1 for update skip locked;
   if not found then return null; end if;
   update animated_projects set status = 'writing', worker_id = p_worker, started_at = now(), progress = 2, error = null
@@ -51,6 +54,7 @@ begin
   return j;
 end $$;
 revoke all on function claim_animated_job(text) from public, anon, authenticated;
+grant execute on function claim_animated_job(text) to service_role;
 
 -- live progress in the UI
 alter publication supabase_realtime add table animated_projects;

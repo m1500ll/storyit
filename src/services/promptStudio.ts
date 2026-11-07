@@ -57,20 +57,6 @@ export const promptStudio = {
     store.notify();
     return project;
   },
-  /** One scene image (subscribers only, IMAGE_COST credits, charged on success). */
-  async generateImage(projectId: string, scene: number): Promise<PromptProject> {
-    const { project } = await call<{ project: PromptProject }>({ action: 'image', project_id: projectId, scene });
-    store.notify();
-    return project;
-  },
-  /** Short-lived URLs for the project's private scene images. */
-  async imageUrls(files: Record<string, string> | undefined): Promise<Record<string, string>> {
-    const entries = Object.entries(files ?? {});
-    if (!supabase || entries.length === 0) return {};
-    const { data } = await supabase.storage.from('renders').createSignedUrls(entries.map(([, p]) => p), 3600);
-    const byPath = new Map((data ?? []).filter((d) => d.signedUrl).map((d) => [d.path, d.signedUrl]));
-    return Object.fromEntries(entries.map(([n, p]) => [n, byPath.get(p) ?? '']).filter(([, u]) => u));
-  },
   keyStatus: () => (supabase ? call<KeyStatus>({ action: 'key_status' }) : Promise.resolve<KeyStatus>({ connected: false, hint: null, status: null, last_error: null, checked_at: null })),
   async saveKey(key: string) { const r = await call<KeyStatus>({ action: 'key_save', key }); store.notify(); return r; },
   async deleteKey() { await call({ action: 'key_delete' }); store.notify(); },

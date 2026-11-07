@@ -15,9 +15,7 @@ import { reserveAi } from '../_shared/aiBudget.ts';
 const API = 'https://generativelanguage.googleapis.com/v1beta';
 const TEXT_MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
 const TEXT_FALLBACK = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? 'gemini-3.5-flash-lite';
-const IMAGE_MODEL = Deno.env.get('GEMINI_IMAGE_MODEL') ?? 'gemini-3.1-flash-image';
 const PROJECT_COST = 15;
-const IMAGE_COST = 2; // per scene image, subscribers only. Must match IMAGE_COST in src/services/credits.ts
 
 
 const cors = {
@@ -28,7 +26,7 @@ const cors = {
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
 
 async function callGemini(key: string, model: string, body: unknown, timeoutMs: number) {
-  try { await reserveAi(model === IMAGE_MODEL ? 'image' : 'text'); } catch { throw new GeminiError('quota', 429); } // daily ceiling: behaves like a quota
+  try { await reserveAi('text'); } catch { throw new GeminiError('quota', 429); } // daily ceiling: behaves like a quota
   let res: Response;
   try {
     res = await fetch(`${API}/models/${model}:generateContent`, {
@@ -81,8 +79,6 @@ async function generateText(key: string, prompt: string, schema: unknown, allowB
   throw last;
 }
 
-const b64 = (u: Uint8Array) => { let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); };
-const unb64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -138,47 +134,8 @@ Deno.serve(async (req) => {
     project = data;
   }
 
-  // ---------- Scene image (user's key only) ----------
-  if (action === 'image') {
-    if (!project) return json({ error: 'Projet introuvable' }, 404);
-    const images = project.data.images as { scene_number: number; prompt: string; style: string; location_environment: string }[] | undefined;
-    const scene = images?.find((s) => s.scene_number === Number(body.scene));
-    if (!scene) return json({ error: 'Générez d’abord les prompts image.' }, 400);
-    const { data: profile } = await user.from('profiles').select('plan, credit_balance').eq('id', uid).single();
-    if (!profile || profile.plan === 'free') return json({ error: 'La génération d’images est incluse dans les abonnements Creator et Studio.', code: 'plan_required' }, 402);
-    if (profile.credit_balance < IMAGE_COST) return json({ error: 'Not enough Story Credits.' }, 402);
-
-    const files: Record<string, string> = { ...(project.data.image_files ?? {}) };
-    const parts: unknown[] = [{ text: `Image verticale 9:16. ${scene.style}. Lieu : ${scene.location_environment}. ${scene.prompt}\nAucun texte, aucune légende, aucun filigrane.${files['1'] && scene.scene_number !== 1 ? '\nGarde exactement les mêmes personnages (forme, couleurs, vêtements, accessoires) que sur l’image de référence.' : ''}` }];
-    if (files['1'] && scene.scene_number !== 1) {
-      const { data: ref } = await admin.storage.from('renders').download(files['1']);
-      if (ref) parts.push({ inlineData: { mimeType: ref.type || 'image/png', data: b64(new Uint8Array(await ref.arrayBuffer())) } });
-    }
-    try {
-      let bytes: Uint8Array | null = null;
-      // 1) Gemini on Storyit's key (best quality, keeps the characters with the reference image).
-      try {
-        const out = await callGemini(Deno.env.get('GEMINI_API_KEY') ?? '', IMAGE_MODEL, { contents: [{ role: 'user', parts }], generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '9:16' } } }, 90_000);
-        const img = out?.candidates?.[0]?.content?.parts?.find((p: { inlineData?: { data: string } }) => p.inlineData)?.inlineData;
-        if (img?.data) bytes = unb64(img.data);
-      } catch (e) { console.error('image gemini', e instanceof GeminiError ? e.problem : e); }
-      // (A free FLUX backup was tested: watermark, characters missing, 1 image / 45 s per server IP. Not good enough.)
-      if (!bytes) throw new Error('La génération d’image est momentanément indisponible. Utilisez « Ouvrir dans Gemini » sur la scène, ou réessayez plus tard.');
-      const ext = bytes[0] === 0xff ? 'jpg' : 'png';
-      const path = `${uid}/prompts/${project.id}/scene-${String(scene.scene_number).padStart(2, '0')}-${Date.now()}.${ext}`;
-      const up = await admin.storage.from('renders').upload(path, bytes, { contentType: ext === 'jpg' ? 'image/jpeg' : 'image/png' });
-      if (up.error) throw new Error('Impossible d’enregistrer l’image.');
-      const old = files[String(scene.scene_number)];
-      files[String(scene.scene_number)] = path;
-      const saved = await admin.from('prompt_projects').update({ data: { ...project.data, image_files: files }, updated_at: new Date().toISOString() }).eq('id', project.id).eq('user_id', uid).select('*').single();
-      if (saved.error) throw new Error('Impossible d’enregistrer le projet.');
-      if (old) await admin.storage.from('renders').remove([old]);
-      await user.rpc('consume_credits', { p_amount: IMAGE_COST, p_story_id: null, p_description: `Prompt Studio — image scène ${scene.scene_number}` });
-      return json({ project: saved.data });
-    } catch (e) {
-      return json({ error: `${e instanceof Error ? e.message : 'Échec de la génération'} Aucun crédit n’a été utilisé.` }, 502);
-    }
-  }
+  // Scene image generation was removed from the product (the Animated Studio replaces it).
+  if (action === 'image') return json({ error: 'La génération d’images a été retirée de Storyit.' }, 410);
 
   // ---------- Text phases ----------
   if (action !== 'phase') return json({ error: 'Action inconnue' }, 400);

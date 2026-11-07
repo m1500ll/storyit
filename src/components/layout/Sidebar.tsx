@@ -1,13 +1,11 @@
 import {
-  BookOpen, CalendarDays, ClipboardCheck, Clapperboard, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Loader2, Send, Settings, Sparkles, TrendingUp, Users, Wand2,
+  BookOpen, CalendarDays, Clapperboard, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, Wand2,
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
-import { useCredits, useStories } from '@/hooks/useStore';
+import { useCredits } from '@/hooks/useStore';
 import { creditLevel, projectsFor } from '@/services/credits';
-import { useBetaAccess } from '@/hooks/useBeta';
 import { cn } from '@/lib/cn';
 
-import { useWizard } from '@/services/wizardStore';
 import { usePaywall } from '../billing/Paywall';
 import { Logo } from '../ui';
 
@@ -33,18 +31,10 @@ function NavItem({ to, label, icon: Icon, end, badge, locked }: Item) {
   );
 }
 
-const Count = ({ n, tone = 'muted' }: { n: number; tone?: 'muted' | 'accent' }) =>
-  n > 0 ? <span className={cn('rounded-full px-1.5 text-[10px] font-semibold tabular-nums', tone === 'accent' ? 'bg-amber-500/15 text-amber-300' : 'bg-line/[0.08] text-zinc-400')}>{n}</span> : null;
-
 export function Sidebar() {
-  const { data: stories = [] } = useStories();
   const { balance } = useCredits();
-  const beta = useBetaAccess();
   const level = creditLevel(balance);
-  const w = useWizard();
   const openPaywall = usePaywall();
-  const toReview = stories.filter((s) => s.status === 'in_review').length;
-  const characters = new Set(stories.flatMap((s) => s.characters.map((c) => `${c.name}|${c.species}`))).size;
 
   const sections: { title: string; items: Item[] }[] = [
     {
@@ -61,31 +51,10 @@ export function Sidebar() {
     {
       title: 'Create',
       items: [
-        { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[10px] text-violet-300">New</span> },
+        { to: '/app/studio', label: 'Animated Studio', icon: Clapperboard, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[10px] text-violet-300">New</span> },
+        { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2 },
       ],
     },
-    ...(beta ? [
-    {
-      title: 'Episode studio · Beta',
-      items: [
-        {
-          to: '/app/new', label: 'New episode', icon: Sparkles,
-          badge: w.pending ? <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-300" aria-label="Generating" />
-            : w.step > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-violet-400" aria-label="Draft in progress" /> : <span className="rounded-full bg-line/[0.08] px-1.5 text-[10px] text-zinc-400">Beta</span>,
-        },
-        { to: '/app/episodes', label: 'Episodes', icon: Clapperboard, badge: <Count n={stories.length} /> },
-        { to: '/app/characters', label: 'Characters', icon: Users, badge: <Count n={characters} /> },
-        { to: '/app/review', label: 'Review queue', icon: ClipboardCheck, badge: <Count n={toReview} tone="accent" /> },
-      ],
-    },
-    ] : [{
-      title: 'Episode studio · Soon',
-      items: [
-        { to: '/app/new', label: 'New episode', icon: Sparkles, locked: true },
-        { to: '/app/episodes', label: 'Episodes', icon: Clapperboard, locked: true },
-        { to: '/app/characters', label: 'Characters', icon: Users, locked: true },
-      ],
-    }]),
     {
       title: 'Grow',
       items: [
