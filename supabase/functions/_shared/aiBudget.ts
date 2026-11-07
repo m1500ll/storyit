@@ -8,6 +8,9 @@ export const AI_COST = {
   image: 0.05,    // one generated image
   tts: 0.02,
   video_clip: 1,  // one generated video clip: by far the most expensive call
+  claude_chat: 0.08, // one Claude Opus 5.5 turn of the animated-studio brief chat (cached system prompt, optional web search)
+  claude_spec: 1.5,  // one VideoSpec generation (long structured output with adaptive thinking), incl. one repair turn
+  tts_elevenlabs: 0.4, // one ~60 s ElevenLabs narration
 } as const;
 export type AiKind = keyof typeof AI_COST;
 
