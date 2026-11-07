@@ -20,3 +20,13 @@ cd render-engine && npm install
 CHROME_BIN=/path/to/chrome-headless-shell REMOTION_GL=swangle REMOTION_TMP=$PWD/.rtmp \
   node scripts/stills.mjs examples/hammersmith.en.json examples/hammersmith.en.words.json out/t/x_ 30,520,1200 0.5
 ```
+
+## Production (Animated Studio)
+- `worker/pipeline.ts` claims queued `animated_projects` rows and produces each short: VideoSpec by Claude
+  (`specWriter.ts`), ElevenLabs narration (`voice.ts`), soundtrack (`audio/spec_audio.py`), render (`render.ts`),
+  upload to `renders/<user_id>/animated/<project_id>.mp4`, refund on failure.
+- `deploy/modal_app.py` runs it on Modal. GitHub Actions (`.github/workflows/deploy-render-worker.yml`) deploys it on
+  every push that changes `render-engine/` on `feat/animated-studio` (repository variable `RENDER_WORKER_AUTODEPLOY=true`,
+  secrets `MODAL_TOKEN_ID` / `MODAL_TOKEN_SECRET`). The worker's keys are in the Modal secret `storyit-render`.
+- Supabase Edge Function secrets: `ANTHROPIC_API_KEY`, `RENDER_WORKER_URL` (`https://<workspace>--storyit-render-api.modal.run/wake`),
+  `RENDER_WORKER_TOKEN` (same value as in the Modal secret).
