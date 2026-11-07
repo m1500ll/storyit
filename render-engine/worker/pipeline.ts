@@ -72,7 +72,8 @@ export async function produce(job: Job) {
     log(job.id, `done in ${((Date.now() - t0) / 60000).toFixed(1)} min`);
   } catch (e) {
     log(job.id, "FAILED", e);
-    await set(job.id, { status: "failed", error: reasonOf(e), finished_at: new Date().toISOString() });
+    const detail = (e instanceof Error ? `${e.name}: ${e.message}\n${e.stack ?? ""}` : String(e)).slice(0, 4000);
+    await set(job.id, { status: "failed", error: reasonOf(e), error_detail: detail, finished_at: new Date().toISOString() });
     if (job.credits_charged > 0) {
       const { error } = await db.rpc("grant_credits", { p_user_id: job.user_id, p_amount: job.credits_charged, p_type: "refund",
         p_description: "Animated Studio — remboursement (vidéo non produite)" });

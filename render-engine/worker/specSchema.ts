@@ -3,8 +3,10 @@
 // Keep it in step with src/spec.ts: a field Claude writes here must exist there, with the same meaning.
 import { z } from 'zod';
 
-const V2 = z.tuple([z.number(), z.number()]);
-const V3 = z.tuple([z.number(), z.number(), z.number()]);
+// Fixed-length lists are plain arrays here: the SDK's structured-output converter rejects JSON-schema tuples.
+// checkSpec() enforces their lengths (V2 = [x, z], V3 = [x, y, z], area = [x0, z0, x1, z1]).
+const V2 = z.array(z.number()).describe('[x, z] in metres (exactly 2 numbers)');
+const V3 = z.array(z.number()).describe('[x, y, z] in metres (exactly 3 numbers)');
 /** a moment in the narration: word `word` (0-based) of script line `line` (0-based), plus `offset` seconds */
 const Cue = z.object({ line: z.number().int(), word: z.number().int(), offset: z.number().optional() });
 
@@ -16,7 +18,7 @@ const Outfit = z.object({
 });
 
 const Piece = z.union([
-  z.object({ kind: z.literal('eights'), lanes: V2, colors: z.tuple([z.string(), z.string()]), pass: Cue, speed: z.number().optional() }),
+  z.object({ kind: z.literal('eights'), lanes: V2, colors: z.array(z.string()).describe('exactly 2 hex colours'), pass: Cue, speed: z.number().optional() }),
   z.object({ kind: z.literal('rowboat'), at: V2, lean: Cue, tip: Cue }),
   z.object({ kind: z.literal('barrier'), z: z.number(), sign: z.boolean().optional() }),
 ]);
@@ -44,7 +46,7 @@ const Group = z.object({
   outfit: z.union([Outfit, z.array(Outfit)]),
   at: V2.optional(),
   count: z.number().int().optional(),
-  area: z.tuple([z.number(), z.number(), z.number(), z.number()]).optional().describe('[x0, z0, x1, z1]'),
+  area: z.array(z.number()).optional().describe('[x0, z0, x1, z1] (exactly 4 numbers)'),
   onDeck: z.boolean().optional(),
   enter: Cue.optional(),
   actions: z.array(Action),
@@ -122,10 +124,17 @@ export function checkSpec(s: VideoSpecOut): string[] {
     if (!c) return;
     if (c.line < 0 || c.line >= counts.length || c.word < 0 || c.word >= counts[c.line]!) out.push(`${where}: cue line ${c.line} word ${c.word} does not exist`);
   };
+  const len = (a: unknown[] | undefined, n: number, where: string) => { if (a && a.length !== n) out.push(`${where}: needs exactly ${n} numbers, got ${a.length}`); };
+  (s.decor.pieces ?? []).forEach((p, i) => {
+    if (p.kind === 'eights') { len(p.lanes, 2, `piece ${i} lanes`); len(p.colors, 2, `piece ${i} colors`); }
+    if (p.kind === 'rowboat') len(p.at, 2, `piece ${i} at`);
+  });
   const ids = new Set(s.groups.map((g) => g.id));
   if (ids.size !== s.groups.length) out.push('group ids must be unique');
   s.groups.forEach((g) => {
     if (!g.at && !g.area) out.push(`group ${g.id}: give "at" or "area"`);
+    len(g.at, 2, `group ${g.id} at`); len(g.area, 4, `group ${g.id} area`);
+    g.actions.forEach((a, i) => { if (Array.isArray(a.to)) len(a.to, 2, `group ${g.id} action ${i} to`); });
     cue(g.enter, `group ${g.id} enter`);
     g.actions.forEach((a, i) => cue(a.from, `group ${g.id} action ${i}`));
   });
@@ -139,12 +148,14 @@ export function checkSpec(s: VideoSpecOut): string[] {
     if (!sh.cams.length) out.push(`shot ${sh.id}: no camera`);
     sh.cams.forEach((c, i) => {
       cue(c.at, `shot ${sh.id} cam ${i}`);
+      if ('pos' in c.framing) { len(c.framing.pos, 3, `shot ${sh.id} cam ${i} pos`); len(c.framing.look, 3, `shot ${sh.id} cam ${i} look`); }
+      else if (Array.isArray(c.framing.subject)) len(c.framing.subject, 3, `shot ${sh.id} cam ${i} subject`);
       if ('subject' in c.framing && typeof c.framing.subject === 'string' && c.framing.subject !== 'eights' && !ids.has(c.framing.subject)) out.push(`shot ${sh.id} cam ${i}: unknown subject ${c.framing.subject}`);
     });
     (sh.groups ?? []).forEach((g) => { if (!ids.has(g)) out.push(`shot ${sh.id}: unknown group ${g}`); });
-    (sh.fx ?? []).forEach((e, i) => { cue(e.from, `shot ${sh.id} fx ${i}`); cue(e.to, `shot ${sh.id} fx ${i} end`); });
+    (sh.fx ?? []).forEach((e, i) => { cue(e.from, `shot ${sh.id} fx ${i}`); cue(e.to, `shot ${sh.id} fx ${i} end`); len(e.at, 3, `shot ${sh.id} fx ${i} at`); });
     (sh.kicks ?? []).forEach((e, i) => cue(e.at, `shot ${sh.id} kick ${i}`));
-    (sh.dof ?? []).forEach((e, i) => cue(e.at, `shot ${sh.id} dof ${i}`));
+    (sh.dof ?? []).forEach((e, i) => { cue(e.at, `shot ${sh.id} dof ${i}`); if (Array.isArray(e.focus)) len(e.focus, 3, `shot ${sh.id} dof ${i} focus`); });
     if (sh.bridgeEra && sh.bridgeEra !== 'gone' && !s.decor.bridge) out.push(`shot ${sh.id}: bridgeEra without a bridge in the decor`);
   });
   if (s.decor.bridge && !s.decor.river) out.push('a bridge needs the river');

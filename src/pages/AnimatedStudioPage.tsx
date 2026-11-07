@@ -115,13 +115,18 @@ function Start() {
   );
 }
 
+/** **bold** spans from the studio's replies, rendered as <strong> (no HTML is ever injected) */
+function Rich({ text }: { text: string }) {
+  return <>{text.split('**').map((part, i) => (i % 2 ? <strong key={i} className="font-semibold text-zinc-50">{part}</strong> : <span key={i}>{part}</span>))}</>;
+}
+
 function Bubble({ line }: { line: ChatLine }) {
   const me = line.role === 'user';
   return (
     <div className={cn('flex', me ? 'justify-end' : 'justify-start')}>
       <div className={cn('max-w-[85%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
         me ? 'bg-violet-600/90 text-white' : 'surface text-zinc-200')}>
-        {line.text}
+        {me ? line.text : <Rich text={line.text} />}
       </div>
     </div>
   );

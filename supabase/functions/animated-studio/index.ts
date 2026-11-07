@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     if (!body.project_id) return json({ error: 'project_id manquant' }, 400);
     const p = await load(body.project_id);
     if (!p) return json({ error: 'Projet introuvable.' }, 404);
-    const { messages: _m, ...rest } = p; // the raw Claude history stays on the server
+    const { messages: _m, error_detail: _d, ...rest } = p as Row & { error_detail?: string }; // raw Claude history and stack traces stay on the server
     return json({ project: rest });
   }
 
