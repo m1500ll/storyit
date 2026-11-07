@@ -1,16 +1,20 @@
-# Deploys the Animated Studio render worker to Modal (render-engine/deploy/modal_app.py). Manual trigger only:
-# GitHub > Actions > "Deploy render worker" > Run workflow.
+# Deploys the Animated Studio render worker to Modal (render-engine/deploy/modal_app.py): on every push that changes
+# render-engine/ on the studio branches, or by hand (GitHub > Actions > "Deploy render worker" > Run workflow).
 # Needs two repository secrets (Settings > Secrets and variables > Actions): MODAL_TOKEN_ID, MODAL_TOKEN_SECRET.
 # The worker's own keys live in the Modal secret "storyit-render" (created in the Modal dashboard), not here.
 name: Deploy render worker
 on:
   workflow_dispatch:
+  push:
+    branches: [feat/animated-studio]
+    paths: ["render-engine/**", ".github/workflows/deploy-render-worker.yml"]
 permissions:
   contents: read
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.RENDER_WORKER_AUTODEPLOY == 'true' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
