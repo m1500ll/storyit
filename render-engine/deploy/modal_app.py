@@ -4,7 +4,8 @@
 # - poll:  every 5 minutes, in case a wake-up was missed.
 # - drain: claims queued shorts one by one and produces them (worker/pipeline.ts).
 # Rendering: software WebGL (swangle) on 32 CPU cores by default: proven, ~15-25 min per 60 s short.
-# Set RENDER_MODE=gpu in the secret to try an L4 GPU with ANGLE/EGL (faster; verify one render first).
+# GPU option: deploy with DEPLOY_GPU=1 (needs a payment method on Modal), then set RENDER_MODE=gpu in the secret to
+# render on an L4 with ANGLE/EGL (faster; verify one render first).
 # Secrets (Modal secret "storyit-render"): SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY,
 #   ELEVENLABS_API_KEY, ELEVENLABS_DEFAULT_VOICE, RENDER_WORKER_TOKEN.
 # Deploy:  pip install modal && modal setup && modal deploy render-engine/deploy/modal_app.py
@@ -46,13 +47,16 @@ def drain_cpu():
     _drain()
 
 
-@app.function(secrets=[secret], gpu="L4", cpu=8.0, memory=32768, timeout=2 * 60 * 60, max_containers=2)
-def drain_gpu():
-    _drain()
+# The GPU worker is deployed only when DEPLOY_GPU=1 at deploy time (Modal requires a payment method for GPUs).
+if os.environ.get("DEPLOY_GPU") == "1":
+    @app.function(secrets=[secret], gpu="L4", cpu=8.0, memory=32768, timeout=2 * 60 * 60, max_containers=2)
+    def drain_gpu():
+        _drain()
 
 
 def _start():
-    (drain_gpu if os.environ.get("RENDER_MODE") == "gpu" else drain_cpu).spawn()
+    gpu = os.environ.get("RENDER_MODE") == "gpu" and "drain_gpu" in globals()
+    (globals()["drain_gpu"] if gpu else drain_cpu).spawn()
 
 
 @app.function(secrets=[secret])
