@@ -27,7 +27,7 @@ image = (
     .pip_install("numpy==2.3.*", "scipy==1.16.*", "pillow==11.*", "fastapi[standard]")
     .add_local_dir(str(HERE), "/app", copy=True, ignore=["node_modules", "out", ".rtmp", "**/__pycache__"])
     .run_commands("cd /app && npm ci --no-audit --no-fund", "cd /app && npx remotion browser ensure")
-    .env({"PYTHON": "python3", "REMOTION_GL": "swangle", "RENDER_CONCURRENCY": "16"})
+    .env({"PYTHON": "python3", "REMOTION_GL": "swangle", "RENDER_CHUNKS": "4", "RENDER_CONCURRENCY": "4"})
 )
 
 app = modal.App("storyit-render", image=image)
@@ -38,6 +38,7 @@ def _drain():
     env = dict(os.environ)
     if env.get("RENDER_MODE") == "gpu":
         env["REMOTION_GL"] = "angle-egl"
+        env["RENDER_CHUNKS"] = "2"
         env["RENDER_CONCURRENCY"] = "4"
     subprocess.run(["npx", "tsx", "worker/pipeline.ts"], cwd="/app", env=env, check=True)
 
