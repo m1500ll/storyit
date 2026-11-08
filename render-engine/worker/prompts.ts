@@ -18,7 +18,7 @@ export const PROPS: Record<string, number> = {
 const STYLE = `STYLE (fixed, never change it): flat 2D bean-headed cartoon characters with plum ink outlines, standing in a painted, ink-outlined, saturated 3D world; gliding cameras; depth of field on close shots; a white flash after the hook; golden light for the explanation beat. No captions or text on screen. One steady narrator voice.
 
 STORY FORMULA (55-60 s, 170-210 words, one sentence or beat per script line, 10-14 lines):
-1. Hook: the absurd true fact in one line.
+1. Hook: the absurd true fact as a promise in one short line (see NARRATION CRAFT).
 2. Setting: year, place, why it mattered.
 3. Action: escalation over three or four beats, each a little bigger.
 4. Snap: the moment it goes wrong (or almost).
@@ -26,7 +26,24 @@ STORY FORMULA (55-60 s, 170-210 words, one sentence or beat per script line, 10-
 6. Explanation: one physics or human idea through an everyday analogy.
 7. Consequence: what changed because of it.
 8. Callback twist: the ending, a researched fact that lands as a joke.
-Never describe on screen what the viewer already sees. Every joke is a real, sourced fact. No real living private person.`;
+Never describe on screen what the viewer already sees. Every joke is a real, sourced fact. No real living private person.
+
+NARRATION CRAFT (this is what makes the short worth watching; never write a neutral encyclopedia voice):
+- A storyteller talking to ONE friend, live: warm, amused, a little conspiratorial. Second person and rhetorical questions are welcome ("Tu imagines ?", "Imagine."). Present tense for the action, so it happens now.
+- The first line is the whole battle: a jaw-dropping, concrete promise in at most 14 words that opens a question the viewer must see answered (a number, a contradiction, a stake). Never start with a date, "Il était une fois", "Saviez-vous" or a definition.
+- Re-hook every 3 or 4 lines with a turn that raises the stakes ("Mais ça, ce n'est rien.", "Et c'est là que tout dérape.", "Sauf que personne n'avait prévu une chose."). Each beat must be bigger than the last.
+- Concrete beats abstract: names, numbers, objects, sounds, a smell, a gesture. One vivid detail per beat; cut every filler word, every "en effet", "ainsi", "donc", every passive sentence.
+- Rhythm: mostly short sentences (6 to 14 words), then one longer one to breathe, then a 2-4 word punch line alone ("Silence.", "Le pont tremble."). Vary the length; never three long lines in a row.
+- Emotion in the words: surprise, tension, relief, irony. Deadpan understatement lands the jokes; exclamation marks only on the 2 or 3 real peaks.
+- The ending pays off the hook with a twist the viewer did not see coming, and the very last line is short and quotable, ideally echoing the first line so the loop invites a rewatch.
+
+PUNCTUATION (the voice reads it: it sets the pauses, the rhythm and the intonation; it must be impeccable):
+- Every script line ends with exactly one of . ! ? … (never a bare line, never a comma at the end).
+- Commas where a speaker breathes, at least one in any line longer than 12 words; a comma before "mais" and after an opening clause ("En 1912, …").
+- "…" for suspense just before a reveal (at most 3 in the short); "?" on real questions; "!" on peaks only, never "!!" or "?!".
+- French typography for French: a space before ? ! : ; and inside « » quotes; ' or ’ in elisions (l'arbitre); no ALL CAPS, no emoji, no hashtags, no stage directions in brackets.
+- Numbers the way they are said: years and big numbers in digits are fine ("1912", "12 000"); no abbreviations (write "kilomètres", "environ", "Saint").
+- Before answering, reread the script aloud in your head: fix any line that is flat, too long to say in one breath, or wrongly punctuated.`;
 
 export const SPEC_SYSTEM = `You write VideoSpecs for Storyit's animated-shorts engine: JSON documents that the engine renders into a finished 60 s vertical short. You receive the agreed brief (chat recap). Return only the VideoSpec, matching the schema exactly.
 

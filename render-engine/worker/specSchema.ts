@@ -277,3 +277,38 @@ export function checkSpec(s: VideoSpecOut): string[] {
   if (!s.facts.length) out.push('list the facts the story relies on, with sources');
   return out;
 }
+
+/** mechanical punctuation fixes on the narration (the voice reads punctuation as rhythm and intonation). Word tokens
+ *  (letters and digits) never change, so every cue stays valid. */
+export function normalizeScript<T extends { script: string[]; language: string }>(spec: T): T {
+  const fr = /^fr/i.test(spec.language);
+  const script = spec.script.map((raw) => {
+    let l = raw.replace(/\s+/g, " ").trim();
+    l = l.replace(/\.{3,}/g, "…").replace(/([!?])\1+/g, "$1").replace(/\?!|!\?/g, "?").replace(/\s+([,.…])/g, "$1");
+    if (fr) l = l.replace(/\s*([?!:;])/g, "\u00a0$1").replace(/«\s*/g, "«\u00a0").replace(/\s*»/g, "\u00a0»");
+    else l = l.replace(/\s+([?!:;])/g, "$1");
+    l = l.replace(/[,;:\s\u00a0]+$/, "");
+    if (!/[.!?…»"]$/.test(l)) l += ".";
+    return l;
+  });
+  return { ...spec, script };
+}
+
+/** craft checks on the narration: problems sent back to Claude for a rewrite (see NARRATION CRAFT in prompts.ts) */
+export function checkNarration(s: { script: string[] }): string[] {
+  const out: string[] = [];
+  const words = (l: string) => l.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
+  const hook = s.script[0] ?? "";
+  if (words(hook) > 16) out.push(`the hook (line 0) has ${words(hook)} words: make it a punchy promise of at most 14 words`);
+  if (/^\s*(en|in)\s+(l'an\s+)?[\d\p{L}-]*\s*\d{3,4}\b/iu.test(hook) || /^\s*(il était une fois|once upon a time|saviez-vous|did you know)/iu.test(hook)) out.push("the hook (line 0) starts with a date or a stock opening: open on the shocking fact or the stake instead");
+  s.script.forEach((l, i) => {
+    const n = words(l);
+    if (n > 26) out.push(`line ${i} has ${n} words: too long to say in one breath, split it into two lines`);
+    else if (n > 16 && !/[,;:—–]/.test(l)) out.push(`line ${i} has ${n} words and no comma: add the breath pause(s) where a speaker would breathe`);
+    if (/\b[A-ZÀ-Ý]{4,}\b/.test(l)) out.push(`line ${i} has a word in capitals: no ALL CAPS in the narration`);
+    if (/[\[\]()]|\p{Extended_Pictographic}|#/u.test(l)) out.push(`line ${i} has brackets, an emoji or a hashtag: narration text only`);
+  });
+  const long = s.script.map((l) => words(l) > 15);
+  for (let i = 2; i < long.length; i++) if (long[i] && long[i - 1] && long[i - 2]) { out.push(`lines ${i - 2}-${i} are three long sentences in a row: break the rhythm with a short punch line`); break; }
+  return out;
+}

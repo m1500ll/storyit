@@ -5,7 +5,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { MODEL, specSystemText } from "./prompts.js";
-import { VideoSpecSchema, checkSpec, type VideoSpecOut } from "./specSchema.js";
+import { VideoSpecSchema, checkNarration, checkSpec, normalizeScript, type VideoSpecOut } from "./specSchema.js";
 
 export type SpecResult = { spec: VideoSpecOut; usage: Anthropic.Beta.BetaUsage[]; problems: string[] };
 
@@ -56,8 +56,9 @@ export async function writeSpec(brief: string, language: string, client = new An
     try {
       const parsed = VideoSpecSchema.safeParse(extractJson(textOf(msg)));
       if (parsed.success) {
-        problems = checkSpec(parsed.data);
-        if (!best || problems.length < best.problems.length) best = { spec: parsed.data, problems };
+        const spec = normalizeScript(parsed.data);
+        problems = [...checkSpec(spec), ...checkNarration(spec)];
+        if (!best || problems.length < best.problems.length) best = { spec, problems };
         if (!problems.length) break;
       } else problems = zodProblems(parsed.error);
     } catch (e) {
