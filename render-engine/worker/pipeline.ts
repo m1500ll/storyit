@@ -71,9 +71,11 @@ export async function produce(job: Job) {
     let lastPct = 30;
     const video = await renderVideo(spec as VideoSpec, voice.words, path.join(dir, "mix.wav"), path.join(dir, "render"), (p) => {
       const pct = Math.floor(30 + p * 65);
-      if (pct >= lastPct + 5) { lastPct = pct; void set(job.id, { progress: pct }); }
+      if (pct >= lastPct + 5) { lastPct = pct; set(job.id, { progress: pct }).then(() => {}, () => {}); } // a builder only runs when awaited/then'd
     });
     // 5. upload
+    const mb = fs.statSync(video).size / 1e6;
+    log(job.id, `video ${mb.toFixed(1)} MB`);
     const key = `${job.user_id}/animated/${job.id}.mp4`;
     const { error } = await db.storage.from("renders").upload(key, fs.readFileSync(video), { contentType: "video/mp4", upsert: true });
     if (error) throw new Error("upload: " + error.message);

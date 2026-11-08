@@ -46,7 +46,16 @@ export async function renderVideo(spec: VideoSpec, words: Word[], mixWav: string
   const silent = path.join(outDir, "video_silent.mp4");
   execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", list, "-c", "copy", silent]);
   const final = path.join(outDir, "video.mp4");
-  execFileSync("ffmpeg", ["-v", "error", "-y", "-i", silent, "-i", path.resolve(mixWav), "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy",
+  // re-encoded with a capped bitrate: the crf 18 parts weigh ~100 MB per minute, over Supabase Storage's 50 MB per-file limit
+  const mux = (video: string[]) => execFileSync("ffmpeg", ["-v", "error", "-y", "-i", silent, "-i", path.resolve(mixWav), "-map", "0:v:0", "-map", "1:a:0",
+    "-c:v", "libx264", "-preset", "medium", ...video, "-pix_fmt", "yuv420p",
     "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-af", "volume=-0.5dB", "-shortest", "-movflags", "+faststart", final]);
+  mux(["-crf", "20", "-maxrate", "4500k", "-bufsize", "6M"]);
+  const LIMIT = 48e6;
+  if (fs.statSync(final).size > LIMIT) { // safety net: a fixed average bitrate that fits
+    const secs = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", final]).toString());
+    const kbps = Math.floor((LIMIT * 8 * 0.95) / secs / 1000) - 200;
+    mux(["-b:v", `${kbps}k`, "-maxrate", `${kbps}k`, "-bufsize", `${kbps * 2}k`]);
+  }
   return final;
 }
