@@ -418,6 +418,13 @@ const hatOn = (p: Pen, o: Outfit, hp: P2[], H: Blob, cx: number, hc: number, lig
     p.poly(body, null, ow);
     const [bx, by] = R([[cx, yb + 1 * u]])[0];
     p.ell(bx, by, 0.45 * W, 0.05 * HH, "#1d1b22", ow, 0, 360, (a * 180) / Math.PI);
+  } else if (o.hat === "spacehelmet") {
+    // astronaut's bubble helmet: a clear globe around the head with an ink ring, a highlight and a collar ring
+    const [hx, hy] = R([[cx, hc]])[0];
+    p.g.save(); p.g.globalAlpha = 0.18; p.ell(hx, hy, 0.66 * W, 0.62 * HH, "#bfe0ff", 0); p.g.restore();
+    p.ell(hx, hy, 0.66 * W, 0.62 * HH, null, ow * 0.9);
+    p.arc(hx - 0.2 * W, hy - 0.22 * HH, 0.32 * W, 0.3 * HH, 200, 250, 4 * u, "#ffffff");
+    p.ell(hx, hy + 0.58 * HH, 0.42 * W, 0.08 * HH, "#b8bcc6", ow * 0.8);
   } else if (o.hat === "nemes") {
     // pharaoh's striped headcloth: a flat top over the head and two lappets falling to the shoulders, gold and blue
     const yb = crown + 0.42 * HH, wb = 0.52 * W, top = crown - 0.04 * HH;
@@ -966,6 +973,8 @@ export const FARMER = (v = 0): Outfit => ({ jacket: ["#c0353a", "#3f6fb5", "#2f8
 export const PHARAOH: Outfit = { jacket: "#f4f1ea", pants: SKINS[3], boots: "#c99067", hat: "nemes", sash: "#e8c45a", buttons: "#3a5fa8", skin: SKINS[3] };
 export const EGYPTIAN = (v = 0): Outfit => ({ jacket: "#f4f1ea", pants: SKINS[(v % 2) + 2], boots: SKINS[(v % 2) + 2], hat: "hair", hair: "#1d1b22", skin: SKINS[(v % 2) + 2], dress: v % 3 === 1 ? "#f4f1ea" : undefined });
 export const EXPLORER = (v = 0): Outfit => ({ jacket: "#c8b07a", pants: "#a8935a", boots: "#5a3b2a", hat: "pith", skin: SKINS[v % 2], moustache: v % 2 ? undefined : "#6a4a30" });
+/** an astronaut in a white suit with a bubble helmet and grey boots (sash = the mission stripe) */
+export const ASTRONAUT = (v = 0): Outfit => ({ jacket: "#f2f0ea", pants: "#e4e2dc", boots: "#8a8e98", hat: "spacehelmet", sash: ["#d6453a", "#3f6fb5", "#e8c45a"][v % 3], skin: SKINS[v % 4] });
 /** a scientist in a white lab coat */
 export const SCIENTIST = (v = 0): Outfit => ({ jacket: "#f4f6f8", pants: ["#3b3f52", "#3b5b9a"][v % 2], boots: "#4a3426", hat: "hair", hair: ["#7a7a7a", "#2a201a", "#c08a4a", "#5a3b2a"][v % 4], skin: SKINS[v % 4], moustache: v % 4 === 0 ? "#7a7a7a" : undefined });
 /** today's strollers: no hats, bright casual colours */

@@ -21,7 +21,7 @@ export type KitName = string;
 
 export type Decor = {
   /** the ground everywhere that is not water, quay or road */
-  ground: "grass" | "cobble" | "sand";
+  ground: "grass" | "cobble" | "sand" | "moon";
   /** a river along x between the banks (z = +-30), with stone embankments and quays */
   river: boolean;
   /** the template's chain suspension bridge across the river (needs river) */
@@ -50,6 +50,9 @@ export type Decor = {
   /** an Egyptian desert on sand: pyramids far behind (great one at (0, -170)), the Sphinx at (26, -62) facing +z, an
    *  obelisk at (-12, -20), an oasis at (-30, 12), market tents, quarry blocks, dunes. Needs river: false, ground sand. */
   desert?: Record<string, never>;
+  /** the Moon (ground "moon"): craters, rocks, black starry sky with the Earth, a lunar module at (12, -8), a flag at
+   *  (6, -2), a rover at (-8, 10), a rocket on its pad at (-24, -34). Needs river: false. */
+  space?: { flag?: "usa" | "none" };
   /** flag on the bridge towers */
   flag?: "england" | "union" | "france" | "none";
 };
@@ -64,9 +67,11 @@ export type Piece =
   /** a car driving along the main road (city) in lane z, from x0 at cue `from` to x1 at cue `to` (heading toward x1) */
   | { kind: "car"; color?: string; lane: number; x0: number; x1: number; from: Cue; to: Cue }
   /** a sailing ship on the sea (harbour) in lane z, from x0 at cue `from` to x1 at cue `to` (bow toward x1) */
-  | { kind: "ship"; hull?: string; sail?: string; lane: number; x0: number; x1: number; from: Cue; to: Cue };
+  | { kind: "ship"; hull?: string; sail?: string; lane: number; x0: number; x1: number; from: Cue; to: Cue }
+  /** the space decor's rocket lifts off from its pad at the cue `launch` (flame, then an accelerating climb) */
+  | { kind: "rocket"; launch: Cue };
 
-export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant" | "scientist" | "sailor" | "captain" | "fisherman" | "farmer" | "pharaoh" | "egyptian" | "explorer" | "art";
+export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant" | "scientist" | "sailor" | "captain" | "fisherman" | "farmer" | "pharaoh" | "egyptian" | "explorer" | "astronaut" | "art";
 export type Outfit = { name: OutfitName; variant?: number; color?: string; /** name "art": the id of a drawing in spec.art */ art?: string };
 
 /** what a group of characters does from a cue onward */

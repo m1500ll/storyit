@@ -16,8 +16,9 @@ import { buildCity, carGeo } from "./city";
 import { buildHarbour, shipGeo, SEA_Y } from "./harbour";
 import { buildFarm } from "./farm";
 import { buildDesert, sandTex } from "./desert";
+import { buildSpace, moonTex, rocketGroup, ROCKET } from "./space";
 import { Pool, Actor, Fx, stage, SIGN_AT, SU_SWING } from "./cast";
-import { FPS, D0, SHOTS, camAt, bridgeState, deckY, deckX, dropW, shapeZ, BridgeState, V3, smooth, FOREGROUND, ShotDef, BOAT_LEN, boatX, strokeAt, rowboatRoll, piece, SPEC, ballAt, BALL_R, carAt, shipAt } from "./story";
+import { FPS, D0, SHOTS, camAt, bridgeState, deckY, deckX, dropW, shapeZ, BridgeState, V3, smooth, FOREGROUND, ShotDef, BOAT_LEN, boatX, strokeAt, rowboatRoll, piece, SPEC, ballAt, BALL_R, carAt, shipAt, rocketAt } from "./story";
 const hasRiver = () => SPEC.decor.river;
 const hasBridge = () => SPEC.decor.river && !!SPEC.decor.bridge;
 const boatDefs = () => { const e = piece("eights"); return e ? [0, 1].map((k) => ({ z: e.lanes[k]!, blade: e.colors[k]!, kit: e.colors[k]! })) : []; };
@@ -128,6 +129,7 @@ export class World {
   private hulls: THREE.Mesh[] = []; private oars: THREE.InstancedMesh[] = []; private blades: THREE.InstancedMesh[] = [];
   private rowboat = new THREE.Group();
   private ball!: THREE.Mesh; private car = new THREE.Group(); private ship = new THREE.Group();
+  private space: { earth: THREE.Object3D; stars: THREE.Object3D } | null = null; private rocket: THREE.Group | null = null;
   private frustum = new THREE.Frustum();
   private m4 = new THREE.Matrix4(); private v = new THREE.Vector3(); private sph = new THREE.Sphere();
 
@@ -187,7 +189,7 @@ export class World {
     M.wood = lam("wood", () => ({ map: beam() }));
     M.bed = lam("bed", () => ({ map: bed() }));
     M.sand = lam("sand", () => ({ color: "#e2c992" }));
-    const groundM = SPEC.decor.ground === "cobble" ? M.cobble : SPEC.decor.ground === "sand" ? lam("sandHD", () => ({ map: sandTex() })) : M.grass;
+    const groundM = SPEC.decor.ground === "cobble" ? M.cobble : SPEC.decor.ground === "sand" ? lam("sandHD", () => ({ map: sandTex() })) : SPEC.decor.ground === "moon" ? lam("moonHD", () => ({ map: moonTex() })) : M.grass;
     const harbour = !!SPEC.decor.harbour; // the harbour has land only for z >= 0: the sea fills z < 0
     if (!hasRiver()) b.add(harbour ? quadUp(-900, 900, 0, 30, 450, 7.5) : quadUp(-900, 900, -30, 30, 450, 15), groundM);
     if (hasRiver()) for (const s of [-1, 1]) {
@@ -242,6 +244,13 @@ export class World {
     if (SPEC.decor.harbour) buildHarbour(R, kit, SPEC.decor.harbour);
     if (SPEC.decor.farm) buildFarm(R, kit, SPEC.decor.farm);
     if (SPEC.decor.desert) buildDesert(R, kit, SPEC.decor.desert);
+    if (SPEC.decor.space) {
+      this.space = buildSpace(R, SPEC.decor.space);
+      for (const o of [this.space.earth, this.space.stars]) o.layers.set(NOINK);
+      this.rocket = rocketGroup(); this.rocket.position.set(ROCKET[0], D0 + 0.6, ROCKET[1]);
+      this.rocket.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+      R.add(this.rocket);
+    }
     { const sp = piece("ship"); if (sp) { const sb = new Batch(); shipGeo(sb, 0, 0, 0.9, sp.hull ?? "#2f6f5a", sp.sail ?? "#f4f1ea"); sb.build(this.ship); this.ship.visible = false; R.add(this.ship); } }
     { const cp = piece("car"); if (cp) { const cb = new Batch(); carGeo(cb, cp.color ?? "#e2453c", 0, 0); cb.build(this.car); this.car.visible = false; R.add(this.car); } }
     // the football (piece "ball"): white with dark patches, rolled by the distance it travels
@@ -462,8 +471,13 @@ export class World {
     this.sky.position.copy(cam.position);
     untone(L.fog, this.fog.color); this.fog.near = L.fogNear; this.fog.far = L.fogFar;
     if (SPEC.decor.desert) { this.fog.near = L.fogNear * 3; this.fog.far = L.fogFar * 2.2; } // dry desert air: the pyramids 200 m away keep their colour
+    if (this.space) { // the Moon: a black sky (deep navy at the horizon), no air so no haze, no clouds, stars around the lens
+      ["#1a1f3a", "#0d1026", "#070918", "#04050f", "#020308"].forEach((h, i) => untone(h, su["c" + i].value));
+      this.fog.near = 5000; this.fog.far = 9000;
+      this.space.stars.position.copy(cam.position);
+    }
     scene.fog = this.fog; scene.background = null;
-    const showSun = s.light === "golden";
+    const showSun = s.light === "golden" && !this.space;
     this.sunDisc.visible = this.sunHalo.visible = showSun;
     if (showSun) {
       this.sunDisc.position.copy(cam.position).addScaledVector(sunDir, 900);
@@ -475,6 +489,12 @@ export class World {
       const m = this.clouds[i], mat = m.material as THREE.MeshBasicMaterial;
       m.lookAt(cam.position.x, m.position.y, cam.position.z);
       mat.map = this.cloudMaps[s.light][i % 4];
+      m.visible = !this.space;
+    }
+    if (this.rocket) { // lift-off: the rocket climbs from its pad after the launch cue, the flame burns from 0.6 s before
+      const r = rocketAt(t);
+      this.rocket.position.y = D0 + 0.6 + r.y;
+      const fl = this.rocket.getObjectByName("flame"); if (fl) { fl.visible = r.burn; fl.scale.set(1, 0.85 + 0.3 * Math.abs(Math.sin(t * 31)), 1); }
     }
     // ---- river colours (on-screen targets, tone-map-inverted) ----
     const W = this.WU, wc = K.water;

@@ -96,6 +96,7 @@ const pushK = (f: number, f0: number, rate: number, punch = 0, n = 35) => {
 export const subjectPoint = (id: number, subj: string | V3, f: number, height = 1.55): V3 => {
   if (Array.isArray(subj)) return subj;
   const t = SHOTS[id - 1]!.tau(T(f));
+  if (subj === "rocket") { const r = rocketAt(t); return [-24, D0 + 0.6 + r.y + height + 8, -34]; }
   if (subj === "ship") { const c = shipAt(t); if (c) return [c[0], D0 + height - 1.55, c[1]]; }
   if (subj === "car") { const c = carAt(t); if (c) return [c[0], D0 + height - 0.6, c[1]]; }
   if (subj === "ball") { const p = ballAt(t); if (p) return [p[0], p[1] + height - 1.55 + 0.4, p[2]]; }
@@ -206,6 +207,14 @@ export const shipAt = (t: number): [number, number, number] | null => {
   if (!p) return null;
   const a = TL.t(p.from), b = TL.t(p.to), u = Math.max(0, Math.min(1, (t - a) / Math.max(0.1, b - a))), e = u * u * (3 - 2 * u);
   return [p.x0 + (p.x1 - p.x0) * e, p.lane, p.x1 >= p.x0 ? 1 : -1];
+};
+/** the rocket's height above its pad at story time t (0 before the launch cue) and whether its engine burns */
+export const rocketAt = (t: number): { y: number; burn: boolean } => {
+  const p = piece("rocket");
+  if (!p) return { y: 0, burn: false };
+  const dt = t - TL.t(p.launch);
+  if (dt < -0.6) return { y: 0, burn: false };
+  return { y: dt > 0 ? 0.5 * 9 * dt * dt : 0, burn: true }; // the engine lights 0.6 s before lift-off
 };
 export const strokeAt = (t: number, k: number) => (((t * 0.6 + k * 0.17) % 1) + 1) % 1;
 export const rowboatRoll = (t: number) => {

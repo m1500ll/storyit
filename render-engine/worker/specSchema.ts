@@ -12,7 +12,7 @@ const Cue = z.object({ line: z.number().int(), word: z.number().int(), offset: z
 
 const Expr = z.enum(['neutral', 'stern', 'grin', 'laugh', 'whistle', 'nervous', 'shock', 'relief', 'relief_open', 'dazed', 'pained', 'smile', 'smile_closed', 'lick']);
 const Outfit = z.object({
-  name: z.enum(['townsfolk', 'kid', 'owner', 'modern', 'soldier', 'officer', 'rower', 'player', 'referee', 'knight', 'king', 'queen', 'peasant', 'scientist', 'sailor', 'captain', 'fisherman', 'farmer', 'pharaoh', 'egyptian', 'explorer', 'art']),
+  name: z.enum(['townsfolk', 'kid', 'owner', 'modern', 'soldier', 'officer', 'rower', 'player', 'referee', 'knight', 'king', 'queen', 'peasant', 'scientist', 'sailor', 'captain', 'fisherman', 'farmer', 'pharaoh', 'egyptian', 'explorer', 'astronaut', 'art']),
   variant: z.number().int().optional(),
   color: z.string().optional().describe('hex colour: the rower or player kit, the knight tabard'),
   art: z.string().optional().describe('name "art" only: the id of a drawing in art'),
@@ -22,13 +22,14 @@ const Piece = z.union([
   z.object({ kind: z.literal('eights'), lanes: V2, colors: z.array(z.string()).describe('exactly 2 hex colours'), pass: Cue, speed: z.number().optional() }),
   z.object({ kind: z.literal('rowboat'), at: V2, lean: Cue, tip: Cue }),
   z.object({ kind: z.literal('barrier'), z: z.number(), sign: z.boolean().optional() }),
+  z.object({ kind: z.literal('rocket'), launch: Cue }),
   z.object({ kind: z.literal('ship'), hull: z.string().optional(), sail: z.string().optional(), lane: z.number(), x0: z.number(), x1: z.number(), from: Cue, to: Cue }),
   z.object({ kind: z.literal('car'), color: z.string().optional(), lane: z.number(), x0: z.number(), x1: z.number(), from: Cue, to: Cue }),
   z.object({ kind: z.literal('ball'), keys: z.array(z.object({ at: Cue, pos: V2, lift: z.number().optional().describe('arc top in metres: a lob or a shot') })).describe('the ball rests at the first key, then moves key to key') }),
 ]);
 
 const Decor = z.object({
-  ground: z.enum(['grass', 'cobble', 'sand']),
+  ground: z.enum(['grass', 'cobble', 'sand', 'moon']),
   river: z.boolean(),
   bridge: z.object({ era: z.enum(['old', 'new']) }).optional(),
   town: z.object({ seed: z.number().int() }).optional(),
@@ -40,6 +41,7 @@ const Decor = z.object({
   harbour: z.object({ hull: z.string().optional() }).optional().describe('harbour and sea: needs river false, no other decor'),
   farm: z.object({}).optional().describe('farm and countryside: needs river false, no other decor'),
   desert: z.object({}).optional().describe('Egyptian desert with pyramids: needs river false, ground sand, no other decor'),
+  space: z.object({ flag: z.enum(['usa', 'none']).optional() }).optional().describe('the Moon: needs river false, ground moon, no other decor'),
 });
 
 const Action = z.object({
@@ -90,7 +92,7 @@ const Shot = z.object({
   bridgeEra: z.enum(['old', 'gone', 'new']).optional(),
   fx: z.array(z.object({ kind: z.enum(['creak', 'crack', 'splash', 'burst', 'stars']), from: Cue, to: Cue.optional(), at: V3, size: z.number().optional() })).optional(),
   storyFrom: Cue.optional(),
-  show: z.array(z.enum(['eights', 'rowboat', 'barrier', 'ball', 'car', 'ship'])).optional(),
+  show: z.array(z.enum(['eights', 'rowboat', 'barrier', 'ball', 'car', 'ship', 'rocket'])).optional(),
   kicks: z.array(z.object({ at: Cue, amount: z.number() })).optional(),
 });
 
@@ -115,7 +117,7 @@ export const VideoSpecSchema = z.object({
     alt: z.string().optional().describe('optional second pose (same viewBox) swapped in while it moves or reacts'),
     height: z.number().describe('real height in metres of what the viewBox shows'),
   })).optional(),
-  cast: z.array(z.object({ name: z.string(), shows: z.string().describe('a group id, a piece kind (eights, rowboat, barrier, ball, car, ship) or a decor part (bridge, river, town, stadium, castle, city, lab, harbour, sea, lighthouse, pier, farm, barn, farmhouse, pond, windmill, fields, desert, pyramids, sphinx, obelisk, oasis)') })).describe('every character, animal and object the narration names, and what shows it on screen'),
+  cast: z.array(z.object({ name: z.string(), shows: z.string().describe('a group id, a piece kind (eights, rowboat, barrier, ball, car, ship) or a decor part (bridge, river, town, stadium, castle, city, lab, harbour, sea, lighthouse, pier, farm, barn, farmhouse, pond, windmill, fields, desert, pyramids, sphinx, obelisk, oasis, moon, space, earth, lander, rover, flag)') })).describe('every character, animal and object the narration names, and what shows it on screen'),
   groups: z.array(Group),
   shots: z.array(Shot),
   sound: z.array(SoundCue).optional(),
@@ -167,11 +169,11 @@ export function checkSpec(s: VideoSpecOut): string[] {
   }
   for (const id of arts.keys()) if (!used.has(id)) out.push(`art ${id} is drawn but no group uses it`);
   if (!s.cast.length) out.push('cast is empty: list every character, animal and object the narration names, each with what shows it');
-  const DECOR_PARTS: Record<string, boolean> = { bridge: !!s.decor.bridge, river: s.decor.river, town: !!s.decor.town, stadium: !!s.decor.stadium, castle: !!s.decor.castle, city: !!s.decor.city, lab: !!s.decor.city?.lab, harbour: !!s.decor.harbour, sea: !!s.decor.harbour, lighthouse: !!s.decor.harbour, pier: !!s.decor.harbour, farm: !!s.decor.farm, barn: !!s.decor.farm, farmhouse: !!s.decor.farm, pond: !!s.decor.farm, windmill: !!s.decor.farm, fields: !!s.decor.farm, desert: !!s.decor.desert, pyramids: !!s.decor.desert, sphinx: !!s.decor.desert, obelisk: !!s.decor.desert, oasis: !!s.decor.desert };
+  const DECOR_PARTS: Record<string, boolean> = { bridge: !!s.decor.bridge, river: s.decor.river, town: !!s.decor.town, stadium: !!s.decor.stadium, castle: !!s.decor.castle, city: !!s.decor.city, lab: !!s.decor.city?.lab, harbour: !!s.decor.harbour, sea: !!s.decor.harbour, lighthouse: !!s.decor.harbour, pier: !!s.decor.harbour, farm: !!s.decor.farm, barn: !!s.decor.farm, farmhouse: !!s.decor.farm, pond: !!s.decor.farm, windmill: !!s.decor.farm, fields: !!s.decor.farm, desert: !!s.decor.desert, pyramids: !!s.decor.desert, sphinx: !!s.decor.desert, obelisk: !!s.decor.desert, oasis: !!s.decor.desert, moon: !!s.decor.space, space: !!s.decor.space, earth: !!s.decor.space, lander: !!s.decor.space, rover: !!s.decor.space, flag: !!s.decor.space && s.decor.space.flag !== 'none' };
   for (const c of s.cast) {
     const w = c.shows;
     if (ids.has(w)) { if (!s.shots.some((sh) => !sh.groups || sh.groups.includes(w))) out.push(`cast "${c.name}": group ${w} is in no shot`); }
-    else if (['eights', 'rowboat', 'barrier', 'ball', 'car', 'ship'].includes(w)) {
+    else if (['eights', 'rowboat', 'barrier', 'ball', 'car', 'ship', 'rocket'].includes(w)) {
       if (!s.decor.pieces?.some((p) => p.kind === w)) out.push(`cast "${c.name}": piece ${w} is not in decor.pieces`);
       else if (!s.shots.some((sh) => sh.show?.includes(w as never))) out.push(`cast "${c.name}": no shot shows the ${w}`);
     } else if (w in DECOR_PARTS) { if (!DECOR_PARTS[w]) out.push(`cast "${c.name}": the decor has no ${w}`); }
@@ -197,7 +199,7 @@ export function checkSpec(s: VideoSpecOut): string[] {
       cue(c.at, `shot ${sh.id} cam ${i}`);
       if ('pos' in c.framing) { len(c.framing.pos, 3, `shot ${sh.id} cam ${i} pos`); len(c.framing.look, 3, `shot ${sh.id} cam ${i} look`); }
       else if (Array.isArray(c.framing.subject)) len(c.framing.subject, 3, `shot ${sh.id} cam ${i} subject`);
-      if ('subject' in c.framing && typeof c.framing.subject === 'string' && c.framing.subject !== 'eights' && c.framing.subject !== 'ball' && c.framing.subject !== 'car' && c.framing.subject !== 'ship' && !ids.has(c.framing.subject)) out.push(`shot ${sh.id} cam ${i}: unknown subject ${c.framing.subject}`);
+      if ('subject' in c.framing && typeof c.framing.subject === 'string' && c.framing.subject !== 'eights' && c.framing.subject !== 'ball' && c.framing.subject !== 'car' && c.framing.subject !== 'ship' && c.framing.subject !== 'rocket' && !ids.has(c.framing.subject)) out.push(`shot ${sh.id} cam ${i}: unknown subject ${c.framing.subject}`);
     });
     (sh.groups ?? []).forEach((g) => { if (!ids.has(g)) out.push(`shot ${sh.id}: unknown group ${g}`); });
     (sh.fx ?? []).forEach((e, i) => { cue(e.from, `shot ${sh.id} fx ${i}`); cue(e.to, `shot ${sh.id} fx ${i} end`); len(e.at, 3, `shot ${sh.id} fx ${i} at`); });
@@ -229,6 +231,17 @@ export function checkSpec(s: VideoSpecOut): string[] {
     if (z < 0 && y < 4.6) out.push(`shot ${sh.id} cam ${i}: the lens is under the sea (over the water keep y above 4.6; the sea is at y = 3.6)`);
     else if (z >= 0 && y < 6.4) out.push(`shot ${sh.id} cam ${i}: the lens is under the quay (y must be above 6.4)`);
     else if (z > 14.5 && z < 26 && y < 16 && Math.abs(x) < 102) out.push(`shot ${sh.id} cam ${i}: the lens is inside the waterfront houses (z 15-25); stay on the quay (z < 14) or above the roofs`);
+  }));
+  if (s.decor.space && (s.decor.river || s.decor.bridge || s.decor.town || s.decor.stadium || s.decor.castle || s.decor.city || s.decor.harbour || s.decor.farm || s.decor.desert)) out.push('the Moon stands alone: river false, no other decor');
+  if (s.decor.space && s.decor.ground !== 'moon') out.push('the space decor needs "ground": "moon"');
+  const rocket = s.decor.pieces?.find((p) => p.kind === 'rocket');
+  if (rocket && 'launch' in rocket) { cue(rocket.launch, 'rocket launch'); if (!s.decor.space) out.push('the rocket stands on the Moon: it needs decor.space'); }
+  if (s.decor.space) s.shots.forEach((sh) => sh.cams.forEach((c, i) => {
+    if (!('pos' in c.framing)) return;
+    const [x, y, z] = c.framing.pos;
+    if (y < 6.4) out.push(`shot ${sh.id} cam ${i}: the lens is under the ground (y must be above 6.4)`);
+    else if (y < 40 && Math.hypot(x + 24, z + 34) < 3) out.push(`shot ${sh.id} cam ${i}: the lens is inside the rocket`);
+    else if (y < 12 && Math.abs(x - 12) < 3 && Math.abs(z + 8) < 3) out.push(`shot ${sh.id} cam ${i}: the lens is inside the lunar module`);
   }));
   if (s.decor.desert && (s.decor.river || s.decor.bridge || s.decor.town || s.decor.stadium || s.decor.castle || s.decor.city || s.decor.harbour || s.decor.farm)) out.push('the desert stands alone: river false, no other decor');
   if (s.decor.desert && s.decor.ground !== 'sand') out.push('the desert needs "ground": "sand"');

@@ -152,7 +152,7 @@ function Bubble({ line }: { line: ChatLine }) {
 const DECOR_THUMBS: Record<string, { n: number; label: string }> = {
   river_town: { n: 2, label: 'Ville au bord de l’eau' }, town_square: { n: 2, label: 'Place de ville' }, stadium: { n: 2, label: 'Stade' },
   castle: { n: 2, label: 'Château' }, city: { n: 2, label: 'Ville moderne' }, lab: { n: 1, label: 'Laboratoire' },
-  harbour: { n: 2, label: 'Port et mer' }, farm: { n: 2, label: 'Ferme' }, desert: { n: 2, label: 'Désert d’Égypte' },
+  harbour: { n: 2, label: 'Port et mer' }, farm: { n: 2, label: 'Ferme' }, desert: { n: 2, label: 'Désert d’Égypte' }, space: { n: 2, label: 'Espace et Lune' },
 };
 const DecorThumbs = ({ decor }: { decor: string }) => {
   const d = DECOR_THUMBS[decor];
