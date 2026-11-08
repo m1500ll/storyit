@@ -1,0 +1,10 @@
+// Cloudflare Workers (static assets): serves the Vite build; unknown paths fall back to index.html (single-page app).
+// Headers come from public/_headers.
+{
+  "name": "storyit",
+  "compatibility_date": "2026-06-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
