@@ -2,11 +2,15 @@
 // then claimed once (the database attaches them to the referrer: once, never oneself, within 14 days of sign-up).
 import { repository } from '@/services/repository';
 
+/** The referral programme is paused: links are ignored, nothing is claimed, the page and menu entries are hidden. */
+export const REFERRAL_ENABLED = false;
+
 const KEY = 'storyit:ref';
 const VALID = /^[A-Z0-9]{6,12}$/;
 
 /** remembers ?ref=CODE from the current URL (call once at start-up) */
 export function captureReferral() {
+  if (!REFERRAL_ENABLED) return;
   try {
     const code = new URLSearchParams(window.location.search).get('ref')?.trim().toUpperCase();
     if (code && VALID.test(code)) localStorage.setItem(KEY, code);
@@ -15,6 +19,7 @@ export function captureReferral() {
 
 /** the referral code waiting to be claimed in this browser, if any */
 export function pendingReferral(): string | null {
+  if (!REFERRAL_ENABLED) return null;
   try { return localStorage.getItem(KEY); } catch { return null; }
 }
 

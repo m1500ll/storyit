@@ -26,7 +26,6 @@ const BillingPage = lazy(() => import('@/pages/BillingPage'));
 const MonetisationPage = lazy(() => import('@/pages/MonetisationPage'));
 const GuidePage = lazy(() => import('@/pages/GuidePage'));
 const HelpPage = lazy(() => import('@/pages/HelpPage'));
-const ReferralPage = lazy(() => import('@/pages/ReferralPage'));
 
 export default function App() {
   return (
@@ -56,7 +55,7 @@ export default function App() {
               <Route path="history" element={<SubscriberGate><PublicationsPage history /></SubscriberGate>} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="billing" element={<BillingPage />} />
-              <Route path="referrals" element={<ReferralPage />} />
+              <Route path="referrals" element={<Navigate to="/app" replace />} />
               <Route path="monetisation" element={<MonetisationPage />} />
               <Route path="guide" element={<GuidePage />} />
               <Route path="help" element={<HelpPage />} />

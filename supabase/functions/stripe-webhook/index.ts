@@ -137,7 +137,8 @@ Deno.serve(async (req) => {
         }
         if (obj.amount_paid >= 0) await grant(userId, product, true);
         // referral: the friend's first real payment of a plan (never the $1 trial)
-        if (obj.amount_paid > 0 && (!line || line.amount > 0)) await rewardReferral(userId);
+        // the programme is paused unless REFERRAL_ENABLED=true is set in the function secrets
+        if (env('REFERRAL_ENABLED') === 'true' && obj.amount_paid > 0 && (!line || line.amount > 0)) await rewardReferral(userId);
         break;
       }
       case 'customer.subscription.updated':
