@@ -1,3 +1,4 @@
+import { SocialPause } from '@/components/layout/SocialPause';
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { SubscriberGate } from '@/components/layout/SubscriberGate';
@@ -42,7 +43,7 @@ export default function App() {
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/app" element={<RequireAuth><AppShell /></RequireAuth>}>
               <Route index element={<DashboardPage />} />
-              <Route path="accounts" element={<SubscriberGate><AccountsPage /></SubscriberGate>} />
+              <Route path="accounts" element={<SocialPause><SubscriberGate><AccountsPage /></SubscriberGate></SocialPause>} />
               <Route path="studio" element={<AnimatedStudioPage />} />
               <Route path="studio/:projectId" element={<AnimatedStudioPage />} />
               {/* the old Gemini/Veo episode studio was replaced by the Animated Studio */}
