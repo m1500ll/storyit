@@ -243,14 +243,17 @@ function Project({ id }: { id: string }) {
   const [error, setError] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
+  const [dlUrl, setDlUrl] = useState<string | null>(null);
   const [voice, setVoice] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => animatedStudio.watch(id, () => undefined), [id]);
   useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }); }, [project?.transcript?.length, pending]);
   useEffect(() => {
-    if (project?.status === 'done' && project.video_path) void animatedStudio.videoUrl(project.video_path).then(setUrl);
-  }, [project?.status, project?.video_path]);
+    if (project?.status !== 'done' || !project.video_path) return;
+    void animatedStudio.videoUrl(project.video_path).then(setUrl);
+    void animatedStudio.videoUrl(project.video_path, `${(project.title ?? 'storyit').replace(/[^\p{L}\p{N} -]/gu, '').trim() || 'storyit'}.mp4`).then(setDlUrl);
+  }, [project?.status, project?.video_path, project?.title]);
   // leaving mid-reply loses nothing (the reply is saved server-side), but warn while a message is being sent
   useEffect(() => {
     if (!sending) return;
@@ -301,7 +304,8 @@ function Project({ id }: { id: string }) {
               <video src={url} controls playsInline preload="metadata" className="aspect-[9/16] w-full max-w-[320px] rounded-xl bg-black" />
               <div className="min-w-0 space-y-3">
                 <p className="text-sm text-zinc-200">Votre vidéo animée est prête : 60 secondes, format vertical 9:16, avec narration, musique et bruitages.</p>
-                <a href={url} download={`${(project.title ?? 'storyit').replace(/[^\p{L}\p{N} -]/gu, '')}.mp4`}
+                <p className="text-xs text-zinc-400">Elle est aussi dans votre <Link to="/app/library" className="rounded text-violet-300 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">bibliothèque vidéo</Link>, prête à être publiée.</p>
+                <a href={dlUrl ?? url}
                   className="inline-flex h-10 items-center gap-2 rounded-xl border border-line/10 bg-line/[0.03] px-4 text-sm text-zinc-100 hover:bg-line/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
                   <Download className="h-4 w-4" /> Télécharger le MP4
                 </a>

@@ -2,7 +2,8 @@
 //   writing   Claude writes the VideoSpec from the brief transcript (specWriter.ts)
 //   voicing   ElevenLabs reads the script, word timings, auto-fit to ~57.5 s (voice.ts)
 //   rendering soundtrack (audio/spec_audio.py) + 3D render (render.ts) + mux
-//   done      MP4 uploaded to the private `renders` bucket at <user_id>/animated/<project_id>.mp4
+//   done      MP4 uploaded to the private `renders` bucket at <user_id>/animated/<project_id>.mp4, and a copy added to
+//             the customer's video library (bucket `library`, table media_assets)
 // Any failure: status failed, a short customer-facing error, the credits refunded.
 // Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, ELEVENLABS_API_KEY, ELEVENLABS_DEFAULT_VOICE.
 // Usage: npx tsx worker/pipeline.ts [--once]
@@ -50,6 +51,23 @@ export const briefText = (lines: Line[]) => lines.map((m) => {
   return t;
 }).join("\n\n");
 
+/** a copy of the finished short in the customer's video library (bucket `library` + table media_assets), ready to
+ *  distribute; the service role skips the plan-limit guard, which is meant for manual uploads */
+async function addToLibrary(job: Job, title: string, video: string) {
+  const id = crypto.randomUUID();
+  const path = `${job.user_id}/${id}.mp4`;
+  const buf = fs.readFileSync(video);
+  const up = await db.storage.from("library").upload(path, buf, { contentType: "video/mp4" });
+  if (up.error) throw new Error(up.error.message);
+  const secs = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", video]).toString()) || null;
+  const { error } = await db.from("media_assets").insert({
+    id, user_id: job.user_id, title: (title || "Vidéo animée").slice(0, 200), notes: "Créée avec l'Animated Studio", tags: ["animated-studio"],
+    storage_path: path, mime: "video/mp4", size_bytes: buf.length, duration_seconds: secs, width: 1080, height: 1920, status: "available",
+  });
+  if (error) { await db.storage.from("library").remove([path]); throw new Error(error.message); }
+  log(job.id, "added to the library", id);
+}
+
 export async function produce(job: Job) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `short-${job.id.slice(0, 8)}-`));
   const t0 = Date.now();
@@ -93,6 +111,7 @@ export async function produce(job: Job) {
     const { error } = await db.storage.from("renders").upload(key, fs.readFileSync(video), { contentType: "video/mp4", upsert: true });
     if (error) throw new Error("upload: " + error.message);
     await set(job.id, { status: "done", progress: 100, video_path: key, finished_at: new Date().toISOString() });
+    await addToLibrary(job, spec.title, video).catch((e) => log(job.id, "library copy failed (the video stays in the studio):", e));
     log(job.id, `done in ${((Date.now() - t0) / 60000).toFixed(1)} min`);
   } catch (e) {
     log(job.id, "FAILED", e);

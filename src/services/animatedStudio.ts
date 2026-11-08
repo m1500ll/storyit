@@ -50,10 +50,11 @@ export const animatedStudio = {
     await call({ action: 'generate', project_id: projectId, language, voice_id: voiceId });
     store.notify();
   },
-  /** Short-lived URL of the finished MP4 (private bucket). */
-  async videoUrl(path: string): Promise<string | null> {
+  /** Short-lived URL of the finished MP4 (private bucket). With `download`, the file is served as an attachment under
+   *  that name: the `download` attribute of a link is ignored across origins, so the browser would only play it. */
+  async videoUrl(path: string, download?: string): Promise<string | null> {
     if (!supabase) return null;
-    const { data } = await supabase.storage.from('renders').createSignedUrl(path, 3600);
+    const { data } = await supabase.storage.from('renders').createSignedUrl(path, 3600, download ? { download } : undefined);
     return data?.signedUrl ?? null;
   },
   /** Live progress from the render worker (Realtime on the project's row). Returns an unsubscribe function. */
