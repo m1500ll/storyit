@@ -12,7 +12,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import Anthropic from 'npm:@anthropic-ai/sdk@1.6.0';
 import { ANIMATED_COST, CHAT_SYSTEM, CHAT_TOOLS, DECOR_KEYS, MODEL, seedNote, type Brief, type Choices } from '../_shared/animatedStudio.ts';
-import { BudgetError, reserveAi } from '../_shared/aiBudget.ts';
+import { BudgetError, releaseAi, reserveAi } from '../_shared/aiBudget.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -144,6 +144,8 @@ Deno.serve(async (req) => {
       }
       return json({ project_id: p.id, reply: line.text, transcript });
     } catch (e) {
+      await releaseAi('claude_chat'); // the turn failed: it spent nothing
+      if (e instanceof Anthropic.APIError && /credit balance/i.test(e.message)) { console.error('anthropic: out of credit'); return json({ error: "Le studio est momentanément indisponible. Réessayez un peu plus tard. Aucun crédit n'a été utilisé." }, 503); }
       if (e instanceof Anthropic.RateLimitError) return json({ error: 'Le studio est très demandé. Réessayez dans une minute.' }, 429);
       if (e instanceof Anthropic.APIError) { console.error('anthropic', e.status, e.message.slice(0, 300)); return json({ error: 'Le studio ne répond pas. Réessayez dans un instant.' }, 502); }
       if (e instanceof Error && e.message === 'refusal') return json({ error: 'Cette demande ne peut pas être traitée. Essayez une autre idée.' }, 422);
