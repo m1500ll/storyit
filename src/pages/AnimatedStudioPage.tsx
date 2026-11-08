@@ -10,15 +10,16 @@ import { ANIMATED_SHORT_COST } from '@/services/credits';
 import { animatedStudio, type AnimatedProject, type AnimatedStatus, type Brief, type ChatLine, type Choices } from '@/services/animatedStudio';
 import { voicesFor, type Voice } from '@/services/voices';
 
-const THEMES: { icon: LucideIcon; label: string; hint: string }[] = [
-  { icon: Landmark, label: 'Histoire vraie absurde', hint: 'Des faits réels qui semblent inventés' },
-  { icon: FlaskConical, label: 'Inventions et sciences ratées', hint: 'Les accidents qui ont tout changé' },
-  { icon: Trophy, label: 'Sport insolite', hint: 'Matchs, courses et records improbables' },
-  { icon: PawPrint, label: 'Animaux plus malins que nous', hint: 'Quand une bête gagne contre une ville' },
-  { icon: Scale, label: 'Lois et règles absurdes', hint: 'Des règles vraies, et pourquoi' },
-  { icon: Crown, label: 'Caprices de rois et de maires', hint: 'Les ordres les plus fous' },
-  { icon: Building2, label: 'Ponts, bâtiments et chantiers fous', hint: 'Ce qui n’aurait jamais dû tenir' },
-  { icon: Dices, label: 'Surprends-moi', hint: 'Le studio choisit un thème pour vous' },
+/** theme cards: each shows a still of the matching decor, rendered by the engine (public/studio/themes) */
+const THEMES: { icon: LucideIcon; img: string; label: string; hint: string }[] = [
+  { icon: Landmark, img: 'histoire', label: 'Histoire vraie absurde', hint: 'Des faits réels qui semblent inventés' },
+  { icon: FlaskConical, img: 'inventions', label: 'Inventions et sciences ratées', hint: 'Les accidents qui ont tout changé' },
+  { icon: Trophy, img: 'sport', label: 'Sport insolite', hint: 'Matchs, courses et records improbables' },
+  { icon: PawPrint, img: 'animaux', label: 'Animaux plus malins que nous', hint: 'Quand une bête gagne contre une ville' },
+  { icon: Scale, img: 'lois', label: 'Lois et règles absurdes', hint: 'Des règles vraies, et pourquoi' },
+  { icon: Crown, img: 'rois', label: 'Caprices de rois et de maires', hint: 'Les ordres les plus fous' },
+  { icon: Building2, img: 'chantiers', label: 'Ponts, bâtiments et chantiers fous', hint: 'Ce qui n’aurait jamais dû tenir' },
+  { icon: Dices, img: 'surprise', label: 'Surprends-moi', hint: 'Le studio choisit un thème pour vous' },
 ];
 const LANGS: { code: string; label: string }[] = [{ code: 'fr', label: 'Français' }, { code: 'en', label: 'English' }, { code: 'es', label: 'Español' }];
 
@@ -80,12 +81,18 @@ function Start() {
         {THEMES.map((t) => (
           <li key={t.label} className="min-w-0">
             <button type="button" disabled={!animatedStudio.available || busy} onClick={() => void start(`Thème choisi : ${t.label}`, t.label)}
-              className={cn('surface flex h-full w-full flex-col items-start gap-1 rounded-2xl p-3 text-left [touch-action:manipulation] transition-colors hover:border-violet-500/40 hover:bg-violet-500/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50',
+              className={cn('surface group flex h-full w-full flex-col overflow-hidden rounded-2xl text-left [touch-action:manipulation] transition-colors hover:border-violet-500/40 hover:bg-violet-500/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50',
                 busyTheme === t.label && 'border-violet-500/60 bg-violet-500/10')}>
-              <span aria-hidden className="grid h-10 w-10 place-items-center rounded-xl bg-violet-500/10 text-violet-300"><t.icon className="h-5 w-5" /></span>
-              <span className="text-sm font-medium text-zinc-100">{t.label}</span>
-              <span className="text-xs text-zinc-400">{t.hint}</span>
-              {busyTheme === t.label && <span className="mt-1 flex items-center gap-1 text-[11px] text-violet-200"><Loader2 className="h-3 w-3 animate-spin motion-reduce:animate-none" /> Le studio prépare vos options…</span>}
+              <span className="relative block aspect-[4/3] w-full overflow-hidden bg-line/[0.06]">
+                <img src={`/studio/themes/${t.img}.jpg`} alt="" width={400} height={300} decoding="async"
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none" />
+                <span aria-hidden className="absolute left-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-ink-950/70 text-violet-200 backdrop-blur"><t.icon className="h-4 w-4" /></span>
+              </span>
+              <span className="flex flex-1 flex-col gap-1 p-3">
+                <span className="text-sm font-medium text-zinc-100">{t.label}</span>
+                <span className="text-xs text-zinc-400">{t.hint}</span>
+                {busyTheme === t.label && <span className="mt-1 flex items-center gap-1 text-[11px] text-violet-200"><Loader2 className="h-3 w-3 animate-spin motion-reduce:animate-none" /> Le studio prépare vos options…</span>}
+              </span>
             </button>
           </li>
         ))}
