@@ -12,7 +12,7 @@ const Cue = z.object({ line: z.number().int(), word: z.number().int(), offset: z
 
 const Expr = z.enum(['neutral', 'stern', 'grin', 'laugh', 'whistle', 'nervous', 'shock', 'relief', 'relief_open', 'dazed', 'pained', 'smile', 'smile_closed', 'lick']);
 const Outfit = z.object({
-  name: z.enum(['townsfolk', 'kid', 'owner', 'modern', 'soldier', 'officer', 'rower', 'player', 'referee', 'knight', 'king', 'queen', 'peasant']),
+  name: z.enum(['townsfolk', 'kid', 'owner', 'modern', 'soldier', 'officer', 'rower', 'player', 'referee', 'knight', 'king', 'queen', 'peasant', 'scientist']),
   variant: z.number().int().optional(),
   color: z.string().optional().describe('hex colour: the rower or player kit, the knight tabard'),
 });
@@ -21,6 +21,7 @@ const Piece = z.union([
   z.object({ kind: z.literal('eights'), lanes: V2, colors: z.array(z.string()).describe('exactly 2 hex colours'), pass: Cue, speed: z.number().optional() }),
   z.object({ kind: z.literal('rowboat'), at: V2, lean: Cue, tip: Cue }),
   z.object({ kind: z.literal('barrier'), z: z.number(), sign: z.boolean().optional() }),
+  z.object({ kind: z.literal('car'), color: z.string().optional(), lane: z.number(), x0: z.number(), x1: z.number(), from: Cue, to: Cue }),
   z.object({ kind: z.literal('ball'), keys: z.array(z.object({ at: Cue, pos: V2, lift: z.number().optional().describe('arc top in metres: a lob or a shot') })).describe('the ball rests at the first key, then moves key to key') }),
 ]);
 
@@ -33,6 +34,7 @@ const Decor = z.object({
   pieces: z.array(Piece).optional(),
   stadium: z.object({ home: z.string().optional(), away: z.string().optional() }).optional().describe('football stadium: needs river false, no bridge, no town'),
   castle: z.object({ roof: z.string().optional(), banner: z.enum(['red', 'green']).optional() }).optional().describe('medieval castle: needs river false, no bridge, no town, no stadium'),
+  city: z.object({ lab: z.boolean().optional() }).optional().describe('modern city (+ laboratory interior): needs river false, no other decor'),
 });
 
 const Action = z.object({
@@ -83,7 +85,7 @@ const Shot = z.object({
   bridgeEra: z.enum(['old', 'gone', 'new']).optional(),
   fx: z.array(z.object({ kind: z.enum(['creak', 'crack', 'splash', 'burst', 'stars']), from: Cue, to: Cue.optional(), at: V3, size: z.number().optional() })).optional(),
   storyFrom: Cue.optional(),
-  show: z.array(z.enum(['eights', 'rowboat', 'barrier', 'ball'])).optional(),
+  show: z.array(z.enum(['eights', 'rowboat', 'barrier', 'ball', 'car'])).optional(),
   kicks: z.array(z.object({ at: Cue, amount: z.number() })).optional(),
 });
 
@@ -153,7 +155,7 @@ export function checkSpec(s: VideoSpecOut): string[] {
       cue(c.at, `shot ${sh.id} cam ${i}`);
       if ('pos' in c.framing) { len(c.framing.pos, 3, `shot ${sh.id} cam ${i} pos`); len(c.framing.look, 3, `shot ${sh.id} cam ${i} look`); }
       else if (Array.isArray(c.framing.subject)) len(c.framing.subject, 3, `shot ${sh.id} cam ${i} subject`);
-      if ('subject' in c.framing && typeof c.framing.subject === 'string' && c.framing.subject !== 'eights' && c.framing.subject !== 'ball' && !ids.has(c.framing.subject)) out.push(`shot ${sh.id} cam ${i}: unknown subject ${c.framing.subject}`);
+      if ('subject' in c.framing && typeof c.framing.subject === 'string' && c.framing.subject !== 'eights' && c.framing.subject !== 'ball' && c.framing.subject !== 'car' && !ids.has(c.framing.subject)) out.push(`shot ${sh.id} cam ${i}: unknown subject ${c.framing.subject}`);
     });
     (sh.groups ?? []).forEach((g) => { if (!ids.has(g)) out.push(`shot ${sh.id}: unknown group ${g}`); });
     (sh.fx ?? []).forEach((e, i) => { cue(e.from, `shot ${sh.id} fx ${i}`); cue(e.to, `shot ${sh.id} fx ${i} end`); len(e.at, 3, `shot ${sh.id} fx ${i} at`); });
@@ -164,6 +166,17 @@ export function checkSpec(s: VideoSpecOut): string[] {
   if (s.decor.bridge && !s.decor.river) out.push('a bridge needs the river');
   if (s.decor.stadium && (s.decor.river || s.decor.bridge || s.decor.town)) out.push('the stadium stands alone: river false, no bridge, no town');
   if (s.decor.castle && (s.decor.river || s.decor.bridge || s.decor.town || s.decor.stadium)) out.push('the castle stands alone: river false, no bridge, no town, no stadium');
+  if (s.decor.city && (s.decor.river || s.decor.bridge || s.decor.town || s.decor.stadium || s.decor.castle)) out.push('the city stands alone: river false, no bridge, no town, no stadium, no castle');
+  const car = s.decor.pieces?.find((p) => p.kind === 'car');
+  if (car && 'lane' in car) { cue(car.from, 'car from'); cue(car.to, 'car to'); if (!s.decor.city) out.push('the car drives on the city road: it needs decor.city'); }
+  if (s.shots.some((sh) => sh.show?.includes('car') || sh.cams.some((c) => 'subject' in c.framing && c.framing.subject === 'car')) && !car) out.push('a shot shows or follows the car but decor.pieces has no car');
+  if (s.decor.city) s.shots.forEach((sh) => sh.cams.forEach((c, i) => {
+    if (!('pos' in c.framing)) return;
+    const [x, y, z] = c.framing.pos, lab = z < -200;
+    if (y < 6.4) out.push(`shot ${sh.id} cam ${i}: the lens is under the ground (y must be above 6.4)`);
+    else if (!lab && y < 55 && Math.abs(z) > 12.3 && Math.abs(x) > 11.5) out.push(`shot ${sh.id} cam ${i}: the lens is inside or behind a building (it would only see a wall); keep street lenses over the road or pavement (|z| < 12) or in the cross street (|x| < 7)`);
+    else if (lab && (Math.abs(x) > 8.7 || z < -225.7 || z > -213 || y > 10.8)) out.push(`shot ${sh.id} cam ${i}: lab lenses stay inside the room (|x| < 8.7, z -225.7..-214, y below 10.8)`);
+  }));
   if (s.decor.castle) s.shots.forEach((sh) => sh.cams.forEach((c, i) => {
     if (!('pos' in c.framing)) return;
     const [x, y, z] = c.framing.pos, inWall = y < 15.5 && Math.max(Math.abs(x), Math.abs(z)) > 27.2 && Math.max(Math.abs(x), Math.abs(z)) < 30.5;

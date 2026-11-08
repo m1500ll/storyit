@@ -12,8 +12,9 @@ import { TONE, CHAR, LFB, twoTone, untone } from "./shade";
 import { NOINK } from "./ink";
 import { buildStadium } from "./stadium";
 import { buildCastle } from "./castle";
+import { buildCity, carGeo } from "./city";
 import { Pool, Actor, Fx, stage, SIGN_AT, SU_SWING } from "./cast";
-import { FPS, D0, SHOTS, camAt, bridgeState, deckY, deckX, dropW, shapeZ, BridgeState, V3, smooth, FOREGROUND, ShotDef, BOAT_LEN, boatX, strokeAt, rowboatRoll, piece, SPEC, ballAt, BALL_R } from "./story";
+import { FPS, D0, SHOTS, camAt, bridgeState, deckY, deckX, dropW, shapeZ, BridgeState, V3, smooth, FOREGROUND, ShotDef, BOAT_LEN, boatX, strokeAt, rowboatRoll, piece, SPEC, ballAt, BALL_R, carAt } from "./story";
 const hasRiver = () => SPEC.decor.river;
 const hasBridge = () => SPEC.decor.river && !!SPEC.decor.bridge;
 const boatDefs = () => { const e = piece("eights"); return e ? [0, 1].map((k) => ({ z: e.lanes[k]!, blade: e.colors[k]!, kit: e.colors[k]! })) : []; };
@@ -123,7 +124,7 @@ export class World {
   private buntingEra = "";
   private hulls: THREE.Mesh[] = []; private oars: THREE.InstancedMesh[] = []; private blades: THREE.InstancedMesh[] = [];
   private rowboat = new THREE.Group();
-  private ball!: THREE.Mesh;
+  private ball!: THREE.Mesh; private car = new THREE.Group();
   private frustum = new THREE.Frustum();
   private m4 = new THREE.Matrix4(); private v = new THREE.Vector3(); private sph = new THREE.Sphere();
 
@@ -232,6 +233,8 @@ export class World {
     if (SPEC.decor.town) buildTown(R, kit, sightLines());
     if (SPEC.decor.stadium) buildStadium(R, SPEC.decor.stadium);
     if (SPEC.decor.castle) buildCastle(R, kit, SPEC.decor.castle);
+    if (SPEC.decor.city) buildCity(R, kit, SPEC.decor.city);
+    { const cp = piece("car"); if (cp) { const cb = new Batch(); carGeo(cb, cp.color ?? "#e2453c", 0, 0); cb.build(this.car); this.car.visible = false; R.add(this.car); } }
     // the football (piece "ball"): white with dark patches, rolled by the distance it travels
     this.ball = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 16), lam("ballM", () => ({ map: ctex("ballTex", 256, 128, (g) => {
       g.fillStyle = "#f6f4ec"; g.fillRect(0, 0, 256, 128); g.fillStyle = "#241726";
@@ -470,6 +473,9 @@ export class World {
     this.poseBridge(b, t, tau, id);
     this.poseBoats(id, t, s.show.includes("eights"), s.show.includes("rowboat"));
     this.barrier.visible = s.show.includes("barrier");
+    const cpos = s.show.includes("car") ? carAt(t) : null;
+    this.car.visible = !!cpos;
+    if (cpos) { this.car.position.set(cpos[0], 0, cpos[1]); this.car.rotation.y = cpos[2] > 0 ? 0 : Math.PI; }
     const bp = s.show.includes("ball") ? ballAt(t) : null;
     this.ball.visible = !!bp;
     if (bp) {

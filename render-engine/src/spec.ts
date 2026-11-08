@@ -38,6 +38,9 @@ export type Decor = {
   /** a medieval castle centred on the origin: curtain walls at x, z = +-30 (9 m), corner towers, the keep at the back
    *  (x -8..8, z -24..-8), the gate in the front wall at z = +30 (x -2.6..2.6), a cobbled courtyard. Needs river: false. */
   castle?: { roof?: string; banner?: "red" | "green" };
+  /** a modern city: main road along x (z -7..7), cross street along z (x -7..7), pavements to |z| = 12, buildings beyond;
+   *  lab: also a laboratory interior centred on (0, -220). Needs river: false. */
+  city?: { lab?: boolean };
   /** flag on the bridge towers */
   flag?: "england" | "union" | "france" | "none";
 };
@@ -48,9 +51,11 @@ export type Piece =
   | { kind: "barrier"; z: number; sign?: boolean }
   /** a football: rests at the first key's spot, then travels key to key (rolling on the grass, or flying in an arc
    *  whose top is `lift` m above the ground when the key has one: a lob, a shot, a clearance); rests after the last */
-  | { kind: "ball"; keys: { at: Cue; pos: V2; lift?: number }[] };
+  | { kind: "ball"; keys: { at: Cue; pos: V2; lift?: number }[] }
+  /** a car driving along the main road (city) in lane z, from x0 at cue `from` to x1 at cue `to` (heading toward x1) */
+  | { kind: "car"; color?: string; lane: number; x0: number; x1: number; from: Cue; to: Cue };
 
-export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant";
+export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant" | "scientist";
 export type Outfit = { name: OutfitName; variant?: number; color?: string };
 
 /** what a group of characters does from a cue onward */

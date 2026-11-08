@@ -940,6 +940,8 @@ export const PEASANT = (v = 0): Outfit => {
   return v % 3 === 1 ? { jacket: tunics[v % 4], pants: "#5a4a3a", boots: "#4a3426", hat: "bonnet", dress: ["#a88a5a", "#8a7a6a"][v % 2], skin: SKINS[v % 4] }
     : { jacket: tunics[v % 4], pants: "#5a4a3a", boots: "#4a3426", hat: "hair", hair: hair[v % 4], skin: SKINS[v % 4] };
 };
+/** a scientist in a white lab coat */
+export const SCIENTIST = (v = 0): Outfit => ({ jacket: "#f4f6f8", pants: ["#3b3f52", "#3b5b9a"][v % 2], boots: "#4a3426", hat: "hair", hair: ["#7a7a7a", "#2a201a", "#c08a4a", "#5a3b2a"][v % 4], skin: SKINS[v % 4], moustache: v % 4 === 0 ? "#7a7a7a" : undefined });
 /** today's strollers: no hats, bright casual colours */
 export const modern = (v = 0): Outfit => {
   const tops = ["#e2453c", "#3f6fb5", "#f0b43c", "#2f8a4f", "#7b5ac9", "#f4f1ea", "#e86e9a"];
