@@ -42,7 +42,7 @@ function AccountPicker({ accounts, selected, onChange, groups }: {
                 <input type="checkbox" className="h-4 w-4 accent-violet-500" checked={selected.has(a.id)} onChange={(e) => set([a.id], e.target.checked)} />
                 <PlatformDot platform={a.platform} />
                 <span className="min-w-0 flex-1 truncate text-zinc-200">{accountLabel(a)}</span>
-                {!a.can_publish && <span className="shrink-0 text-[10px] text-amber-300" title={a.publish_restriction ?? ''}>Can't publish</span>}
+                {!a.can_publish && <span className="shrink-0 text-[11px] text-amber-300" title={a.publish_restriction ?? ''}>Can't publish</span>}
               </label>
             </li>
           ))}

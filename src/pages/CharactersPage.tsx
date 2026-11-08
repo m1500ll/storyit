@@ -34,7 +34,7 @@ export default function CharactersPage() {
             </div>
             <p className="mt-4 text-sm text-zinc-400">{c.personality}</p>
             <p className="mt-2 rounded-lg bg-ink-850 p-2.5 font-mono text-[11px] leading-relaxed text-zinc-500">{c.visual}</p>
-            <p className="label mb-1.5 mt-4 text-[10px]">Appears in {c.episodes.length} episode{c.episodes.length > 1 ? 's' : ''}</p>
+            <p className="label mb-1.5 mt-4 text-[11px]">Appears in {c.episodes.length} episode{c.episodes.length > 1 ? 's' : ''}</p>
             <ul className="space-y-1">
               {c.episodes.slice(0, 4).map((e) => <li key={e.id}><Link to={`/app/stories/${e.id}`} className="text-xs text-zinc-300 hover:text-violet-300">{e.title}</Link></li>)}
             </ul>

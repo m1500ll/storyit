@@ -65,7 +65,7 @@ export function GettingStarted({ stories }: { stories: StoryWithScenes[] }) {
           const isNext = s === next;
           const body = (
             <>
-              <span className={cn('grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[10px]',
+              <span className={cn('grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[11px]',
                 s.done ? 'border-violet-500 bg-violet-500 text-white' : isNext ? 'border-violet-400' : 'border-line/15')}>
                 {s.done && <Check className="h-3 w-3" />}
               </span>

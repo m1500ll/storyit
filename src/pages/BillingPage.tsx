@@ -60,7 +60,7 @@ export default function BillingPage() {
           : <CardHeader title="Upgrade or top up" subtitle="Plans renew monthly. Top-up packs never expire." />}
         <PlanPicker currentPlan={profile?.plan} />
       </Card>
-      <Card className="mt-6 overflow-x-auto">
+      <Card className="mt-6 overflow-x-auto" tabIndex={0} role="region" aria-label="Credit history">
         <CardHeader title="Credit history" />
         <table className="w-full min-w-[480px] text-left text-sm">
           <thead className="label"><tr><th className="pb-3 font-medium">Date</th><th className="pb-3 font-medium">Description</th><th className="pb-3 text-right font-medium">Amount</th><th className="pb-3 text-right font-medium">Balance</th></tr></thead>

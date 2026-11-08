@@ -51,7 +51,7 @@ export function Sidebar() {
     {
       title: 'Create',
       items: [
-        { to: '/app/studio', label: 'Animated Studio', icon: Clapperboard, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[10px] text-violet-300">New</span> },
+        { to: '/app/studio', label: 'Animated Studio', icon: Clapperboard, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[11px] text-violet-300">New</span> },
         { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2 },
       ],
     },
@@ -78,14 +78,14 @@ export function Sidebar() {
       <nav className="mt-8 space-y-6" aria-label="Main">
         {sections.map((s) => (
           <div key={s.title}>
-            <p className="label mb-1.5 px-3 text-[10px]">{s.title}</p>
+            <p className="label mb-1.5 px-3 text-[11px]">{s.title}</p>
             <div className="space-y-0.5">{s.items.map((i) => <NavItem key={i.to} {...i} />)}</div>
           </div>
         ))}
       </nav>
       <div className="mt-auto pt-6">
         <div className={cn('surface p-4', level === 'low' && 'border-amber-500/40', level === 'empty' && 'border-coral-500/40')}>
-          <p className="label flex items-center gap-1.5 text-[10px]"><Coins className="h-3 w-3" /> Credits</p>
+          <p className="label flex items-center gap-1.5 text-[11px]"><Coins className="h-3 w-3" /> Credits</p>
           <p className={cn('mt-1 font-display text-3xl tabular-nums', level === 'ok' ? 'text-zinc-50' : level === 'low' ? 'text-amber-300' : 'text-coral-300')}>{balance}</p>
           <p className="text-[11px] text-zinc-500">
             {level === 'empty' ? 'Out of credits: top up to keep creating.' : level === 'low' ? 'Running low.' : `≈ ${projectsFor(balance)} Prompt Studio projects`}

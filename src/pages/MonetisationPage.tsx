@@ -33,7 +33,7 @@ export default function MonetisationPage() {
             return (
               <li key={item}>
                 <button onClick={() => toggle(item)} aria-pressed={ok}
-                  className="flex w-full items-center gap-3 rounded-xl border border-line/[0.08] px-3 py-2.5 text-left text-sm transition hover:border-violet-500/30">
+                  className="flex min-h-11 w-full items-center gap-3 rounded-xl border border-line/[0.08] px-3 py-2.5 text-left text-sm transition hover:border-violet-500/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
                   {ok ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-300" /> : <Circle className="h-4 w-4 shrink-0 text-zinc-600" />}
                   <span className={ok ? 'text-zinc-300' : 'text-zinc-400'}>{item}</span>
                 </button>

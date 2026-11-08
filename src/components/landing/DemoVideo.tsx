@@ -42,7 +42,7 @@ export function DemoVideo() {
             {FRUIT_DRAMA_SCENES.map((s, n) => <span key={s.position} className={cn('h-0.5 flex-1 rounded-full', n <= i ? 'bg-white' : 'bg-white/25')} />)}
           </div>
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4 pt-12">
-            <p className="text-[10px] uppercase tracking-widest text-white/60">Scene {scene.position} · {scene.title}</p>
+            <p className="text-[11px] uppercase tracking-widest text-white/60">Scene {scene.position} · {scene.title}</p>
             <p className="mt-1 text-sm font-semibold leading-snug text-white">{scene.dialogue ?? scene.narration}</p>
           </div>
           <button onClick={() => setPlaying((p) => !p)} className="touch-hit absolute right-3 top-6 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70" aria-label={playing ? 'Pause' : 'Play'}>

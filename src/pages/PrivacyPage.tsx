@@ -45,7 +45,7 @@ export default function PrivacyPage() {
           <p className="label mb-3">Contents</p>
           <ol className="grid gap-1.5 sm:grid-cols-2">
             {[['who', 'Who we are'], ['data', 'Data we collect'], ['why', 'Why we use it'], ['sharing', 'Who we share it with'], ['ai', 'AI generation'], ['social', 'TikTok & Instagram accounts'], ['storage', 'Cookies & local storage'], ['retention', 'How long we keep it'], ['rights', 'Your rights'], ['security', 'Security'], ['changes', 'Changes & contact'], ['data-deletion', 'Delete your data']].map(([id, label], i) => (
-              <li key={id}><a href={`#${id}`} className="text-zinc-400 hover:text-violet-300">{i + 1}. {label}</a></li>
+              <li key={id}><a href={`#${id}`} className="touch-hit text-zinc-400 hover:text-violet-300">{i + 1}. {label}</a></li>
             ))}
           </ol>
         </nav>

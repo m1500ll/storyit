@@ -25,7 +25,7 @@
     --zinc-400: 82 80 96; --zinc-500: 98 96 112; --zinc-600: 108 106 122;
     --line: 24 20 48;
     --violet-200: 91 33 182; --violet-300: 109 40 217; --violet-400: 124 58 237;
-    --coral-300: 194 65 12; --coral-400: 234 88 12;
+    --coral-300: 154 52 18; --coral-400: 194 65 12; /* 300 = text on coral tints: 4.5:1 on the light coral surfaces */
     --emerald-200: 4 108 78; --emerald-300: 4 120 87;
     --amber-100: 120 53 15; --amber-200: 146 64 14; --amber-300: 180 83 9;
     --sky-300: 3 105 161;
@@ -58,6 +58,9 @@
   @media (pointer: coarse) {
     .touch-hit { position: relative; }
     .touch-hit::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
+    select, input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='range']), summary { min-height: 44px; }
+    input[type='range'] { min-height: 44px; }
+    input[type='checkbox'], input[type='radio'] { min-width: 22px; min-height: 22px; }
   }
   /* Subtle square grid ("grillage") that follows the theme's line colour. */
   .bg-grid {

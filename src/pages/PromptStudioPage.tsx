@@ -167,7 +167,7 @@ function Project({ id }: { id: string }) {
             <button disabled={!has[s.key]} onClick={() => setView(s.key)} aria-current={shown === s.key ? 'step' : undefined}
               className={cn('flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:cursor-not-allowed',
                 shown === s.key ? 'bg-violet-500/15 text-violet-200' : has[s.key] ? 'text-zinc-300 hover:bg-line/[0.05]' : 'text-zinc-600')}>
-              <span className={cn('grid h-5 w-5 place-items-center rounded-full text-[10px] tabular-nums', has[s.key] ? 'bg-emerald-500/15 text-emerald-300' : 'bg-line/5')}>{has[s.key] ? <Check className="h-3 w-3" /> : i + 1}</span>{s.label}
+              <span className={cn('grid h-5 w-5 place-items-center rounded-full text-[11px] tabular-nums', has[s.key] ? 'bg-emerald-500/15 text-emerald-300' : 'bg-line/5')}>{has[s.key] ? <Check className="h-3 w-3" /> : i + 1}</span>{s.label}
             </button>
           </li>
         ))}

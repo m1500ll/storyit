@@ -86,12 +86,12 @@ export function MobileNav() {
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line/[0.06] bg-ink-950/90 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Main">
         {tabs.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end}
-            className={({ isActive }) => cn('relative flex flex-col items-center gap-1 py-2.5 text-[10px] [touch-action:manipulation]', isActive ? 'text-violet-300' : 'text-zinc-500')}>
+            className={({ isActive }) => cn('relative flex flex-col items-center gap-1 py-2.5 text-[11px] [touch-action:manipulation]', isActive ? 'text-violet-300' : 'text-zinc-500')}>
             <Icon className="h-5 w-5" />{label}
           </NavLink>
         ))}
         <button onClick={() => setOpen(true)} aria-expanded={open} aria-haspopup="dialog"
-          className={cn('flex flex-col items-center gap-1 py-2.5 text-[10px] [touch-action:manipulation]', inMenu || open ? 'text-violet-300' : 'text-zinc-500')}>
+          className={cn('flex flex-col items-center gap-1 py-2.5 text-[11px] [touch-action:manipulation]', inMenu || open ? 'text-violet-300' : 'text-zinc-500')}>
           <Menu className="h-5 w-5" />Menu
         </button>
       </nav>

@@ -19,7 +19,7 @@ export default function GuidePage() {
         {TIPS.map((t, i) => (
           <Card key={t.title} className="relative">
             <span className="absolute right-5 top-4 font-display text-4xl text-line/[0.08]">{i + 1}</span>
-            <h3 className="pr-10 text-sm font-semibold text-zinc-100">{t.title}</h3>
+            <h2 className="pr-10 text-sm font-semibold text-zinc-100">{t.title}</h2>
             <p className="mt-2 text-sm leading-relaxed text-zinc-400">{t.body}</p>
           </Card>
         ))}

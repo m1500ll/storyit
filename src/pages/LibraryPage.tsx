@@ -158,10 +158,10 @@ export default function LibraryPage() {
                 </div>
                 <div className="p-2.5">
                   <p className="truncate text-xs font-medium text-zinc-100" title={m.title}>{m.title}</p>
-                  <p className="mt-0.5 text-[10px] tabular-nums text-zinc-500">
+                  <p className="mt-0.5 text-[11px] tabular-nums text-zinc-500">
                     {[m.duration_seconds && `${m.duration_seconds}s`, m.width && m.height && `${m.width}×${m.height}`, `${(m.size_bytes / 1048576).toFixed(1)} MB`].filter(Boolean).join(' · ')}
                   </p>
-                  {state && <span className={cn('mt-1.5 inline-block rounded-full px-2 py-0.5 text-[10px]', STATE_CLS[state])}>{VIDEO_STATE_LABEL[state]}</span>}
+                  {state && <span className={cn('mt-1.5 inline-block rounded-full px-2 py-0.5 text-[11px]', STATE_CLS[state])}>{VIDEO_STATE_LABEL[state]}</span>}
                   <div className="mt-2 flex items-center gap-1">
                     <button onClick={() => setHistory(m)} className="rounded px-1.5 py-1 text-[11px] text-zinc-400 hover:bg-line/5 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
                       History · {its.filter((p) => p.status !== 'cancelled').length}

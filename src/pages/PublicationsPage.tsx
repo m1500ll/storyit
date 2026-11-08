@@ -70,7 +70,7 @@ export default function PublicationsPage({ history = false }: { history?: boolea
       <div className="mb-4 flex flex-wrap items-center gap-2">
         {!history && <>
           <div role="tablist" aria-label="Calendar view" className="flex rounded-xl border border-line/10 p-0.5">
-            {(['day', 'week', 'month'] as const).map((v) => <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={cn('h-8 rounded-lg px-3 text-xs capitalize', view === v ? 'bg-violet-500/15 text-violet-200' : 'text-zinc-400')}>{v}</button>)}
+            {(['day', 'week', 'month'] as const).map((v) => <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={cn('touch-hit h-8 rounded-lg px-3 text-xs capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50', view === v ? 'bg-violet-500/15 text-violet-200' : 'text-zinc-400')}>{v}</button>)}
           </div>
           <Button size="sm" variant="ghost" onClick={() => shift(-1)} aria-label="Previous period">‹</Button>
           <span className="text-xs tabular-nums text-zinc-300">{anchor.toLocaleDateString(undefined, view === 'month' ? { month: 'long', year: 'numeric' } : { day: 'numeric', month: 'short' })}</span>
@@ -156,7 +156,7 @@ function PublicationRow({ pub, account, video, ai }: { pub: Publication; account
         <span className="w-12 shrink-0 text-xs tabular-nums text-zinc-400">{new Date(pub.scheduled_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
         <PlatformDot platform={pub.platform} />
         <span className="min-w-0 flex-1"><span className="block truncate text-sm text-zinc-100">{videoTitle}</span><span className="block truncate text-[11px] text-zinc-500">{accountLabel(account)}</span></span>
-        {!pub.metadata_approved && ['draft', 'scheduled'].includes(pub.status) && <span className="hidden shrink-0 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-300 sm:inline">Caption to approve</span>}
+        {!pub.metadata_approved && ['draft', 'scheduled'].includes(pub.status) && <span className="hidden shrink-0 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-300 sm:inline">Caption to approve</span>}
         <PubBadge status={pub.status} />
         <ChevronDown className={cn('h-4 w-4 shrink-0 text-zinc-500 transition-transform', open && 'rotate-180')} aria-hidden />
       </button>

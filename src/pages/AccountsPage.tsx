@@ -80,7 +80,7 @@ export default function AccountsPage() {
                   <p className="truncate text-sm font-medium text-zinc-100">{a.username ? `@${a.username}` : a.display_name ?? 'Account'}</p>
                   <p className="flex items-center gap-1.5 text-[11px] text-zinc-500"><PlatformDot platform={a.platform} />{PLATFORM_NAME[a.platform]} · id {a.external_id.slice(0, 10)}{a.external_id.length > 10 ? '…' : ''}</p>
                 </div>
-                <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium', STATUS[a.status].cls)}>{STATUS[a.status].label}</span>
+                <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium', STATUS[a.status].cls)}>{STATUS[a.status].label}</span>
               </div>
               <dl className="mt-4 space-y-1.5 text-xs">
                 <div className="flex justify-between gap-2"><dt className="text-zinc-500">Publishing</dt>
