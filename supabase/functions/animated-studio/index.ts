@@ -26,6 +26,20 @@ type Line = { role: string; text: string; choices?: Choices; brief?: Brief };
 type Row = { id: string; user_id: string; status: string; messages: Anthropic.Beta.BetaMessageParam[]; transcript: Line[]; title: string | null; language: string };
 const OUR_TOOLS = new Set(['present_choices', 'brief_ready']);
 
+/** a copy of the conversation whose newest customer turn carries a cache breakpoint, so the whole history (and the
+ *  search results in it) is read from the prompt cache on the next turn instead of being billed again in full. The
+ *  stored history never keeps breakpoints (the API allows 4 per request: the system prompt uses one). */
+function withCacheBreakpoint(messages: Anthropic.Beta.BetaMessageParam[]): Anthropic.Beta.BetaMessageParam[] {
+  let i = messages.length - 1;
+  while (i >= 0 && messages[i]!.role !== 'user') i--;
+  if (i < 0) return messages;
+  const m = messages[i]!;
+  const blocks = typeof m.content === 'string' ? [{ type: 'text' as const, text: m.content }] : [...m.content];
+  if (!blocks.length) return messages;
+  blocks[blocks.length - 1] = { ...blocks[blocks.length - 1], cache_control: { type: 'ephemeral' } } as typeof blocks[number];
+  return [...messages.slice(0, i), { ...m, content: blocks }, ...messages.slice(i + 1)];
+}
+
 /** one Claude turn of the brief chat; server tools (web search) can pause a long turn: continue it, at most 3 times.
  *  The turn ends on our own tool call (cards or brief), which the next customer message answers as its tool result. */
 async function chatTurn(client: Anthropic, history: Anthropic.Beta.BetaMessageParam[]) {
@@ -41,8 +55,8 @@ async function chatTurn(client: Anthropic, history: Anthropic.Beta.BetaMessagePa
       thinking: { type: 'adaptive' },
       output_config: { effort: 'low' }, // conversational turns: low effort is enough and keeps replies quick
       system: [{ type: 'text', text: CHAT_SYSTEM, cache_control: { type: 'ephemeral' } }],
-      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 3 }, ...CHAT_TOOLS],
-      messages,
+      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 1 }, ...CHAT_TOOLS],
+      messages: withCacheBreakpoint(messages),
     });
     if (res.stop_reason === 'refusal') throw new Error('refusal');
     messages.push({ role: 'assistant', content: res.content }); // keep every block (thinking, search results) unchanged
@@ -52,7 +66,7 @@ async function chatTurn(client: Anthropic, history: Anthropic.Beta.BetaMessagePa
       if (b.name === 'present_choices') choices = b.input as Choices;
       if (b.name === 'brief_ready') brief = b.input as Brief;
     }
-    console.log(JSON.stringify({ audit: 'animated_chat_usage', model: res.model, usage: res.usage }));
+    console.log(JSON.stringify({ audit: 'animated_chat_usage', model: res.model, usage: res.usage })); // cache_read_input_tokens shows the history cache working
     if (res.stop_reason !== 'pause_turn') break;
   }
   if (choices) choices = { ...choices, options: (choices.options ?? []).slice(0, 4).filter((o) => o?.title) };

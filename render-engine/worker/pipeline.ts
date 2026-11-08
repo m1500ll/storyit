@@ -2,8 +2,8 @@
 //   writing   Claude writes the VideoSpec from the brief transcript (specWriter.ts)
 //   voicing   ElevenLabs reads the script, word timings, auto-fit to ~57.5 s (voice.ts)
 //   rendering soundtrack (audio/spec_audio.py) + 3D render (render.ts) + mux
-//   done      MP4 uploaded to the private `renders` bucket at <user_id>/animated/<project_id>.mp4, and a copy added to
-//             the customer's video library (bucket `library`, table media_assets)
+//   done      MP4 stored once, in the customer's video library (bucket `library` <user_id>/<media id>.mp4 + a media_assets
+//             row); video_path points at it. Fallback: the private `renders` bucket at <user_id>/animated/<project_id>.mp4
 // Any failure: status failed, a short customer-facing error, the credits refunded.
 // Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, ELEVENLABS_API_KEY, ELEVENLABS_DEFAULT_VOICE.
 // Usage: npx tsx worker/pipeline.ts [--once]
@@ -53,7 +53,7 @@ export const briefText = (lines: Line[]) => lines.map((m) => {
 
 /** a copy of the finished short in the customer's video library (bucket `library` + table media_assets), ready to
  *  distribute; the service role skips the plan-limit guard, which is meant for manual uploads */
-async function addToLibrary(job: Job, title: string, video: string) {
+async function addToLibrary(job: Job, title: string, video: string): Promise<string> {
   const id = crypto.randomUUID();
   const path = `${job.user_id}/${id}.mp4`;
   const buf = fs.readFileSync(video);
@@ -66,6 +66,7 @@ async function addToLibrary(job: Job, title: string, video: string) {
   });
   if (error) { await db.storage.from("library").remove([path]); throw new Error(error.message); }
   log(job.id, "added to the library", id);
+  return path;
 }
 
 export async function produce(job: Job) {
@@ -107,11 +108,15 @@ export async function produce(job: Job) {
     // 5. upload
     const mb = fs.statSync(video).size / 1e6;
     log(job.id, `video ${mb.toFixed(1)} MB`);
-    const key = `${job.user_id}/animated/${job.id}.mp4`;
-    const { error } = await db.storage.from("renders").upload(key, fs.readFileSync(video), { contentType: "video/mp4", upsert: true });
-    if (error) throw new Error("upload: " + error.message);
+    // stored ONCE, in the customer's library (bucket library + media_assets); the studio plays that file. Only if the
+    // library refuses it does the video go to the private renders bucket instead (<uid>/animated/<id>.mp4).
+    let key = await addToLibrary(job, spec.title, video).catch((e) => { log(job.id, "library upload failed, keeping it in renders:", e); return null; });
+    if (!key) {
+      key = `${job.user_id}/animated/${job.id}.mp4`;
+      const { error } = await db.storage.from("renders").upload(key, fs.readFileSync(video), { contentType: "video/mp4", upsert: true });
+      if (error) throw new Error("upload: " + error.message);
+    }
     await set(job.id, { status: "done", progress: 100, video_path: key, finished_at: new Date().toISOString() });
-    await addToLibrary(job, spec.title, video).catch((e) => log(job.id, "library copy failed (the video stays in the studio):", e));
     log(job.id, `done in ${((Date.now() - t0) / 60000).toFixed(1)} min`);
   } catch (e) {
     log(job.id, "FAILED", e);

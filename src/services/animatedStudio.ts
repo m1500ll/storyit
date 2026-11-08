@@ -55,7 +55,9 @@ export const animatedStudio = {
    *  that name: the `download` attribute of a link is ignored across origins, so the browser would only play it. */
   async videoUrl(path: string, download?: string): Promise<string | null> {
     if (!supabase) return null;
-    const { data } = await supabase.storage.from('renders').createSignedUrl(path, 3600, download ? { download } : undefined);
+    // new shorts live once in the library (<uid>/<id>.mp4); older ones and fallbacks in renders (<uid>/animated/<id>.mp4)
+    const bucket = path.includes('/animated/') ? 'renders' : 'library';
+    const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 3600, download ? { download } : undefined);
     return data?.signedUrl ?? null;
   },
   /** Live progress from the render worker (Realtime on the project's row). Returns an unsubscribe function. */
