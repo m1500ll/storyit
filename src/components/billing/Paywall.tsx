@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import { useProfile } from '@/hooks/useStore';
 import { PROMPT_PROJECT_COST, projectsFor } from '@/services/credits';
 import { PlanPicker } from './PlanPicker';
+import { TrialUpgrade } from './TrialUpgrade';
 
 /** Why the sheet opened: lets the headline match what the user was trying to do. */
 export type PaywallReason = 'credits' | 'accounts' | 'library' | 'publications';
@@ -43,7 +44,7 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
               <li className="rounded-lg bg-line/[0.04] px-3 py-2">100 credits ≈ {projectsFor(100)} full projects</li>
               <li className="rounded-lg bg-line/[0.04] px-3 py-2">Top-up credits never expire</li>
             </ul>
-            <div className="relative mt-6"><PlanPicker currentPlan={profile?.plan} trialUsed={profile?.trial_used} compact /></div>
+            <div className="relative mt-6"><TrialUpgrade /><PlanPicker currentPlan={profile?.plan} trialUsed={profile?.trial_used} compact /></div>
             <button onClick={() => setState(null)} className="relative mt-4 w-full text-center text-xs text-zinc-500 hover:text-zinc-300">Not now</button>
           </div>
         </div>

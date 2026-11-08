@@ -2,6 +2,8 @@
 // Creates Stripe Checkout sessions (plans & credit packs) and Customer Portal sessions.
 // trial: true on a plan = the $1 three-day trial (one per account): a one-time $1 fee + 3 trial days, then the plan.
 // It never counts as a referral (stripe-webhook only qualifies a referral on a paid plan line).
+// status: the caller's trial (if one is running). end_trial { product? }: ends the trial now (optionally on the other
+// plan): Stripe bills the full plan price at once and the webhook grants the plan's credits.
 // Secrets: STRIPE_SECRET_KEY, STRIPE_PRICE_CREATOR, STRIPE_PRICE_STUDIO, STRIPE_PRICE_PACK_100, STRIPE_PRICE_PACK_500
 // Optional: APP_URL (default http://localhost:5173)
 import { createClient } from 'npm:@supabase/supabase-js@2';
@@ -51,7 +53,7 @@ Deno.serve(async (req) => {
   const appUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173';
 
   try {
-    const { action, product, trial } = (await req.json()) as { action: 'checkout' | 'portal'; product?: ProductKey; trial?: boolean };
+    const { action, product, trial } = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial'; product?: ProductKey; trial?: boolean };
 
     // Get or create the Stripe customer for this user.
     const { data: profile } = await admin.from('profiles').select('stripe_customer_id, plan, trial_used').eq('id', user.id).single();
@@ -60,6 +62,29 @@ Deno.serve(async (req) => {
       const customer = await stripe('customers', { email: user.email ?? '', 'metadata[user_id]': user.id });
       customerId = customer.id as string;
       await admin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id);
+    }
+
+    if (action === 'status' || action === 'end_trial') {
+      const subs = await stripe(`subscriptions?customer=${customerId}&status=trialing&limit=1`);
+      const sub = subs?.data?.[0];
+      const priceId = sub?.items?.data?.[0]?.price?.id as string | undefined;
+      const current = priceId === Deno.env.get('STRIPE_PRICE_STUDIO') ? 'studio' : priceId === Deno.env.get('STRIPE_PRICE_CREATOR') ? 'creator' : null;
+      if (action === 'status') return json({ trialing: !!sub, trial_end: sub?.trial_end ?? null, product: current });
+      if (!sub) return json({ error: 'Aucun essai en cours.' }, 409);
+      // end the trial now; on the other plan if asked (Stripe bills the full price of the plan immediately)
+      const target = product === 'studio' || product === 'creator' ? product : current ?? 'creator';
+      const params: Record<string, string> = { trial_end: 'now', proration_behavior: 'none', 'expand[]': 'latest_invoice' };
+      if (target !== current) {
+        const price = Deno.env.get(PRODUCTS[target].env);
+        if (!price) return json({ error: 'Price not configured.' }, 503);
+        params['items[0][id]'] = sub.items.data[0].id;
+        params['items[0][price]'] = price;
+        params['metadata[product]'] = target;
+      }
+      const updated = await stripe(`subscriptions/${sub.id}`, params);
+      const inv = updated?.latest_invoice;
+      const paid = inv?.status === 'paid';
+      return json({ ok: true, status: updated.status, paid, product: target, invoice_url: paid ? null : inv?.hosted_invoice_url ?? null });
     }
 
     if (action === 'portal') {

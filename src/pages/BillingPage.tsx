@@ -6,6 +6,7 @@ import { Button, Card, CardHeader, PageHeader } from '@/components/ui';
 import { useCredits, useProfile } from '@/hooks/useStore';
 import { billingService } from '@/services/billing';
 import { PLANS } from '@/services/credits';
+import { TrialUpgrade } from '@/components/billing/TrialUpgrade';
 
 function CheckoutBanner() {
   const [params, setParams] = useSearchParams();
@@ -58,6 +59,7 @@ export default function BillingPage() {
         {profile?.plan === 'studio'
           ? <CardHeader title="Top up credits" subtitle="You're on Studio, our top plan. Top-up packs never expire." />
           : <CardHeader title="Upgrade or top up" subtitle="Plans renew monthly. Top-up packs never expire." />}
+        <TrialUpgrade />
         <PlanPicker currentPlan={profile?.plan} trialUsed={profile?.trial_used} />
       </Card>
       <Card className="mt-6 overflow-x-auto" tabIndex={0} role="region" aria-label="Credit history">
