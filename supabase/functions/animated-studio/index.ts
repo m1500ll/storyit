@@ -20,7 +20,8 @@ const cors = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
-const MAX_TURNS = 30; // a brief that long has lost its way: ask the customer to start a new project
+const MAX_TURNS = 15; // a brief that long has lost its way: ask the customer to start a new project
+const WRAP_UP_AT = 10; // from this customer message on, Claude must conclude with the brief (keeps a chat from running up the bill)
 
 type Line = { role: string; text: string; choices?: Choices; brief?: Brief };
 type Row = { id: string; user_id: string; status: string; messages: Anthropic.Beta.BetaMessageParam[]; transcript: Line[]; title: string | null; language: string };
@@ -42,7 +43,7 @@ function withCacheBreakpoint(messages: Anthropic.Beta.BetaMessageParam[]): Anthr
 
 /** one Claude turn of the brief chat; server tools (web search) can pause a long turn: continue it, at most 3 times.
  *  The turn ends on our own tool call (cards or brief), which the next customer message answers as its tool result. */
-async function chatTurn(client: Anthropic, history: Anthropic.Beta.BetaMessageParam[]) {
+async function chatTurn(client: Anthropic, history: Anthropic.Beta.BetaMessageParam[], search: boolean) {
   const messages = [...history];
   let reply = '';
   let choices: Choices | undefined, brief: Brief | undefined;
@@ -54,7 +55,8 @@ async function chatTurn(client: Anthropic, history: Anthropic.Beta.BetaMessagePa
       thinking: { type: 'adaptive' },
       output_config: { effort: 'low' }, // conversational turns: low effort is enough and keeps replies quick
       system: [{ type: 'text', text: CHAT_SYSTEM, cache_control: { type: 'ephemeral' } }],
-      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 1 }, ...CHAT_TOOLS],
+      // web search only until the story ideas are shown: each search adds whole pages that every later turn pays for again
+      tools: search ? [{ type: 'web_search_20260209' as const, name: 'web_search' as const, max_uses: 1 }, ...CHAT_TOOLS] : CHAT_TOOLS,
       messages: withCacheBreakpoint(messages),
     } satisfies Omit<Anthropic.Beta.MessageCreateParamsNonStreaming, 'model'>;
     // the lighter chat model first; if it is unavailable or rejects a parameter, the turn runs on MODEL instead
@@ -143,12 +145,17 @@ Deno.serve(async (req) => {
     }
     if (p.transcript.length >= MAX_TURNS * 2) return json({ error: 'Cette discussion est très longue : créez un nouveau projet pour repartir de zéro.' }, 409);
     try { await reserveAi('claude_chat'); } catch (e) { return json({ error: e instanceof BudgetError ? e.message : 'Service indisponible.' }, 429); }
+    // once the story ideas were shown, the rest of the chat needs neither the list of taken ideas nor web search
+    const storyShown = p.transcript.some((l) => l.choices?.step === 'story');
     // ideas already proposed to anyone (newest first): Claude must not offer them again
-    const { data: taken } = await admin.from('animated_ideas').select('title').order('created_at', { ascending: false }).limit(80);
-    const note = seedNote([...new Set((taken ?? []).map((r: { title: string }) => r.title))]);
+    const { data: taken } = storyShown ? { data: [] } : await admin.from('animated_ideas').select('title').order('created_at', { ascending: false }).limit(80);
+    const sent = p.transcript.filter((l) => l.role === 'user').length + 1;
+    const note = seedNote([...new Set((taken ?? []).map((r: { title: string }) => r.title))]) + (sent >= WRAP_UP_AT
+      ? `\n[Studio note] The customer has sent ${sent} messages: wrap up now. Call brief_ready in this turn with the best choices so far (pick sensible defaults for anything still open) and ask nothing more.`
+      : '');
     const history: Anthropic.Beta.BetaMessageParam[] = [...p.messages, customerTurn(p.messages, text, note)];
     try {
-      const out = await chatTurn(new Anthropic({ apiKey: key, timeout: 120_000, maxRetries: 1 }), history);
+      const out = await chatTurn(new Anthropic({ apiKey: key, timeout: 120_000, maxRetries: 1 }), history, !storyShown);
       const line: Line = { role: 'assistant', text: out.reply || (out.brief ? 'Voici le récapitulatif de votre vidéo.' : '') };
       if (out.choices?.options.length) line.choices = out.choices;
       if (out.brief) line.brief = out.brief;

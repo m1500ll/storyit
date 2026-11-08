@@ -29,6 +29,11 @@ const systemText = () =>
     "\n\nOUTPUT: reply with the VideoSpec as ONE JSON object and nothing else (no prose, no code fences). It must validate against this JSON Schema:\n" +
     JSON.stringify(z.toJSONSchema(VideoSpecSchema)));
 
+/** problems the video survives (style, length a little off, an unused drawing): worth no full rewrite on their own */
+const MINOR = [/^script has (1[1-3]\d|2[3-5]\d) words/, /words and no comma/, /three long sentences in a row/, /is drawn but no group uses it/,
+  /keep each drawing under/, /^the hook \(line 0\) has (1[5-9]|2\d) words/, /has a word in capitals/];
+const isMinor = (p: string) => MINOR.some((r) => r.test(p));
+
 export async function writeSpec(brief: string, language: string, client = new Anthropic()): Promise<SpecResult> {
   const system: Anthropic.Beta.BetaTextBlockParam[] = [{ type: "text", text: systemText(), cache_control: { type: "ephemeral", ttl: "1h" } }];
   const messages: Anthropic.Beta.BetaMessageParam[] = [{
@@ -44,7 +49,7 @@ export async function writeSpec(brief: string, language: string, client = new An
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default", // a safety-classifier decline is retried server-side on Anthropic's recommended model
       thinking: { type: "adaptive" },
-      output_config: { effort: "high" },
+      output_config: { effort: "medium" }, // medium: far fewer thinking tokens (billed as output); the checks below catch mistakes
       system,
       messages,
     });
@@ -62,7 +67,8 @@ export async function writeSpec(brief: string, language: string, client = new An
         const spec = normalizeScript(parsed.data);
         problems = [...checkSpec(spec), ...checkNarration(spec)];
         if (!best || problems.length < best.problems.length) best = { spec, problems };
-        if (!problems.length) break;
+        // a full rewrite costs a whole new spec: only for problems that break the video, not for small style ones
+        if (!problems.some((p) => !isMinor(p))) break;
       } else problems = zodProblems(parsed.error);
     } catch (e) {
       problems = [`the reply is not one valid JSON object (${e instanceof Error ? e.message : String(e)})`];
