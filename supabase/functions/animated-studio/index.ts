@@ -11,7 +11,7 @@
 // Secrets: ANTHROPIC_API_KEY (Edge Function secret, never a VITE_ variable).
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import Anthropic from 'npm:@anthropic-ai/sdk@1.6.0';
-import { ANIMATED_COST, CHAT_SYSTEM, CHAT_TOOLS, DECOR_KEYS, MODEL, seedNote, type Brief, type Choices } from '../_shared/animatedStudio.ts';
+import { ANIMATED_COST, CHAT_SYSTEM, CHAT_TOOLS, DECOR_KEYS, CHAT_MODEL, MODEL, seedNote, type Brief, type Choices } from '../_shared/animatedStudio.ts';
 import { BudgetError, releaseAi, reserveAi } from '../_shared/aiBudget.ts';
 
 const cors = {
@@ -47,8 +47,7 @@ async function chatTurn(client: Anthropic, history: Anthropic.Beta.BetaMessagePa
   let reply = '';
   let choices: Choices | undefined, brief: Brief | undefined;
   for (let hop = 0; hop < 4; hop++) {
-    const res = await client.beta.messages.create({
-      model: MODEL,
+    const params = {
       max_tokens: 8000,
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default', // a safety-classifier decline is retried server-side on Anthropic's recommended model
@@ -57,7 +56,13 @@ async function chatTurn(client: Anthropic, history: Anthropic.Beta.BetaMessagePa
       system: [{ type: 'text', text: CHAT_SYSTEM, cache_control: { type: 'ephemeral' } }],
       tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 1 }, ...CHAT_TOOLS],
       messages: withCacheBreakpoint(messages),
-    });
+    } satisfies Omit<Anthropic.Beta.MessageCreateParamsNonStreaming, 'model'>;
+    // the lighter chat model first; if it is unavailable or rejects a parameter, the turn runs on MODEL instead
+    const res = await client.beta.messages.create({ model: CHAT_MODEL, ...params })
+      .catch((e: { status?: number }) => {
+        if (CHAT_MODEL !== MODEL && (e?.status === 400 || e?.status === 404)) { console.error('chat model fallback', e); return client.beta.messages.create({ model: MODEL, ...params }); }
+        throw e;
+      });
     if (res.stop_reason === 'refusal') throw new Error('refusal');
     messages.push({ role: 'assistant', content: res.content }); // keep every block (thinking, search results) unchanged
     reply += res.content.filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === 'text').map((b) => b.text).join('');

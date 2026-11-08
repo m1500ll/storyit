@@ -15,7 +15,7 @@ type Timed = { word: string; start: number; end: number };
 async function elevenlabs(text: string, voiceId: string, language: string) {
   const key = process.env.ELEVENLABS_API_KEY;
   if (!key) throw new Error("ELEVENLABS_API_KEY is not set");
-  const model = process.env.ELEVENLABS_MODEL ?? "eleven_multilingual_v2";
+  const model = process.env.ELEVENLABS_MODEL ?? "eleven_flash_v2_5" // half the credits per character of multilingual_v2;
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}/with-timestamps?output_format=${process.env.ELEVENLABS_FORMAT ?? "mp3_44100_128"}`, {
     method: "POST",
     headers: { "xi-api-key": key, "Content-Type": "application/json" },

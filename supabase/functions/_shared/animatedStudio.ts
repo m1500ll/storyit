@@ -4,6 +4,8 @@
 // The system prompt is a static string (no dates, no ids) so it stays byte-identical and caches.
 
 export const MODEL = Deno.env.get('ANIMATED_MODEL') ?? 'claude-opus-5-5';
+/** the brief chat (questions and cards): a lighter model is enough and costs much less; the script stays on MODEL */
+export const CHAT_MODEL = Deno.env.get('ANIMATED_CHAT_MODEL') ?? 'claude-sonnet-5-5';
 
 export const STYLE = `STYLE (fixed, never change it): flat 2D bean-headed cartoon characters with plum ink outlines, standing in a painted, ink-outlined, saturated 3D world; gliding cameras; depth of field on close shots; a white flash after the hook; golden light for the explanation beat. No captions or text on screen. One steady narrator voice.
 

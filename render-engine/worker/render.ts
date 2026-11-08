@@ -50,7 +50,7 @@ export async function renderVideo(spec: VideoSpec, words: Word[], mixWav: string
   const mux = (video: string[]) => execFileSync("ffmpeg", ["-v", "error", "-y", "-i", silent, "-i", path.resolve(mixWav), "-map", "0:v:0", "-map", "1:a:0",
     "-c:v", "libx264", "-preset", "medium", ...video, "-pix_fmt", "yuv420p",
     "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-af", "volume=-0.5dB", "-shortest", "-movflags", "+faststart", final]);
-  mux(["-crf", "20", "-maxrate", "4500k", "-bufsize", "6M"]);
+  mux(["-crf", "22", "-maxrate", "3500k", "-bufsize", "5M"]); // ~30% lighter files (storage, downloads); same look on a phone
   const LIMIT = 48e6;
   if (fs.statSync(final).size > LIMIT) { // safety net: a fixed average bitrate that fits
     const secs = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", final]).toString());
