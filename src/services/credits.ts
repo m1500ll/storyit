@@ -14,13 +14,15 @@ export const CREDIT_COSTS = {
 export const PLANS = [
   { id: 'free', name: 'Starter', price: 0, credits: 30, period: 'once', perks: ['Prompt Studio: script, image and video prompts', '30 free credits (2 full projects)', 'Posting to TikTok and Instagram: Creator plan'] },
   { id: 'creator', name: 'Creator', price: 29, compareAt: 45, credits: 430, period: 'month', perks: ['10 social accounts, grouped as you like', '500 videos in your library', 'Daily rotation campaigns', '430 credits / month (28 Prompt Studio projects)'], featured: true },
-  { id: 'pro', name: 'Pro', price: 49, credits: 1200, period: 'month', badge: 'Best value', perks: ['Everything in Creator', '30 social accounts', '2,000 videos in your library', '1,200 credits / month (20 animated shorts)'] },
+  { id: 'pro', name: 'Pro', price: 59, credits: 1050, period: 'month', badge: 'Best value', perks: ['Everything in Creator', '30 social accounts', '2,000 videos in your library', '1,050 credits / month (17 animated shorts)'] },
   { id: 'studio', name: 'Studio', price: 99, compareAt: 180, credits: 1600, period: 'month', perks: ['Unlimited accounts and videos', 'Everything in Pro', 'Built for agencies and account networks', '1,600 credits / month'] },
 ] as const;
 
 /** $1 three-day trial on a paid plan (one per account), then the plan at full price. Keep in sync with
  *  supabase/functions/_shared/stripe.ts (TRIAL). */
 export const TRIAL = { price: 1, days: 3, credits: 60 } as const;
+/** The $1 trial is closed to new customers (trials already running can still be ended early with TrialUpgrade). */
+export const TRIAL_ENABLED = false;
 
 export const estimateEpisodeCost = (sceneCount: number) => sceneCount * CREDIT_COSTS.sceneRender;
 

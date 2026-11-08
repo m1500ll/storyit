@@ -2,7 +2,7 @@ import { Check, Coins } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { billingService } from '@/services/billing';
-import { CREDIT_PACKS, PLANS, TRIAL, projectsFor, type ProductKey } from '@/services/credits';
+import { CREDIT_PACKS, PLANS, TRIAL, TRIAL_ENABLED, projectsFor, type ProductKey } from '@/services/credits';
 import { store } from '@/services/store';
 import { Button, useToast } from '../ui';
 
@@ -13,7 +13,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed }: { currentPlan?: 
   const toast = useToast();
   const [pending, setPending] = useState<string | null>(null);
   const currentPrice = PLANS.find((p) => p.id === currentPlan)?.price ?? 0;
-  const canTrial = !trialUsed && (currentPlan ?? 'free') === 'free';
+  const canTrial = TRIAL_ENABLED && !trialUsed && (currentPlan ?? 'free') === 'free';
   const [error, setError] = useState<string | null>(null);
 
   const buy = async (product: ProductKey, trial = false) => {

@@ -1,14 +1,13 @@
 import { ArrowRight } from 'lucide-react';
 import { Button } from '../ui';
 import { StartLink } from './StartLink';
-import { TRIAL } from '@/services/credits';
 
 /** CTA repeated at decision points (after proof, after the money maths). */
 export function InlineCTA({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mx-auto -mt-6 mb-4 flex max-w-6xl flex-col items-center gap-3 px-4 text-center md:px-6">
       <p className="text-sm text-zinc-300">{title}</p>
-      <StartLink to="/app/billing"><Button>Try {TRIAL.days} days for ${TRIAL.price} <ArrowRight className="h-4 w-4" /></Button></StartLink>
+      <StartLink to="/app/billing"><Button>Get started for $29/mo <ArrowRight className="h-4 w-4" /></Button></StartLink>
       {sub && <p className="text-[11px] text-zinc-500">{sub}</p>}
     </div>
   );

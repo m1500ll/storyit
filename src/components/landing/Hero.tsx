@@ -6,7 +6,6 @@ import { Button } from '../ui';
 import { VideoCard } from './VideoCard';
 import { VideoLightbox } from './VideoLightbox';
 import { StartLink } from './StartLink';
-import { TRIAL } from '@/services/credits';
 
 const FAN = [
   { tilt: -6, y: 18 }, { tilt: -3, y: 4 }, { tilt: 0, y: -6 }, { tilt: 3, y: 4 }, { tilt: 6, y: 18 },
@@ -21,7 +20,7 @@ export function Hero() {
       <div className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px]" />
       <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-20 text-center md:px-6 md:pt-28">
         <StartLink to="/app/billing" className="group mx-auto mb-4 flex max-w-fit items-center gap-2 rounded-full border border-coral-400/40 bg-coral-500/10 px-3 py-1.5 text-xs font-medium text-coral-300 transition hover:border-coral-400/70">
-          <span aria-hidden>🎉</span> Launch offer: try any plan {TRIAL.days} days for ${TRIAL.price} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
+          <span aria-hidden>🎉</span> Launch offer: Creator at $29/mo instead of $45 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
         </StartLink>
         <p className="label mx-auto inline-flex items-center gap-2 rounded-full border border-line/10 px-3 py-1">
           <span className="h-1.5 w-1.5 rounded-full bg-coral-400" /> For TikTok and Instagram Reels
@@ -33,10 +32,10 @@ export function Hero() {
           Storyit sends each video to all your TikTok and Instagram accounts on a schedule, writes a caption for each account, and never posts the same video twice to the same account. Your browser can stay closed.
         </p>
         <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-          <StartLink to="/app/billing"><Button size="lg">Try {TRIAL.days} days for ${TRIAL.price} <ArrowRight className="h-4 w-4" /></Button></StartLink>
+          <StartLink to="/app/billing"><Button size="lg">Get started for $29/mo <ArrowRight className="h-4 w-4" /></Button></StartLink>
           <a href="#how"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> See how it works</Button></a>
         </div>
-        <p className="mt-4 text-xs text-zinc-400"><strong className="text-zinc-200">${TRIAL.price} for {TRIAL.days} days</strong>, then <s className="text-zinc-500">$45</s> $29/mo. Cancel anytime. Or <StartLink to="/app" className="touch-hit text-violet-300 underline-offset-2 hover:underline">start free with 30 credits</StartLink>, no card.</p>
+        <p className="mt-4 text-xs text-zinc-400"><strong className="text-zinc-200">Launch offer</strong>: <s className="text-zinc-500">$45</s> $29/mo. Cancel anytime. Or <StartLink to="/app" className="touch-hit text-violet-300 underline-offset-2 hover:underline">start free with 30 credits</StartLink>, no card.</p>
         <a href="#results" className="group mx-auto mt-6 flex max-w-fit flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] px-5 py-3 transition hover:border-emerald-500/40">
           {RESULT_HIGHLIGHTS.slice(0, 2).map((h) => (
             <span key={h.label} className="text-sm text-zinc-300"><strong className="font-display text-xl tabular-nums text-zinc-50">{h.value}</strong> {h.label}</span>

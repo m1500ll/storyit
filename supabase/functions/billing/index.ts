@@ -166,6 +166,7 @@ Deno.serve(async (req) => {
       params['subscription_data[metadata][product]'] = product;
     }
     if (trial) {
+      return json({ error: 'L’essai à 1 $ n’est plus proposé.', code: 'trial_closed' }, 410);
       // one trial per account: never used, no paid plan now, no subscription ever on this Stripe customer
       if (mode !== 'subscription') return json({ error: 'The trial is only for plans.' }, 400);
       if (profile?.trial_used || (profile?.plan && profile.plan !== 'free')) return json({ error: 'Votre essai a déjà été utilisé.', code: 'trial_used' }, 409);
