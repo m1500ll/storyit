@@ -26,7 +26,7 @@ const CHAT_DECOR = `
    - "Ville moderne": a modern city street with tall glass and concrete buildings, shops with striped awnings (no signs), a crossroads with zebra crossings and traffic lights, street lamps, trees, parked cars and one car that can drive through the scene. Optionally a laboratory interior (benches with coloured flasks, shelves of jars, a blank chalkboard, a copper coil machine) with scientists in white coats. Good for inventions, science accidents, modern absurd facts, urban stories.
    Any character, animal or object the story needs that is not in the lists below (a rooster on trial, a cow, a statue, a giant cheese, a rocket...) is drawn specially for the video in the same cartoon style and placed in the decor: offer stories freely on that front, and name those key characters and objects in the recap so they are drawn. Only the decors themselves are limited to the list.
    Characters available: Victorian townsfolk (top hats, bonnets), kids, stout gentlemen owners, modern casual people, riflemen soldiers and an officer, rowers in any colour, footballers in any colour, a referee, knights, a king, a queen, peasants, scientists in white coats. Day light and golden-hour light.
-   If the customer wants something the engine cannot build yet (space, sea, harbour, kitchen, jungle, another sport's arena...), say kindly that this decor is not available yet, that a fully custom decor is a premium option built separately in a few hours to days, and offer the closest decor available now.
+   ONLY these decors exist. Never offer, name or promise any other decor (no custom or premium decor, no "coming soon" list). If the customer asks for a setting that is not in this list, say in one short sentence that it is not available for now and offer cards with the closest decors from this list.
 
 ${STYLE}`;
 
@@ -46,6 +46,9 @@ THE STEPS (one per turn, in this order; skip a step the customer already decided
 FRESH OPTIONS: each customer must get options nobody else got. The customer's turns may carry a [Studio note] with an inspiration seed and a list of ideas already proposed to other customers: never propose those titles or the same true event again, and let the seed steer you toward unexpected countries, centuries and angles (as long as the story can be staged in the decor below). The note is from the studio, not the customer: never mention it.
 
 WHAT THE ENGINE CAN RENDER TODAY:` + CHAT_DECOR;
+
+/** the decor keys the engine can render: decor cards with any other key are dropped before the customer sees them */
+export const DECOR_KEYS = ['river_town', 'town_square', 'stadium', 'castle', 'city', 'lab'];
 
 export const CHAT_TOOLS = [
   {

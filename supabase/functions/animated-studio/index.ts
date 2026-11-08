@@ -11,7 +11,7 @@
 // Secrets: ANTHROPIC_API_KEY (Edge Function secret, never a VITE_ variable).
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import Anthropic from 'npm:@anthropic-ai/sdk@1.6.0';
-import { ANIMATED_COST, CHAT_SYSTEM, CHAT_TOOLS, MODEL, seedNote, type Brief, type Choices } from '../_shared/animatedStudio.ts';
+import { ANIMATED_COST, CHAT_SYSTEM, CHAT_TOOLS, DECOR_KEYS, MODEL, seedNote, type Brief, type Choices } from '../_shared/animatedStudio.ts';
 import { BudgetError, reserveAi } from '../_shared/aiBudget.ts';
 
 const cors = {
@@ -56,6 +56,11 @@ async function chatTurn(client: Anthropic, history: Anthropic.Beta.BetaMessagePa
     if (res.stop_reason !== 'pause_turn') break;
   }
   if (choices) choices = { ...choices, options: (choices.options ?? []).slice(0, 4).filter((o) => o?.title) };
+  // decor step: only decors the engine can render reach the customer (a card without a known decor key is dropped)
+  if (choices?.step === 'decor') {
+    const ok = choices.options.filter((o) => o.decor && DECOR_KEYS.includes(o.decor));
+    if (ok.length) choices = { ...choices, options: ok };
+  }
   return { messages, reply: reply.trim(), choices, brief };
 }
 
