@@ -1,13 +1,14 @@
 /** Stripe helpers shared by `stripe-webhook` and tests (pure, no Deno APIs). */
 
-export type ProductKey = 'creator' | 'studio' | 'pack_100' | 'pack_500';
+export type ProductKey = 'creator' | 'pro' | 'studio' | 'pack_100' | 'pack_500';
 export const PRICE_ENV: Record<ProductKey, string> = {
-  creator: 'STRIPE_PRICE_CREATOR', studio: 'STRIPE_PRICE_STUDIO', pack_100: 'STRIPE_PRICE_PACK_100', pack_500: 'STRIPE_PRICE_PACK_500',
+  creator: 'STRIPE_PRICE_CREATOR', pro: 'STRIPE_PRICE_PRO', studio: 'STRIPE_PRICE_STUDIO', pack_100: 'STRIPE_PRICE_PACK_100', pack_500: 'STRIPE_PRICE_PACK_500',
 };
 
 /** What each product grants. Keep in sync with src/services/credits.ts (PLANS / CREDIT_PACKS). */
-export const GRANTS: Record<ProductKey, { credits: number; plan?: 'creator' | 'studio'; label: string }> = {
+export const GRANTS: Record<ProductKey, { credits: number; plan?: 'creator' | 'pro' | 'studio'; label: string }> = {
   creator: { credits: 430, plan: 'creator', label: 'Creator plan — monthly credits' },
+  pro: { credits: 1200, plan: 'pro', label: 'Pro plan — monthly credits' },
   studio: { credits: 1600, plan: 'studio', label: 'Studio plan — monthly credits' },
   pack_100: { credits: 100, label: 'Top-up pack — 100 credits' },
   pack_500: { credits: 500, label: 'Top-up pack — 500 credits' },
@@ -29,7 +30,7 @@ export function invoicePriceId(invoice: any): string | null {
 /** price id of an invoice line (older and newer Stripe API shapes) */
 const linePrice = (line: any): string | null => line?.price?.id ?? line?.pricing?.price_details?.price ?? line?.plan?.id ?? null;
 
-/** the line of an invoice that bills a plan (creator/studio), with what that line charged (0 during a trial); null when
+/** the line of an invoice that bills a plan (creator/pro/studio), with what that line charged (0 during a trial); null when
  *  the invoice bills no plan. A trial's first invoice holds the plan line at 0 plus the one-time trial fee. */
 export function planLine(invoice: any, env: (k: string) => string | undefined): { product: ProductKey; amount: number } | null {
   for (const line of invoice?.lines?.data ?? []) {
@@ -44,7 +45,7 @@ export function planLine(invoice: any, env: (k: string) => string | undefined): 
 export const TRIAL = { feeCents: 100, days: 3, credits: 60 };
 
 /** Plan a subscription should give right now. Unpaid/cancelled subscriptions fall back to free. */
-export function planForSubscription(sub: any, env: (k: string) => string | undefined): 'free' | 'creator' | 'studio' | null {
+export function planForSubscription(sub: any, env: (k: string) => string | undefined): 'free' | 'creator' | 'pro' | 'studio' | null {
   if (['canceled', 'unpaid', 'incomplete_expired'].includes(sub?.status)) return 'free';
   if (!['active', 'trialing', 'past_due'].includes(sub?.status)) return null; // incomplete: wait for payment
   const product = productForPrice(sub?.items?.data?.[0]?.price?.id, env);

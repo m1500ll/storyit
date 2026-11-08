@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TRIAL, invoicePriceId, planForSubscription, planLine, productForPrice, verifySignature } from '@shared/stripe.ts';
 
-const env = (k: string) => ({ STRIPE_PRICE_CREATOR: 'price_c', STRIPE_PRICE_STUDIO: 'price_s', STRIPE_PRICE_PACK_100: 'price_p1', STRIPE_PRICE_PACK_500: 'price_p5' } as Record<string, string>)[k];
+const env = (k: string) => ({ STRIPE_PRICE_CREATOR: 'price_c', STRIPE_PRICE_PRO: 'price_pro', STRIPE_PRICE_STUDIO: 'price_s', STRIPE_PRICE_PACK_100: 'price_p1', STRIPE_PRICE_PACK_500: 'price_p5' } as Record<string, string>)[k];
 
 async function sign(payload: string, secret: string, t: number) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -21,6 +21,8 @@ describe('Stripe webhook helpers', () => {
   });
   it('maps prices to products from server config only', () => {
     expect(productForPrice('price_s', env)).toBe('studio');
+    expect(productForPrice('price_pro', env)).toBe('pro');
+    expect(planForSubscription({ status: 'active', items: { data: [{ price: { id: 'price_pro' } }] } }, env)).toBe('pro');
     expect(productForPrice('price_unknown', env)).toBeNull();
   });
   it('reads the paid price on old and new invoice shapes', () => {

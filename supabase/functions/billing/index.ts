@@ -4,10 +4,12 @@
 // It never counts as a referral (stripe-webhook only qualifies a referral on a paid plan line).
 // status: the caller's trial (if one is running). end_trial { product? }: ends the trial now (optionally on the other
 // plan): Stripe bills the full plan price at once and the webhook grants the plan's credits.
-// Secrets: STRIPE_SECRET_KEY, STRIPE_PRICE_CREATOR, STRIPE_PRICE_STUDIO, STRIPE_PRICE_PACK_100, STRIPE_PRICE_PACK_500
+// checkout on a higher plan while a plan is already running = upgrade of that subscription: the customer pays only the
+// price difference now (one invoice) and stripe-webhook switches the plan and grants only the credit difference.
+// Secrets: STRIPE_SECRET_KEY, STRIPE_PRICE_CREATOR, STRIPE_PRICE_PRO, STRIPE_PRICE_STUDIO, STRIPE_PRICE_PACK_100, STRIPE_PRICE_PACK_500
 // Optional: APP_URL (default http://localhost:5173)
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { TRIAL } from '../_shared/stripe.ts';
+import { GRANTS, TRIAL } from '../_shared/stripe.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -20,11 +22,16 @@ const json = (body: unknown, status = 200) =>
 /** Product catalogue. Keys are what the browser may request; price IDs stay server-side. */
 const PRODUCTS = {
   creator: { env: 'STRIPE_PRICE_CREATOR', mode: 'subscription' },
+  pro: { env: 'STRIPE_PRICE_PRO', mode: 'subscription' },
   studio: { env: 'STRIPE_PRICE_STUDIO', mode: 'subscription' },
   pack_100: { env: 'STRIPE_PRICE_PACK_100', mode: 'payment' },
   pack_500: { env: 'STRIPE_PRICE_PACK_500', mode: 'payment' },
 } as const;
 type ProductKey = keyof typeof PRODUCTS;
+const PLAN_KEYS = ['creator', 'pro', 'studio'] as const;
+type PlanKey = (typeof PLAN_KEYS)[number];
+const PLAN_NAMES: Record<PlanKey, string> = { creator: 'Creator', pro: 'Pro', studio: 'Studio' };
+const planOfPrice = (priceId?: string | null) => PLAN_KEYS.find((p) => priceId && Deno.env.get(PRODUCTS[p].env) === priceId) ?? null;
 
 async function stripe(path: string, params?: Record<string, string>) {
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
@@ -64,15 +71,9 @@ Deno.serve(async (req) => {
       await admin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id);
     }
 
-    if (action === 'status' || action === 'end_trial') {
-      const subs = await stripe(`subscriptions?customer=${customerId}&status=trialing&limit=1`);
-      const sub = subs?.data?.[0];
-      const priceId = sub?.items?.data?.[0]?.price?.id as string | undefined;
-      const current = priceId === Deno.env.get('STRIPE_PRICE_STUDIO') ? 'studio' : priceId === Deno.env.get('STRIPE_PRICE_CREATOR') ? 'creator' : null;
-      if (action === 'status') return json({ trialing: !!sub, trial_end: sub?.trial_end ?? null, product: current });
-      if (!sub) return json({ error: 'Aucun essai en cours.' }, 409);
-      // end the trial now; on the other plan if asked (Stripe bills the full price of the plan immediately)
-      const target = product === 'studio' || product === 'creator' ? product : current ?? 'creator';
+    /** ends a running trial now, on `target` if given: Stripe bills the full plan price at once */
+    const endTrial = async (sub: any, target: PlanKey) => {
+      const current = planOfPrice(sub.items.data[0].price.id);
       const params: Record<string, string> = { trial_end: 'now', proration_behavior: 'none', 'expand[]': 'latest_invoice' };
       if (target !== current) {
         const price = Deno.env.get(PRODUCTS[target].env);
@@ -85,6 +86,15 @@ Deno.serve(async (req) => {
       const inv = updated?.latest_invoice;
       const paid = inv?.status === 'paid';
       return json({ ok: true, status: updated.status, paid, product: target, invoice_url: paid ? null : inv?.hosted_invoice_url ?? null });
+    };
+
+    if (action === 'status' || action === 'end_trial') {
+      const subs = await stripe(`subscriptions?customer=${customerId}&status=trialing&limit=1`);
+      const sub = subs?.data?.[0];
+      const current = planOfPrice(sub?.items?.data?.[0]?.price?.id);
+      if (action === 'status') return json({ trialing: !!sub, trial_end: sub?.trial_end ?? null, product: current });
+      if (!sub) return json({ error: 'Aucun essai en cours.' }, 409);
+      return endTrial(sub, PLAN_KEYS.find((p) => p === product) ?? current ?? 'creator');
     }
 
     if (action === 'portal') {
@@ -109,6 +119,48 @@ Deno.serve(async (req) => {
       'metadata[user_id]': user.id,
       'metadata[product]': product,
     };
+    if (mode === 'subscription' && !trial) {
+      // a plan is already running: upgrade it instead of opening a second subscription
+      const subs = await stripe(`subscriptions?customer=${customerId}&status=all&limit=20`);
+      const sub = (subs?.data ?? []).find((x: any) => ['active', 'trialing', 'past_due', 'incomplete'].includes(x.status));
+      if (sub) {
+        const target = product as PlanKey;
+        const current = planOfPrice(sub.items.data[0].price.id);
+        if (!current) return json({ error: 'Votre abonnement actuel ne peut pas être modifié ici. Utilisez « Manage billing ».' }, 409);
+        if (current === target) return json({ error: 'Vous avez déjà cette offre.' }, 409);
+        if (PLAN_KEYS.indexOf(target) < PLAN_KEYS.indexOf(current))
+          return json({ error: 'Pour passer à une offre inférieure, utilisez « Manage billing & invoices ».', code: 'downgrade' }, 409);
+        if (sub.status === 'trialing') return endTrial(sub, target);
+        if (sub.status !== 'active') return json({ error: 'Une facture est en attente : réglez-la dans « Manage billing & invoices », puis réessayez.' }, 409);
+        const [from, to] = await Promise.all([stripe(`prices/${sub.items.data[0].price.id}`), stripe(`prices/${price}`)]);
+        const diff = Number(to.unit_amount) - Number(from.unit_amount);
+        const credits = Math.max(0, GRANTS[target].credits - GRANTS[current].credits);
+        // reuse an unpaid upgrade invoice for the same change (retry after a declined card) instead of billing twice
+        const open = await stripe(`invoices?customer=${customerId}&status=open&limit=20`);
+        let inv = (open?.data ?? []).find((x: any) => x.metadata?.kind === 'plan_upgrade' && x.metadata?.subscription === sub.id && x.metadata?.to === target);
+        if (!inv) {
+          const draft = await stripe('invoices', {
+            customer: customerId, currency: String(to.currency), collection_method: 'charge_automatically', auto_advance: 'false',
+            pending_invoice_items_behavior: 'exclude',
+            ...(sub.default_payment_method ? { default_payment_method: String(sub.default_payment_method) } : {}),
+            description: `Storyit : passage de ${PLAN_NAMES[current]} à ${PLAN_NAMES[target]}`,
+            'metadata[kind]': 'plan_upgrade', 'metadata[user_id]': user.id, 'metadata[subscription]': sub.id,
+            'metadata[from]': current, 'metadata[to]': target, 'metadata[credits]': String(credits),
+          });
+          await stripe('invoiceitems', {
+            customer: customerId, invoice: draft.id, amount: String(diff), currency: String(to.currency),
+            description: `Passage de l’offre ${PLAN_NAMES[current]} à ${PLAN_NAMES[target]} (différence de prix)`,
+          });
+          inv = await stripe(`invoices/${draft.id}/finalize`, { auto_advance: 'false' });
+        }
+        if (inv.status !== 'paid') {
+          try { inv = await stripe(`invoices/${inv.id}/pay`, sub.default_payment_method ? { payment_method: String(sub.default_payment_method) } : {}); }
+          catch { inv = await stripe(`invoices/${inv.id}`); } // declined or needs 3-D Secure: the customer pays on the invoice page
+        }
+        const paid = inv.status === 'paid';
+        return json({ upgraded: true, paid, product: target, invoice_url: paid ? null : inv.hosted_invoice_url ?? null });
+      }
+    }
     if (mode === 'subscription') {
       params['subscription_data[metadata][user_id]'] = user.id;
       params['subscription_data[metadata][product]'] = product;

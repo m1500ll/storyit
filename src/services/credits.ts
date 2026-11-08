@@ -14,7 +14,8 @@ export const CREDIT_COSTS = {
 export const PLANS = [
   { id: 'free', name: 'Starter', price: 0, credits: 30, period: 'once', perks: ['Prompt Studio: script, image and video prompts', '30 free credits (2 full projects)', 'Posting to TikTok and Instagram: Creator plan'] },
   { id: 'creator', name: 'Creator', price: 29, compareAt: 45, credits: 430, period: 'month', perks: ['10 social accounts, grouped as you like', '500 videos in your library', 'Daily rotation campaigns', '430 credits / month (28 Prompt Studio projects)'], featured: true },
-  { id: 'studio', name: 'Studio', price: 99, compareAt: 180, credits: 1600, period: 'month', perks: ['Unlimited accounts and videos', 'Everything in Creator', 'Built for agencies and account networks', '1,600 credits / month'] },
+  { id: 'pro', name: 'Pro', price: 49, credits: 1200, period: 'month', badge: 'Best value', perks: ['Everything in Creator', '30 social accounts', '2,000 videos in your library', '1,200 credits / month (20 animated shorts)'] },
+  { id: 'studio', name: 'Studio', price: 99, compareAt: 180, credits: 1600, period: 'month', perks: ['Unlimited accounts and videos', 'Everything in Pro', 'Built for agencies and account networks', '1,600 credits / month'] },
 ] as const;
 
 /** $1 three-day trial on a paid plan (one per account), then the plan at full price. Keep in sync with
@@ -28,7 +29,7 @@ export const CREDIT_PACKS = [
   { id: 'pack_500', credits: 500, price: 49, badge: 'Best value' },
 ] as const;
 
-export type ProductKey = 'creator' | 'studio' | (typeof CREDIT_PACKS)[number]['id'];
+export type ProductKey = 'creator' | 'pro' | 'studio' | (typeof CREDIT_PACKS)[number]['id'];
 
 /** Full episode = concepts + storyboard + render of every scene. */
 export const FULL_EPISODE_COST = CREDIT_COSTS.conceptGeneration + CREDIT_COSTS.sceneBreakdown + 15 * CREDIT_COSTS.sceneRender;

@@ -15,7 +15,7 @@ export function TrialUpgrade() {
   if (!status?.trialing) return null;
 
   const end = status.trial_end ? new Date(status.trial_end * 1000) : null;
-  const activate = async (product: 'creator' | 'studio') => {
+  const activate = async (product: 'creator' | 'pro' | 'studio') => {
     setPending(product); setError(null);
     try {
       const r = await billingService.endTrial(product);
@@ -28,7 +28,7 @@ export function TrialUpgrade() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Activation impossible.'); }
     finally { setPending(null); }
   };
-  const plans = PLANS.filter((p) => p.id === 'creator' || p.id === 'studio');
+  const plans = PLANS.filter((p) => p.id !== 'free');
   return (
     <div className="mb-6 rounded-2xl border border-coral-400/40 bg-gradient-to-r from-coral-500/15 via-violet-500/10 to-transparent p-4">
       <p className="flex items-center gap-2 text-sm font-semibold text-zinc-100"><Rocket className="h-4 w-4 text-coral-300" aria-hidden /> Vous êtes en période d’essai</p>
@@ -36,10 +36,10 @@ export function TrialUpgrade() {
         {end ? `Elle se termine le ${end.toLocaleDateString()} à ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. ` : ''}
         Plus assez de crédits ? Activez votre abonnement maintenant : vous recevez tout de suite tous les crédits de l’offre.
       </p>
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+      <div className="mt-3 flex flex-col flex-wrap gap-2 sm:flex-row">
         {plans.map((p) => (
           <Button key={p.id} size="sm" variant={p.id === (status.product ?? 'creator') ? 'primary' : 'secondary'} loading={pending === p.id} disabled={pending !== null}
-            onClick={() => void activate(p.id as 'creator' | 'studio')}>
+            onClick={() => void activate(p.id as 'creator' | 'pro' | 'studio')}>
             Activer {p.name} maintenant · ${p.price}/mo · {p.credits} crédits
           </Button>
         ))}

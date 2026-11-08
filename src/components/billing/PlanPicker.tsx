@@ -3,13 +3,16 @@ import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { billingService } from '@/services/billing';
 import { CREDIT_PACKS, PLANS, TRIAL, projectsFor, type ProductKey } from '@/services/credits';
-import { Button } from '../ui';
+import { store } from '@/services/store';
+import { Button, useToast } from '../ui';
 
-const RANKS: Record<string, number> = { free: 0, creator: 1, studio: 2 };
+const RANKS: Record<string, number> = { free: 0, creator: 1, pro: 2, studio: 3 };
 const rank = (plan?: string) => RANKS[plan ?? 'free'] ?? 0;
 
 export function PlanPicker({ currentPlan, compact, trialUsed }: { currentPlan?: string; compact?: boolean; trialUsed?: boolean }) {
+  const toast = useToast();
   const [pending, setPending] = useState<string | null>(null);
+  const currentPrice = PLANS.find((p) => p.id === currentPlan)?.price ?? 0;
   const canTrial = !trialUsed && (currentPlan ?? 'free') === 'free';
   const [error, setError] = useState<string | null>(null);
 
@@ -17,7 +20,12 @@ export function PlanPicker({ currentPlan, compact, trialUsed }: { currentPlan?: 
     setPending(trial ? `${product}:trial` : product);
     setError(null);
     try {
-      await billingService.checkout(product, { trial });
+      const r = await billingService.checkout(product, { trial });
+      if (r.upgraded && r.paid) {
+        toast(`Offre ${PLANS.find((p) => p.id === product)?.name ?? ''} activée : vos crédits en plus arrivent dans quelques secondes.`);
+        setTimeout(() => store.notify(), 4000);
+        setPending(null);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Checkout failed');
       setPending(null);
@@ -26,7 +34,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed }: { currentPlan?: 
 
   return (
     <div>
-      <div className={cn('grid gap-3', compact ? 'sm:grid-cols-2' : 'md:grid-cols-3')}>
+      <div className={cn('grid gap-3', compact ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 xl:grid-cols-4')}>
         {/* In the compact paywall, only show plans above the current one (Studio customers just see the top-up packs). */}
         {PLANS.filter((p) => !compact || (p.id !== 'free' && rank(p.id) > rank(currentPlan))).map((p) => {
           const current = p.id === currentPlan;
@@ -37,7 +45,8 @@ export function PlanPicker({ currentPlan, compact, trialUsed }: { currentPlan?: 
             <div key={p.id} className={cn('rounded-xl border p-4', featured ? 'border-violet-500/40 bg-violet-500/[0.06]' : 'border-line/[0.08] bg-ink-850')}>
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-zinc-100">{p.name}</p>
-                {current && <span className="rounded-full bg-line/10 px-2 py-0.5 text-[11px] text-zinc-300">Current</span>}
+                {current ? <span className="rounded-full bg-line/10 px-2 py-0.5 text-[11px] text-zinc-300">Current</span>
+                  : 'badge' in p && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300">{p.badge}</span>}
               </div>
               <p className="mt-2 flex items-baseline gap-2 font-display text-3xl text-zinc-50">
                 {'compareAt' in p && <s className="font-sans text-base text-zinc-500" aria-label={`instead of $${p.compareAt}`}>${p.compareAt}</s>}
@@ -68,7 +77,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed }: { currentPlan?: 
               {p.id !== 'free' && !(canTrial && !current && !included) && (
                 <Button size="sm" className="mt-4 w-full" variant={featured && !included ? 'primary' : 'secondary'} disabled={current || included}
                   loading={pending === p.id} onClick={() => buy(p.id as ProductKey)}>
-                  {current ? 'Your plan' : included ? 'Included in your plan' : `Upgrade to ${p.name}`}
+                  {current ? 'Your plan' : included ? 'Included in your plan' : currentPrice > 0 ? `Upgrade to ${p.name} · +$${p.price - currentPrice} today` : `Upgrade to ${p.name}`}
                 </Button>
               )}
             </div>
@@ -89,7 +98,10 @@ export function PlanPicker({ currentPlan, compact, trialUsed }: { currentPlan?: 
           </button>
         ))}
       </div>
-      {error && <p className="mt-3 text-xs text-coral-300">{error}</p>}
+      {currentPrice > 0 && rank(currentPlan) < rank('studio') && (
+        <p className="mt-3 text-[11px] text-zinc-500">Upgrading keeps your billing date: you only pay the price difference today, and you get the extra credits of the new plan right away.</p>
+      )}
+      {error && <p role="alert" className="mt-3 text-xs text-coral-300">{error}</p>}
       <p className="mt-4 text-[11px] text-zinc-600">Secure payment by Stripe. Cancel anytime.</p>
     </div>
   );

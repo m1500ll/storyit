@@ -7,7 +7,7 @@
 // REFERRAL_FRIEND_BONUS credits (default 100), the referrer free months as Stripe customer balance (months x the price of
 // their plan, Creator when they have none), which pays their next invoices. Secret: STRIPE_SECRET_KEY.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { GRANTS, TRIAL, invoicePriceId, planForSubscription, planLine, productForPrice, verifySignature, type ProductKey } from '../_shared/stripe.ts';
+import { GRANTS, PRICE_ENV, TRIAL, invoicePriceId, planForSubscription, planLine, productForPrice, verifySignature, type ProductKey } from '../_shared/stripe.ts';
 
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const env = (k: string) => Deno.env.get(k);
@@ -60,7 +60,7 @@ async function rewardReferral(referredId: string) {
       customer = (await stripeApi('customers', { email: u.user?.email ?? '', 'metadata[user_id]': r.referrer_id }, `referrer-customer-${r.referrer_id}`)).id as string;
       await admin.from('profiles').update({ stripe_customer_id: customer }).eq('id', r.referrer_id);
     }
-    const priceId = env(ref?.plan === 'studio' ? 'STRIPE_PRICE_STUDIO' : 'STRIPE_PRICE_CREATOR');
+    const priceId = env(ref?.plan === 'studio' || ref?.plan === 'pro' ? PRICE_ENV[ref.plan as 'pro' | 'studio'] : 'STRIPE_PRICE_CREATOR');
     if (!priceId) throw new Error('referral reward: plan price not configured');
     const price = await stripeApi(`prices/${priceId}`);
     const amount = Number(price.unit_amount) * r.months;
@@ -100,6 +100,24 @@ Deno.serve(async (req) => {
         break;
       }
       case 'invoice.paid': {
+        if (obj.metadata?.kind === 'plan_upgrade') {
+          // upgrade paid (billing: the price difference only): switch the subscription to the new plan without a new charge,
+          // then grant only the credit difference. Never a referral (the customer already paid a plan before).
+          const m = obj.metadata as Record<string, string>;
+          const to = m.to as ProductKey;
+          const price = env(PRICE_ENV[to]);
+          const userId = (await userIdForCustomer(obj.customer)) ?? m.user_id;
+          if (!userId || !price || !GRANTS[to]?.plan) break;
+          const sub = await stripeApi(`subscriptions/${m.subscription}`);
+          if (sub.items.data[0].price.id !== price) {
+            await stripeApi(`subscriptions/${sub.id}`, { 'items[0][id]': sub.items.data[0].id, 'items[0][price]': price,
+              proration_behavior: 'none', 'metadata[product]': to }, `plan-upgrade-${obj.id}`);
+          }
+          const { error } = await admin.rpc('grant_credits', { p_user_id: userId, p_amount: Math.max(0, Number(m.credits) || 0),
+            p_type: 'subscription_grant', p_description: `Passage à l’offre ${to} — crédits en plus`, p_plan: GRANTS[to].plan, p_reset: false });
+          if (error) throw new Error(error.message);
+          break;
+        }
         // The product comes from the plan line actually billed (covers plan changes made in the Customer Portal).
         const line = planLine(obj, env);
         const product = line?.product ?? productForPrice(invoicePriceId(obj), env);
