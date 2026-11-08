@@ -4,3 +4,6 @@ dist
 .env.local
 *.tar.gz
 *.tsbuildinfo
+
+# Cloudflare wrangler local state
+.wrangler/
