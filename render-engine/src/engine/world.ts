@@ -15,6 +15,7 @@ import { buildCastle } from "./castle";
 import { buildCity, carGeo } from "./city";
 import { buildHarbour, shipGeo, SEA_Y } from "./harbour";
 import { buildFarm } from "./farm";
+import { buildDesert, sandTex } from "./desert";
 import { Pool, Actor, Fx, stage, SIGN_AT, SU_SWING } from "./cast";
 import { FPS, D0, SHOTS, camAt, bridgeState, deckY, deckX, dropW, shapeZ, BridgeState, V3, smooth, FOREGROUND, ShotDef, BOAT_LEN, boatX, strokeAt, rowboatRoll, piece, SPEC, ballAt, BALL_R, carAt, shipAt } from "./story";
 const hasRiver = () => SPEC.decor.river;
@@ -186,8 +187,9 @@ export class World {
     M.wood = lam("wood", () => ({ map: beam() }));
     M.bed = lam("bed", () => ({ map: bed() }));
     M.sand = lam("sand", () => ({ color: "#e2c992" }));
+    const groundM = SPEC.decor.ground === "cobble" ? M.cobble : SPEC.decor.ground === "sand" ? lam("sandHD", () => ({ map: sandTex() })) : M.grass;
     const harbour = !!SPEC.decor.harbour; // the harbour has land only for z >= 0: the sea fills z < 0
-    if (!hasRiver()) b.add(harbour ? quadUp(-900, 900, 0, 30, 450, 7.5) : quadUp(-900, 900, -30, 30, 450, 15), SPEC.decor.ground === "cobble" ? M.cobble : M.grass);
+    if (!hasRiver()) b.add(harbour ? quadUp(-900, 900, 0, 30, 450, 7.5) : quadUp(-900, 900, -30, 30, 450, 15), groundM);
     if (hasRiver()) for (const s of [-1, 1]) {
       const zn = s * 30, zf = s * 900;
       b.add(s < 0 ? quadUp(-900, 900, zf, zn, 450, 217.5) : quadUp(-900, 900, zn, zf, 450, 217.5), M.grass);
@@ -199,7 +201,7 @@ export class World {
       b.add(boxGeo(V(-600, D0 - 0.05, s < 0 ? -30.6 : 29.4), V(600, D0 + 0.02, s < 0 ? -29.4 : 30.6), 2), M.cope);
     }
     if (hasRiver()) b.add(quadUp(-900, 900, -30, 30, 225, 7.5, -0.6 - D0), M.bed);
-    else for (const s of [-1, 1]) { if (harbour && s < 0) continue; b.add(s < 0 ? quadUp(-900, 900, -900, -30, 450, 217.5) : quadUp(-900, 900, 30, 900, 450, 217.5), SPEC.decor.ground === "cobble" ? M.cobble : M.grass); }
+    else for (const s of [-1, 1]) { if (harbour && s < 0) continue; b.add(s < 0 ? quadUp(-900, 900, -900, -30, 450, 217.5) : quadUp(-900, 900, 30, 900, 450, 217.5), groundM); }
     // towers: twin stone columns on plinths, lintel, cornice, pyramid caps, iron saddles; flag poles
     if (hasBridge()) for (const zc of [-27, 27]) {
       for (const xc of [-3.35, 3.35]) {
@@ -239,6 +241,7 @@ export class World {
     if (SPEC.decor.city) buildCity(R, kit, SPEC.decor.city);
     if (SPEC.decor.harbour) buildHarbour(R, kit, SPEC.decor.harbour);
     if (SPEC.decor.farm) buildFarm(R, kit, SPEC.decor.farm);
+    if (SPEC.decor.desert) buildDesert(R, kit, SPEC.decor.desert);
     { const sp = piece("ship"); if (sp) { const sb = new Batch(); shipGeo(sb, 0, 0, 0.9, sp.hull ?? "#2f6f5a", sp.sail ?? "#f4f1ea"); sb.build(this.ship); this.ship.visible = false; R.add(this.ship); } }
     { const cp = piece("car"); if (cp) { const cb = new Batch(); carGeo(cb, cp.color ?? "#e2453c", 0, 0); cb.build(this.car); this.car.visible = false; R.add(this.car); } }
     // the football (piece "ball"): white with dark patches, rolled by the distance it travels
@@ -458,6 +461,7 @@ export class World {
     su.e.value.set(e[1], e[2], e[3], e[4]);
     this.sky.position.copy(cam.position);
     untone(L.fog, this.fog.color); this.fog.near = L.fogNear; this.fog.far = L.fogFar;
+    if (SPEC.decor.desert) { this.fog.near = L.fogNear * 3; this.fog.far = L.fogFar * 2.2; } // dry desert air: the pyramids 200 m away keep their colour
     scene.fog = this.fog; scene.background = null;
     const showSun = s.light === "golden";
     this.sunDisc.visible = this.sunHalo.visible = showSun;

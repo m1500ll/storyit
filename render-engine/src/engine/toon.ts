@@ -418,6 +418,22 @@ const hatOn = (p: Pen, o: Outfit, hp: P2[], H: Blob, cx: number, hc: number, lig
     p.poly(body, null, ow);
     const [bx, by] = R([[cx, yb + 1 * u]])[0];
     p.ell(bx, by, 0.45 * W, 0.05 * HH, "#1d1b22", ow, 0, 360, (a * 180) / Math.PI);
+  } else if (o.hat === "nemes") {
+    // pharaoh's striped headcloth: a flat top over the head and two lappets falling to the shoulders, gold and blue
+    const yb = crown + 0.42 * HH, wb = 0.52 * W, top = crown - 0.04 * HH;
+    const cloth = R([[cx - wb * 0.86, top + 0.1 * HH], [cx - wb * 0.6, top], [cx + wb * 0.6, top], [cx + wb * 0.86, top + 0.1 * HH], [cx + wb, yb + 0.5 * HH], [cx + wb * 0.62, yb + 0.55 * HH], [cx + wb * 0.6, yb], [cx - wb * 0.6, yb], [cx - wb * 0.62, yb + 0.55 * HH], [cx - wb, yb + 0.5 * HH]]);
+    p.shadedFill(cloth, "#e8c45a", "#b8902e", light, wb, 0.4);
+    p.clip(cloth, () => { for (let k = 0; k < 9; k++) p.band(R([[cx - wb - 4 * u, top + k * 0.11 * HH], [cx + wb + 4 * u, top + k * 0.11 * HH]]), "#3a5fa8", 0.045 * HH, 0.6 * u); });
+    p.poly(cloth, null, ow);
+    const [ux, uy] = R([[cx, top + 0.03 * HH]])[0]; p.ell(ux, uy, 5 * u, 6 * u, "#e8c45a", 1.6 * u); // the uraeus
+  } else if (o.hat === "pith") {
+    // explorer's pith helmet: a khaki dome and a wide brim
+    const yb = crown + 0.26 * HH, wb = 0.42 * W;
+    const dome = R([...sag(yb, wb).reverse(), [cx - wb * 0.7, yb - 0.3 * HH], [cx - wb * 0.25, yb - 0.42 * HH], [cx + wb * 0.25, yb - 0.42 * HH], [cx + wb * 0.7, yb - 0.3 * HH]]);
+    p.shadedFill(dome, "#d9c48a", "#a8935a", light, wb, 0.4);
+    p.clip(dome, () => p.band(R([[cx - wb - 4 * u, yb - 0.08 * HH], [cx + wb + 4 * u, yb - 0.08 * HH]]), "#8a6a44", 0.06 * HH, 0.8 * u));
+    p.poly(dome, null, ow);
+    const [bx, by] = R([[cx, yb + 1 * u]])[0]; p.ell(bx, by, 0.62 * W, 0.07 * HH, "#cbb57a", ow, 0, 360, (a * 180) / Math.PI);
   } else if (o.hat === "crown") {
     // a gold band with five points and red gems, sitting on the hair line
     const yb = crown + 0.2 * HH, ht = 0.34 * HH, wb = 0.36 * W, pts: P2[] = [...sag(yb, wb).reverse()];
@@ -946,6 +962,10 @@ export const CAPTAIN: Outfit = { jacket: "#1f2a4a", pants: "#1f2a4a", boots: "#1
 export const FISHERMAN = (v = 0): Outfit => ({ jacket: "#f0b43c", pants: "#3b3f52", boots: "#2f5a3a", hat: "cap", cap: "#f0b43c", skin: SKINS[(v + 1) % 4], moustache: v % 2 ? "#5a3b2a" : undefined });
 /** a farmer in blue dungarees over a checked shirt, a straw-coloured cap */
 export const FARMER = (v = 0): Outfit => ({ jacket: ["#c0353a", "#3f6fb5", "#2f8a4f"][v % 3], pants: "#3b5b9a", boots: "#5a3b2a", hat: "cap", cap: "#e0c070", skin: SKINS[v % 4], moustache: v % 2 ? "#6a4a30" : undefined });
+/** Egypt: the pharaoh (nemes, gold collar), workers in white kilts with bare legs, an explorer in khaki */
+export const PHARAOH: Outfit = { jacket: "#f4f1ea", pants: SKINS[3], boots: "#c99067", hat: "nemes", sash: "#e8c45a", buttons: "#3a5fa8", skin: SKINS[3] };
+export const EGYPTIAN = (v = 0): Outfit => ({ jacket: "#f4f1ea", pants: SKINS[(v % 2) + 2], boots: SKINS[(v % 2) + 2], hat: "hair", hair: "#1d1b22", skin: SKINS[(v % 2) + 2], dress: v % 3 === 1 ? "#f4f1ea" : undefined });
+export const EXPLORER = (v = 0): Outfit => ({ jacket: "#c8b07a", pants: "#a8935a", boots: "#5a3b2a", hat: "pith", skin: SKINS[v % 2], moustache: v % 2 ? undefined : "#6a4a30" });
 /** a scientist in a white lab coat */
 export const SCIENTIST = (v = 0): Outfit => ({ jacket: "#f4f6f8", pants: ["#3b3f52", "#3b5b9a"][v % 2], boots: "#4a3426", hat: "hair", hair: ["#7a7a7a", "#2a201a", "#c08a4a", "#5a3b2a"][v % 4], skin: SKINS[v % 4], moustache: v % 4 === 0 ? "#7a7a7a" : undefined });
 /** today's strollers: no hats, bright casual colours */

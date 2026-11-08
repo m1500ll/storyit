@@ -21,7 +21,7 @@ export type KitName = string;
 
 export type Decor = {
   /** the ground everywhere that is not water, quay or road */
-  ground: "grass" | "cobble";
+  ground: "grass" | "cobble" | "sand";
   /** a river along x between the banks (z = +-30), with stone embankments and quays */
   river: boolean;
   /** the template's chain suspension bridge across the river (needs river) */
@@ -47,6 +47,9 @@ export type Decor = {
   /** a farm: dirt yard around the origin, red barn (x -22..-6, z -24..-12), farmhouse at (16, -18), paddock (x 6..26,
    *  z 2..18), pond at (-16, 12), haystacks, crop fields, a windmill. Animals are story drawings (art). river: false. */
   farm?: Record<string, never>;
+  /** an Egyptian desert on sand: pyramids far behind (great one at (0, -170)), the Sphinx at (26, -62) facing +z, an
+   *  obelisk at (-12, -20), an oasis at (-30, 12), market tents, quarry blocks, dunes. Needs river: false, ground sand. */
+  desert?: Record<string, never>;
   /** flag on the bridge towers */
   flag?: "england" | "union" | "france" | "none";
 };
@@ -63,7 +66,7 @@ export type Piece =
   /** a sailing ship on the sea (harbour) in lane z, from x0 at cue `from` to x1 at cue `to` (bow toward x1) */
   | { kind: "ship"; hull?: string; sail?: string; lane: number; x0: number; x1: number; from: Cue; to: Cue };
 
-export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant" | "scientist" | "sailor" | "captain" | "fisherman" | "farmer" | "art";
+export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant" | "scientist" | "sailor" | "captain" | "fisherman" | "farmer" | "pharaoh" | "egyptian" | "explorer" | "art";
 export type Outfit = { name: OutfitName; variant?: number; color?: string; /** name "art": the id of a drawing in spec.art */ art?: string };
 
 /** what a group of characters does from a cue onward */

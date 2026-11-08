@@ -4,7 +4,7 @@ import { store } from './store';
 import { ANIMATED_SHORT_COST } from './credits';
 
 export type AnimatedStatus = 'brief' | 'queued' | 'writing' | 'voicing' | 'rendering' | 'done' | 'failed';
-export type DecorKey = 'river_town' | 'town_square' | 'stadium' | 'castle' | 'city' | 'lab' | 'harbour' | 'farm';
+export type DecorKey = 'river_town' | 'town_square' | 'stadium' | 'castle' | 'city' | 'lab' | 'harbour' | 'farm' | 'desert';
 export interface ChoiceOption { title: string; detail: string; emoji: string; decor?: DecorKey }
 export interface Choices { step: 'format' | 'story' | 'decor' | 'other'; question: string; options: ChoiceOption[] }
 export interface Brief { title: string; hook: string; format: string; decor: string; language: string; facts: { fact: string; source: string }[] }
