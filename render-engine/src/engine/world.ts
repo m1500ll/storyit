@@ -10,8 +10,9 @@ import { Pen, fxNoCars } from "./toon";
 import { LIGHTS, LOOK, LightPreset } from "./lights";
 import { TONE, CHAR, LFB, twoTone, untone } from "./shade";
 import { NOINK } from "./ink";
+import { buildStadium } from "./stadium";
 import { Pool, Actor, Fx, stage, SIGN_AT, SU_SWING } from "./cast";
-import { FPS, D0, SHOTS, camAt, bridgeState, deckY, deckX, dropW, shapeZ, BridgeState, V3, smooth, FOREGROUND, ShotDef, BOAT_LEN, boatX, strokeAt, rowboatRoll, piece, SPEC } from "./story";
+import { FPS, D0, SHOTS, camAt, bridgeState, deckY, deckX, dropW, shapeZ, BridgeState, V3, smooth, FOREGROUND, ShotDef, BOAT_LEN, boatX, strokeAt, rowboatRoll, piece, SPEC, ballAt, BALL_R } from "./story";
 const hasRiver = () => SPEC.decor.river;
 const hasBridge = () => SPEC.decor.river && !!SPEC.decor.bridge;
 const boatDefs = () => { const e = piece("eights"); return e ? [0, 1].map((k) => ({ z: e.lanes[k]!, blade: e.colors[k]!, kit: e.colors[k]! })) : []; };
@@ -121,6 +122,7 @@ export class World {
   private buntingEra = "";
   private hulls: THREE.Mesh[] = []; private oars: THREE.InstancedMesh[] = []; private blades: THREE.InstancedMesh[] = [];
   private rowboat = new THREE.Group();
+  private ball!: THREE.Mesh;
   private frustum = new THREE.Frustum();
   private m4 = new THREE.Matrix4(); private v = new THREE.Vector3(); private sph = new THREE.Sphere();
 
@@ -227,6 +229,15 @@ export class World {
     // (A's at z +-2.2 with legs +-3.0: the near A is close enough to the lens that the parent and the arc stay inside it)
     b.build(R);
     if (SPEC.decor.town) buildTown(R, kit, sightLines());
+    if (SPEC.decor.stadium) buildStadium(R, SPEC.decor.stadium);
+    // the football (piece "ball"): white with dark patches, rolled by the distance it travels
+    this.ball = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 16), lam("ballM", () => ({ map: ctex("ballTex", 256, 128, (g) => {
+      g.fillStyle = "#f6f4ec"; g.fillRect(0, 0, 256, 128); g.fillStyle = "#241726";
+      for (const [x, y] of [[32, 30], [96, 70], [160, 30], [224, 70], [64, 104], [192, 104], [128, 8]]) {
+        g.beginPath(); for (let k = 0; k < 5; k++) { const a = (k / 5) * Math.PI * 2 - Math.PI / 2; g.lineTo(x + 15 * Math.cos(a), y + 15 * Math.sin(a)); } g.fill();
+      }
+    }) })));
+    this.ball.castShadow = true; this.ball.visible = false; R.add(this.ball);
     // the spec's own props (Kenney kit pieces placed by Claude)
     for (const pr of SPEC.decor.props ?? []) {
       const o = kitClone(kit, pr.kit, pr.h);
@@ -457,6 +468,13 @@ export class World {
     this.poseBridge(b, t, tau, id);
     this.poseBoats(id, t, s.show.includes("eights"), s.show.includes("rowboat"));
     this.barrier.visible = s.show.includes("barrier");
+    const bp = s.show.includes("ball") ? ballAt(t) : null;
+    this.ball.visible = !!bp;
+    if (bp) {
+      // spin from the position alone (frames render out of order in parallel tabs)
+      this.ball.rotation.set(bp[2] / BALL_R, 0, -bp[0] / BALL_R);
+      this.ball.position.set(...bp);
+    }
     this.sign.visible = this.barrier.visible && piece("barrier")?.sign !== false;
     for (const sm of this.smoke) {
       const u = (t * 0.11 + sm.k) % 1, sz = 3 + u * 9;

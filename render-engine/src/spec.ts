@@ -32,6 +32,9 @@ export type Decor = {
   props?: { kit: KitName; x: number; z: number; h: number; yaw?: number }[];
   /** animated set pieces: racing eights on the river, a rowing boat that tips, a road barrier with a no-cars sign */
   pieces?: Piece[];
+  /** a football stadium centred on the origin (pitch 105 x 68 m, length along x; goals at x = -52.5 / +52.5, touchlines
+   *  at z = -34 / +34): painted crowd in the two teams' colours, boards, roofs, floodlights. Needs river: false. */
+  stadium?: { home?: string; away?: string };
   /** flag on the bridge towers */
   flag?: "england" | "union" | "france" | "none";
 };
@@ -39,9 +42,12 @@ export type Decor = {
 export type Piece =
   | { kind: "eights"; lanes: [number, number]; colors: [string, string]; pass: Cue; speed?: number }
   | { kind: "rowboat"; at: V2; lean: Cue; tip: Cue; hull?: string }
-  | { kind: "barrier"; z: number; sign?: boolean };
+  | { kind: "barrier"; z: number; sign?: boolean }
+  /** a football: rests at the first key's spot, then travels key to key (rolling on the grass, or flying in an arc
+   *  whose top is `lift` m above the ground when the key has one: a lob, a shot, a clearance); rests after the last */
+  | { kind: "ball"; keys: { at: Cue; pos: V2; lift?: number }[] };
 
-export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower";
+export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee";
 export type Outfit = { name: OutfitName; variant?: number; color?: string };
 
 /** what a group of characters does from a cue onward */
@@ -118,7 +124,7 @@ export type Shot = {
 
 export type SoundCue = {
   at: Cue;
-  kind: "cheer" | "murmur" | "whoa" | "creak" | "chain_groan" | "splash" | "crack" | "steps" | "bell" | "whoosh" | "knock";
+  kind: "cheer" | "murmur" | "whoa" | "creak" | "chain_groan" | "splash" | "crack" | "steps" | "bell" | "whoosh" | "knock" | "whistle" | "kick";
   dur?: number;
   level?: number; // LU relative to the voice, before the -6 dB event rule (default per kind)
   pan?: number;

@@ -89,13 +89,47 @@ def amb_day(dur, r, river):
     return x
 
 
+def whistle(r, blasts=(0.35,)):
+    """a referee's pea whistle: a ~2.9 kHz tone trilled by the pea (25-35 Hz), one short blast per entry"""
+    out = []
+    for d in blasts:
+        n = ns(d); t = np.arange(n) / SR
+        f0 = 2850 + 120 * r.random()
+        trill = 0.55 + 0.45 * np.sin(2 * np.pi * (27 + 8 * r.random()) * t)
+        x = np.sin(2 * np.pi * f0 * t + 0.8 * np.sin(2 * np.pi * 30 * t)) * trill + 0.15 * np.sin(4 * np.pi * f0 * t)
+        x *= np.minimum(1, t / 0.012) * np.minimum(1, (d - t) / 0.04)
+        out += [x, np.zeros(ns(0.12))]
+    return st(np.concatenate(out) * 0.5)
+
+
+def kick(r):
+    """a boot on a ball: a short low thump (~85 Hz falling) with a leather click on top"""
+    d = 0.25; n = ns(d); t = np.arange(n) / SR
+    body = np.sin(2 * np.pi * (85 + 60 * np.exp(-t * 40)) * t) * np.exp(-t * 22)
+    click = bp(colored(n, r, 0.0), 1800, 5000, 1) * np.exp(-t * 180) * 0.6
+    return st(body + click)
+
+
+def amb_stadium(dur, r):
+    """a full stadium: a wide crowd bed with slow swells, a few distant chants and horns"""
+    x = K._murmur(dur, r, 40) * 0.9
+    n = ns(dur)
+    swell = 0.75 + 0.25 * smooth_noise(n, r, 0.15)
+    x = x * swell
+    x += st(bp(colored(n, r, 1.0), 200, 1400, 1) * 0.25)
+    return x
+
+
 shots = TL["shots"]
 for i, s in enumerate(shots):
     a, b = s["start"], s["end"]
     if b - a < 0.3:
         continue
     fin = max(0.05, s.get("xfade", 0) / 30 / 2)
-    bed = K._golden(b - a + 0.4, rr()) if s["light"] == "golden" else amb_day(b - a + 0.4, rr(), TL.get("river", True))
+    if TL.get("stadium"):
+        bed = amb_stadium(b - a + 0.4, rr())
+    else:
+        bed = K._golden(b - a + 0.4, rr()) if s["light"] == "golden" else amb_day(b - a + 0.4, rr(), TL.get("river", True))
     put(fades(bed, fin, 0.35), a - fin, -29, kind="bed", rev=0.0)
     if s.get("crowd", 0) >= 10:  # a visible crowd murmurs under the shot
         put(K._murmur(b - a, rr(), min(28, s["crowd"] // 4 + 6)), a, -16, kind="bed", lpf=3600, rev=0.3)
@@ -125,10 +159,12 @@ def gen_cue(kind, dur, r):
     if kind == "steps": return K._steps(max(0.8, dur), r, 20)
     if kind == "bell": return K._bell(r)
     if kind == "knock": return K._hull_knock(r)
+    if kind == "whistle": return whistle(r, (0.35,) if (dur or 0) < 1.6 else (0.25, 0.25, 0.7))  # dur >= 1.6: the final whistle
+    if kind == "kick": return kick(r)
     return G.whoosh(0.6, r, 0.09, 330, 2000, 0.8, 0.18, 0.15)
 
 
-LEVEL = {"cheer": -8, "murmur": -14, "whoa": -6, "creak": -6, "chain_groan": -6, "splash": -2, "crack": -2, "steps": -12, "bell": -14, "knock": -15, "whoosh": -13}
+LEVEL = {"cheer": -8, "murmur": -14, "whoa": -6, "creak": -6, "chain_groan": -6, "splash": -2, "crack": -2, "steps": -12, "bell": -14, "knock": -15, "whoosh": -13, "whistle": -9, "kick": -8}
 for c in TL.get("cues", []):
     put(gen_cue(c["kind"], c.get("dur", 1.5), rr()), c["t"], c.get("level", LEVEL.get(c["kind"], -10)), p=c.get("pan", 0.0), rev=0.2)
 for e in TL.get("fx", []):  # effect cards get their sound automatically

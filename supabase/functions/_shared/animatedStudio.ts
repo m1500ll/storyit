@@ -21,8 +21,9 @@ Never describe on screen what the viewer already sees. Every joke is a real, sou
 const CHAT_DECOR = `
    - "Ville au bord de l'eau": a painted 19th-century town on both banks of a river, quays and embankments, optionally a chain suspension bridge (old dark iron, or repainted green and gold, or demolished), a park, market stalls, trees, lanterns, carts, a windmill; racing rowing eights, a small rowing boat, a modern road barrier with a no-cars sign.
    - "Place de ville sans rivière": the same town with an open cobbled or grassy square instead of the river.
-   Characters available: Victorian townsfolk (top hats, bonnets), kids, stout gentlemen owners, modern casual people, riflemen soldiers and an officer, rowers in any colour. Day light and golden-hour light.
-   If the customer wants something the engine cannot build yet (space, sea, castle, kitchen...), say kindly that this decor is not available yet, that a fully custom decor is a premium option built separately in a few hours to days, and offer the closest decor available now.
+   - "Stade de football": a full football stadium (striped pitch with its markings, goals with nets, four stands packed with a painted crowd in the two teams' colours, roofs, floodlights, advertising boards without text). Footballers in any team colours, a referee, a ball that can roll, be passed, lobbed or shot into the net; referee whistle, kicks and a roaring crowd in the sound. Good for sport stories of any era (the stadium itself looks modern).
+   Characters available: Victorian townsfolk (top hats, bonnets), kids, stout gentlemen owners, modern casual people, riflemen soldiers and an officer, rowers in any colour, footballers in any colour, a referee. Day light and golden-hour light.
+   If the customer wants something the engine cannot build yet (space, sea, castle, kitchen, another sport's arena...), say kindly that this decor is not available yet, that a fully custom decor is a premium option built separately in a few hours to days, and offer the closest decor available now.
 
 ${STYLE}`;
 

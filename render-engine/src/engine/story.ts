@@ -96,6 +96,7 @@ const pushK = (f: number, f0: number, rate: number, punch = 0, n = 35) => {
 export const subjectPoint = (id: number, subj: string | V3, f: number, height = 1.55): V3 => {
   if (Array.isArray(subj)) return subj;
   const t = SHOTS[id - 1]!.tau(T(f));
+  if (subj === "ball") { const p = ballAt(t); if (p) return [p[0], p[1] + height - 1.55 + 0.4, p[2]]; }
   if (subj === "eights") { const e = piece("eights"); return [boatX(t, 0) + 2.5, 0.75 + height, e?.lanes[0] ?? 0]; }
   const rt = GROUPS.find((g) => g.g.id === subj);
   if (!rt) return [0, D0 + height, 0];
@@ -173,6 +174,22 @@ export const boatX = (t: number, k: number) => {
   const p = piece("eights");
   if (!p) return 1e4;
   return (p.speed ?? 4.6) * (t - TL.t(p.pass)) + (k ? -3.5 : 0);
+};
+/** the ball's centre at story time t (null without a ball piece); the move between two keys eases in and out */
+export const BALL_R = 0.16; // drawn a little larger than a real ball (0.11 m) so it reads on a phone
+export const ballAt = (t: number): V3 | null => {
+  const p = piece("ball");
+  if (!p || !p.keys.length) return null;
+  const ks = p.keys.map((k) => ({ t: TL.t(k.at), pos: k.pos, lift: k.lift ?? 0 })).sort((a, b) => a.t - b.t);
+  const rest = (k: typeof ks[number]): V3 => [k.pos[0], D0 + BALL_R, k.pos[1]];
+  if (t <= ks[0]!.t) return rest(ks[0]!);
+  for (let i = 1; i < ks.length; i++) {
+    const a = ks[i - 1]!, b = ks[i]!;
+    if (t > b.t) continue;
+    const u = (t - a.t) / Math.max(1e-3, b.t - a.t), e = b.lift ? u : u * u * (3 - 2 * u); // flights keep their speed, rolls ease
+    return [a.pos[0] + (b.pos[0] - a.pos[0]) * e, D0 + BALL_R + 4 * b.lift * u * (1 - u), a.pos[1] + (b.pos[1] - a.pos[1]) * e];
+  }
+  return rest(ks.at(-1)!);
 };
 export const strokeAt = (t: number, k: number) => (((t * 0.6 + k * 0.17) % 1) + 1) % 1;
 export const rowboatRoll = (t: number) => {

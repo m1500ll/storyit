@@ -11,6 +11,7 @@ export function soundTimeline(spec: VideoSpec, words: Word[]) {
     duration: TOTAL / FPS,
     seed: [...spec.title].reduce((s, c) => (s * 31 + c.charCodeAt(0)) >>> 0, 7),
     river: spec.decor.river,
+    stadium: !!spec.decor.stadium,
     flash: FLASH_AT >= 0 ? FLASH_AT / FPS : null,
     words: words.map((w) => ({ start: w.start, end: w.end })),
     shots: SHOTS.map((s) => ({

@@ -914,6 +914,9 @@ export const OWNER = (v = 0): Outfit => ({ jacket: v ? "#2f3b52" : "#4a2f3a", pa
   moustache: v ? "#d9d3c7" : "#4a3020", skin: SKINS[v ? 0 : 2], build: "stout" });
 /** a rower in the crew's colours (bare-headed, short hair) */
 export const ROWER = (kit: string, v = 0): Outfit => ({ jacket: kit, pants: "#f4f1ea", boots: "#f4f1ea", hat: "hair", hair: ["#5a3b2a", "#2a201a", "#c08a4a", "#7a4a2a"][v % 4], skin: SKINS[v % 4] });
+/** footballers: the team shirt, white or dark shorts, socks in the shirt colour; referee all in black */
+export const PLAYER = (kit: string, v = 0): Outfit => ({ jacket: kit, pants: v % 2 ? "#f4f1ea" : "#1f2433", boots: kit, hat: "hair", hair: ["#5a3b2a", "#2a201a", "#c08a4a", "#7a4a2a", "#e0b860"][v % 5], skin: SKINS[v % 4] });
+export const REFEREE: Outfit = { jacket: "#1d1d24", pants: "#1d1d24", boots: "#1d1d24", hat: "hair", hair: "#2a201a", skin: SKINS[1], build: "stout" };
 /** today's strollers: no hats, bright casual colours */
 export const modern = (v = 0): Outfit => {
   const tops = ["#e2453c", "#3f6fb5", "#f0b43c", "#2f8a4f", "#7b5ac9", "#f4f1ea", "#e86e9a"];
