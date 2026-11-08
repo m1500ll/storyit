@@ -35,7 +35,7 @@ export function PromptStudioHero() {
       </form>
       <div className="mt-3 flex flex-wrap gap-2">
         {IDEAS.map((i) => (
-          <button key={i} type="button" onClick={() => setIdea(i)} className="rounded-full border border-line/10 bg-line/[0.04] px-3 py-1 text-xs text-zinc-300 hover:border-violet-400/40 hover:text-zinc-100">{i}</button>
+          <button key={i} type="button" onClick={() => setIdea(i)} className="touch-hit rounded-full border border-line/10 bg-line/[0.04] px-3 py-1 text-xs text-zinc-300 hover:border-violet-400/40 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">{i}</button>
         ))}
       </div>
 

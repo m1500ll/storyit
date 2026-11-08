@@ -50,7 +50,7 @@ export function DistributionOverview() {
       </div>
       <Card>
         <CardHeader title="Next publications" subtitle={toApprove ? `${toApprove} caption${toApprove > 1 ? 's' : ''} to approve before they can go out` : undefined}
-          action={<Link to="/app/distribute" className="text-xs text-violet-300 hover:text-violet-200">Distribute videos</Link>} />
+          action={<Link to="/app/distribute" className="touch-hit text-xs text-violet-300 hover:text-violet-200">Distribute videos</Link>} />
         {upcoming.length === 0 ? <p className="text-xs text-zinc-500">Nothing scheduled. Import videos, connect an account, then distribute.</p> : (
           <ul className="space-y-1.5">
             {upcoming.slice(0, 5).map((p) => (
@@ -89,13 +89,13 @@ function Onboarding({ steps }: { steps: { label: string; done: boolean; to: stri
           <p className="text-xs text-zinc-500">{done} of {steps.length} done</p>
         </div>
         <button onClick={() => { setDismissed(true); try { localStorage.setItem(DISMISS_KEY, '1'); } catch { /* private mode */ } }}
-          aria-label="Hide checklist" className="rounded-lg p-1.5 text-zinc-500 hover:bg-line/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><X className="h-4 w-4" /></button>
+          aria-label="Hide checklist" className="touch-hit rounded-lg p-1.5 text-zinc-500 hover:bg-line/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><X className="h-4 w-4" /></button>
       </div>
       <div className="mt-3"><ProgressBar value={done} max={steps.length} label="Onboarding progress" /></div>
       <ol className="mt-4 space-y-1.5">
         {steps.map((s) => (
           <li key={s.label}>
-            <Link to={s.to} className={cn('flex items-center gap-3 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-line/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50', s === next ? 'text-zinc-100' : 'text-zinc-500')}>
+            <Link to={s.to} className={cn('flex min-h-11 items-center gap-3 rounded-lg px-2 py-1.5 text-sm sm:min-h-0 transition-colors hover:bg-line/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50', s === next ? 'text-zinc-100' : 'text-zinc-500')}>
               <span className={cn('grid h-5 w-5 shrink-0 place-items-center rounded-full border', s.done ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-line/15')}>{s.done && <Check className="h-3 w-3" />}</span>
               <span className={cn('flex-1', s.done && 'line-through decoration-zinc-600')}>{s.label}</span>
               {s === next && <span className="text-xs text-violet-300">Start</span>}

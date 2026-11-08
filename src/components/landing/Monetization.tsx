@@ -52,7 +52,7 @@ export function Monetization() {
             <ul className="mt-4 flex-1 space-y-2">
               {p.rules.map((r) => <li key={r} className="flex gap-2 text-sm text-zinc-400"><span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-zinc-500" />{r}</li>)}
             </ul>
-            <a href={p.url} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300">
+            <a href={p.url} target="_blank" rel="noreferrer" className="touch-hit mt-5 inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300">
               Official rules <ExternalLink className="h-3 w-3" />
             </a>
           </div>
@@ -65,7 +65,7 @@ export function Monetization() {
           <div className="mt-4 inline-flex rounded-xl border border-line/10 p-1" role="tablist" aria-label="Platform">
             {(['tiktok', 'youtube'] as const).map((id) => (
               <button key={id} role="tab" aria-selected={platformId === id} onClick={() => setPlatformId(id)}
-                className={cn('rounded-lg px-3 py-1.5 text-xs font-medium transition', platformId === id ? 'bg-line/10 text-zinc-50' : 'text-zinc-500 hover:text-zinc-300')}>
+                className={cn('touch-hit rounded-lg px-3 py-1.5 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50', platformId === id ? 'bg-line/10 text-zinc-50' : 'text-zinc-500 hover:text-zinc-300')}>
                 {id === 'tiktok' ? 'TikTok' : 'YouTube Shorts'}
               </button>
             ))}

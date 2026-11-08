@@ -45,7 +45,7 @@ export function DemoVideo() {
             <p className="text-[10px] uppercase tracking-widest text-white/60">Scene {scene.position} · {scene.title}</p>
             <p className="mt-1 text-sm font-semibold leading-snug text-white">{scene.dialogue ?? scene.narration}</p>
           </div>
-          <button onClick={() => setPlaying((p) => !p)} className="absolute right-3 top-6 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white backdrop-blur" aria-label={playing ? 'Pause' : 'Play'}>
+          <button onClick={() => setPlaying((p) => !p)} className="touch-hit absolute right-3 top-6 grid h-8 w-8 place-items-center rounded-full bg-black/40 text-white backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70" aria-label={playing ? 'Pause' : 'Play'}>
             {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="ml-0.5 h-3.5 w-3.5" />}
           </button>
         </div>

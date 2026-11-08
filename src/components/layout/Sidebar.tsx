@@ -91,7 +91,7 @@ export function Sidebar() {
             {level === 'empty' ? 'Out of credits: top up to keep creating.' : level === 'low' ? 'Running low.' : `≈ ${projectsFor(balance)} Prompt Studio projects`}
           </p>
           <button onClick={() => openPaywall()}
-            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#c2410c] to-[#b45309] py-2 text-xs font-semibold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-400/60">
+            className="touch-hit mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#c2410c] to-[#b45309] py-2 text-xs font-semibold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-400/60">
             <Coins className="h-3.5 w-3.5" aria-hidden /> Buy credits
           </button>
         </div>

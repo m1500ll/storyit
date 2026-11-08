@@ -45,7 +45,7 @@ export function GettingStarted({ stories }: { stories: StoryWithScenes[] }) {
           <p className="text-sm font-semibold text-zinc-100">Your first episode is ready to post 🎉</p>
           <p className="text-xs text-zinc-400">Post daily to grow faster — your next idea is one sentence away.</p>
         </div>
-        <button onClick={dismiss} aria-label="Hide checklist" className="rounded-lg p-1.5 text-zinc-500 hover:bg-line/5 hover:text-zinc-200"><X className="h-4 w-4" /></button>
+        <button onClick={dismiss} aria-label="Hide checklist" className="touch-hit rounded-lg p-1.5 text-zinc-500 hover:bg-line/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><X className="h-4 w-4" /></button>
       </div>
     );
   }
@@ -57,7 +57,7 @@ export function GettingStarted({ stories }: { stories: StoryWithScenes[] }) {
           <p className="text-sm font-semibold text-zinc-100">Getting started</p>
           <p className="text-xs text-zinc-500">{completed} of {steps.length} done — you’re on your way.</p>
         </div>
-        <button onClick={dismiss} aria-label="Hide checklist" className="rounded-lg p-1.5 text-zinc-500 hover:bg-line/5 hover:text-zinc-200"><X className="h-4 w-4" /></button>
+        <button onClick={dismiss} aria-label="Hide checklist" className="touch-hit rounded-lg p-1.5 text-zinc-500 hover:bg-line/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><X className="h-4 w-4" /></button>
       </div>
       <div className="mt-3"><ProgressBar value={completed} max={steps.length} /></div>
       <ol className="mt-4 space-y-1">

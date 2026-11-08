@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, Clapperboard, Download, Loader2, Pause, Play, Send, Sparkles, Trash2 } from 'lucide-react';
+import { BookOpen, Building2, Check, ChevronLeft, Clapperboard, Crown, Dices, Download, FlaskConical, Landmark, Loader2, MapPin, Pause, PawPrint, Play, Scale, Send, Sparkles, Trash2, Trophy, type LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, LoadState, PageHeader, ProgressBar, useToast } from '@/components/ui';
@@ -10,15 +10,15 @@ import { ANIMATED_SHORT_COST } from '@/services/credits';
 import { animatedStudio, type AnimatedProject, type AnimatedStatus, type Brief, type ChatLine, type Choices } from '@/services/animatedStudio';
 import { voicesFor, type Voice } from '@/services/voices';
 
-const THEMES: { emoji: string; label: string; hint: string }[] = [
-  { emoji: '🏛️', label: 'Histoire vraie absurde', hint: 'Des faits réels qui semblent inventés' },
-  { emoji: '🔬', label: 'Inventions et sciences ratées', hint: 'Les accidents qui ont tout changé' },
-  { emoji: '⚽', label: 'Sport insolite', hint: 'Matchs, courses et records improbables' },
-  { emoji: '🐾', label: 'Animaux plus malins que nous', hint: 'Quand une bête gagne contre une ville' },
-  { emoji: '⚖️', label: 'Lois et règles absurdes', hint: 'Des règles vraies, et pourquoi' },
-  { emoji: '👑', label: 'Caprices de rois et de maires', hint: 'Les ordres les plus fous' },
-  { emoji: '🌉', label: 'Ponts, bâtiments et chantiers fous', hint: 'Ce qui n’aurait jamais dû tenir' },
-  { emoji: '🎲', label: 'Surprends-moi', hint: 'Le studio choisit un thème pour vous' },
+const THEMES: { icon: LucideIcon; label: string; hint: string }[] = [
+  { icon: Landmark, label: 'Histoire vraie absurde', hint: 'Des faits réels qui semblent inventés' },
+  { icon: FlaskConical, label: 'Inventions et sciences ratées', hint: 'Les accidents qui ont tout changé' },
+  { icon: Trophy, label: 'Sport insolite', hint: 'Matchs, courses et records improbables' },
+  { icon: PawPrint, label: 'Animaux plus malins que nous', hint: 'Quand une bête gagne contre une ville' },
+  { icon: Scale, label: 'Lois et règles absurdes', hint: 'Des règles vraies, et pourquoi' },
+  { icon: Crown, label: 'Caprices de rois et de maires', hint: 'Les ordres les plus fous' },
+  { icon: Building2, label: 'Ponts, bâtiments et chantiers fous', hint: 'Ce qui n’aurait jamais dû tenir' },
+  { icon: Dices, label: 'Surprends-moi', hint: 'Le studio choisit un thème pour vous' },
 ];
 const LANGS: { code: string; label: string }[] = [{ code: 'fr', label: 'Français' }, { code: 'en', label: 'English' }, { code: 'es', label: 'Español' }];
 
@@ -70,7 +70,7 @@ function Start() {
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <label className="text-xs text-zinc-400" htmlFor="lang">Langue de la narration</label>
         <select id="lang" value={lang} onChange={(e) => setLang(e.target.value)}
-          className="h-10 rounded-xl border border-line/10 bg-ink-950 px-3 text-base text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 sm:text-sm">
+          className="h-11 rounded-xl border border-line/10 bg-ink-950 px-3 text-base sm:h-10 text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 sm:text-sm">
           {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
         </select>
         <span className="text-xs text-zinc-500">La discussion est gratuite. La vidéo coûte {ANIMATED_SHORT_COST} crédits, remboursés si le rendu échoue.</span>
@@ -82,7 +82,7 @@ function Start() {
             <button type="button" disabled={!animatedStudio.available || busy} onClick={() => void start(`Thème choisi : ${t.label}`, t.label)}
               className={cn('surface flex h-full w-full flex-col items-start gap-1 rounded-2xl p-3 text-left [touch-action:manipulation] transition-colors hover:border-violet-500/40 hover:bg-violet-500/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50',
                 busyTheme === t.label && 'border-violet-500/60 bg-violet-500/10')}>
-              <span aria-hidden className="text-2xl">{t.emoji}</span>
+              <span aria-hidden className="grid h-10 w-10 place-items-center rounded-xl bg-violet-500/10 text-violet-300"><t.icon className="h-5 w-5" /></span>
               <span className="text-sm font-medium text-zinc-100">{t.label}</span>
               <span className="text-xs text-zinc-400">{t.hint}</span>
               {busyTheme === t.label && <span className="mt-1 flex items-center gap-1 text-[11px] text-violet-200"><Loader2 className="h-3 w-3 animate-spin motion-reduce:animate-none" /> Le studio prépare vos options…</span>}
@@ -114,14 +114,14 @@ function Start() {
         <ul className="grid gap-2 sm:grid-cols-2">
           {projects.map((p) => (
             <li key={p.id} className="surface flex items-center gap-3 px-4 py-3">
-              <Link to={`/app/studio/${p.id}`} className="min-w-0 flex-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
+              <Link to={`/app/studio/${p.id}`} className="min-w-0 flex-1 rounded py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
                 <span className="block truncate text-sm text-zinc-100">{p.title ?? 'Nouvelle vidéo'}</span>
                 <span className="block text-[11px] text-zinc-500">{new Date(p.created_at).toLocaleDateString()}</span>
               </Link>
               <StatusPill p={p} />
               {(p.status === 'brief' || p.status === 'done' || p.status === 'failed') && (
                 <button aria-label={`Supprimer ${p.title ?? 'cette vidéo'}`} onClick={() => window.confirm('Supprimer cette vidéo ? Cette action est définitive.') && animatedStudio.remove(p.id)}
-                  className="rounded-lg p-2 text-zinc-500 hover:bg-line/5 hover:text-coral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><Trash2 className="h-4 w-4" /></button>
+                  className="touch-hit rounded-lg p-2 text-zinc-500 hover:bg-line/5 hover:text-coral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><Trash2 className="h-4 w-4" /></button>
               )}
             </li>
           ))}
@@ -166,7 +166,13 @@ const DecorThumbs = ({ decor }: { decor: string }) => {
   );
 };
 
+const STEP_ICON: Record<Choices['step'], LucideIcon> = { format: Clapperboard, story: BookOpen, decor: MapPin, other: Sparkles };
 const STEP_LABEL: Record<Choices['step'], string> = { format: 'Format', story: 'Histoire', decor: 'Décor', other: 'Choix' };
+
+const StepIcon = ({ step }: { step: Choices['step'] }) => {
+  const I = STEP_ICON[step] ?? Sparkles;
+  return <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-500/10 text-violet-300"><I className="h-4 w-4" /></span>;
+};
 
 /** the studio's clickable options for the next decision */
 function ChoiceCards({ choices, onPick, disabled }: { choices: Choices; onPick: (text: string) => void; disabled: boolean }) {
@@ -178,7 +184,7 @@ function ChoiceCards({ choices, onPick, disabled }: { choices: Choices; onPick: 
           <li key={o.title} className="min-w-0">
             <button type="button" disabled={disabled} onClick={() => onPick(`${o.title} — ${o.detail}`)}
               className="surface flex h-full w-full items-start gap-3 rounded-2xl p-3 text-left [touch-action:manipulation] transition-colors hover:border-violet-500/40 hover:bg-violet-500/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50">
-              <span aria-hidden className="text-2xl leading-none">{o.emoji}</span>
+              <StepIcon step={choices.step} />
               <span className="min-w-0">
                 {o.decor && <DecorThumbs decor={o.decor} />}
                 <span className="block break-words text-sm font-medium text-zinc-100">{o.title}</span>
@@ -233,10 +239,10 @@ function VoicePicker({ voices, value, onChange }: { voices: Voice[]; value: stri
           <div key={v.id} className={cn('surface flex items-center gap-2 rounded-2xl p-2 pr-3 transition-colors', on && 'border-violet-500/60 bg-violet-500/10')}>
             {v.preview ? (
               <button type="button" onClick={() => toggle(v)} aria-label={`${playing === v.id ? 'Arrêter' : 'Écouter'} la voix ${v.name}`}
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-line/[0.06] text-zinc-100 [touch-action:manipulation] hover:bg-line/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-line/[0.06] text-zinc-100 [touch-action:manipulation] hover:bg-line/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
                 {playing === v.id ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               </button>
-            ) : <span className="h-10 w-10 shrink-0" />}
+            ) : <span className="h-11 w-11 shrink-0" />}
             <button type="button" role="radio" aria-checked={on} onClick={() => onChange(v.id)}
               className="flex min-w-0 flex-1 items-center gap-2 rounded-lg py-1 text-left [touch-action:manipulation] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
               <span className="min-w-0 flex-1">
@@ -311,7 +317,7 @@ function Project({ id }: { id: string }) {
 
   return (
     <>
-      <Link to="/app/studio" className="mb-4 inline-flex items-center gap-1 rounded text-xs text-zinc-400 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
+      <Link to="/app/studio" className="touch-hit mb-4 inline-flex items-center gap-1 rounded text-xs text-zinc-400 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
         <ChevronLeft className="h-3.5 w-3.5" /> Toutes les vidéos
       </Link>
       <PageHeader eyebrow="Animated Studio · Bêta" title={project.title ?? 'Nouvelle vidéo'} actions={<StatusPill p={project} />} />
@@ -374,7 +380,7 @@ function Project({ id }: { id: string }) {
       {project.status === 'brief' && brief && !pending && (
         <Card className="mt-6 border-violet-500/30">
           <BriefCard brief={brief} />
-          <h3 className="mb-2 mt-5 text-sm font-semibold text-zinc-100">Choisissez la voix du narrateur</h3>
+          <h2 className="mb-2 mt-5 text-sm font-semibold text-zinc-100">Choisissez la voix du narrateur</h2>
           <VoicePicker voices={voices} value={chosenVoice ?? ''} onChange={setVoice} />
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button loading={launching} disabled={sending} onClick={() => void generate()}>

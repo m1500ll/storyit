@@ -14,7 +14,7 @@ export function LogoMark({ className = 'h-7 w-7' }: { className?: string }) {
 
 export function Logo({ to = '/' }: { to?: string }) {
   return (
-    <Link to={to} className="flex items-center gap-2" aria-label="Storyit home">
+    <Link to={to} className="touch-hit flex items-center gap-2" aria-label="Storyit home">
       <LogoMark />
       <span className="text-[15px] font-bold tracking-tight text-zinc-100">storyit</span>
     </Link>

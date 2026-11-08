@@ -30,7 +30,7 @@ export function LowCreditsBanner() {
       </p>
       <div className="flex shrink-0 items-center gap-1">
         <button onClick={() => openPaywall()}
-          className="rounded-lg bg-gradient-to-r from-[#c2410c] to-[#b45309] px-3.5 py-2 text-xs font-semibold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-400/60">
+          className="touch-hit rounded-lg bg-gradient-to-r from-[#c2410c] to-[#b45309] px-3.5 py-2 text-xs font-semibold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-400/60">
           Buy credits
         </button>
         {!empty && (

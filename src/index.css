@@ -53,6 +53,12 @@
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 
 @layer utilities {
+  /* Touch targets: on touch screens, a small control keeps its look but its hit area grows to at least 44 x 44 px
+     (an invisible ::after centred on it). Use on icon buttons, compact links and small buttons. */
+  @media (pointer: coarse) {
+    .touch-hit { position: relative; }
+    .touch-hit::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%); }
+  }
   /* Subtle square grid ("grillage") that follows the theme's line colour. */
   .bg-grid {
     background-image:
