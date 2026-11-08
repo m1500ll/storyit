@@ -18,19 +18,97 @@ STORY FORMULA (55-60 s, 170-210 words, one sentence or beat per script line, 10-
 8. Callback twist: the ending, a researched fact that lands as a joke.
 Never describe on screen what the viewer already sees. Every joke is a real, sourced fact. No real living private person.`;
 
-export const CHAT_SYSTEM = `You are the story producer of Storyit's Animated Studio. You talk with a Storyit customer (reply in the customer's language, French by default; simple words, short messages, the customer is not a technician) to agree on ONE animated short of about 60 seconds, vertical 9:16. Write plain text: short paragraphs and numbered lines, **bold** at most for a story title, no other Markdown (no headings, tables or links syntax).
-
-Your job in this chat:
-1. Understand what the customer wants (topic, audience, tone, language of the narration).
-2. Propose 2 or 3 concrete story ideas that fit the formula below and the decor the studio can build today, each in two lines: the hook and why it works. True stories only; check facts you are unsure of with web search and keep the sources.
-3. Help the customer pick the decor that performs best for their idea, among what the engine can build today:
+const CHAT_DECOR = `
    - "Ville au bord de l'eau": a painted 19th-century town on both banks of a river, quays and embankments, optionally a chain suspension bridge (old dark iron, or repainted green and gold, or demolished), a park, market stalls, trees, lanterns, carts, a windmill; racing rowing eights, a small rowing boat, a modern road barrier with a no-cars sign.
    - "Place de ville sans rivière": the same town with an open cobbled or grassy square instead of the river.
    Characters available: Victorian townsfolk (top hats, bonnets), kids, stout gentlemen owners, modern casual people, riflemen soldiers and an officer, rowers in any colour. Day light and golden-hour light.
-   If the customer wants something the engine cannot build yet (space, sea, castle, kitchen...), say kindly that this decor is not available yet, that a fully custom decor is a premium option built separately in a few hours to days, and propose the closest decor available now.
-4. When the idea, the decor and the language are agreed, write a short recap (title, hook, decor, language, 3-5 key facts with sources) and tell the customer to press "Générer la vidéo". Do not write the full script in the chat.
+   If the customer wants something the engine cannot build yet (space, sea, castle, kitchen...), say kindly that this decor is not available yet, that a fully custom decor is a premium option built separately in a few hours to days, and offer the closest decor available now.
 
 ${STYLE}`;
+
+export const CHAT_SYSTEM = `You are the story producer of Storyit's Animated Studio. You guide a Storyit customer (reply in the customer's language, French by default; simple words, the customer is not a technician) to ONE animated short of about 60 seconds, vertical 9:16.
+
+HOW THE CHAT WORKS: the customer mostly clicks cards. Every turn, write ONE or TWO short sentences of text (plain text, no Markdown, no lists: the options go in the tool, never in the text), then end the turn with exactly one tool call:
+- present_choices: 3 or 4 clickable cards for the next decision. Each card has a short title (2-7 words), one sentence of detail, and one emoji.
+- brief_ready: when the format, the story and the decor are agreed.
+The customer answers by clicking a card (you receive its title and detail) or by typing freely; follow what they type, even if it skips or changes a step.
+
+THE STEPS (one per turn, in this order; skip a step the customer already decided):
+1. step "format": 4 narrative formats for their theme, i.e. how the story is told (a tone and an angle), for example a deadpan comedy of errors, a mini investigation, a countdown to disaster, a hero who should not have won... Invent fresh ones every time: never a fixed menu.
+2. step "story": 3 or 4 TRUE story ideas that fit the theme, the format, the formula below and the decor available. The card title is the story's name, the detail is the hook. Check facts you are unsure of with web search (at most 3 searches) and keep the sources for the recap.
+3. step "decor": 3 decor variants that suit the chosen story, built ONLY from what the engine can render (list below), e.g. the riverside town at golden hour with the green and gold bridge, or the cobbled square by day with market stalls. Say in the detail why it serves the story.
+4. brief_ready: title, hook, format, decor, narration language and 3-5 key facts with their sources. Then the customer chooses a voice and presses "Générer la vidéo". Do not write the full script.
+
+FRESH OPTIONS: each customer must get options nobody else got. The customer's turns may carry a [Studio note] with an inspiration seed and a list of ideas already proposed to other customers: never propose those titles or the same true event again, and let the seed steer you toward unexpected countries, centuries and angles (as long as the story can be staged in the decor below). The note is from the studio, not the customer: never mention it.
+
+WHAT THE ENGINE CAN RENDER TODAY:` + CHAT_DECOR;
+
+export const CHAT_TOOLS = [
+  {
+    name: 'present_choices',
+    description: 'Shows the customer 3 or 4 clickable cards for the next decision. Always the last thing in your turn.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        step: { type: 'string', enum: ['format', 'story', 'decor', 'other'], description: 'Which decision these cards are for.' },
+        question: { type: 'string', description: 'The question above the cards, in the customer language (max 80 characters).' },
+        options: {
+          type: 'array', minItems: 2, maxItems: 4,
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', description: '2-7 words.' },
+              detail: { type: 'string', description: 'One sentence.' },
+              emoji: { type: 'string', description: 'One emoji.' },
+            },
+            required: ['title', 'detail', 'emoji'],
+          },
+        },
+      },
+      required: ['step', 'question', 'options'],
+    },
+  },
+  {
+    name: 'brief_ready',
+    description: 'Records the agreed brief once the format, story and decor are chosen. The customer then picks a voice and generates the video.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        title: { type: 'string' },
+        hook: { type: 'string', description: 'The hook in one sentence.' },
+        format: { type: 'string' },
+        decor: { type: 'string' },
+        language: { type: 'string', description: 'Narration language code: fr, en or es.' },
+        facts: {
+          type: 'array', minItems: 1, maxItems: 6,
+          items: { type: 'object', properties: { fact: { type: 'string' }, source: { type: 'string', description: 'Source name or URL.' } }, required: ['fact', 'source'] },
+        },
+      },
+      required: ['title', 'hook', 'format', 'decor', 'language', 'facts'],
+    },
+  },
+];
+
+export type Choices = { step: string; question: string; options: { title: string; detail: string; emoji: string }[] };
+export type Brief = { title: string; hook: string; format: string; decor: string; language: string; facts: { fact: string; source: string }[] };
+
+/** random angles for the inspiration seed: each turn draws a few, so two customers on the same theme diverge */
+const SEED = {
+  place: ['France', 'England', 'Scotland', 'Ireland', 'the Netherlands', 'Belgium', 'Germany', 'Austria', 'Switzerland', 'Italy', 'Spain', 'Portugal',
+    'Scandinavia', 'Poland', 'Russia', 'the Ottoman Empire', 'Egypt', 'Morocco', 'West Africa', 'South Africa', 'India', 'China', 'Japan', 'Korea',
+    'Australia', 'New Zealand', 'Canada', 'the United States', 'Mexico', 'Brazil', 'Argentina', 'Chile', 'the Caribbean', 'Quebec', 'Hungary', 'Greece'],
+  era: ['the 1600s', 'the 1700s', 'the 1780s-1810s', 'the 1820s-1850s', 'the 1850s-1880s', 'the 1880s-1900s', 'the 1900s-1920s', 'the 1920s-1940s',
+    'the 1950s-1970s', 'the 1970s-1990s', 'the 2000s-2020s'],
+  angle: ['a law nobody repealed', 'a bet that went too far', 'an animal that outsmarted people', 'a sports match that broke every rule', 'a public works fiasco',
+    'a scientific accident', 'a food or drink that caused chaos', 'a parade or ceremony gone wrong', 'a record attempt', 'a hoax that fooled a city',
+    'a military blunder with no casualties', 'a stubborn inventor', 'a royal or mayoral whim', 'a strike or protest with a funny twist', 'a race between rivals',
+    'a misread letter or telegram', 'a weather event that changed a custom', 'a lost-and-found treasure', 'a building that should not have stood',
+    'a tax that changed how people lived', 'a children\'s idea adults copied', 'an election won in the strangest way', 'a transport first that went wrong'],
+};
+const pick = <T,>(a: T[], n: number) => [...a].sort(() => Math.random() - 0.5).slice(0, n);
+export const seedNote = (taken: string[]) =>
+  `[Studio note] Inspiration seed: ${pick(SEED.place, 3).join(', ')}; ${pick(SEED.era, 2).join(' or ')}; ${pick(SEED.angle, 3).join(' / ')}. Seed nonce ${Math.random().toString(36).slice(2, 8)}.` +
+  (taken.length ? `\nAlready proposed to other customers (do not reuse): ${taken.join(' | ')}` : '');
 
 /** customer-facing price of one animated short, in credits (env-overridable once real costs are measured) */
 export const ANIMATED_COST = Number(Deno.env.get('ANIMATED_CREDITS') ?? '60');

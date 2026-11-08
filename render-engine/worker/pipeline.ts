@@ -24,7 +24,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
 const WORKER = `${os.hostname()}-${process.pid}`;
 
-type Job = { id: string; user_id: string; transcript: { role: string; text: string }[]; language: string; voice_id: string | null; credits_charged: number; spec: unknown | null };
+type Line = { role: string; text: string; choices?: { step: string; options: { title: string; detail: string }[] }; brief?: { title: string; hook: string; format: string; decor: string; language: string; facts: { fact: string; source: string }[] } };
+type Job = { id: string; user_id: string; transcript: Line[]; language: string; voice_id: string | null; credits_charged: number; spec: unknown | null };
 
 const set = (id: string, patch: Record<string, unknown>) => db.from("animated_projects").update(patch).eq("id", id);
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
@@ -37,6 +38,18 @@ const reasonOf = (e: unknown) => {
   return "La vidéo n'a pas pu être produite.";
 };
 
+/** the chat as the spec writer reads it: the customer's clicks and words, the producer's cards, and the agreed brief last */
+export const briefText = (lines: Line[]) => lines.map((m) => {
+  if (m.role === "user") return `CUSTOMER: ${m.text}`;
+  let t = `PRODUCER: ${m.text}`;
+  if (m.choices) t += `\n(cards offered for ${m.choices.step}: ${m.choices.options.map((o) => `${o.title} - ${o.detail}`).join(" | ")})`;
+  if (m.brief) {
+    const b = m.brief;
+    t += `\nAGREED BRIEF\nTitle: ${b.title}\nHook: ${b.hook}\nFormat: ${b.format}\nDecor: ${b.decor}\nLanguage: ${b.language}\nKey facts:\n${b.facts.map((f) => `- ${f.fact} (source: ${f.source})`).join("\n")}`;
+  }
+  return t;
+}).join("\n\n");
+
 export async function produce(job: Job) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `short-${job.id.slice(0, 8)}-`));
   const t0 = Date.now();
@@ -48,7 +61,7 @@ export async function produce(job: Job) {
       spec = kept.data;
       log(job.id, "reusing the saved spec");
     } else {
-      const brief = job.transcript.map((m) => `${m.role === "user" ? "CUSTOMER" : "PRODUCER"}: ${m.text}`).join("\n\n");
+      const brief = briefText(job.transcript);
       const w = await writeSpec(brief, job.language, new Anthropic({ maxRetries: 3 }));
       if (w.problems.length) log(job.id, "spec kept with problems:", w.problems);
       log(job.id, `spec ok: ${w.spec.shots.length} shots, $${usd(w.usage).toFixed(2)}`);

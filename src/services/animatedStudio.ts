@@ -4,7 +4,11 @@ import { store } from './store';
 import { ANIMATED_SHORT_COST } from './credits';
 
 export type AnimatedStatus = 'brief' | 'queued' | 'writing' | 'voicing' | 'rendering' | 'done' | 'failed';
-export interface ChatLine { role: 'user' | 'assistant'; text: string }
+export interface ChoiceOption { title: string; detail: string; emoji: string }
+export interface Choices { step: 'format' | 'story' | 'decor' | 'other'; question: string; options: ChoiceOption[] }
+export interface Brief { title: string; hook: string; format: string; decor: string; language: string; facts: { fact: string; source: string }[] }
+/** a chat line; the studio's lines may carry clickable cards (choices) or the agreed recap (brief) */
+export interface ChatLine { role: 'user' | 'assistant'; text: string; choices?: Choices; brief?: Brief }
 export interface AnimatedProject {
   id: string; title: string | null; status: AnimatedStatus; progress: number; language: string;
   transcript?: ChatLine[]; video_path: string | null; error: string | null; credits_charged?: number;
@@ -42,8 +46,8 @@ export const animatedStudio = {
     return r;
   },
   /** Charges ANIMATED_SHORT_COST credits once and queues the render (refunded by the worker if it fails). */
-  async generate(projectId: string, language: string): Promise<void> {
-    await call({ action: 'generate', project_id: projectId, language });
+  async generate(projectId: string, language: string, voiceId?: string): Promise<void> {
+    await call({ action: 'generate', project_id: projectId, language, voice_id: voiceId });
     store.notify();
   },
   /** Short-lived URL of the finished MP4 (private bucket). */

@@ -1,6 +1,9 @@
 // Supabase Edge Function: `animated-studio` — the Animated Studio's brief chat and job queue.
-// - chat:     one turn of the brief conversation with Claude (picks the story, the decor and the language with the
-//             customer; may check facts with web search). Free: the credits are charged once, at generate.
+// - chat:     one turn of the brief conversation with Claude. Each turn ends with clickable cards (tool
+//             present_choices: format, then story, then decor) or the agreed brief (tool brief_ready); the customer's
+//             click or typed text goes back as the tool result. A hidden studio note (random seed + ideas already
+//             proposed to anyone, table animated_ideas) keeps the options different for every customer.
+//             May check facts with web search. Free: the credits are charged once, at generate.
 // - generate: charges ANIMATED_COST credits once and queues the project for the render worker
 //             (render-engine/worker: VideoSpec by Claude -> ElevenLabs narration -> sound -> 3D render -> upload).
 //             The worker refunds the credits if the render fails.
@@ -8,7 +11,7 @@
 // Secrets: ANTHROPIC_API_KEY (Edge Function secret, never a VITE_ variable).
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import Anthropic from 'npm:@anthropic-ai/sdk@1.6.0';
-import { ANIMATED_COST, CHAT_SYSTEM, MODEL } from '../_shared/animatedStudio.ts';
+import { ANIMATED_COST, CHAT_SYSTEM, CHAT_TOOLS, MODEL, seedNote, type Brief, type Choices } from '../_shared/animatedStudio.ts';
 import { BudgetError, reserveAi } from '../_shared/aiBudget.ts';
 
 const cors = {
@@ -19,31 +22,58 @@ const cors = {
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { ...cors, 'Content-Type': 'application/json' } });
 const MAX_TURNS = 30; // a brief that long has lost its way: ask the customer to start a new project
 
-type Row = { id: string; user_id: string; status: string; messages: Anthropic.Beta.BetaMessageParam[]; transcript: { role: string; text: string }[]; title: string | null; language: string };
+type Line = { role: string; text: string; choices?: Choices; brief?: Brief };
+type Row = { id: string; user_id: string; status: string; messages: Anthropic.Beta.BetaMessageParam[]; transcript: Line[]; title: string | null; language: string };
+const OUR_TOOLS = new Set(['present_choices', 'brief_ready']);
 
-/** one Claude turn of the brief chat; server tools (web search) can pause a long turn: continue it, at most 3 times */
+/** one Claude turn of the brief chat; server tools (web search) can pause a long turn: continue it, at most 3 times.
+ *  The turn ends on our own tool call (cards or brief), which the next customer message answers as its tool result. */
 async function chatTurn(client: Anthropic, history: Anthropic.Beta.BetaMessageParam[]) {
   const messages = [...history];
   let reply = '';
+  let choices: Choices | undefined, brief: Brief | undefined;
   for (let hop = 0; hop < 4; hop++) {
     const res = await client.beta.messages.create({
       model: MODEL,
-      max_tokens: 6000,
+      max_tokens: 8000,
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default', // a safety-classifier decline is retried server-side on Anthropic's recommended model
       thinking: { type: 'adaptive' },
       output_config: { effort: 'low' }, // conversational turns: low effort is enough and keeps replies quick
       system: [{ type: 'text', text: CHAT_SYSTEM, cache_control: { type: 'ephemeral' } }],
-      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 3 }],
+      tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 3 }, ...CHAT_TOOLS],
       messages,
     });
     if (res.stop_reason === 'refusal') throw new Error('refusal');
     messages.push({ role: 'assistant', content: res.content }); // keep every block (thinking, search results) unchanged
     reply += res.content.filter((b): b is Anthropic.Beta.BetaTextBlock => b.type === 'text').map((b) => b.text).join('');
+    for (const b of res.content) {
+      if (b.type !== 'tool_use') continue;
+      if (b.name === 'present_choices') choices = b.input as Choices;
+      if (b.name === 'brief_ready') brief = b.input as Brief;
+    }
     console.log(JSON.stringify({ audit: 'animated_chat_usage', model: res.model, usage: res.usage }));
     if (res.stop_reason !== 'pause_turn') break;
   }
-  return { messages, reply: reply.trim() };
+  if (choices) choices = { ...choices, options: (choices.options ?? []).slice(0, 4).filter((o) => o?.title) };
+  return { messages, reply: reply.trim(), choices, brief };
+}
+
+/** the customer's turn: a tool result for each of our pending tool calls (cards or brief), else plain text */
+function customerTurn(history: Anthropic.Beta.BetaMessageParam[], text: string, note: string): Anthropic.Beta.BetaMessageParam {
+  const last = history.at(-1);
+  const pending = last?.role === 'assistant' && Array.isArray(last.content)
+    ? last.content.filter((b) => b.type === 'tool_use' && OUR_TOOLS.has((b as Anthropic.Beta.BetaToolUseBlock).name)) as Anthropic.Beta.BetaToolUseBlock[]
+    : [];
+  const noteBlock = { type: 'text' as const, text: note };
+  if (!pending.length) return { role: 'user', content: [{ type: 'text', text }, noteBlock] };
+  return {
+    role: 'user',
+    content: [
+      ...pending.map((b, i) => ({ type: 'tool_result' as const, tool_use_id: b.id, content: i === 0 ? `Customer: ${text}` : 'Noted.' })),
+      noteBlock,
+    ],
+  };
 }
 
 Deno.serve(async (req) => {
@@ -89,12 +119,25 @@ Deno.serve(async (req) => {
     }
     if (p.transcript.length >= MAX_TURNS * 2) return json({ error: 'Cette discussion est très longue : créez un nouveau projet pour repartir de zéro.' }, 409);
     try { await reserveAi('claude_chat'); } catch (e) { return json({ error: e instanceof BudgetError ? e.message : 'Service indisponible.' }, 429); }
-    const history: Anthropic.Beta.BetaMessageParam[] = [...p.messages, { role: 'user', content: text }];
+    // ideas already proposed to anyone (newest first): Claude must not offer them again
+    const { data: taken } = await admin.from('animated_ideas').select('title').order('created_at', { ascending: false }).limit(80);
+    const note = seedNote([...new Set((taken ?? []).map((r: { title: string }) => r.title))]);
+    const history: Anthropic.Beta.BetaMessageParam[] = [...p.messages, customerTurn(p.messages, text, note)];
     try {
       const out = await chatTurn(new Anthropic({ apiKey: key, timeout: 120_000, maxRetries: 1 }), history);
-      const transcript = [...p.transcript, { role: 'user', text }, { role: 'assistant', text: out.reply }];
-      await admin.from('animated_projects').update({ messages: out.messages, transcript }).eq('id', p.id);
-      return json({ project_id: p.id, reply: out.reply, transcript });
+      const line: Line = { role: 'assistant', text: out.reply || (out.brief ? 'Voici le récapitulatif de votre vidéo.' : '') };
+      if (out.choices?.options.length) line.choices = out.choices;
+      if (out.brief) line.brief = out.brief;
+      const transcript = [...p.transcript, { role: 'user', text }, line];
+      const patch: Record<string, unknown> = { messages: out.messages, transcript };
+      if (out.brief?.title) patch.title = out.brief.title.slice(0, 120);
+      if (out.brief?.language && ['fr', 'en', 'es'].includes(out.brief.language)) patch.language = out.brief.language;
+      await admin.from('animated_projects').update(patch).eq('id', p.id);
+      if (out.choices?.step === 'story') {
+        const theme = (p.transcript.find((l) => l.role === 'user')?.text ?? text).slice(0, 200);
+        await admin.from('animated_ideas').insert(out.choices.options.map((o) => ({ theme, step: 'story', title: o.title.slice(0, 160) })));
+      }
+      return json({ project_id: p.id, reply: line.text, transcript });
     } catch (e) {
       if (e instanceof Anthropic.RateLimitError) return json({ error: 'Le studio est très demandé. Réessayez dans une minute.' }, 429);
       if (e instanceof Anthropic.APIError) { console.error('anthropic', e.status, e.message.slice(0, 300)); return json({ error: 'Le studio ne répond pas. Réessayez dans un instant.' }, 502); }
@@ -110,6 +153,7 @@ Deno.serve(async (req) => {
     if (!p) return json({ error: 'Projet introuvable.' }, 404);
     if (p.status !== 'brief') return json({ error: 'Cette vidéo est déjà lancée.' }, 409);
     if (p.transcript.filter((m) => m.role === 'assistant').length < 1) return json({ error: "Discutez d'abord de votre idée avec le studio." }, 400);
+    if (body.voice_id && !/^[A-Za-z0-9]{16,32}$/.test(body.voice_id)) return json({ error: 'Voix inconnue.' }, 400);
     // charge first (atomic, fails when the balance is too low), then queue; the worker refunds on failure
     const { error: credErr } = await user.rpc('consume_credits', { p_amount: ANIMATED_COST, p_story_id: null, p_description: 'Animated Studio — vidéo animée' });
     if (credErr) return json({ error: `Il vous faut ${ANIMATED_COST} crédits pour générer cette vidéo.`, code: 'insufficient_credits' }, 402);
