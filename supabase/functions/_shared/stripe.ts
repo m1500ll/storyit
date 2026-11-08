@@ -7,8 +7,8 @@ export const PRICE_ENV: Record<ProductKey, string> = {
 
 /** What each product grants. Keep in sync with src/services/credits.ts (PLANS / CREDIT_PACKS). */
 export const GRANTS: Record<ProductKey, { credits: number; plan?: 'creator' | 'studio'; label: string }> = {
-  creator: { credits: 300, plan: 'creator', label: 'Creator plan — monthly credits' },
-  studio: { credits: 1200, plan: 'studio', label: 'Studio plan — monthly credits' },
+  creator: { credits: 430, plan: 'creator', label: 'Creator plan — monthly credits' },
+  studio: { credits: 1600, plan: 'studio', label: 'Studio plan — monthly credits' },
   pack_100: { credits: 100, label: 'Top-up pack — 100 credits' },
   pack_500: { credits: 500, label: 'Top-up pack — 500 credits' },
 };
