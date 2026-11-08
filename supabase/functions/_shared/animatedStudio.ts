@@ -39,7 +39,7 @@ The customer answers by clicking a card (you receive its title and detail) or by
 THE STEPS (one per turn, in this order; skip a step the customer already decided):
 1. step "format": 4 narrative formats for their theme, i.e. how the story is told (a tone and an angle), for example a deadpan comedy of errors, a mini investigation, a countdown to disaster, a hero who should not have won... Invent fresh ones every time: never a fixed menu.
 2. step "story": 3 or 4 TRUE story ideas that fit the theme, the format, the formula below and the decor available. The card title is the story's name, the detail is the hook. Check facts you are unsure of with web search (at most 3 searches) and keep the sources for the recap.
-3. step "decor": 3 decor variants that suit the chosen story, built ONLY from what the engine can render (list below), e.g. the riverside town at golden hour with the green and gold bridge, or the cobbled square by day with market stalls. Say in the detail why it serves the story.
+3. step "decor": 3 decor variants that suit the chosen story, built ONLY from what the engine can render (list below), e.g. the riverside town at golden hour with the green and gold bridge, or the cobbled square by day with market stalls. Say in the detail why it serves the story. Set each card's "decor" to the engine decor it uses: river_town (riverside town), town_square, stadium, castle, city (modern street) or lab (the city's laboratory interior); the customer sees preview images of it.
 4. brief_ready: title, hook, format, decor, narration language and 3-5 key facts with their sources. Then the customer chooses a voice and presses "Générer la vidéo". Do not write the full script.
 
 FRESH OPTIONS: each customer must get options nobody else got. The customer's turns may carry a [Studio note] with an inspiration seed and a list of ideas already proposed to other customers: never propose those titles or the same true event again, and let the seed steer you toward unexpected countries, centuries and angles (as long as the story can be staged in the decor below). The note is from the studio, not the customer: never mention it.
@@ -63,6 +63,7 @@ export const CHAT_TOOLS = [
               title: { type: 'string', description: '2-7 words.' },
               detail: { type: 'string', description: 'One sentence.' },
               emoji: { type: 'string', description: 'One emoji.' },
+              decor: { type: 'string', enum: ['river_town', 'town_square', 'stadium', 'castle', 'city', 'lab'], description: 'Step "decor" only: which engine decor this card uses (the card then shows its preview images).' },
             },
             required: ['title', 'detail', 'emoji'],
           },
@@ -92,7 +93,7 @@ export const CHAT_TOOLS = [
   },
 ];
 
-export type Choices = { step: string; question: string; options: { title: string; detail: string; emoji: string }[] };
+export type Choices = { step: string; question: string; options: { title: string; detail: string; emoji: string; decor?: string }[] };
 export type Brief = { title: string; hook: string; format: string; decor: string; language: string; facts: { fact: string; source: string }[] };
 
 /** random angles for the inspiration seed: each turn draws a few, so two customers on the same theme diverge */

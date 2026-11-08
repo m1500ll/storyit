@@ -148,6 +148,24 @@ function Bubble({ line }: { line: ChatLine }) {
   );
 }
 
+/** preview stills of each engine decor (rendered by the engine itself, public/studio/decors) */
+const DECOR_THUMBS: Record<string, { n: number; label: string }> = {
+  river_town: { n: 2, label: 'Ville au bord de l’eau' }, town_square: { n: 2, label: 'Place de ville' }, stadium: { n: 2, label: 'Stade' },
+  castle: { n: 2, label: 'Château' }, city: { n: 2, label: 'Ville moderne' }, lab: { n: 1, label: 'Laboratoire' },
+};
+const DecorThumbs = ({ decor }: { decor: string }) => {
+  const d = DECOR_THUMBS[decor];
+  if (!d) return null;
+  return (
+    <span className="mb-2 flex gap-1.5" aria-hidden>
+      {Array.from({ length: d.n }, (_, i) => (
+        <img key={i} src={`/studio/decors/${decor}-${i + 1}.jpg`} alt="" width={270} height={480} loading="lazy" decoding="async"
+          className="aspect-[9/16] w-1/2 max-w-[120px] rounded-lg bg-line/[0.06] object-cover" />
+      ))}
+    </span>
+  );
+};
+
 const STEP_LABEL: Record<Choices['step'], string> = { format: 'Format', story: 'Histoire', decor: 'Décor', other: 'Choix' };
 
 /** the studio's clickable options for the next decision */
@@ -162,6 +180,7 @@ function ChoiceCards({ choices, onPick, disabled }: { choices: Choices; onPick: 
               className="surface flex h-full w-full items-start gap-3 rounded-2xl p-3 text-left [touch-action:manipulation] transition-colors hover:border-violet-500/40 hover:bg-violet-500/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50">
               <span aria-hidden className="text-2xl leading-none">{o.emoji}</span>
               <span className="min-w-0">
+                {o.decor && <DecorThumbs decor={o.decor} />}
                 <span className="block break-words text-sm font-medium text-zinc-100">{o.title}</span>
                 <span className="mt-0.5 block break-words text-xs text-zinc-400">{o.detail}</span>
               </span>
