@@ -40,7 +40,7 @@ export async function writeSpec(brief: string, language: string, client = new An
   for (let attempt = 0; attempt < 3; attempt++) {
     const stream = client.beta.messages.stream({
       model: MODEL,
-      max_tokens: 64000,
+      max_tokens: 128000, // the model's ceiling: thinking + a full spec with story drawings (art SVGs) can pass 64k
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default", // a safety-classifier decline is retried server-side on Anthropic's recommended model
       thinking: { type: "adaptive" },
@@ -51,8 +51,11 @@ export async function writeSpec(brief: string, language: string, client = new An
     const msg = await stream.finalMessage();
     usage.push(msg.usage);
     if (msg.stop_reason === "refusal") throw new Error("Claude declined this brief (refusal)");
-    if (msg.stop_reason === "max_tokens") throw new Error("VideoSpec truncated (max_tokens)");
     let problems: string[];
+    if (msg.stop_reason === "max_tokens") { // cut off: ask for the same spec, more compact (no partial assistant turn is kept)
+      messages.push({ role: "user", content: "Your previous answer was cut off because it was too long. Write the complete VideoSpec again, more compact: at most 6 story drawings, each under 6000 characters with simple shapes, no comments, and keep the reasoning short." });
+      continue;
+    }
     try {
       const parsed = VideoSpecSchema.safeParse(extractJson(textOf(msg)));
       if (parsed.success) {
