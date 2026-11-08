@@ -24,6 +24,8 @@ export async function renderVideo(spec: VideoSpec, words: Word[], mixWav: string
   await renderMedia({
     serveUrl, composition, inputProps, chromiumOptions, browserExecutable,
     codec: "h264", crf: 18, outputLocation: silent, muted: true,
+    // tests only: RENDER_FRAMES="0-29" renders a slice instead of the whole short
+    ...(process.env.RENDER_FRAMES ? { frameRange: process.env.RENDER_FRAMES.split("-").map(Number) as [number, number] } : {}),
     concurrency: Number(process.env.RENDER_CONCURRENCY ?? 4),
     timeoutInMilliseconds: 600_000,
     onProgress: ({ progress }) => onProgress(progress),
