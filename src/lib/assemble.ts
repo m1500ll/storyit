@@ -15,16 +15,25 @@ const W = 720;
 const H = 1280;
 let instance: Promise<FFmpeg> | null = null;
 
-/** Lazy-loads ffmpeg.wasm (self-hosted, ~30 MB, fetched only when someone exports). */
+/** ffmpeg.wasm core from a CDN (~30 MB, above the 25 MB per-file limit of the site host), pinned to the installed
+ *  @ffmpeg/core version and fetched only when someone exports. Loaded as same-origin blob URLs for the ffmpeg worker. */
+const CORE_BASE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';
+async function blobURL(url: string, type: string) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Could not download the video tools (${res.status}).`);
+  return URL.createObjectURL(new Blob([await res.arrayBuffer()], { type }));
+}
+
+/** Lazy-loads ffmpeg.wasm (fetched only when someone exports). */
 export function loadFFmpeg(): Promise<FFmpeg> {
   instance ??= (async () => {
-    const [{ FFmpeg }, core, wasm] = await Promise.all([
+    const [{ FFmpeg }, coreURL, wasmURL] = await Promise.all([
       import('@ffmpeg/ffmpeg'),
-      import('@ffmpeg/core?url'),
-      import('@ffmpeg/core/wasm?url'),
+      blobURL(`${CORE_BASE}/ffmpeg-core.js`, 'text/javascript'),
+      blobURL(`${CORE_BASE}/ffmpeg-core.wasm`, 'application/wasm'),
     ]);
     const ff = new FFmpeg();
-    await ff.load({ coreURL: core.default, wasmURL: wasm.default });
+    await ff.load({ coreURL, wasmURL });
     return ff;
   })().catch((e) => { instance = null; throw e; });
   return instance;
