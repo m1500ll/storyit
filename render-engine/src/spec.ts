@@ -44,6 +44,9 @@ export type Decor = {
   /** a harbour: land and quay for z >= 0 (houses from z = 15), the sea for z < 0, a pier out to z = -40 (x -3..3), two
    *  moored sailing ships, a breakwater and a lighthouse at (70, -62). Needs river: false. */
   harbour?: { hull?: string };
+  /** a farm: dirt yard around the origin, red barn (x -22..-6, z -24..-12), farmhouse at (16, -18), paddock (x 6..26,
+   *  z 2..18), pond at (-16, 12), haystacks, crop fields, a windmill. Animals are story drawings (art). river: false. */
+  farm?: Record<string, never>;
   /** flag on the bridge towers */
   flag?: "england" | "union" | "france" | "none";
 };
@@ -60,7 +63,7 @@ export type Piece =
   /** a sailing ship on the sea (harbour) in lane z, from x0 at cue `from` to x1 at cue `to` (bow toward x1) */
   | { kind: "ship"; hull?: string; sail?: string; lane: number; x0: number; x1: number; from: Cue; to: Cue };
 
-export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant" | "scientist" | "sailor" | "captain" | "fisherman" | "art";
+export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant" | "scientist" | "sailor" | "captain" | "fisherman" | "farmer" | "art";
 export type Outfit = { name: OutfitName; variant?: number; color?: string; /** name "art": the id of a drawing in spec.art */ art?: string };
 
 /** what a group of characters does from a cue onward */

@@ -25,8 +25,9 @@ const CHAT_DECOR = `
    - "Château médiéval": a stone castle with crenellated walls, four round towers with pointed slate roofs, a tall keep, a gatehouse with a raised portcullis, a cobbled courtyard with a well (stalls and carts can make it a market), banners, grass and trees outside. Knights in helmets and coloured tabards, a king and a queen with crowns, peasants. Good for medieval and royal stories (kings' whims, sieges that went wrong, strange laws of the Middle Ages).
    - "Ville moderne": a modern city street with tall glass and concrete buildings, shops with striped awnings (no signs), a crossroads with zebra crossings and traffic lights, street lamps, trees, parked cars and one car that can drive through the scene. Optionally a laboratory interior (benches with coloured flasks, shelves of jars, a blank chalkboard, a copper coil machine) with scientists in white coats. Good for inventions, science accidents, modern absurd facts, urban stories.
    Any character, animal or object the story needs that is not in the lists below (a rooster on trial, a cow, a statue, a giant cheese, a rocket...) is drawn specially for the video in the same cartoon style and placed in the decor: offer stories freely on that front, and name those key characters and objects in the recap so they are drawn. Only the decors themselves are limited to the list.
-   Characters available: Victorian townsfolk (top hats, bonnets), kids, stout gentlemen owners, modern casual people, riflemen soldiers and an officer, rowers in any colour, footballers in any colour, a referee, knights, a king, a queen, peasants, scientists in white coats, sailors, a captain, fishermen. Day light and golden-hour light.
+   Characters available: Victorian townsfolk (top hats, bonnets), kids, stout gentlemen owners, modern casual people, riflemen soldiers and an officer, rowers in any colour, footballers in any colour, a referee, knights, a king, a queen, peasants, scientists in white coats, sailors, a captain, fishermen, farmers. Day light and golden-hour light.
    - "Port et mer": a harbour on the open sea: a cobbled quay with bollards, crates, barrels, nets and a wooden cargo crane, painted waterfront houses, a long wooden pier, two big sailing ships moored at the quay and a small fishing boat, a rock breakwater ending at a red and white striped lighthouse. One sailing ship can sail across the scene. Sailors in striped tops, a captain in navy with gold buttons, fishermen in yellow oilskins. Good for sea stories, shipwrecks, mutinies, explorers, pirates, fishing tales, strange cargoes.
+   - "Ferme et campagne": a farm in the countryside: a dirt farmyard, a big red barn with white-braced doors, a farmhouse, a fenced paddock, a duck pond with reeds, haystacks, a cart, striped crop fields and a windmill on the hill. Farmers in dungarees and peasants. Every animal the story needs (cow, rooster, pig, sheep, horse...) is drawn for the video. Good for animal stories, animal trials, rural legends, strange harvests and village tales.
    ONLY these decors exist. Never offer, name or promise any other decor (no custom or premium decor, no "coming soon" list). If the customer asks for a setting that is not in this list, say in one short sentence that it is not available for now and offer cards with the closest decors from this list.
 
 ${STYLE}`;
@@ -41,7 +42,7 @@ The customer answers by clicking a card (you receive its title and detail) or by
 THE STEPS (one per turn, in this order; skip a step the customer already decided):
 1. step "format": 4 narrative formats for their theme, i.e. how the story is told (a tone and an angle), for example a deadpan comedy of errors, a mini investigation, a countdown to disaster, a hero who should not have won... Invent fresh ones every time: never a fixed menu.
 2. step "story": 3 or 4 TRUE story ideas that fit the theme, the format, the formula below and the decor available. The card title is the story's name, the detail is the hook. Check facts you are unsure of with web search (at most 3 searches) and keep the sources for the recap.
-3. step "decor": 3 decor variants that suit the chosen story, built ONLY from what the engine can render (list below), e.g. the riverside town at golden hour with the green and gold bridge, or the cobbled square by day with market stalls. Say in the detail why it serves the story. Set each card's "decor" to the engine decor it uses: river_town (riverside town), town_square, stadium, castle, city (modern street), lab (the city's laboratory interior) or harbour (harbour and sea); the customer sees preview images of it.
+3. step "decor": 3 decor variants that suit the chosen story, built ONLY from what the engine can render (list below), e.g. the riverside town at golden hour with the green and gold bridge, or the cobbled square by day with market stalls. Say in the detail why it serves the story. Set each card's "decor" to the engine decor it uses: river_town (riverside town), town_square, stadium, castle, city (modern street), lab (the city's laboratory interior), harbour (harbour and sea) or farm (farm and countryside); the customer sees preview images of it.
 4. brief_ready: title, hook, format, decor, narration language and 3-5 key facts with their sources. Then the customer chooses a voice and presses "Générer la vidéo". Do not write the full script.
 
 FRESH OPTIONS: each customer must get options nobody else got. The customer's turns may carry a [Studio note] with an inspiration seed and a list of ideas already proposed to other customers: never propose those titles or the same true event again, and let the seed steer you toward unexpected countries, centuries and angles (as long as the story can be staged in the decor below). The note is from the studio, not the customer: never mention it.
@@ -49,7 +50,7 @@ FRESH OPTIONS: each customer must get options nobody else got. The customer's tu
 WHAT THE ENGINE CAN RENDER TODAY:` + CHAT_DECOR;
 
 /** the decor keys the engine can render: decor cards with any other key are dropped before the customer sees them */
-export const DECOR_KEYS = ['river_town', 'town_square', 'stadium', 'castle', 'city', 'lab', 'harbour'];
+export const DECOR_KEYS = ['river_town', 'town_square', 'stadium', 'castle', 'city', 'lab', 'harbour', 'farm'];
 
 export const CHAT_TOOLS = [
   {
@@ -68,7 +69,7 @@ export const CHAT_TOOLS = [
               title: { type: 'string', description: '2-7 words.' },
               detail: { type: 'string', description: 'One sentence.' },
               emoji: { type: 'string', description: 'One emoji.' },
-              decor: { type: 'string', enum: ['river_town', 'town_square', 'stadium', 'castle', 'city', 'lab', 'harbour'], description: 'Step "decor" only: which engine decor this card uses (the card then shows its preview images).' },
+              decor: { type: 'string', enum: ['river_town', 'town_square', 'stadium', 'castle', 'city', 'lab', 'harbour', 'farm'], description: 'Step "decor" only: which engine decor this card uses (the card then shows its preview images).' },
             },
             required: ['title', 'detail', 'emoji'],
           },

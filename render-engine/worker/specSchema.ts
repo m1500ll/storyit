@@ -12,7 +12,7 @@ const Cue = z.object({ line: z.number().int(), word: z.number().int(), offset: z
 
 const Expr = z.enum(['neutral', 'stern', 'grin', 'laugh', 'whistle', 'nervous', 'shock', 'relief', 'relief_open', 'dazed', 'pained', 'smile', 'smile_closed', 'lick']);
 const Outfit = z.object({
-  name: z.enum(['townsfolk', 'kid', 'owner', 'modern', 'soldier', 'officer', 'rower', 'player', 'referee', 'knight', 'king', 'queen', 'peasant', 'scientist', 'sailor', 'captain', 'fisherman', 'art']),
+  name: z.enum(['townsfolk', 'kid', 'owner', 'modern', 'soldier', 'officer', 'rower', 'player', 'referee', 'knight', 'king', 'queen', 'peasant', 'scientist', 'sailor', 'captain', 'fisherman', 'farmer', 'art']),
   variant: z.number().int().optional(),
   color: z.string().optional().describe('hex colour: the rower or player kit, the knight tabard'),
   art: z.string().optional().describe('name "art" only: the id of a drawing in art'),
@@ -38,6 +38,7 @@ const Decor = z.object({
   castle: z.object({ roof: z.string().optional(), banner: z.enum(['red', 'green']).optional() }).optional().describe('medieval castle: needs river false, no bridge, no town, no stadium'),
   city: z.object({ lab: z.boolean().optional() }).optional().describe('modern city (+ laboratory interior): needs river false, no other decor'),
   harbour: z.object({ hull: z.string().optional() }).optional().describe('harbour and sea: needs river false, no other decor'),
+  farm: z.object({}).optional().describe('farm and countryside: needs river false, no other decor'),
 });
 
 const Action = z.object({
@@ -113,7 +114,7 @@ export const VideoSpecSchema = z.object({
     alt: z.string().optional().describe('optional second pose (same viewBox) swapped in while it moves or reacts'),
     height: z.number().describe('real height in metres of what the viewBox shows'),
   })).optional(),
-  cast: z.array(z.object({ name: z.string(), shows: z.string().describe('a group id, a piece kind (eights, rowboat, barrier, ball, car, ship) or a decor part (bridge, river, town, stadium, castle, city, lab, harbour, sea, lighthouse, pier)') })).describe('every character, animal and object the narration names, and what shows it on screen'),
+  cast: z.array(z.object({ name: z.string(), shows: z.string().describe('a group id, a piece kind (eights, rowboat, barrier, ball, car, ship) or a decor part (bridge, river, town, stadium, castle, city, lab, harbour, sea, lighthouse, pier, farm, barn, farmhouse, pond, windmill, fields)') })).describe('every character, animal and object the narration names, and what shows it on screen'),
   groups: z.array(Group),
   shots: z.array(Shot),
   sound: z.array(SoundCue).optional(),
@@ -165,7 +166,7 @@ export function checkSpec(s: VideoSpecOut): string[] {
   }
   for (const id of arts.keys()) if (!used.has(id)) out.push(`art ${id} is drawn but no group uses it`);
   if (!s.cast.length) out.push('cast is empty: list every character, animal and object the narration names, each with what shows it');
-  const DECOR_PARTS: Record<string, boolean> = { bridge: !!s.decor.bridge, river: s.decor.river, town: !!s.decor.town, stadium: !!s.decor.stadium, castle: !!s.decor.castle, city: !!s.decor.city, lab: !!s.decor.city?.lab, harbour: !!s.decor.harbour, sea: !!s.decor.harbour, lighthouse: !!s.decor.harbour, pier: !!s.decor.harbour };
+  const DECOR_PARTS: Record<string, boolean> = { bridge: !!s.decor.bridge, river: s.decor.river, town: !!s.decor.town, stadium: !!s.decor.stadium, castle: !!s.decor.castle, city: !!s.decor.city, lab: !!s.decor.city?.lab, harbour: !!s.decor.harbour, sea: !!s.decor.harbour, lighthouse: !!s.decor.harbour, pier: !!s.decor.harbour, farm: !!s.decor.farm, barn: !!s.decor.farm, farmhouse: !!s.decor.farm, pond: !!s.decor.farm, windmill: !!s.decor.farm, fields: !!s.decor.farm };
   for (const c of s.cast) {
     const w = c.shows;
     if (ids.has(w)) { if (!s.shots.some((sh) => !sh.groups || sh.groups.includes(w))) out.push(`cast "${c.name}": group ${w} is in no shot`); }
@@ -227,6 +228,14 @@ export function checkSpec(s: VideoSpecOut): string[] {
     if (z < 0 && y < 4.6) out.push(`shot ${sh.id} cam ${i}: the lens is under the sea (over the water keep y above 4.6; the sea is at y = 3.6)`);
     else if (z >= 0 && y < 6.4) out.push(`shot ${sh.id} cam ${i}: the lens is under the quay (y must be above 6.4)`);
     else if (z > 14.5 && z < 26 && y < 16 && Math.abs(x) < 102) out.push(`shot ${sh.id} cam ${i}: the lens is inside the waterfront houses (z 15-25); stay on the quay (z < 14) or above the roofs`);
+  }));
+  if (s.decor.farm && (s.decor.river || s.decor.bridge || s.decor.town || s.decor.stadium || s.decor.castle || s.decor.city || s.decor.harbour)) out.push('the farm stands alone: river false, no bridge, no town, no stadium, no castle, no city, no harbour');
+  if (s.decor.farm) s.shots.forEach((sh) => sh.cams.forEach((c, i) => {
+    if (!('pos' in c.framing)) return;
+    const [x, y, z] = c.framing.pos;
+    if (y < 6.4) out.push(`shot ${sh.id} cam ${i}: the lens is under the ground (y must be above 6.4)`);
+    else if (y < 17 && x > -22.5 && x < -5.5 && z > -24.5 && z < -11.5) out.push(`shot ${sh.id} cam ${i}: the lens is inside the barn (x -22..-6, z -24..-12)`);
+    else if (y < 18 && x > 10 && x < 22 && z > -23 && z < -13) out.push(`shot ${sh.id} cam ${i}: the lens is inside the farmhouse`);
   }));
   if (s.decor.castle) s.shots.forEach((sh) => sh.cams.forEach((c, i) => {
     if (!('pos' in c.framing)) return;

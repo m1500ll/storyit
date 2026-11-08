@@ -14,6 +14,7 @@ import { buildStadium } from "./stadium";
 import { buildCastle } from "./castle";
 import { buildCity, carGeo } from "./city";
 import { buildHarbour, shipGeo, SEA_Y } from "./harbour";
+import { buildFarm } from "./farm";
 import { Pool, Actor, Fx, stage, SIGN_AT, SU_SWING } from "./cast";
 import { FPS, D0, SHOTS, camAt, bridgeState, deckY, deckX, dropW, shapeZ, BridgeState, V3, smooth, FOREGROUND, ShotDef, BOAT_LEN, boatX, strokeAt, rowboatRoll, piece, SPEC, ballAt, BALL_R, carAt, shipAt } from "./story";
 const hasRiver = () => SPEC.decor.river;
@@ -237,6 +238,7 @@ export class World {
     if (SPEC.decor.castle) buildCastle(R, kit, SPEC.decor.castle);
     if (SPEC.decor.city) buildCity(R, kit, SPEC.decor.city);
     if (SPEC.decor.harbour) buildHarbour(R, kit, SPEC.decor.harbour);
+    if (SPEC.decor.farm) buildFarm(R, kit, SPEC.decor.farm);
     { const sp = piece("ship"); if (sp) { const sb = new Batch(); shipGeo(sb, 0, 0, 0.9, sp.hull ?? "#2f6f5a", sp.sail ?? "#f4f1ea"); sb.build(this.ship); this.ship.visible = false; R.add(this.ship); } }
     { const cp = piece("car"); if (cp) { const cb = new Batch(); carGeo(cb, cp.color ?? "#e2453c", 0, 0); cb.build(this.car); this.car.visible = false; R.add(this.car); } }
     // the football (piece "ball"): white with dark patches, rolled by the distance it travels
