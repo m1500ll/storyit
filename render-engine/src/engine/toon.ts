@@ -940,6 +940,10 @@ export const PEASANT = (v = 0): Outfit => {
   return v % 3 === 1 ? { jacket: tunics[v % 4], pants: "#5a4a3a", boots: "#4a3426", hat: "bonnet", dress: ["#a88a5a", "#8a7a6a"][v % 2], skin: SKINS[v % 4] }
     : { jacket: tunics[v % 4], pants: "#5a4a3a", boots: "#4a3426", hat: "hair", hair: hair[v % 4], skin: SKINS[v % 4] };
 };
+/** the harbour's people: sailors in striped tops and caps, a captain in navy with gold buttons, fishermen in oilskins */
+export const SAILOR = (v = 0): Outfit => ({ jacket: ["#f4f1ea", "#3f6fb5"][v % 2], pants: "#2d3a5a", boots: "#2a201a", hat: "cap", cap: ["#2d3a5a", "#f4f1ea", "#c0353a"][v % 3], skin: SKINS[v % 4], moustache: v % 3 === 2 ? "#4a3426" : undefined });
+export const CAPTAIN: Outfit = { jacket: "#1f2a4a", pants: "#1f2a4a", boots: "#1d1b22", hat: "cap", cap: "#1f2a4a", buttons: "#e8c45a", moustache: "#f4f1ea", skin: SKINS[0], build: "stout" };
+export const FISHERMAN = (v = 0): Outfit => ({ jacket: "#f0b43c", pants: "#3b3f52", boots: "#2f5a3a", hat: "cap", cap: "#f0b43c", skin: SKINS[(v + 1) % 4], moustache: v % 2 ? "#5a3b2a" : undefined });
 /** a scientist in a white lab coat */
 export const SCIENTIST = (v = 0): Outfit => ({ jacket: "#f4f6f8", pants: ["#3b3f52", "#3b5b9a"][v % 2], boots: "#4a3426", hat: "hair", hair: ["#7a7a7a", "#2a201a", "#c08a4a", "#5a3b2a"][v % 4], skin: SKINS[v % 4], moustache: v % 4 === 0 ? "#7a7a7a" : undefined });
 /** today's strollers: no hats, bright casual colours */

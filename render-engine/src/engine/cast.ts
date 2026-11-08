@@ -7,7 +7,7 @@ import { ART } from "./art";
 import * as THREE from "three";
 import {
   Pen, bodyFront, bodySide, swingKid, soldier, townsfolk, OFFICER, KID, PARENT, fxNote, fxBurst, fxSplash, fxStars, fxCreak, fxRing, fxBlob, fxShadow, fxContact, fxPlank, fxDrum,
-  OWNER, ROWER, PLAYER, REFEREE, KNIGHT, KING, QUEEN, PEASANT, SCIENTIST, modern, fxCrack, fxTophat,
+  OWNER, ROWER, PLAYER, REFEREE, KNIGHT, KING, QUEEN, PEASANT, SCIENTIST, SAILOR, CAPTAIN, FISHERMAN, modern, fxCrack, fxTophat,
   Outfit, Expr, FrontOpts, SideOpts,
 } from "./toon";
 import {
@@ -245,6 +245,9 @@ const outfitOf = (o: SpecOutfit): { o: Outfit; key: string } => {
     case "queen": return { o: QUEEN, key: "queen" };
     case "peasant": return { o: PEASANT(v), key: `pe${v % 12}` };
     case "scientist": return { o: SCIENTIST(v), key: `sc${v % 4}` };
+    case "sailor": return { o: SAILOR(v), key: `sa${v % 6}` };
+    case "captain": return { o: CAPTAIN, key: "capt" };
+    case "fisherman": return { o: FISHERMAN(v), key: `fi${v % 2}` };
     default: return { o: OUT[v % 6]!, key: `f${v % 6}` };
   }
 };

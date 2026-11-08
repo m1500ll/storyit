@@ -96,6 +96,7 @@ const pushK = (f: number, f0: number, rate: number, punch = 0, n = 35) => {
 export const subjectPoint = (id: number, subj: string | V3, f: number, height = 1.55): V3 => {
   if (Array.isArray(subj)) return subj;
   const t = SHOTS[id - 1]!.tau(T(f));
+  if (subj === "ship") { const c = shipAt(t); if (c) return [c[0], D0 + height - 1.55, c[1]]; }
   if (subj === "car") { const c = carAt(t); if (c) return [c[0], D0 + height - 0.6, c[1]]; }
   if (subj === "ball") { const p = ballAt(t); if (p) return [p[0], p[1] + height - 1.55 + 0.4, p[2]]; }
   if (subj === "eights") { const e = piece("eights"); return [boatX(t, 0) + 2.5, 0.75 + height, e?.lanes[0] ?? 0]; }
@@ -198,6 +199,13 @@ export const carAt = (t: number): [number, number, number] | null => {
   if (!p) return null;
   const a = TL.t(p.from), b = TL.t(p.to), u = Math.max(0, Math.min(1, (t - a) / Math.max(0.1, b - a)));
   return [p.x0 + (p.x1 - p.x0) * u, p.lane, p.x1 >= p.x0 ? 1 : -1];
+};
+/** the moving ship's position at story time t: [x, z, heading sign] (null without a ship piece) */
+export const shipAt = (t: number): [number, number, number] | null => {
+  const p = piece("ship");
+  if (!p) return null;
+  const a = TL.t(p.from), b = TL.t(p.to), u = Math.max(0, Math.min(1, (t - a) / Math.max(0.1, b - a))), e = u * u * (3 - 2 * u);
+  return [p.x0 + (p.x1 - p.x0) * e, p.lane, p.x1 >= p.x0 ? 1 : -1];
 };
 export const strokeAt = (t: number, k: number) => (((t * 0.6 + k * 0.17) % 1) + 1) % 1;
 export const rowboatRoll = (t: number) => {

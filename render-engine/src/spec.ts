@@ -41,6 +41,9 @@ export type Decor = {
   /** a modern city: main road along x (z -7..7), cross street along z (x -7..7), pavements to |z| = 12, buildings beyond;
    *  lab: also a laboratory interior centred on (0, -220). Needs river: false. */
   city?: { lab?: boolean };
+  /** a harbour: land and quay for z >= 0 (houses from z = 15), the sea for z < 0, a pier out to z = -40 (x -3..3), two
+   *  moored sailing ships, a breakwater and a lighthouse at (70, -62). Needs river: false. */
+  harbour?: { hull?: string };
   /** flag on the bridge towers */
   flag?: "england" | "union" | "france" | "none";
 };
@@ -53,9 +56,11 @@ export type Piece =
    *  whose top is `lift` m above the ground when the key has one: a lob, a shot, a clearance); rests after the last */
   | { kind: "ball"; keys: { at: Cue; pos: V2; lift?: number }[] }
   /** a car driving along the main road (city) in lane z, from x0 at cue `from` to x1 at cue `to` (heading toward x1) */
-  | { kind: "car"; color?: string; lane: number; x0: number; x1: number; from: Cue; to: Cue };
+  | { kind: "car"; color?: string; lane: number; x0: number; x1: number; from: Cue; to: Cue }
+  /** a sailing ship on the sea (harbour) in lane z, from x0 at cue `from` to x1 at cue `to` (bow toward x1) */
+  | { kind: "ship"; hull?: string; sail?: string; lane: number; x0: number; x1: number; from: Cue; to: Cue };
 
-export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant" | "scientist" | "art";
+export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant" | "scientist" | "sailor" | "captain" | "fisherman" | "art";
 export type Outfit = { name: OutfitName; variant?: number; color?: string; /** name "art": the id of a drawing in spec.art */ art?: string };
 
 /** what a group of characters does from a cue onward */
