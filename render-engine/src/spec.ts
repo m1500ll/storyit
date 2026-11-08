@@ -55,8 +55,8 @@ export type Piece =
   /** a car driving along the main road (city) in lane z, from x0 at cue `from` to x1 at cue `to` (heading toward x1) */
   | { kind: "car"; color?: string; lane: number; x0: number; x1: number; from: Cue; to: Cue };
 
-export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant" | "scientist";
-export type Outfit = { name: OutfitName; variant?: number; color?: string };
+export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant" | "scientist" | "art";
+export type Outfit = { name: OutfitName; variant?: number; color?: string; /** name "art": the id of a drawing in spec.art */ art?: string };
 
 /** what a group of characters does from a cue onward */
 export type Action = {
@@ -156,6 +156,10 @@ export type VideoSpec = {
   /** facts and sources (shown to the client, never on screen) */
   facts?: { claim: string; source: string }[];
   decor: Decor;
+  /** story-specific drawings (SVG, house style) for characters, animals and objects the engine has no model for */
+  art?: { id: string; what: string; svg: string; alt?: string; height: number }[];
+  /** every character, animal and object the narration names, and the group that shows it on screen */
+  cast?: { name: string; shows: string }[];
   groups: Group[];
   shots: Shot[];
   sound?: SoundCue[];

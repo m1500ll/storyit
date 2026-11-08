@@ -3,6 +3,7 @@
 // outfits). Characters are yaw-only billboards shaded by cardShade() (scene tint, bright floor, side gradient toward
 // the sun, painted crescent in the drawing); standing ones get a soft multiply contact blob. Effects are unlit cards.
 // Cards, effects and blobs live on the NOINK layer so the world ink pass never outlines their quads.
+import { ART } from "./art";
 import * as THREE from "three";
 import {
   Pen, bodyFront, bodySide, swingKid, soldier, townsfolk, OFFICER, KID, PARENT, fxNote, fxBurst, fxSplash, fxStars, fxCreak, fxRing, fxBlob, fxShadow, fxContact, fxPlank, fxDrum,
@@ -248,6 +249,25 @@ const outfitOf = (o: SpecOutfit): { o: Outfit; key: string } => {
   }
 };
 
+/** a member drawn from spec.art: an unlit cut-out card standing on the ground, bobbing when it walks, hopping when it
+ *  cheers, mirrored when it walks toward -x (drawings face right), with a ground shadow; `alt` swaps in every 0.25 s
+ *  while it moves or cheers (wings, a beak, a waving arm) */
+const artMember = (cam: CamInfo, m: NonNullable<ReturnType<typeof memberAt>>, x: number, y: number, z: number, t: number, out: Stage) => {
+  const a = ART.get(m.outfit.art ?? "");
+  if (!a || !a.img.naturalWidth) return;
+  const h = a.height * (m.scale ?? 1), w = h * a.aspect;
+  if (cam.pos.distanceTo(tmp.set(x, y + h / 2, z)) < Math.max(1.2, h * 0.6)) return;
+  const busy = m.moving || m.wave !== undefined; // cheering members carry a wave
+  const ph = (t * 1.6 + hh(m.key, 5)) % 1;
+  const lift = m.moving ? Math.abs(Math.sin(ph * Math.PI * 2)) * 0.05 * h : busy ? Math.abs(Math.sin(t * Math.PI * 4 + m.key)) * 0.12 * h : 0;
+  const useAlt = !!a.alt && busy && Math.floor(t * 4 + m.key) % 2 === 1, img = useAlt ? a.alt! : a.img;
+  const mirror = m.dirX < 0;
+  const cw = Math.round(512 * Math.min(1, a.aspect) * 2), ch = Math.round(512 * Math.min(1, 1 / a.aspect) * 2);
+  out.fx.push({ key: `art|${m.outfit.art}|${useAlt ? 1 : 0}|${mirror ? 1 : 0}`, cw, ch, x, y: y + lift + h / 2, z, w, h,
+    draw: (p) => { const g = p.g; g.save(); if (mirror) { g.translate(cw, 0); g.scale(-1, 1); } g.drawImage(img, 0, 0, cw, ch); g.restore(); } });
+  if (cam.pos.distanceTo(tmp.set(x, y, z)) < 45) blob(out, x, y, z, Math.max(0.4, w / 0.7));
+};
+
 /** every member of every group that is visible in shot id */
 const groups = (id: number, t: number, b: BridgeState, cam: CamInfo, out: Stage) => {
   for (const rt of GROUPS) {
@@ -256,6 +276,7 @@ const groups = (id: number, t: number, b: BridgeState, cam: CamInfo, out: Stage)
       const m = memberAt(rt, i, t);
       if (!m) continue;
       const x = m.x + (m.onDeck ? deckX(m.z, b) : 0), y = m.onDeck ? deckY(m.z, b, m.x) : D0, z = m.z;
+      if (m.outfit.name === "art") { artMember(cam, m, x, y, z, t, out); continue; }
       if (near(cam, x, y, z, 3.0 * m.scale + 0.4)) continue;
       const { o, key } = outfitOf(m.outfit);
       const who: Who = { i: m.key, o, okey: key };

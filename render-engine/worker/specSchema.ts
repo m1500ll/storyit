@@ -12,9 +12,10 @@ const Cue = z.object({ line: z.number().int(), word: z.number().int(), offset: z
 
 const Expr = z.enum(['neutral', 'stern', 'grin', 'laugh', 'whistle', 'nervous', 'shock', 'relief', 'relief_open', 'dazed', 'pained', 'smile', 'smile_closed', 'lick']);
 const Outfit = z.object({
-  name: z.enum(['townsfolk', 'kid', 'owner', 'modern', 'soldier', 'officer', 'rower', 'player', 'referee', 'knight', 'king', 'queen', 'peasant', 'scientist']),
+  name: z.enum(['townsfolk', 'kid', 'owner', 'modern', 'soldier', 'officer', 'rower', 'player', 'referee', 'knight', 'king', 'queen', 'peasant', 'scientist', 'art']),
   variant: z.number().int().optional(),
   color: z.string().optional().describe('hex colour: the rower or player kit, the knight tabard'),
+  art: z.string().optional().describe('name "art" only: the id of a drawing in art'),
 });
 
 const Piece = z.union([
@@ -104,6 +105,13 @@ export const VideoSpecSchema = z.object({
   script: z.array(z.string()).describe('the narration, one sentence or beat per line; cues index into it'),
   facts: z.array(z.object({ claim: z.string(), source: z.string() })),
   decor: Decor,
+  art: z.array(z.object({
+    id: z.string(), what: z.string().describe('what it is, in a few words'),
+    svg: z.string().describe('the drawing: one <svg> with a viewBox, house style, facing right, feet or base on the bottom edge'),
+    alt: z.string().optional().describe('optional second pose (same viewBox) swapped in while it moves or reacts'),
+    height: z.number().describe('real height in metres of what the viewBox shows'),
+  })).optional(),
+  cast: z.array(z.object({ name: z.string(), shows: z.string().describe('a group id, a piece kind (eights, rowboat, barrier, ball, car) or a decor part (bridge, river, town, stadium, castle, city, lab)') })).describe('every character, animal and object the narration names, and what shows it on screen'),
   groups: z.array(Group),
   shots: z.array(Shot),
   sound: z.array(SoundCue).optional(),
@@ -135,6 +143,36 @@ export function checkSpec(s: VideoSpecOut): string[] {
     if (p.kind === 'rowboat') len(p.at, 2, `piece ${i} at`);
   });
   const ids = new Set(s.groups.map((g) => g.id));
+  // story-specific drawings and the cast: nothing the narration names may be missing on screen
+  const arts = new Map((s.art ?? []).map((a) => [a.id, a]));
+  if (arts.size !== (s.art ?? []).length) out.push('art ids must be unique');
+  for (const a of s.art ?? []) for (const [k, v] of [['svg', a.svg], ['alt', a.alt]] as const) {
+    if (v === undefined) continue;
+    const t = v.trim();
+    if (!/^<svg[\s>]/i.test(t) || !/<\/svg>\s*$/i.test(t)) out.push(`art ${a.id} ${k}: must be one <svg>...</svg> element`);
+    else if (!/viewBox\s*=/i.test(t)) out.push(`art ${a.id} ${k}: the <svg> needs a viewBox`);
+    if (/<(script|foreignObject|image)\b/i.test(t) || /href\s*=\s*"(?!#)/i.test(t)) out.push(`art ${a.id} ${k}: no script, foreignObject, image or external link: draw with shapes only`);
+    if (t.length > 16000) out.push(`art ${a.id} ${k}: ${t.length} characters; keep each drawing under 16000 (simplify the shapes)`);
+    if (a.height < 0.05 || a.height > 40) out.push(`art ${a.id}: height ${a.height} m is out of range`);
+  }
+  const used = new Set<string>();
+  for (const g of s.groups) for (const o of Array.isArray(g.outfit) ? g.outfit : [g.outfit]) {
+    if (o.name !== 'art') continue;
+    if (!o.art || !arts.has(o.art)) out.push(`group ${g.id}: outfit art "${o.art ?? ''}" is not in art`);
+    else used.add(o.art);
+  }
+  for (const id of arts.keys()) if (!used.has(id)) out.push(`art ${id} is drawn but no group uses it`);
+  if (!s.cast.length) out.push('cast is empty: list every character, animal and object the narration names, each with what shows it');
+  const DECOR_PARTS: Record<string, boolean> = { bridge: !!s.decor.bridge, river: s.decor.river, town: !!s.decor.town, stadium: !!s.decor.stadium, castle: !!s.decor.castle, city: !!s.decor.city, lab: !!s.decor.city?.lab };
+  for (const c of s.cast) {
+    const w = c.shows;
+    if (ids.has(w)) { if (!s.shots.some((sh) => !sh.groups || sh.groups.includes(w))) out.push(`cast "${c.name}": group ${w} is in no shot`); }
+    else if (['eights', 'rowboat', 'barrier', 'ball', 'car'].includes(w)) {
+      if (!s.decor.pieces?.some((p) => p.kind === w)) out.push(`cast "${c.name}": piece ${w} is not in decor.pieces`);
+      else if (!s.shots.some((sh) => sh.show?.includes(w as never))) out.push(`cast "${c.name}": no shot shows the ${w}`);
+    } else if (w in DECOR_PARTS) { if (!DECOR_PARTS[w]) out.push(`cast "${c.name}": the decor has no ${w}`); }
+    else out.push(`cast "${c.name}": "${w}" is not a group, a piece or a decor part (if the engine has no model for it, draw it in art and add a group)`);
+  }
   if (ids.size !== s.groups.length) out.push('group ids must be unique');
   s.groups.forEach((g) => {
     if (!g.at && !g.area) out.push(`group ${g.id}: give "at" or "area"`);

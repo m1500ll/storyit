@@ -20,6 +20,8 @@ import { LensBlur, GrainEffect } from "./lensblur";
 import { GradeEffect, GRADES, GRADE_STRENGTH, gradeFor } from "./grade";
 import { Kit } from "./build";
 import { FLASH_AT, SHOTS, layersAt, dofAt } from "./story";
+import { loadArt } from "./art";
+import type { VideoSpec } from "../spec";
 
 
 /** A/B switches for test stills only (Remotion inputProps `{ post: { ink: false, ... } }`); everything is on by default. */
@@ -51,7 +53,7 @@ const fwd = new THREE.Vector3(), fpt = new THREE.Vector3();
 const useKit = () => {
   const [kit, setKit] = useState<Kit | null>(null);
   const [handle] = useState(() => delayRender("bridge kit"));
-  useEffect(() => { loadKit().then((k) => { setKit(k); continueRender(handle); }); }, [handle]);
+  useEffect(() => { Promise.all([loadKit(), loadArt((getInputProps() as { spec?: VideoSpec }).spec)]).then(([k]) => { setKit(k); continueRender(handle); }); }, [handle]);
   return kit;
 };
 

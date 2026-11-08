@@ -78,6 +78,36 @@
    }
   ]
  },
+ "cast": [
+  {
+   "name": "Hammersmith Bridge",
+   "shows": "bridge"
+  },
+  {
+   "name": "the Thames",
+   "shows": "river"
+  },
+  {
+   "name": "the crowd of twelve thousand",
+   "shows": "road"
+  },
+  {
+   "name": "the Oxford and Cambridge crews",
+   "shows": "eights"
+  },
+  {
+   "name": "the bridge owners",
+   "shows": "owners"
+  },
+  {
+   "name": "the rowing boat",
+   "shows": "rowboat"
+  },
+  {
+   "name": "today's no-cars barrier",
+   "shows": "barrier"
+  }
+ ],
  "groups": [
   {
    "id": "fpL",
