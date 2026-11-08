@@ -1,7 +1,6 @@
 import {
   BookOpen, CalendarDays, Clapperboard, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Menu, Send,
-  Settings, TrendingUp, Wand2, X,
-} from 'lucide-react';
+  Settings, TrendingUp, Wand2, X, Gift } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/cn';
@@ -27,6 +26,7 @@ const sections = [
   { title: 'Grow', items: [
     { to: '/app/monetisation', label: 'Monetisation', icon: TrendingUp },
     { to: '/app/guide', label: 'Creator guide', icon: BookOpen },
+    { to: '/app/referrals', label: 'Parrainage', icon: Gift },
   ] },
   { title: 'Account', items: [
     { to: '/app/billing', label: 'Plan & credits', icon: CreditCard },

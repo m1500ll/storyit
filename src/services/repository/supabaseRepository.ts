@@ -3,7 +3,7 @@ import type { Database } from '@/types/database';
 import type { StoryWithScenes } from '@/types/domain';
 import { store } from '../store';
 import { InsufficientCreditsError } from '../errors';
-import type { RenderProgress, Repository } from './types';
+import type { ReferralSummary, RenderProgress, Repository } from './types';
 import type { PublishPack, Thumbnail } from '@/lib/publishPack';
 
 const STORY_SELECT = '*, scenes(*), characters(*)';
@@ -60,6 +60,23 @@ export function createSupabaseRepository(db: SupabaseClient<Database>): Reposito
     async getProfile() {
       const id = await uid();
       return unwrap(await db.from('profiles').select('*').eq('id', id).maybeSingle());
+    },
+
+    async getReferrals() {
+      const any = db as unknown as SupabaseClient;
+      const { data: code, error } = await any.rpc('my_referral_code');
+      if (error) throw new Error(error.message);
+      const { data: friends, error: e2 } = await any.rpc('my_referrals');
+      if (e2) throw new Error(e2.message);
+      return { code: code as string, friends: (friends ?? []) as ReferralSummary['friends'] };
+    },
+
+    async claimReferral(code) {
+      const any = db as unknown as SupabaseClient;
+      const { data, error } = await any.rpc('claim_referral', { p_code: code });
+      if (error) throw new Error(error.message);
+      store.notify();
+      return data as string;
     },
 
     async listTransactions() {

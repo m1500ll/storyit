@@ -2,6 +2,10 @@ import type { CreditTransaction, Profile, Scene, StoryStatus } from '@/types/dat
 import type { SceneDraft, StoryConcept, StoryWithScenes } from '@/types/domain';
 import type { PublishPack, Thumbnail } from '@/lib/publishPack';
 
+/** referral programme (migration 0021) */
+export interface ReferralFriend { label: string; status: 'signed_up' | 'qualified'; reward_months: number; created_at: string; qualified_at: string | null }
+export interface ReferralSummary { code: string; friends: ReferralFriend[] }
+
 export type SceneEditableFields = Pick<Scene, 'narration' | 'dialogue' | 'image_prompt' | 'video_prompt'>;
 
 /** Persistence port. Implemented by an in-memory mock and by Supabase. */
@@ -9,6 +13,10 @@ export interface Repository {
   getProfile(): Promise<Profile | null>;
   listTransactions(): Promise<CreditTransaction[]>;
   consumeCredits(amount: number, storyId: string, description: string): Promise<number>;
+  /** the caller's referral code (created on first use) and the friends who signed up through it */
+  getReferrals(): Promise<ReferralSummary>;
+  /** attaches the signed-in account to the owner of `code` (once, never oneself); returns 'ok' or the reason */
+  claimReferral(code: string): Promise<string>;
 
   listStories(): Promise<StoryWithScenes[]>;
   getStory(id: string): Promise<StoryWithScenes | null>;

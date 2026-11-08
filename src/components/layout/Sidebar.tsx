@@ -1,6 +1,5 @@
 import {
-  BookOpen, CalendarDays, Clapperboard, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, Wand2,
-} from 'lucide-react';
+  BookOpen, CalendarDays, Clapperboard, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, Wand2, Gift } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useCredits } from '@/hooks/useStore';
 import { creditLevel, projectsFor } from '@/services/credits';
@@ -60,6 +59,7 @@ export function Sidebar() {
       items: [
         { to: '/app/monetisation', label: 'Monetisation', icon: TrendingUp },
         { to: '/app/guide', label: 'Creator guide', icon: BookOpen },
+        { to: '/app/referrals', label: 'Parrainage', icon: Gift },
       ],
     },
     {

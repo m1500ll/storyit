@@ -24,6 +24,15 @@ const changed = <T>(value: T): Promise<T> => {
 export const mockRepository: Repository = {
   getProfile: async () => mockDb.profile,
   listTransactions: async () => mockDb.transactions,
+  getReferrals: async () => ({
+    code: 'DEMO7K2X',
+    friends: [
+      { label: 'Léa', status: 'qualified', reward_months: 1, created_at: '2026-10-02T10:00:00Z', qualified_at: '2026-10-03T09:00:00Z' },
+      { label: 'Ma•••', status: 'qualified', reward_months: 1, created_at: '2026-10-12T10:00:00Z', qualified_at: '2026-10-14T18:00:00Z' },
+      { label: 'Yanis', status: 'signed_up', reward_months: 0, created_at: '2026-11-01T10:00:00Z', qualified_at: null },
+    ],
+  }),
+  claimReferral: async () => 'ok',
 
   async consumeCredits(amount, storyId, description) {
     const balance = mockDb.profile.credit_balance;

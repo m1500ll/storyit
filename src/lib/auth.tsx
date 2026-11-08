@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { subscribeToRealtime } from '@/services/repository/supabaseRepository';
 import { store } from '@/services/store';
 import { supabase } from './supabase';
+import { claimPendingReferral } from './referral';
 
 interface AuthState {
   /** `undefined` while the initial session is loading. Always a truthy stub in mock mode. */
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!supabase || !session) return;
+    void claimPendingReferral(); // a visitor who arrived through a referral link and now has an account
     return subscribeToRealtime(supabase);
   }, [session]);
 

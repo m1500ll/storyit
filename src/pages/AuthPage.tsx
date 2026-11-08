@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Gift } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useSeo } from '@/lib/seo';
@@ -6,6 +6,8 @@ import { Button, Card, Logo, ThemeToggle } from '@/components/ui';
 import { GoogleIcon } from '@/components/ui/GoogleIcon';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { pendingReferral } from '@/lib/referral';
+import { REFERRAL_FRIEND_BONUS } from '@/services/credits';
 
 type Mode = 'signin' | 'signup' | 'forgot';
 
@@ -84,6 +86,7 @@ export default function AuthPage() {
   };
 
   const copy = COPY[mode];
+  const invited = !!pendingReferral();
   return (
     <div className="grid min-h-screen place-items-center bg-ink-950 px-4 py-10">
       <div className="pointer-events-none fixed left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]" />
@@ -92,6 +95,12 @@ export default function AuthPage() {
         <Logo />
         <h1 className="mt-8 font-display text-3xl text-zinc-50">{copy.title}</h1>
         <p className="mt-1 text-sm text-zinc-500">{copy.sub}</p>
+        {mode === 'signup' && invited && (
+          <p className="mt-4 flex items-start gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs text-zinc-100">
+            <Gift className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden />
+            Invité par un ami : {REFERRAL_FRIEND_BONUS} crédits offerts avec votre premier abonnement.
+          </p>
+        )}
         {mode === 'signup' && (
           <ul className="mt-4 space-y-1.5 text-xs text-zinc-400">
             {['30 free credits to try the Prompt Studio', 'Post each video on all your TikTok and Instagram accounts', 'Free plan, no card, cancel anytime'].map((t) => (
