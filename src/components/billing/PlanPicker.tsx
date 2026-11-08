@@ -2,21 +2,22 @@ import { Check, Coins } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { billingService } from '@/services/billing';
-import { CREDIT_PACKS, PLANS, projectsFor, type ProductKey } from '@/services/credits';
+import { CREDIT_PACKS, PLANS, TRIAL, projectsFor, type ProductKey } from '@/services/credits';
 import { Button } from '../ui';
 
 const RANKS: Record<string, number> = { free: 0, creator: 1, studio: 2 };
 const rank = (plan?: string) => RANKS[plan ?? 'free'] ?? 0;
 
-export function PlanPicker({ currentPlan, compact }: { currentPlan?: string; compact?: boolean }) {
-  const [pending, setPending] = useState<ProductKey | null>(null);
+export function PlanPicker({ currentPlan, compact, trialUsed }: { currentPlan?: string; compact?: boolean; trialUsed?: boolean }) {
+  const [pending, setPending] = useState<string | null>(null);
+  const canTrial = !trialUsed && (currentPlan ?? 'free') === 'free';
   const [error, setError] = useState<string | null>(null);
 
-  const buy = async (product: ProductKey) => {
-    setPending(product);
+  const buy = async (product: ProductKey, trial = false) => {
+    setPending(trial ? `${product}:trial` : product);
     setError(null);
     try {
-      await billingService.checkout(product);
+      await billingService.checkout(product, { trial });
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Checkout failed');
       setPending(null);
@@ -38,14 +39,33 @@ export function PlanPicker({ currentPlan, compact }: { currentPlan?: string; com
                 <p className="text-sm font-semibold text-zinc-100">{p.name}</p>
                 {current && <span className="rounded-full bg-line/10 px-2 py-0.5 text-[11px] text-zinc-300">Current</span>}
               </div>
-              <p className="mt-2 font-display text-3xl text-zinc-50">${p.price}<span className="font-sans text-xs text-zinc-500">{p.period === 'month' ? '/mo' : ''}</span></p>
+              <p className="mt-2 flex items-baseline gap-2 font-display text-3xl text-zinc-50">
+                {'compareAt' in p && <s className="font-sans text-base text-zinc-500" aria-label={`instead of $${p.compareAt}`}>${p.compareAt}</s>}
+                <span>${p.price}<span className="font-sans text-xs text-zinc-500">{p.period === 'month' ? '/mo' : ''}</span></span>
+                {'compareAt' in p && <span className="self-center rounded-full bg-coral-500/15 px-2 py-0.5 font-sans text-[11px] font-medium leading-4 text-coral-300">Launch offer</span>}
+              </p>
               <p className="text-xs text-violet-300">{p.credits} credits {p.period === 'month' ? '/ month' : 'to start'} · ≈ {projectsFor(p.credits)} Prompt Studio projects</p>
               {!compact && (
                 <ul className="mt-3 space-y-1.5">
                   {p.perks.map((k) => <li key={k} className="flex gap-1.5 text-xs text-zinc-400"><Check className="h-3.5 w-3.5 shrink-0 text-violet-400" />{k}</li>)}
                 </ul>
               )}
-              {p.id !== 'free' && (
+              {p.id !== 'free' && canTrial && !current && !included && (
+                <>
+                  <Button size="sm" className="mt-4 w-full" variant={featured ? 'primary' : 'secondary'} loading={pending === `${p.id}:trial`}
+                    disabled={pending !== null} onClick={() => buy(p.id as ProductKey, true)}>
+                    Try {TRIAL.days} days for ${TRIAL.price}
+                  </Button>
+                  <p className="mt-1.5 text-[11px] leading-snug text-zinc-500">
+                    ${TRIAL.price} today, then ${p.price}/mo after {TRIAL.days} days. Cancel anytime before. {TRIAL.credits} credits during the trial.
+                  </p>
+                  <button type="button" onClick={() => buy(p.id as ProductKey)} disabled={pending !== null}
+                    className="touch-hit mt-1 text-[11px] text-violet-300 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50">
+                    {pending === p.id ? '…' : `Or subscribe now for $${p.price}/mo`}
+                  </button>
+                </>
+              )}
+              {p.id !== 'free' && !(canTrial && !current && !included) && (
                 <Button size="sm" className="mt-4 w-full" variant={featured && !included ? 'primary' : 'secondary'} disabled={current || included}
                   loading={pending === p.id} onClick={() => buy(p.id as ProductKey)}>
                   {current ? 'Your plan' : included ? 'Included in your plan' : `Upgrade to ${p.name}`}

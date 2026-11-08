@@ -15,8 +15,9 @@ async function call(body: Record<string, unknown>): Promise<string> {
 
 /** Stripe-hosted pages: card data never touches our app. */
 export const billingService = {
-  async checkout(product: ProductKey) {
-    window.location.assign(await call({ action: 'checkout', product }));
+  /** trial: the $1 three-day trial of a plan (one per account), then the plan at full price */
+  async checkout(product: ProductKey, opts: { trial?: boolean } = {}) {
+    window.location.assign(await call({ action: 'checkout', product, trial: opts.trial === true }));
   },
   async openPortal() {
     window.location.assign(await call({ action: 'portal' }));

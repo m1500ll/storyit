@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { invoicePriceId, planForSubscription, productForPrice, verifySignature } from '@shared/stripe.ts';
+import { TRIAL, invoicePriceId, planForSubscription, planLine, productForPrice, verifySignature } from '@shared/stripe.ts';
 
 const env = (k: string) => ({ STRIPE_PRICE_CREATOR: 'price_c', STRIPE_PRICE_STUDIO: 'price_s', STRIPE_PRICE_PACK_100: 'price_p1', STRIPE_PRICE_PACK_500: 'price_p5' } as Record<string, string>)[k];
 
@@ -33,5 +33,22 @@ describe('Stripe webhook helpers', () => {
     expect(planForSubscription(sub('unpaid', 'price_s'), env)).toBe('free');
     expect(planForSubscription(sub('canceled', 'price_c'), env)).toBe('free');
     expect(planForSubscription(sub('incomplete', 'price_c'), env)).toBeNull();
+  });
+});
+
+describe('planLine (trial vs paid invoices)', () => {
+  const env = (k: string) => ({ STRIPE_PRICE_CREATOR: 'price_creator', STRIPE_PRICE_STUDIO: 'price_studio' } as Record<string, string>)[k];
+  it('finds the plan line and its amount on a normal invoice', () => {
+    expect(planLine({ lines: { data: [{ price: { id: 'price_creator' }, amount: 2900 }] } }, env)).toEqual({ product: 'creator', amount: 2900 });
+  });
+  it('sees a $1 trial invoice: plan line at 0 even when the one-time fee comes first', () => {
+    const inv = { lines: { data: [{ price: { id: 'price_trial_fee' }, amount: 100 }, { pricing: { price_details: { price: 'price_studio' } }, amount: 0 }] } };
+    expect(planLine(inv, env)).toEqual({ product: 'studio', amount: 0 });
+  });
+  it('returns null for a credit pack invoice', () => {
+    expect(planLine({ lines: { data: [{ price: { id: 'price_pack' }, amount: 1200 }] } }, env)).toBeNull();
+  });
+  it('trial settings: $1 for 3 days, 60 credits', () => {
+    expect(TRIAL).toEqual({ feeCents: 100, days: 3, credits: 60 });
   });
 });

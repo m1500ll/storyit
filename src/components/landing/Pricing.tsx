@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { CREDIT_PACKS, PLANS } from '@/services/credits';
+import { CREDIT_PACKS, PLANS, TRIAL } from '@/services/credits';
 import { Button } from '../ui';
 import { StartLink } from './StartLink';
 
@@ -21,7 +21,11 @@ export function Pricing() {
                 <h3 className="text-sm font-semibold text-zinc-100">{p.name}</h3>
                 {featured && <span className="rounded-full bg-violet-500/15 px-2 py-0.5 text-[11px] text-violet-300">Recommended</span>}
               </div>
-              <p className="mt-4 font-display text-5xl text-zinc-50">${p.price}<span className="font-sans text-sm text-zinc-500">{p.period === 'month' ? '/mo' : ''}</span></p>
+              <p className="mt-4 flex flex-wrap items-baseline gap-x-3 font-display text-5xl text-zinc-50">
+                {'compareAt' in p && <s className="font-sans text-xl text-zinc-500" aria-label={`instead of $${p.compareAt}`}>${p.compareAt}</s>}
+                <span>${p.price}<span className="font-sans text-sm text-zinc-500">{p.period === 'month' ? '/mo' : ''}</span></span>
+              </p>
+              {'compareAt' in p && <p className="mt-2 text-xs"><span className="rounded-full bg-coral-500/15 px-2 py-0.5 font-medium text-coral-300">Launch offer</span> <span className="text-zinc-400">Try {TRIAL.days} days for ${TRIAL.price}</span></p>}
 
               <ul className="mt-6 flex-1 space-y-2.5">
                 {p.perks.map((perk) => (
@@ -29,7 +33,7 @@ export function Pricing() {
                 ))}
               </ul>
               <StartLink to={p.price === 0 ? '/app' : '/app/billing'} className="mt-8">
-                <Button variant={featured ? 'primary' : 'secondary'} className="w-full">{p.price === 0 ? 'Start Free' : `Start with ${p.name}`}</Button>
+                <Button variant={featured ? 'primary' : 'secondary'} className="w-full">{p.price === 0 ? 'Start Free' : `Try ${p.name} for $${TRIAL.price}`}</Button>
               </StartLink>
             </div>
           );

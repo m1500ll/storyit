@@ -1,8 +1,11 @@
 // Supabase Edge Function: `billing`
 // Creates Stripe Checkout sessions (plans & credit packs) and Customer Portal sessions.
+// trial: true on a plan = the $1 three-day trial (one per account): a one-time $1 fee + 3 trial days, then the plan.
+// It never counts as a referral (stripe-webhook only qualifies a referral on a paid plan line).
 // Secrets: STRIPE_SECRET_KEY, STRIPE_PRICE_CREATOR, STRIPE_PRICE_STUDIO, STRIPE_PRICE_PACK_100, STRIPE_PRICE_PACK_500
 // Optional: APP_URL (default http://localhost:5173)
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { TRIAL } from '../_shared/stripe.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -21,11 +24,11 @@ const PRODUCTS = {
 } as const;
 type ProductKey = keyof typeof PRODUCTS;
 
-async function stripe(path: string, params: Record<string, string>) {
+async function stripe(path: string, params?: Record<string, string>) {
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(params),
+    method: params ? 'POST' : 'GET',
+    headers: { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}`, ...(params ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}) },
+    body: params ? new URLSearchParams(params) : undefined,
     signal: AbortSignal.timeout(15_000),
   });
   const data = await res.json();
@@ -48,10 +51,10 @@ Deno.serve(async (req) => {
   const appUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173';
 
   try {
-    const { action, product } = (await req.json()) as { action: 'checkout' | 'portal'; product?: ProductKey };
+    const { action, product, trial } = (await req.json()) as { action: 'checkout' | 'portal'; product?: ProductKey; trial?: boolean };
 
     // Get or create the Stripe customer for this user.
-    const { data: profile } = await admin.from('profiles').select('stripe_customer_id').eq('id', user.id).single();
+    const { data: profile } = await admin.from('profiles').select('stripe_customer_id, plan, trial_used').eq('id', user.id).single();
     let customerId = profile?.stripe_customer_id as string | null;
     if (!customerId) {
       const customer = await stripe('customers', { email: user.email ?? '', 'metadata[user_id]': user.id });
@@ -84,6 +87,23 @@ Deno.serve(async (req) => {
     if (mode === 'subscription') {
       params['subscription_data[metadata][user_id]'] = user.id;
       params['subscription_data[metadata][product]'] = product;
+    }
+    if (trial) {
+      // one trial per account: never used, no paid plan now, no subscription ever on this Stripe customer
+      if (mode !== 'subscription') return json({ error: 'The trial is only for plans.' }, 400);
+      if (profile?.trial_used || (profile?.plan && profile.plan !== 'free')) return json({ error: 'Votre essai a déjà été utilisé.', code: 'trial_used' }, 409);
+      const past = await stripe(`subscriptions?customer=${customerId}&status=all&limit=1`);
+      if (past?.data?.length) return json({ error: 'Votre essai a déjà été utilisé.', code: 'trial_used' }, 409);
+      const plan = await stripe(`prices/${price}`);
+      params['subscription_data[trial_period_days]'] = String(TRIAL.days);
+      params['subscription_data[metadata][trial]'] = '1';
+      params['metadata[trial]'] = '1';
+      params['line_items[1][price_data][currency]'] = String(plan.currency);
+      params['line_items[1][price_data][unit_amount]'] = String(TRIAL.feeCents);
+      params['line_items[1][price_data][product_data][name]'] = `Storyit — essai ${TRIAL.days} jours`;
+      params['line_items[1][quantity]'] = '1';
+      params['payment_method_collection'] = 'always';
+      params['subscription_data[trial_settings][end_behavior][missing_payment_method]'] = 'cancel';
     }
     const session = await stripe('checkout/sessions', params);
     return json({ url: session.url });

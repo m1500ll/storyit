@@ -7,7 +7,7 @@
 // REFERRAL_FRIEND_BONUS credits (default 100), the referrer free months as Stripe customer balance (months x the price of
 // their plan, Creator when they have none), which pays their next invoices. Secret: STRIPE_SECRET_KEY.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { GRANTS, invoicePriceId, planForSubscription, productForPrice, verifySignature, type ProductKey } from '../_shared/stripe.ts';
+import { GRANTS, TRIAL, invoicePriceId, planForSubscription, planLine, productForPrice, verifySignature, type ProductKey } from '../_shared/stripe.ts';
 
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const env = (k: string) => Deno.env.get(k);
@@ -100,13 +100,26 @@ Deno.serve(async (req) => {
         break;
       }
       case 'invoice.paid': {
-        // The product comes from the price actually paid (covers plan changes made in the Customer Portal).
-        const product = productForPrice(invoicePriceId(obj), env);
+        // The product comes from the plan line actually billed (covers plan changes made in the Customer Portal).
+        const line = planLine(obj, env);
+        const product = line?.product ?? productForPrice(invoicePriceId(obj), env);
         const meta = obj.parent?.subscription_details?.metadata ?? obj.subscription_details?.metadata ?? {};
         const userId = (await userIdForCustomer(obj.customer)) ?? meta.user_id;
-        if (userId && product && GRANTS[product].plan && obj.amount_paid >= 0) await grant(userId, product, true);
-        // referral: the friend's first real payment for a subscription
-        if (userId && product && GRANTS[product].plan && obj.amount_paid > 0) await rewardReferral(userId);
+        if (!userId || !product || !GRANTS[product].plan) break;
+        if (line && line.amount === 0) {
+          // $1 trial: the plan line is free for the trial days; give the plan and TRIAL.credits, mark the trial used.
+          // The plan's full credits come with the first real invoice. A trial never counts as a referral.
+          if (obj.amount_paid > 0) {
+            const { error } = await admin.rpc('grant_credits', { p_user_id: userId, p_amount: TRIAL.credits, p_type: 'subscription_grant',
+              p_description: `Essai ${TRIAL.days} jours — crédits`, p_plan: GRANTS[product].plan, p_reset: true });
+            if (error) throw new Error(error.message);
+            await admin.from('profiles').update({ trial_used: true }).eq('id', userId);
+          }
+          break;
+        }
+        if (obj.amount_paid >= 0) await grant(userId, product, true);
+        // referral: the friend's first real payment of a plan (never the $1 trial)
+        if (obj.amount_paid > 0 && (!line || line.amount > 0)) await rewardReferral(userId);
         break;
       }
       case 'customer.subscription.updated':

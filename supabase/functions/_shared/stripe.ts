@@ -26,6 +26,23 @@ export function invoicePriceId(invoice: any): string | null {
   return line?.price?.id ?? line?.pricing?.price_details?.price ?? line?.plan?.id ?? null;
 }
 
+/** price id of an invoice line (older and newer Stripe API shapes) */
+const linePrice = (line: any): string | null => line?.price?.id ?? line?.pricing?.price_details?.price ?? line?.plan?.id ?? null;
+
+/** the line of an invoice that bills a plan (creator/studio), with what that line charged (0 during a trial); null when
+ *  the invoice bills no plan. A trial's first invoice holds the plan line at 0 plus the one-time trial fee. */
+export function planLine(invoice: any, env: (k: string) => string | undefined): { product: ProductKey; amount: number } | null {
+  for (const line of invoice?.lines?.data ?? []) {
+    const product = productForPrice(linePrice(line), env);
+    if (product && GRANTS[product].plan) return { product, amount: Number(line.amount ?? 0) };
+  }
+  return null;
+}
+
+/** $1 three-day trial: price of the one-time fee (cents), length, credits given during the trial. Keep in sync with
+ *  src/services/credits.ts (TRIAL). */
+export const TRIAL = { feeCents: 100, days: 3, credits: 60 };
+
 /** Plan a subscription should give right now. Unpaid/cancelled subscriptions fall back to free. */
 export function planForSubscription(sub: any, env: (k: string) => string | undefined): 'free' | 'creator' | 'studio' | null {
   if (['canceled', 'unpaid', 'incomplete_expired'].includes(sub?.status)) return 'free';

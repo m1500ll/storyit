@@ -30,10 +30,10 @@ export default function LandingPage() {
       <Hero />
       <Showcase />
       <Results />
-      <InlineCTA title="Want videos like these on all your accounts?" sub="Free plan, no card required" />
+      <InlineCTA title="Want videos like these on all your accounts?" sub="Launch offer: $1 for 3 days, then $29/mo. Cancel anytime." />
       <TimeSaved />
       <Monetization />
-      <InlineCTA title="Start posting on every account today." sub="Free plan, no card required" />
+      <InlineCTA title="Start posting on every account today." sub="Launch offer: $1 for 3 days, then $29/mo. Cancel anytime." />
       <HowItWorks />
       <DemoVideo />
       <FeatureGrid />

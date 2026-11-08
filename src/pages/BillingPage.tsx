@@ -58,7 +58,7 @@ export default function BillingPage() {
         {profile?.plan === 'studio'
           ? <CardHeader title="Top up credits" subtitle="You're on Studio, our top plan. Top-up packs never expire." />
           : <CardHeader title="Upgrade or top up" subtitle="Plans renew monthly. Top-up packs never expire." />}
-        <PlanPicker currentPlan={profile?.plan} />
+        <PlanPicker currentPlan={profile?.plan} trialUsed={profile?.trial_used} />
       </Card>
       <Card className="mt-6 overflow-x-auto" tabIndex={0} role="region" aria-label="Credit history">
         <CardHeader title="Credit history" />
