@@ -42,7 +42,7 @@ export type CreditLevel = 'ok' | 'low' | 'empty';
 export const creditLevel = (balance: number): CreditLevel => (balance <= 0 ? 'empty' : balance <= LOW_CREDITS ? 'low' : 'ok');
 
 /** referral programme: credits the referred friend gets with their first subscription (the webhook's REFERRAL_FRIEND_BONUS) */
-export const REFERRAL_FRIEND_BONUS = 50;
+export const REFERRAL_FRIEND_BONUS = 100;
 /** qualified friends needed for the big reward, and the months it gives (1 month for each other friend) */
 export const REFERRAL_GOAL = 5;
 export const REFERRAL_BIG_MONTHS = 6;

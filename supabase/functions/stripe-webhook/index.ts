@@ -4,7 +4,7 @@
 // Secrets: STRIPE_WEBHOOK_SECRET (whsec_...), plus the STRIPE_PRICE_* used by `billing`.
 // Events: checkout.session.completed, invoice.paid, customer.subscription.updated, customer.subscription.deleted
 // Referrals (migration 0021): a referred friend's first PAID subscription invoice qualifies the referral: the friend gets
-// REFERRAL_FRIEND_BONUS credits (default 50), the referrer free months as Stripe customer balance (months x the price of
+// REFERRAL_FRIEND_BONUS credits (default 100), the referrer free months as Stripe customer balance (months x the price of
 // their plan, Creator when they have none), which pays their next invoices. Secret: STRIPE_SECRET_KEY.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { GRANTS, invoicePriceId, planForSubscription, productForPrice, verifySignature, type ProductKey } from '../_shared/stripe.ts';
@@ -40,7 +40,7 @@ async function stripeApi(path: string, params?: Record<string, string>, idempote
 /** rewards the referral of `referredId` (their first paid subscription invoice). Retry-safe: flags in the database plus
  *  an idempotency key per referral on the Stripe balance transaction. */
 async function rewardReferral(referredId: string) {
-  const bonus = Number(env('REFERRAL_FRIEND_BONUS') ?? '50');
+  const bonus = Number(env('REFERRAL_FRIEND_BONUS') ?? '100');
   const { data, error } = await admin.rpc('qualify_referral', { p_referred: referredId, p_friend_bonus: bonus });
   if (error) throw new Error('qualify_referral: ' + error.message);
   const r = (data as { referral_id: string; referrer_id: string; months: number; rank: number; reward_applied: boolean; bonus_applied: boolean; friend_bonus: number }[] | null)?.[0];
