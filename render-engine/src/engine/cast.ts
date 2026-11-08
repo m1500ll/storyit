@@ -6,7 +6,7 @@
 import * as THREE from "three";
 import {
   Pen, bodyFront, bodySide, swingKid, soldier, townsfolk, OFFICER, KID, PARENT, fxNote, fxBurst, fxSplash, fxStars, fxCreak, fxRing, fxBlob, fxShadow, fxContact, fxPlank, fxDrum,
-  OWNER, ROWER, PLAYER, REFEREE, modern, fxCrack, fxTophat,
+  OWNER, ROWER, PLAYER, REFEREE, KNIGHT, KING, QUEEN, PEASANT, modern, fxCrack, fxTophat,
   Outfit, Expr, FrontOpts, SideOpts,
 } from "./toon";
 import {
@@ -239,6 +239,10 @@ const outfitOf = (o: SpecOutfit): { o: Outfit; key: string } => {
     case "rower": return { o: ROWER(o.color ?? "#22306a", v), key: `r${o.color}${v % 4}` };
     case "player": return { o: PLAYER(o.color ?? "#e2453c", v), key: `p${o.color}${v % 10}` };
     case "referee": return { o: REFEREE, key: "ref" };
+    case "knight": return { o: KNIGHT(o.color ?? "#3f6fb5", v), key: `kn${o.color}${v % 4}` };
+    case "king": return { o: KING, key: "king" };
+    case "queen": return { o: QUEEN, key: "queen" };
+    case "peasant": return { o: PEASANT(v), key: `pe${v % 12}` };
     default: return { o: OUT[v % 6]!, key: `f${v % 6}` };
   }
 };

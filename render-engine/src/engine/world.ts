@@ -11,6 +11,7 @@ import { LIGHTS, LOOK, LightPreset } from "./lights";
 import { TONE, CHAR, LFB, twoTone, untone } from "./shade";
 import { NOINK } from "./ink";
 import { buildStadium } from "./stadium";
+import { buildCastle } from "./castle";
 import { Pool, Actor, Fx, stage, SIGN_AT, SU_SWING } from "./cast";
 import { FPS, D0, SHOTS, camAt, bridgeState, deckY, deckX, dropW, shapeZ, BridgeState, V3, smooth, FOREGROUND, ShotDef, BOAT_LEN, boatX, strokeAt, rowboatRoll, piece, SPEC, ballAt, BALL_R } from "./story";
 const hasRiver = () => SPEC.decor.river;
@@ -230,6 +231,7 @@ export class World {
     b.build(R);
     if (SPEC.decor.town) buildTown(R, kit, sightLines());
     if (SPEC.decor.stadium) buildStadium(R, SPEC.decor.stadium);
+    if (SPEC.decor.castle) buildCastle(R, kit, SPEC.decor.castle);
     // the football (piece "ball"): white with dark patches, rolled by the distance it travels
     this.ball = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 24, 16), lam("ballM", () => ({ map: ctex("ballTex", 256, 128, (g) => {
       g.fillStyle = "#f6f4ec"; g.fillRect(0, 0, 256, 128); g.fillStyle = "#241726";

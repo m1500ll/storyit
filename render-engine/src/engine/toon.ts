@@ -377,8 +377,8 @@ const hatOn = (p: Pen, o: Outfit, hp: P2[], H: Blob, cx: number, hc: number, lig
       const [tx, ty] = R([[cx, yb - ht - 6 * u]])[0];
       p.ell(tx, ty, 7 * u, 7 * u, "#2b7a4b", 2.5 * u); // green tuft
     }
-  } else if (o.hat === "cap" || o.hat === "hair") {
-    const cut = crown + (o.hat === "cap" ? 0.3 : 0.42) * HH;
+  } else if (o.hat === "cap" || o.hat === "hair" || o.hat === "helmet") {
+    const cut = crown + (o.hat === "cap" ? 0.3 : o.hat === "helmet" ? 0.47 : 0.42) * HH;
     const keep = (x: number, y: number) => y < cut || (side && o.hat === "hair" && x < cx - 6 * u && y < hc + 0.42 * H.b);
     // start the arc at the first kept point after a dropped one, so the kept run is contiguous and the cut closes it
     const n = hp.length, startIdx = Math.max(0, hp.findIndex(([x, y], i) => keep(x, y) && !keep(hp[(i + n - 1) % n][0], hp[(i + n - 1) % n][1])));
@@ -389,9 +389,15 @@ const hatOn = (p: Pen, o: Outfit, hp: P2[], H: Blob, cx: number, hc: number, lig
       const [x0, y0] = arc[arc.length - 1], [x1, y1] = arc[0];
       for (let i = 1; i < 6; i++) arc.push([x0 + ((x1 - x0) * i) / 6, y0 + ((y1 - y0) * i) / 6 + (i % 2 ? 4 * u : 0)]);
     }
-    const col = o.hat === "cap" ? o.cap! : o.hair!;
+    const col = o.hat === "cap" ? o.cap! : o.hat === "helmet" ? "#aab2bf" : o.hair!;
     p.shadedFill(arc, col, mul(col, SH_FELT), light, H.a, 0.35);
     p.poly(arc, null, ow);
+    if (o.hat === "helmet") { // rim band and, seen from the front, a nasal bar down the face
+      const deg = (a * 180) / Math.PI, [rx, ry] = R([[cx, cut - 1 * u]])[0];
+      p.arc(rx, ry, 0.5 * W, 0.05 * HH, 180, 360, 3 * u, "#7d8593");
+      if (!side) p.poly(R([[cx - 3.5 * u, cut - 4 * u], [cx + 3.5 * u, cut - 4 * u], [cx + 3 * u, cut + 0.2 * HH], [cx - 3 * u, cut + 0.2 * HH]]), "#9aa2af", 1.6 * u);
+      void deg;
+    }
     if (o.hat === "hair") {
       const s = side ? -1 : facing || 1;
       p.stroke([[cx + s * 10 * u, cut - 30 * u], [cx + s * 2 * u, cut - 12 * u]], 1.2 * u);
@@ -412,6 +418,14 @@ const hatOn = (p: Pen, o: Outfit, hp: P2[], H: Blob, cx: number, hc: number, lig
     p.poly(body, null, ow);
     const [bx, by] = R([[cx, yb + 1 * u]])[0];
     p.ell(bx, by, 0.45 * W, 0.05 * HH, "#1d1b22", ow, 0, 360, (a * 180) / Math.PI);
+  } else if (o.hat === "crown") {
+    // a gold band with five points and red gems, sitting on the hair line
+    const yb = crown + 0.2 * HH, ht = 0.34 * HH, wb = 0.36 * W, pts: P2[] = [...sag(yb, wb).reverse()];
+    for (let k = 0; k <= 8; k++) pts.push([cx - wb + (2 * wb * k) / 8, yb - (k % 2 ? ht * 0.55 : ht)]);
+    const body = R(pts);
+    p.shadedFill(body, "#e8c45a", "#b8902e", light, wb, 0.4);
+    p.poly(body, null, ow);
+    for (const k of [-1, 0, 1]) { const [gx, gy] = R([[cx + k * wb * 0.55, yb - ht * 0.22]])[0]; p.ell(gx, gy, 4.5 * u, 4.5 * u, "#c0353a", 1.4 * u); }
   } else if (o.hat === "bonnet") {
     const [bx, by] = R([[cx + (side ? 6 * u : 0), crown + 0.16 * HH]])[0];
     p.arc(bx, by, 0.5 * W, 0.2 * HH, 200, 340, 7 * u, BONNET_BRIM);
@@ -917,6 +931,15 @@ export const ROWER = (kit: string, v = 0): Outfit => ({ jacket: kit, pants: "#f4
 /** footballers: the team shirt, white or dark shorts, socks in the shirt colour; referee all in black */
 export const PLAYER = (kit: string, v = 0): Outfit => ({ jacket: kit, pants: v % 2 ? "#f4f1ea" : "#1f2433", boots: kit, hat: "hair", hair: ["#5a3b2a", "#2a201a", "#c08a4a", "#7a4a2a", "#e0b860"][v % 5], skin: SKINS[v % 4] });
 export const REFEREE: Outfit = { jacket: "#1d1d24", pants: "#1d1d24", boots: "#1d1d24", hat: "hair", hair: "#2a201a", skin: SKINS[1], build: "stout" };
+/** the castle's people: a knight in mail with a tabard in his colour, the king and queen, peasants */
+export const KNIGHT = (col: string, v = 0): Outfit => ({ jacket: col, pants: "#8e96a3", boots: "#5d6470", hat: "helmet", belt: "#5a3b2a", skin: SKINS[v % 4] });
+export const KING: Outfit = { jacket: "#b3263a", pants: "#3b3f52", boots: "#4a3426", hat: "crown", buttons: "#e8c45a", sash: "#e8c45a", moustache: "#6a4a30", skin: SKIN, build: "stout" };
+export const QUEEN: Outfit = { jacket: "#6a3fa0", pants: "#3b3f52", boots: "#4a3426", hat: "crown", dress: "#7b5ac9", skin: SKINS[2] };
+export const PEASANT = (v = 0): Outfit => {
+  const tunics = ["#8a6a44", "#6f7f4a", "#9a5a3a", "#7a6a5a"], hair = ["#5a3b2a", "#2a201a", "#c08a4a", "#7a4a2a"];
+  return v % 3 === 1 ? { jacket: tunics[v % 4], pants: "#5a4a3a", boots: "#4a3426", hat: "bonnet", dress: ["#a88a5a", "#8a7a6a"][v % 2], skin: SKINS[v % 4] }
+    : { jacket: tunics[v % 4], pants: "#5a4a3a", boots: "#4a3426", hat: "hair", hair: hair[v % 4], skin: SKINS[v % 4] };
+};
 /** today's strollers: no hats, bright casual colours */
 export const modern = (v = 0): Outfit => {
   const tops = ["#e2453c", "#3f6fb5", "#f0b43c", "#2f8a4f", "#7b5ac9", "#f4f1ea", "#e86e9a"];

@@ -35,6 +35,9 @@ export type Decor = {
   /** a football stadium centred on the origin (pitch 105 x 68 m, length along x; goals at x = -52.5 / +52.5, touchlines
    *  at z = -34 / +34): painted crowd in the two teams' colours, boards, roofs, floodlights. Needs river: false. */
   stadium?: { home?: string; away?: string };
+  /** a medieval castle centred on the origin: curtain walls at x, z = +-30 (9 m), corner towers, the keep at the back
+   *  (x -8..8, z -24..-8), the gate in the front wall at z = +30 (x -2.6..2.6), a cobbled courtyard. Needs river: false. */
+  castle?: { roof?: string; banner?: "red" | "green" };
   /** flag on the bridge towers */
   flag?: "england" | "union" | "france" | "none";
 };
@@ -47,7 +50,7 @@ export type Piece =
    *  whose top is `lift` m above the ground when the key has one: a lob, a shot, a clearance); rests after the last */
   | { kind: "ball"; keys: { at: Cue; pos: V2; lift?: number }[] };
 
-export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee";
+export type OutfitName = "townsfolk" | "kid" | "owner" | "modern" | "soldier" | "officer" | "rower" | "player" | "referee" | "knight" | "king" | "queen" | "peasant";
 export type Outfit = { name: OutfitName; variant?: number; color?: string };
 
 /** what a group of characters does from a cue onward */

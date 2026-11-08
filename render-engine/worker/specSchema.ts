@@ -12,9 +12,9 @@ const Cue = z.object({ line: z.number().int(), word: z.number().int(), offset: z
 
 const Expr = z.enum(['neutral', 'stern', 'grin', 'laugh', 'whistle', 'nervous', 'shock', 'relief', 'relief_open', 'dazed', 'pained', 'smile', 'smile_closed', 'lick']);
 const Outfit = z.object({
-  name: z.enum(['townsfolk', 'kid', 'owner', 'modern', 'soldier', 'officer', 'rower', 'player', 'referee']),
+  name: z.enum(['townsfolk', 'kid', 'owner', 'modern', 'soldier', 'officer', 'rower', 'player', 'referee', 'knight', 'king', 'queen', 'peasant']),
   variant: z.number().int().optional(),
-  color: z.string().optional().describe('hex colour: the rower or player kit'),
+  color: z.string().optional().describe('hex colour: the rower or player kit, the knight tabard'),
 });
 
 const Piece = z.union([
@@ -32,6 +32,7 @@ const Decor = z.object({
   props: z.array(z.object({ kit: z.string(), x: z.number(), z: z.number(), h: z.number(), yaw: z.number().optional() })).optional(),
   pieces: z.array(Piece).optional(),
   stadium: z.object({ home: z.string().optional(), away: z.string().optional() }).optional().describe('football stadium: needs river false, no bridge, no town'),
+  castle: z.object({ roof: z.string().optional(), banner: z.enum(['red', 'green']).optional() }).optional().describe('medieval castle: needs river false, no bridge, no town, no stadium'),
 });
 
 const Action = z.object({
@@ -162,6 +163,14 @@ export function checkSpec(s: VideoSpecOut): string[] {
   });
   if (s.decor.bridge && !s.decor.river) out.push('a bridge needs the river');
   if (s.decor.stadium && (s.decor.river || s.decor.bridge || s.decor.town)) out.push('the stadium stands alone: river false, no bridge, no town');
+  if (s.decor.castle && (s.decor.river || s.decor.bridge || s.decor.town || s.decor.stadium)) out.push('the castle stands alone: river false, no bridge, no town, no stadium');
+  if (s.decor.castle) s.shots.forEach((sh) => sh.cams.forEach((c, i) => {
+    if (!('pos' in c.framing)) return;
+    const [x, y, z] = c.framing.pos, inWall = y < 15.5 && Math.max(Math.abs(x), Math.abs(z)) > 27.2 && Math.max(Math.abs(x), Math.abs(z)) < 30.5;
+    const inKeep = y < 28 && x > -8.5 && x < 8.5 && z > -24.5 && z < -7.5;
+    if (y < 6.4) out.push(`shot ${sh.id} cam ${i}: the lens is under the ground (y must be above 6.4)`);
+    else if (inWall || inKeep) out.push(`shot ${sh.id} cam ${i}: the lens is inside a castle wall or the keep; move it into the courtyard (|x|, |z| < 27) or outside (beyond 31)`);
+  }));
   if (s.decor.stadium) s.shots.forEach((sh) => sh.cams.forEach((c, i) => {
     if ('pos' in c.framing && c.framing.pos[1] < 6.4) out.push(`shot ${sh.id} cam ${i}: the lens is under the pitch (y must be above 6.4, the grass is at y = 6)`);
   }));
