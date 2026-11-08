@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 import Anthropic from "@anthropic-ai/sdk";
 import { writeSpec, usd } from "./specWriter.js";
+import { VideoSpecSchema, checkSpec, type VideoSpecOut } from "./specSchema.js";
 import { recordVoice } from "./voice.js";
 import { soundTimeline } from "./timeline.js";
 import { renderVideo } from "./render.js";
@@ -23,7 +24,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
 const WORKER = `${os.hostname()}-${process.pid}`;
 
-type Job = { id: string; user_id: string; transcript: { role: string; text: string }[]; language: string; voice_id: string | null; credits_charged: number };
+type Job = { id: string; user_id: string; transcript: { role: string; text: string }[]; language: string; voice_id: string | null; credits_charged: number; spec: unknown | null };
 
 const set = (id: string, patch: Record<string, unknown>) => db.from("animated_projects").update(patch).eq("id", id);
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
@@ -40,11 +41,19 @@ export async function produce(job: Job) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `short-${job.id.slice(0, 8)}-`));
   const t0 = Date.now();
   try {
-    // 1. VideoSpec
-    const brief = job.transcript.map((m) => `${m.role === "user" ? "CUSTOMER" : "PRODUCER"}: ${m.text}`).join("\n\n");
-    const { spec, usage, problems } = await writeSpec(brief, job.language, new Anthropic({ maxRetries: 3 }));
-    if (problems.length) log(job.id, "spec kept with problems:", problems);
-    log(job.id, `spec ok: ${spec.shots.length} shots, $${usd(usage).toFixed(2)}`);
+    // 1. VideoSpec (a retried job keeps the spec Claude already wrote, if it is still valid: no second bill)
+    let spec: VideoSpecOut;
+    const kept = job.spec ? VideoSpecSchema.safeParse(job.spec) : null;
+    if (kept?.success && !checkSpec(kept.data).length) {
+      spec = kept.data;
+      log(job.id, "reusing the saved spec");
+    } else {
+      const brief = job.transcript.map((m) => `${m.role === "user" ? "CUSTOMER" : "PRODUCER"}: ${m.text}`).join("\n\n");
+      const w = await writeSpec(brief, job.language, new Anthropic({ maxRetries: 3 }));
+      if (w.problems.length) log(job.id, "spec kept with problems:", w.problems);
+      log(job.id, `spec ok: ${w.spec.shots.length} shots, $${usd(w.usage).toFixed(2)}`);
+      spec = w.spec;
+    }
     await set(job.id, { spec, title: spec.title, status: "voicing", progress: 15 });
     // 2. voice
     const voiceId = job.voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE;
