@@ -74,15 +74,15 @@ Deno.serve(async (req) => {
     /** ends a running trial now, on `target` if given: Stripe bills the full plan price at once */
     const endTrial = async (sub: any, target: PlanKey) => {
       const current = planOfPrice(sub.items.data[0].price.id);
-      const params: Record<string, string> = { trial_end: 'now', proration_behavior: 'none', 'expand[]': 'latest_invoice' };
       if (target !== current) {
+        // switch the plan first, while still in trial (no charge): ending the trial in the same call as a price change
+        // left the subscription on the new plan with no invoice at all
         const price = Deno.env.get(PRODUCTS[target].env);
         if (!price) return json({ error: 'Price not configured.' }, 503);
-        params['items[0][id]'] = sub.items.data[0].id;
-        params['items[0][price]'] = price;
-        params['metadata[product]'] = target;
+        await stripe(`subscriptions/${sub.id}`, { 'items[0][id]': sub.items.data[0].id, 'items[0][price]': price, proration_behavior: 'none', 'metadata[product]': target });
       }
-      const updated = await stripe(`subscriptions/${sub.id}`, params);
+      // then end the trial: Stripe bills the new period at the plan's full price
+      const updated = await stripe(`subscriptions/${sub.id}`, { trial_end: 'now', proration_behavior: 'none', 'expand[]': 'latest_invoice' });
       const inv = updated?.latest_invoice;
       const paid = inv?.status === 'paid';
       return json({ ok: true, status: updated.status, paid, product: target, invoice_url: paid ? null : inv?.hosted_invoice_url ?? null });
