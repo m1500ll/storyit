@@ -15,7 +15,7 @@ export function MarketingNavbar() {
           <a href="/#pricing" className="hover:text-zinc-100">Pricing</a>
           <a href="/#faq" className="hover:text-zinc-100">FAQ</a>
         </nav>
-        <div className="flex items-center gap-2"><ThemeToggle />{!session && <Link to="/login?mode=signin" className="hidden px-3 text-sm text-zinc-400 hover:text-zinc-100 sm:block">Sign in</Link>}<Link to={session ? '/app' : '/login'}><Button size="sm">{session ? 'My studio' : 'Try for $1'}</Button></Link></div>
+        <div className="flex items-center gap-2"><ThemeToggle />{!session && <Link to="/login?mode=signin" className="hidden px-3 text-sm text-zinc-400 hover:text-zinc-100 sm:block">Sign in</Link>}<Link to={session ? '/app' : '/login'}><Button size="sm">{session ? 'My studio' : 'Create my 3D video'}</Button></Link></div>
       </div>
     </header>
   );
