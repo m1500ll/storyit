@@ -1,7 +1,7 @@
 // Supabase Edge Function: `dubbing` (video translation)
 // - list: the caller's translations
 // - create { source_path, language, voice_id?, replace_captions?, seconds, title? }: the video was uploaded by the browser
-//   to library/<uid>/dubs/...; charges DUB_CREDITS_PER_MIN credits per started minute (default 15) and queues the job for
+//   to library/<uid>/dubs/...; charges DUB_CREDITS_PER_MIN credits per started minute (default 35) and queues the job for
 //   the render worker (dub/dub.py), which refunds the credits if it fails.
 // - url { id, download? }: short-lived link to the finished video
 // - delete { id }: removes a finished or failed translation (not the video already added to the library)
@@ -17,7 +17,7 @@ const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: 
 
 const LANGS = ['fr', 'en', 'es']; // the languages with curated voices (src/services/voices.ts)
 const MAX_SECONDS = 180;
-const PER_MIN = Number(Deno.env.get('DUB_CREDITS_PER_MIN') ?? '15');
+const PER_MIN = Number(Deno.env.get('DUB_CREDITS_PER_MIN') ?? '35');
 export const dubCost = (seconds: number) => PER_MIN * Math.max(1, Math.ceil(seconds / 60));
 
 Deno.serve(async (req) => {

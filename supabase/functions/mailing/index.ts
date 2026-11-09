@@ -45,7 +45,7 @@ const CAMPAIGNS: Record<string, Campaign> = {
 <tr><td>🎵 la <strong>musique et les effets d’origine</strong> gardés,</td></tr>
 <tr><td>💬 les <strong>sous-titres incrustés remplacés</strong> par des sous-titres traduits,</td></tr>
 <tr><td>🎬 le montage reste exactement le même.</td></tr></table></td></tr>
-<tr><td style="font-size:14px;line-height:1.6;color:#4b4560">Envoyez simplement votre vidéo verticale (3 minutes maximum). 15 crédits par minute de vidéo, remboursés si la traduction échoue.</td></tr>
+<tr><td style="font-size:14px;line-height:1.6;color:#4b4560">Envoyez simplement votre vidéo verticale (3 minutes maximum). 35 crédits par minute de vidéo, remboursés si la traduction échoue.</td></tr>
 <tr><td align="center" style="padding:26px 0 8px"><a href="${APP}/app/translate" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:14px 26px;border-radius:12px">Traduire une vidéo</a></td></tr>`, unsub),
     text: (unsub) => `Bonjour,
 
@@ -56,7 +56,7 @@ Nouveauté sur Storyit : la traduction de vidéos. Une vidéo, plusieurs langues
 - les sous-titres incrustés remplacés par des sous-titres traduits,
 - le montage reste exactement le même.
 
-Envoyez simplement votre vidéo verticale (3 minutes maximum). 15 crédits par minute de vidéo, remboursés si la traduction échoue.
+Envoyez simplement votre vidéo verticale (3 minutes maximum). 35 crédits par minute de vidéo, remboursés si la traduction échoue.
 
 Traduire une vidéo : ${APP}/app/translate
 
