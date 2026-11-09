@@ -52,6 +52,9 @@ export const ANIMATED_LENGTHS = [
   { seconds: 120, label: '2 minutes', credits: 120 },
 ] as const;
 export type AnimatedLength = (typeof ANIMATED_LENGTHS)[number]['seconds'];
+/** video translation: credits per started minute of video. Must match DUB_CREDITS_PER_MIN in supabase/functions/dubbing. */
+export const DUB_CREDITS_PER_MIN = 15;
+export const dubCost = (seconds: number) => DUB_CREDITS_PER_MIN * Math.max(1, Math.ceil(seconds / 60));
 /** how many 30-second animated videos a credit balance pays for (the figure the landing page shows) */
 export const videosFor = (credits: number) => Math.floor(credits / ANIMATED_LENGTHS[0].credits);
 export const projectsFor = (credits: number) => Math.floor(credits / PROMPT_PROJECT_COST);

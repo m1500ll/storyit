@@ -3,6 +3,7 @@
 #   (RENDER_WORKER_URL = https://<workspace>--storyit-render-api.modal.run/wake, RENDER_WORKER_TOKEN as Bearer).
 # - poll:  every 5 minutes, in case a wake-up was missed.
 # - drain: claims queued shorts one by one and produces them (worker/pipeline.ts).
+# - drain_dub: claims queued video translations (dub_jobs) and produces them (dub/dub.py); api /wake-dub starts it.
 # Rendering: software WebGL (swangle) on 32 CPU cores by default: proven, ~15-25 min per 60 s short.
 # GPU option: deploy with DEPLOY_GPU=1 (needs a payment method on Modal), then set RENDER_MODE=gpu in the secret to
 # render on an L4 with ANGLE/EGL (faster; verify one render first).
@@ -30,6 +31,13 @@ image = (
     .env({"PYTHON": "python3", "REMOTION_GL": "swangle", "RENDER_CHUNKS": "4", "RENDER_CONCURRENCY": "4"})
 )
 
+# video translation (dub/dub.py): the render image plus Demucs (voice / music separation, model baked in) and OpenCV
+dub_image = (
+    image.pip_install("torch==2.5.1", "torchaudio==2.5.1", index_url="https://download.pytorch.org/whl/cpu")
+    .pip_install("demucs==4.0.1", "soundfile==0.12.*", "opencv-python-headless==4.10.*")
+    .run_commands("python -c \"from demucs.pretrained import get_model; get_model('htdemucs')\"")
+)
+
 app = modal.App("storyit-render", image=image)
 secret = modal.Secret.from_name("storyit-render")
 
@@ -55,6 +63,11 @@ if os.environ.get("DEPLOY_GPU") == "1":
         _drain()
 
 
+@app.function(image=dub_image, secrets=[secret], cpu=16.0, memory=16384, timeout=60 * 60, max_containers=2)
+def drain_dub():
+    subprocess.run(["python3", "dub/dub.py"], cwd="/app", env=dict(os.environ), check=True)
+
+
 def _start():
     gpu = os.environ.get("RENDER_MODE") == "gpu" and "drain_gpu" in globals()
     (globals()["drain_gpu"] if gpu else drain_cpu).spawn()
@@ -74,6 +87,13 @@ def api():
         _start()
         return {"started": True}
 
+    @web.post("/wake-dub")
+    def wake_dub_route(authorization: str = Header(default="")):
+        if authorization != f"Bearer {os.environ['RENDER_WORKER_TOKEN']}":
+            raise HTTPException(status_code=401)
+        drain_dub.spawn()
+        return {"started": True}
+
     return web
 
 
@@ -88,3 +108,8 @@ def poll():
     with urllib.request.urlopen(req, timeout=20) as r:
         if json.load(r):
             _start()
+    req = urllib.request.Request(os.environ["SUPABASE_URL"].rstrip("/") + "/rest/v1/dub_jobs?status=eq.queued&select=id&limit=1",
+                                 headers={"apikey": key, "Authorization": f"Bearer {key}"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        if json.load(r):
+            drain_dub.spawn()

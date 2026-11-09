@@ -1,5 +1,5 @@
 import {
-  BookOpen, CalendarDays, Clapperboard, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, Wand2 } from 'lucide-react';
+  BookOpen, CalendarDays, Clapperboard, Languages, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, Wand2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useCredits } from '@/hooks/useStore';
 import { creditLevel, projectsFor } from '@/services/credits';
@@ -51,6 +51,7 @@ export function Sidebar() {
       title: 'Create',
       items: [
         { to: '/app/studio', label: 'Animated Studio', icon: Clapperboard, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[11px] text-violet-300">New</span> },
+        { to: '/app/translate', label: 'Traduire une vidéo', icon: Languages, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[11px] text-violet-300">New</span> },
         { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2 },
       ],
     },

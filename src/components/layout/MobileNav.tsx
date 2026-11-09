@@ -1,5 +1,5 @@
 import {
-  BookOpen, CalendarDays, Clapperboard, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Menu, Send,
+  BookOpen, CalendarDays, Clapperboard, Languages, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Menu, Send,
   Settings, TrendingUp, Wand2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -21,6 +21,7 @@ const sections = [
   ] },
   { title: 'Create', items: [
     { to: '/app/studio', label: 'Animated Studio', icon: Clapperboard, badge: 'New' },
+    { to: '/app/translate', label: 'Traduire une vidéo', icon: Languages, badge: 'New' },
     { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2 },
   ] },
   { title: 'Grow', items: [

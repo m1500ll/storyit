@@ -17,6 +17,7 @@ const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const PromptStudioPage = lazy(() => import('@/pages/PromptStudioPage'));
 const AnimatedStudioPage = lazy(() => import('@/pages/AnimatedStudioPage'));
+const TranslatePage = lazy(() => import('@/pages/TranslatePage'));
 const AccountsPage = lazy(() => import('@/pages/AccountsPage'));
 const LibraryPage = lazy(() => import('@/pages/LibraryPage'));
 const DistributePage = lazy(() => import('@/pages/DistributePage'));
@@ -44,6 +45,7 @@ export default function App() {
               <Route index element={<DashboardPage />} />
               <Route path="accounts" element={<SocialPause><SubscriberGate><AccountsPage /></SubscriberGate></SocialPause>} />
               <Route path="studio" element={<AnimatedStudioPage />} />
+              <Route path="translate" element={<TranslatePage />} />
               <Route path="studio/:projectId" element={<AnimatedStudioPage />} />
               {/* the old Gemini/Veo episode studio was replaced by the Animated Studio */}
               {['new', 'review', 'episodes', 'characters', 'stories/*'].map((p) => <Route key={p} path={p} element={<Navigate to="/app/studio" replace />} />)}
