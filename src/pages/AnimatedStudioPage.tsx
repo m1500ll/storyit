@@ -1,4 +1,4 @@
-import { BookOpen, Building2, Check, ChevronLeft, Clapperboard, Crown, Dices, Download, FlaskConical, Landmark, Loader2, MapPin, Pause, PawPrint, Play, Scale, Send, Sparkles, Trash2, Trophy, type LucideIcon } from 'lucide-react';
+import { BookOpen, Building2, Check, ChevronLeft, Clapperboard, Clock, Crown, Dices, Download, FlaskConical, Landmark, Loader2, MapPin, Pause, PawPrint, Play, Scale, Send, Sparkles, Trash2, Trophy, type LucideIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, LoadState, PageHeader, ProgressBar, useToast } from '@/components/ui';
@@ -6,7 +6,7 @@ import { usePaywall } from '@/components/billing/Paywall';
 import { useLiveQuery } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
 import { InsufficientCreditsError } from '@/services/errors';
-import { ANIMATED_SHORT_COST } from '@/services/credits';
+import { ANIMATED_LENGTHS, type AnimatedLength } from '@/services/credits';
 import { animatedStudio, type AnimatedProject, type AnimatedStatus, type Brief, type ChatLine, type Choices, type TitleStyle } from '@/services/animatedStudio';
 import { voicesFor, type Voice } from '@/services/voices';
 
@@ -74,7 +74,7 @@ function Start() {
           className="h-11 rounded-xl border border-line/10 bg-ink-950 px-3 text-base sm:h-10 text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 sm:text-sm">
           {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
         </select>
-        <span className="text-xs text-zinc-500">La discussion est gratuite. La vidéo coûte {ANIMATED_SHORT_COST} crédits, remboursés si le rendu échoue.</span>
+        <span className="text-xs text-zinc-500">La discussion est gratuite. La vidéo coûte de 35 à 120 crédits selon sa durée, remboursés si le rendu échoue.</span>
       </div>
       <h2 className="mb-3 text-sm font-semibold text-zinc-100">1. Choisissez un thème</h2>
       <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Thèmes">
@@ -225,6 +225,28 @@ function BriefCard({ brief }: { brief: Brief }) {
   );
 }
 
+/** video length with its price (2 minutes is the rare long format) */
+function LengthPicker({ value, onChange }: { value: AnimatedLength; onChange: (s: AnimatedLength) => void }) {
+  return (
+    <div role="radiogroup" aria-label="Durée de la vidéo" className="grid grid-cols-3 gap-2">
+      {ANIMATED_LENGTHS.map((l) => {
+        const on = l.seconds === value;
+        return (
+          <button key={l.seconds} type="button" role="radio" aria-checked={on} onClick={() => onChange(l.seconds)}
+            className={cn('surface flex min-h-[64px] flex-col items-start justify-center rounded-2xl px-3 py-2.5 text-left transition-colors [touch-action:manipulation] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50',
+              on && 'border-violet-500/60 bg-violet-500/10')}>
+            <span className="flex w-full items-center gap-1.5 text-sm font-medium text-zinc-100">
+              <Clock className="h-4 w-4 shrink-0 text-violet-300" aria-hidden />{l.label}
+              {on && <Check className="ml-auto h-4 w-4 shrink-0 text-violet-300" aria-hidden />}
+            </span>
+            <span className="mt-0.5 text-xs tabular-nums text-zinc-400">{l.credits} crédits</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 const TITLE_STYLES: { id: TitleStyle; name: string; text: string }[] = [
   { id: 'choc', name: 'Choc', text: 'Grosses lettres, mot-choc en jaune' },
   { id: 'bandeau', name: 'Bandeau info', text: 'Bandeau rouge « histoire vraie »' },
@@ -310,6 +332,8 @@ function Project({ id }: { id: string }) {
   const [dlUrl, setDlUrl] = useState<string | null>(null);
   const [voice, setVoice] = useState<string | null>(null);
   const [titleStyle, setTitleStyle] = useState<TitleStyle>('choc');
+  const [length, setLength] = useState<AnimatedLength>(60);
+  const cost = ANIMATED_LENGTHS.find((l) => l.seconds === length)!.credits;
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => animatedStudio.watch(id, () => undefined), [id]);
@@ -340,7 +364,7 @@ function Project({ id }: { id: string }) {
   };
   const generate = async () => {
     setLaunching(true); setError(null);
-    try { await animatedStudio.generate(id, project.language, chosenVoice, titleStyle); toast('Vidéo lancée. Vous pouvez quitter la page.'); }
+    try { await animatedStudio.generate(id, project.language, chosenVoice, titleStyle, length); toast('Vidéo lancée. Vous pouvez quitter la page.'); }
     catch (e) {
       if (e instanceof InsufficientCreditsError) openPaywall();
       setError(e instanceof Error ? e.message : String(e));
@@ -425,11 +449,13 @@ function Project({ id }: { id: string }) {
           <h2 className="mb-2 mt-5 text-sm font-semibold text-zinc-100">Choisissez le style du titre d’accroche</h2>
           <p className="mb-2 text-xs text-zinc-400">La phrase-choc s’affiche en grand au début de la vidéo, puis les sous-titres prennent le relais.</p>
           <TitleStylePicker value={titleStyle} onChange={setTitleStyle} />
+          <h2 className="mb-2 mt-5 text-sm font-semibold text-zinc-100">Choisissez la durée</h2>
+          <LengthPicker value={length} onChange={setLength} />
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button loading={launching} disabled={sending} onClick={() => void generate()}>
-              <Clapperboard className="h-4 w-4" /> Générer la vidéo · {ANIMATED_SHORT_COST} crédits
+              <Clapperboard className="h-4 w-4" /> Générer la vidéo · {cost} crédits
             </Button>
-            <span className="text-xs text-zinc-500">Débités une seule fois, remboursés si le rendu échoue. Environ 30 minutes.</span>
+            <span className="text-xs text-zinc-500">Débités une seule fois, remboursés si le rendu échoue. Environ {length === 120 ? '1 heure' : length === 30 ? '15 minutes' : '30 minutes'}.</span>
           </div>
         </Card>
       )}

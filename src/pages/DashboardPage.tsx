@@ -1,5 +1,4 @@
 import { ArrowRight, Clapperboard, Plus, Sparkles } from 'lucide-react';
-import { ANIMATED_SHORT_COST } from '@/services/credits';
 import { useNavigate } from 'react-router-dom';
 import { DistributionOverview } from '@/components/dashboard/DistributionOverview';
 import { PromptStudioHero } from '@/components/dashboard/PromptStudioHero';
@@ -35,7 +34,7 @@ export default function DashboardPage() {
           <p className="mt-2 text-sm text-zinc-400">Chat with the studio to pick a true story and a decor. Storyit then produces a 60-second vertical video: painted 3D world, cartoon characters, narration, music and sound effects.</p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button variant="secondary" onClick={() => navigate('/app/studio')}><Clapperboard className="h-4 w-4" /> Open the Animated Studio</Button>
-            <span className="text-xs text-zinc-500 tabular-nums">{ANIMATED_SHORT_COST} credits per video · refunded if the render fails</span>
+            <span className="text-xs text-zinc-500 tabular-nums">From 35 credits per video · refunded if the render fails</span>
           </div>
         </Card>
         <CreditCard />

@@ -26,7 +26,7 @@ const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_
 const WORKER = `${os.hostname()}-${process.pid}`;
 
 type Line = { role: string; text: string; choices?: { step: string; options: { title: string; detail: string }[] }; brief?: { title: string; hook: string; format: string; decor: string; language: string; facts: { fact: string; source: string }[] } };
-type Job = { id: string; user_id: string; transcript: Line[]; language: string; voice_id: string | null; title_style?: string | null; credits_charged: number; spec: unknown | null };
+type Job = { id: string; user_id: string; transcript: Line[]; language: string; voice_id: string | null; title_style?: string | null; length_s?: number | null; credits_charged: number; spec: unknown | null };
 
 const set = (id: string, patch: Record<string, unknown>) => db.from("animated_projects").update(patch).eq("id", id);
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
@@ -76,12 +76,12 @@ export async function produce(job: Job) {
     // 1. VideoSpec (a retried job keeps the spec Claude already wrote, if it is still valid: no second bill)
     let spec: VideoSpecOut;
     const kept = job.spec ? VideoSpecSchema.safeParse(job.spec) : null;
-    if (kept?.success && !checkSpec(kept.data).length) {
+    if (kept?.success && !checkSpec(kept.data, job.length_s ?? 60).length) {
       spec = kept.data;
       log(job.id, "reusing the saved spec");
     } else {
       const brief = briefText(job.transcript);
-      const w = await writeSpec(brief, job.language, new Anthropic({ maxRetries: 3 }));
+      const w = await writeSpec(brief, job.language, new Anthropic({ maxRetries: 3 }), job.length_s ?? 60);
       if (w.problems.length) log(job.id, "spec kept with problems:", w.problems);
       log(job.id, `spec ok: ${w.spec.shots.length} shots, $${usd(w.usage).toFixed(2)}`);
       spec = w.spec;

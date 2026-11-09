@@ -143,3 +143,6 @@ export const seedNote = (taken: string[]) =>
 
 /** customer-facing price of one animated short, in credits (env-overridable once real costs are measured) */
 export const ANIMATED_COST = Number(Deno.env.get('ANIMATED_CREDITS') ?? '60');
+/** price in credits of each video length the customer can pick (seconds -> credits). Keep in sync with
+ *  src/services/credits.ts (ANIMATED_LENGTHS). */
+export const LENGTH_COST: Record<number, number> = { 30: 35, 60: ANIMATED_COST, 120: 120 };

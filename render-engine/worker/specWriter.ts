@@ -5,7 +5,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { MODEL, specSystemText } from "./prompts.js";
-import { VideoSpecSchema, checkNarration, checkSpec, normalizeScript, type VideoSpecOut } from "./specSchema.js";
+import { lengthPlan, VideoSpecSchema, checkNarration, checkSpec, normalizeScript, type VideoSpecOut } from "./specSchema.js";
 
 export type SpecResult = { spec: VideoSpecOut; usage: Anthropic.Beta.BetaUsage[]; problems: string[] };
 
@@ -30,15 +30,21 @@ const systemText = () =>
     JSON.stringify(z.toJSONSchema(VideoSpecSchema)));
 
 /** problems the video survives (style, length a little off, an unused drawing): worth no full rewrite on their own */
-const MINOR = [/^script has (1[1-3]\d|2[3-5]\d) words/, /words and no comma/, /three long sentences in a row/, /is drawn but no group uses it/,
+const MINOR = [/words and no comma/, /three long sentences in a row/, /is drawn but no group uses it/,
   /keep each drawing under/, /^the hook \(line 0\) has (1[3-6]) words/, /has a word in capitals/];
-const isMinor = (p: string) => MINOR.some((r) => r.test(p));
+/** a word count within 20% outside the accepted range is a few seconds off: minor */
+const isMinor = (p: string, seconds: number) => {
+  const n = /^script has (\d+) words/.exec(p);
+  if (n) { const { ok } = lengthPlan(seconds); const w = Number(n[1]); return w >= ok[0] * 0.8 && w <= ok[1] * 1.2; }
+  return MINOR.some((r) => r.test(p));
+};
 
-export async function writeSpec(brief: string, language: string, client = new Anthropic()): Promise<SpecResult> {
+export async function writeSpec(brief: string, language: string, client = new Anthropic(), seconds = 60): Promise<SpecResult> {
+  const plan = lengthPlan(seconds);
   const system: Anthropic.Beta.BetaTextBlockParam[] = [{ type: "text", text: systemText(), cache_control: { type: "ephemeral", ttl: "1h" } }];
   const messages: Anthropic.Beta.BetaMessageParam[] = [{
     role: "user",
-    content: `Narration language: ${language}. Write the whole script in that language.\n\nAGREED BRIEF (chat transcript between the customer and the story producer):\n${brief}`,
+    content: `Narration language: ${language}. Write the whole script in that language.\n\nTARGET LENGTH: ${seconds} seconds: ${plan.aim[0]}-${plan.aim[1]} words, ${plan.lines} script lines, ${plan.shots} shots${seconds <= 30 ? " (compress the formula: hook, setting, two escalation beats, the snap, the twist; at most 3 drawings)" : seconds >= 120 ? " (develop the formula: more escalation beats and a second re-hook; at most 7 drawings)" : ""}. This overrides the default length of the formula.\n\nAGREED BRIEF (chat transcript between the customer and the story producer):\n${brief}`,
   }];
   const usage: Anthropic.Beta.BetaUsage[] = [];
   let best: { spec: VideoSpecOut; problems: string[] } | null = null;
@@ -65,10 +71,10 @@ export async function writeSpec(brief: string, language: string, client = new An
       const parsed = VideoSpecSchema.safeParse(extractJson(textOf(msg)));
       if (parsed.success) {
         const spec = normalizeScript(parsed.data);
-        problems = [...checkSpec(spec), ...checkNarration(spec)];
+        problems = [...checkSpec(spec, seconds), ...checkNarration(spec)];
         if (!best || problems.length < best.problems.length) best = { spec, problems };
         // a full rewrite costs a whole new spec: only for problems that break the video, not for small style ones
-        if (!problems.some((p) => !isMinor(p))) break;
+        if (!problems.some((p) => !isMinor(p, seconds))) break;
       } else problems = zodProblems(parsed.error);
     } catch (e) {
       problems = [`the reply is not one valid JSON object (${e instanceof Error ? e.message : String(e)})`];

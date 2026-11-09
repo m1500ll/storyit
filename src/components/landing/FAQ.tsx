@@ -9,7 +9,7 @@ export const faqs = [
   { q: 'Can the same video be posted twice by mistake?', a: 'No. A video can go to many accounts, but only once per account. If a publication result is uncertain, Storyit asks you to check instead of reposting.' },
   { q: 'Who writes the captions?', a: 'You, or the AI, account by account. Each account can have its own tone, language and hashtags. Nothing is posted before you approve it.' },
   { q: 'What is the Prompt Studio?', a: `A guided writer for 60-second Fruit Drama videos: 3 story options, a 15-20 scene script with dialogue, then one image prompt and one video prompt per scene, a thumbnail and hashtags. A full project costs ${PROMPT_PROJECT_COST} credits.` },
-  { q: 'What is the Animated Studio?', a: `Describe your idea, choose a story and a decor with the studio, and Storyit produces a finished 60-second vertical animated short: 3D world, cartoon characters, narration, music and sound. One short costs ${ANIMATED_SHORT_COST} credits, refunded if the render fails.` },
+  { q: 'What is the Animated Studio?', a: `Describe your idea, choose a story and a decor with the studio, and Storyit produces a finished vertical animated short of 30 seconds, 1 minute or 2 minutes: 3D world, cartoon characters, narration, music and sound. One short costs 35 credits (30 s), ${ANIMATED_SHORT_COST} credits (1 min) or 120 credits (2 min), refunded if the render fails.` },
   { q: 'Can I cancel anytime?', a: 'Yes, from Plan & credits. You keep access until the end of the paid period.' },
 ];
 

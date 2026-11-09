@@ -44,6 +44,14 @@ export const PROMPT_PROJECT_COST = 15;
 /** One finished animated short (Animated Studio), charged once at "Generate" and refunded if the render fails.
  *  Must match ANIMATED_CREDITS (default 60) in supabase/functions/_shared/animatedStudio.ts. */
 export const ANIMATED_SHORT_COST = 60;
+/** video lengths the customer can pick in the Animated Studio, with their price. Must match LENGTH_COST in
+ *  supabase/functions/_shared/animatedStudio.ts. */
+export const ANIMATED_LENGTHS = [
+  { seconds: 30, label: '30 secondes', credits: 35 },
+  { seconds: 60, label: '1 minute', credits: ANIMATED_SHORT_COST },
+  { seconds: 120, label: '2 minutes', credits: 120 },
+] as const;
+export type AnimatedLength = (typeof ANIMATED_LENGTHS)[number]['seconds'];
 export const projectsFor = (credits: number) => Math.floor(credits / PROMPT_PROJECT_COST);
 export type CreditLevel = 'ok' | 'low' | 'empty';
 export const creditLevel = (balance: number): CreditLevel => (balance <= 0 ? 'empty' : balance <= LOW_CREDITS ? 'low' : 'ok');

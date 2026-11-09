@@ -139,11 +139,19 @@ export type VideoSpecOut = z.infer<typeof VideoSpecSchema>;
 export const tokens = (line: string) => line.match(/[\p{L}\p{N}'’-]+/gu)?.filter((t) => /[\p{L}\p{N}]/u.test(t)) ?? [];
 
 /** checks the schema cannot express; returns a list of problems in plain English (empty = OK) */
-export function checkSpec(s: VideoSpecOut): string[] {
+/** target script size for a video length (s): ~3.2 words/s spoken, with pauses */
+export const lengthPlan = (seconds = 60) => {
+  const k = seconds / 60;
+  return { aim: [Math.round(170 * k), Math.round(210 * k)] as const, ok: [Math.round(140 * k), Math.round(230 * k)] as const,
+    lines: seconds <= 30 ? '6-8' : seconds >= 120 ? '20-26' : '10-14', shots: seconds <= 30 ? '6-8' : seconds >= 120 ? '18-24' : '10-14' };
+};
+
+export function checkSpec(s: VideoSpecOut, seconds = 60): string[] {
   const out: string[] = [];
   const counts = s.script.map((l) => tokens(l).length);
   const words = counts.reduce((a, b) => a + b, 0);
-  if (words < 140 || words > 230) out.push(`script has ${words} words; aim for 170-210 (55-60 s at ~3.5 words/s)`);
+  const plan = lengthPlan(seconds);
+  if (words < plan.ok[0] || words > plan.ok[1]) out.push(`script has ${words} words; aim for ${plan.aim[0]}-${plan.aim[1]} (${seconds} s at ~3.5 words/s)`);
   const cue = (c: { line: number; word: number } | undefined, where: string) => {
     if (!c) return;
     if (c.line < 0 || c.line >= counts.length || c.word < 0 || c.word >= counts[c.line]!) out.push(`${where}: cue line ${c.line} word ${c.word} does not exist`);

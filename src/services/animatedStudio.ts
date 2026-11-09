@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { InsufficientCreditsError } from './errors';
 import { store } from './store';
-import { ANIMATED_SHORT_COST } from './credits';
+import { ANIMATED_SHORT_COST, type AnimatedLength } from './credits';
 
 export type AnimatedStatus = 'brief' | 'queued' | 'writing' | 'voicing' | 'rendering' | 'done' | 'failed';
 export type DecorKey = 'river_town' | 'town_square' | 'stadium' | 'castle' | 'city' | 'lab' | 'harbour' | 'farm' | 'desert' | 'space';
@@ -23,8 +23,8 @@ async function call<T>(body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke<T>('animated-studio', { body });
   if (error) {
     const ctx = (error as { context?: Response }).context;
-    const payload = ctx && typeof ctx.json === 'function' ? ((await ctx.json().catch(() => ({}))) as { error?: string; code?: string }) : {};
-    if (payload.code === 'insufficient_credits') throw new InsufficientCreditsError(ANIMATED_SHORT_COST, 0);
+    const payload = ctx && typeof ctx.json === 'function' ? ((await ctx.json().catch(() => ({}))) as { error?: string; code?: string; needed?: number }) : {};
+    if (payload.code === 'insufficient_credits') throw new InsufficientCreditsError(payload.needed ?? ANIMATED_SHORT_COST, 0);
     throw new Error(payload.error ?? error.message);
   }
   return data as T;
@@ -50,8 +50,8 @@ export const animatedStudio = {
     return r;
   },
   /** Charges ANIMATED_SHORT_COST credits once and queues the render (refunded by the worker if it fails). */
-  async generate(projectId: string, language: string, voiceId?: string, titleStyle?: TitleStyle): Promise<void> {
-    await call({ action: 'generate', project_id: projectId, language, voice_id: voiceId, title_style: titleStyle });
+  async generate(projectId: string, language: string, voiceId?: string, titleStyle?: TitleStyle, length: AnimatedLength = 60): Promise<void> {
+    await call({ action: 'generate', project_id: projectId, language, voice_id: voiceId, title_style: titleStyle, length });
     store.notify();
   },
   /** Short-lived URL of the finished MP4 (private bucket). With `download`, the file is served as an attachment under
