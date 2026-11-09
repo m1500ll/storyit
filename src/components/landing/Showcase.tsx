@@ -12,10 +12,10 @@ export function Showcase() {
       <p className="mx-auto mt-3 max-w-xl text-center text-sm text-zinc-400">
         One-minute 3D animated shorts of true stories, with a narrator, music and captions: a strong hook, a twist, and viewers who watch to the end. Tap a video to watch it with sound.
       </p>
-      <div className="mx-auto mt-12 grid max-w-3xl grid-cols-3 gap-3 md:gap-6">
+      <div className="mt-12 grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-6">
         {SHOWCASE.map((v) => <VideoCard key={v.slug} video={v} onOpen={() => setOpen(v)} />)}
       </div>
-      <p className="mt-6 text-center text-xs text-zinc-600">Videos made by the Storyit team with the same Animated Studio you get: choose a story, a decor and a voice.</p>
+      <p className="mt-6 text-center text-xs text-zinc-600">Videos made by Storyit customers and our team with the Animated Studio: choose a story, a decor and a voice.</p>
       <VideoLightbox video={open} onClose={() => setOpen(null)} />
     </section>
   );

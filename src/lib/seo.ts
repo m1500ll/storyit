@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 
 const SITE = 'https://storyit.fun';
-const DEFAULT_TITLE = 'Storyit — Upload once, post on every TikTok & Instagram account';
-const DEFAULT_DESC = 'Schedule and publish your videos to several TikTok and Instagram accounts from one library, with a caption per account and no accidental duplicates.';
+const DEFAULT_TITLE = 'Storyit — 3D animated videos from true stories, made by AI';
+const DEFAULT_DESC = 'Pick a true story, a decor and a voice: Storyit makes a finished 3D animated video with narration, music, hook title and captions, ready for TikTok, Reels and Shorts.';
 
 function setMeta(attr: 'name' | 'property', key: string, value: string) {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);

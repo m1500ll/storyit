@@ -2,6 +2,7 @@ import { ArrowRight, Play } from 'lucide-react';
 import { useState } from 'react';
 import { RESULT_HIGHLIGHTS } from '@/data/results';
 import { SHOWCASE, type ShowcaseVideo } from '@/data/showcase';
+import { PLANS, videosFor } from '@/services/credits';
 import { Button } from '../ui';
 import { VideoCard } from './VideoCard';
 import { VideoLightbox } from './VideoLightbox';
@@ -10,7 +11,7 @@ import { StartLink } from './StartLink';
 const FAN = [
   { tilt: -6, y: 18 }, { tilt: -3, y: 4 }, { tilt: 0, y: -6 }, { tilt: 3, y: 4 }, { tilt: 6, y: 18 },
 ];
-const OUTPUTS = ['Several TikTok & Instagram accounts', 'One video library', 'Calendar & rotation', 'A caption per account', 'Prompt Studio for Fruit Drama'];
+const OUTPUTS = ['3D worlds & cartoon characters', 'A narrator voice', 'Music & sound effects', 'Hook title & captions', '30 s, 1 min or 2 min', 'Ready for TikTok, Reels & Shorts'];
 
 export function Hero() {
   const [open, setOpen] = useState<ShowcaseVideo | null>(null);
@@ -23,19 +24,19 @@ export function Hero() {
           <span aria-hidden>🎉</span> Launch offer: Creator at $29/mo instead of $45 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
         </StartLink>
         <p className="label mx-auto inline-flex items-center gap-2 rounded-full border border-line/10 px-3 py-1">
-          <span className="h-1.5 w-1.5 rounded-full bg-coral-400" /> For TikTok and Instagram Reels
+          <span className="h-1.5 w-1.5 rounded-full bg-coral-400" /> AI 3D animated videos · TikTok, Reels, Shorts
         </p>
         <h1 className="mx-auto mt-6 max-w-4xl font-display text-5xl leading-[1.05] text-zinc-50 md:text-7xl">
-          Upload once. Post on every account.
+          Turn any true story into a <span className="text-violet-300">3D animated video</span>.
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-base text-zinc-400 md:text-lg">
-          Storyit sends each video to all your TikTok and Instagram accounts on a schedule, writes a caption for each account, and never posts the same video twice to the same account. Your browser can stay closed.
+          Pick a story, a decor and a voice. Storyit writes the script, animates the 3D world and its characters, records the narrator and adds the hook title, captions and music. A finished vertical video, ready to post.
         </p>
         <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-          <StartLink to="/app/billing"><Button size="lg">Get started for $29/mo <ArrowRight className="h-4 w-4" /></Button></StartLink>
-          <a href="#how"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> See how it works</Button></a>
+          <StartLink to="/app/studio"><Button size="lg">Create my 3D video <ArrowRight className="h-4 w-4" /></Button></StartLink>
+          <a href="#examples"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> Watch examples</Button></a>
         </div>
-        <p className="mt-4 text-xs text-zinc-400"><strong className="text-zinc-200">Launch offer</strong>: <s className="text-zinc-500">$45</s> $29/mo. Cancel anytime. Or <StartLink to="/app" className="touch-hit text-violet-300 underline-offset-2 hover:underline">start free with 30 credits</StartLink>, no card.</p>
+        <p className="mt-4 text-xs text-zinc-400"><strong className="text-zinc-200">Up to {videosFor(PLANS.find((p) => p.id === 'creator')!.credits)} videos a month</strong> with Creator, <s className="text-zinc-500">$45</s> $29/mo. Cancel anytime. Or <StartLink to="/app" className="touch-hit text-violet-300 underline-offset-2 hover:underline">start free with 30 credits</StartLink>, no card.</p>
         <a href="#results" className="group mx-auto mt-6 flex max-w-fit flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] px-5 py-3 transition hover:border-emerald-500/40">
           {RESULT_HIGHLIGHTS.slice(0, 2).map((h) => (
             <span key={h.label} className="text-sm text-zinc-300"><strong className="font-display text-xl tabular-nums text-zinc-50">{h.value}</strong> {h.label}</span>
@@ -44,9 +45,9 @@ export function Hero() {
         </a>
 
         <div className="mx-auto mt-14 flex max-w-4xl items-start justify-center gap-2 sm:gap-4">
-          {SHOWCASE.slice(0, 3).map((v, i) => (
-            <div key={v.slug} className="w-1/3 max-w-[190px] sm:w-1/4"
-              style={{ transform: `translateY(${FAN[i + 1]!.y}px) rotate(${FAN[i + 1]!.tilt}deg)` }}>
+          {SHOWCASE.slice(0, 5).map((v, i) => (
+            <div key={v.slug} className={i === 0 || i === 4 ? 'hidden w-1/5 max-w-[170px] sm:block' : 'w-1/3 max-w-[170px] sm:w-1/5'}
+              style={{ transform: `translateY(${FAN[i]!.y}px) rotate(${FAN[i]!.tilt}deg)` }}>
               <VideoCard video={v} compact onOpen={() => setOpen(v)} />
             </div>
           ))}

@@ -52,6 +52,8 @@ export const ANIMATED_LENGTHS = [
   { seconds: 120, label: '2 minutes', credits: 120 },
 ] as const;
 export type AnimatedLength = (typeof ANIMATED_LENGTHS)[number]['seconds'];
+/** how many 30-second animated videos a credit balance pays for (the figure the landing page shows) */
+export const videosFor = (credits: number) => Math.floor(credits / ANIMATED_LENGTHS[0].credits);
 export const projectsFor = (credits: number) => Math.floor(credits / PROMPT_PROJECT_COST);
 export type CreditLevel = 'ok' | 'low' | 'empty';
 export const creditLevel = (balance: number): CreditLevel => (balance <= 0 ? 'empty' : balance <= LOW_CREDITS ? 'low' : 'ok');

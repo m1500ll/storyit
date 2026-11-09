@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { CREDIT_PACKS, PLANS } from '@/services/credits';
+import { CREDIT_PACKS, PLANS, videosFor } from '@/services/credits';
 import { Button } from '../ui';
 import { StartLink } from './StartLink';
 
@@ -28,6 +28,9 @@ export function Pricing() {
               </p>
               {'compareAt' in p && <p className="mt-2 text-xs"><span className="rounded-full bg-coral-500/15 px-2 py-0.5 font-medium text-coral-300">Launch offer</span></p>}
 
+              {p.price > 0 && (
+                <p className="mt-4 rounded-xl bg-violet-500/10 px-3 py-2 text-sm text-violet-200"><strong className="font-display text-2xl tabular-nums text-zinc-50">{videosFor(p.credits)}</strong> 3D videos a month</p>
+              )}
               <ul className="mt-6 flex-1 space-y-2.5">
                 {p.perks.map((perk) => (
                   <li key={perk} className="flex items-start gap-2 text-sm text-zinc-400"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-400" />{perk}</li>
