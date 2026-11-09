@@ -109,6 +109,11 @@ export const VideoSpecSchema = z.object({
   title: z.string(),
   language: z.string(),
   script: z.array(z.string()).describe('the narration, one sentence or beat per line; cues index into it'),
+  hook_title: z.object({
+    text: z.string().describe('the big title shown during the hook line: at most 10 words'),
+    highlight: z.string().describe('the 1-4 words of text shown in yellow, copied exactly from text'),
+    kicker: z.string().describe('a tiny line above: year and place in capitals ("1474 · BÂLE"), or empty'),
+  }).describe('the hook title shown on screen at the start'),
   facts: z.array(z.object({ claim: z.string(), source: z.string() })),
   decor: Decor,
   art: z.array(z.object({
@@ -299,7 +304,7 @@ export function checkNarration(s: { script: string[] }): string[] {
   const out: string[] = [];
   const words = (l: string) => l.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
   const hook = s.script[0] ?? "";
-  if (words(hook) > 16) out.push(`the hook (line 0) has ${words(hook)} words: make it a punchy promise of at most 14 words`);
+  if (words(hook) > 12) out.push(`the hook (line 0) has ${words(hook)} words: make it a punchy shock of at most 12 words`);
   if (/^\s*(en|in)\s+(l'an\s+)?[\d\p{L}-]*\s*\d{3,4}\b/iu.test(hook) || /^\s*(il était une fois|once upon a time|saviez-vous|did you know)/iu.test(hook)) out.push("the hook (line 0) starts with a date or a stock opening: open on the shocking fact or the stake instead");
   s.script.forEach((l, i) => {
     const n = words(l);

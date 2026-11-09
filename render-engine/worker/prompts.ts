@@ -15,10 +15,10 @@ export const PROPS: Record<string, number> = {
   'stall-green': 2.6, 'stall-bench': 0.9, 'banner-red': 3.2, 'banner-green': 3.2, windmill: 9, canoe: 0.6,
 };
 
-const STYLE = `STYLE (fixed, never change it): flat 2D bean-headed cartoon characters with plum ink outlines, standing in a painted, ink-outlined, saturated 3D world; gliding cameras; depth of field on close shots; a white flash after the hook; golden light for the explanation beat. No captions or text on screen. One steady narrator voice.
+const STYLE = `STYLE (fixed, never change it): flat 2D bean-headed cartoon characters with plum ink outlines, standing in a painted, ink-outlined, saturated 3D world; gliding cameras; depth of field on close shots; a white flash after the hook; golden light for the explanation beat. The engine itself shows the big hook title at the start and one-word captions on the narration: never draw text in art. One steady narrator voice.
 
 STORY FORMULA (55-60 s, 170-210 words, one sentence or beat per script line, 10-14 lines):
-1. Hook: the absurd true fact as a promise in one short line (see NARRATION CRAFT).
+1. Hook: the absurd true fact stated flatly as a fact, a paradox that sounds impossible ("Un homme a vendu la tour Eiffel. Deux fois."), in one short line (see NARRATION CRAFT).
 2. Setting: year, place, why it mattered.
 3. Action: escalation over three or four beats, each a little bigger.
 4. Snap: the moment it goes wrong (or almost).
@@ -30,7 +30,8 @@ Never describe on screen what the viewer already sees. Every joke is a real, sou
 
 NARRATION CRAFT (this is what makes the short worth watching; never write a neutral encyclopedia voice):
 - A storyteller talking to ONE friend, live: warm, amused, a little conspiratorial. Second person and rhetorical questions are welcome ("Tu imagines ?", "Imagine."). Present tense for the action, so it happens now.
-- The first line is the whole battle: a jaw-dropping, concrete promise in at most 14 words that opens a question the viewer must see answered (a number, a contradiction, a stake). Never start with a date, "Il était une fois", "Saviez-vous" or a definition.
+- The first line is the whole battle: at most 12 words, no setup, the most shocking fact of the story said first (a punishment, a contradiction, a crazy number), cut so the viewer must know how or why ("Un coq condamné à mort… pour avoir pondu un œuf.", "Tuer un chien ? La peine de mort.", "74 soldats ont détruit un pont… en marchant."). Never start with a date, a place, "Il était une fois", "Saviez-vous" or a definition: the date and place go in the second line (and in the title kicker).
+- hook_title: the big title shown on screen during the first line. text = the hook line itself or a tighter version of it (at most 10 words, same language, same punctuation rules); highlight = the 1 to 4 words of text that carry the shock (copied exactly from text; they are shown in yellow); kicker = a tiny line above it, the year and place in capitals separated by " · " ("1474 · BÂLE"), or "" when there is no date. Do not set style (the customer chooses it).
 - Re-hook every 3 or 4 lines with a turn that raises the stakes ("Mais ça, ce n'est rien.", "Et c'est là que tout dérape.", "Sauf que personne n'avait prévu une chose."). Each beat must be bigger than the last.
 - Concrete beats abstract: names, numbers, objects, sounds, a smell, a gesture. One vivid detail per beat; cut every filler word, every "en effet", "ainsi", "donc", every passive sentence.
 - Rhythm: mostly short sentences (6 to 14 words), then one longer one to breathe, then a 2-4 word punch line alone ("Silence.", "Le pont tremble."). Vary the length; never three long lines in a row.

@@ -31,7 +31,7 @@ const systemText = () =>
 
 /** problems the video survives (style, length a little off, an unused drawing): worth no full rewrite on their own */
 const MINOR = [/^script has (1[1-3]\d|2[3-5]\d) words/, /words and no comma/, /three long sentences in a row/, /is drawn but no group uses it/,
-  /keep each drawing under/, /^the hook \(line 0\) has (1[5-9]|2\d) words/, /has a word in capitals/];
+  /keep each drawing under/, /^the hook \(line 0\) has (1[3-6]) words/, /has a word in capitals/];
 const isMinor = (p: string) => MINOR.some((r) => r.test(p));
 
 export async function writeSpec(brief: string, language: string, client = new Anthropic()): Promise<SpecResult> {

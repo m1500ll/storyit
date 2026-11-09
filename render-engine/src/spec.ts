@@ -184,7 +184,14 @@ export type VideoSpec = {
   flash?: Cue;
   /** total length in seconds (default: last word + 2.5 s) */
   duration?: number;
+  /** the big hook title shown at the start (until the hook line is spoken); text at most ~10 words, highlight = the
+   *  words of text shown in colour, kicker = a small line above (date and place) */
+  hook_title?: { text: string; highlight?: string; kicker?: string; style?: TitleStyle };
+  /** one-word captions on the narration (default true) */
+  captions?: boolean;
 };
+
+export type TitleStyle = "choc" | "bandeau" | "cinema";
 
 /** word timings of the recorded voice (ElevenLabs alignment or Kokoro durations), seconds from the start of voice.wav */
 export type Word = { word: string; start: number; end: number; line: number };
