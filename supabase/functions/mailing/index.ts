@@ -37,6 +37,34 @@ const shell = (inner: string, unsub: string) => `<!doctype html><html lang="fr">
 </td></tr></table></body></html>`;
 
 const CAMPAIGNS: Record<string, Campaign> = {
+  dubbing_launch: {
+    subject: '🌍 Nouveau : traduisez vos vidéos en anglais, français ou espagnol',
+    html: (unsub) => shell(`<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Nouveauté sur Storyit : la <strong>traduction de vidéos</strong>. Une vidéo, plusieurs langues, plusieurs fois plus de vues.</td></tr>
+<tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.9">
+<tr><td>🎙️ une <strong>nouvelle voix</strong> en anglais, français ou espagnol, calée sur le rythme d’origine,</td></tr>
+<tr><td>🎵 la <strong>musique et les effets d’origine</strong> gardés,</td></tr>
+<tr><td>💬 les <strong>sous-titres incrustés remplacés</strong> par des sous-titres traduits,</td></tr>
+<tr><td>🎬 le montage reste exactement le même.</td></tr></table></td></tr>
+<tr><td style="font-size:14px;line-height:1.6;color:#4b4560">Envoyez simplement votre vidéo verticale (3 minutes maximum). 15 crédits par minute de vidéo, remboursés si la traduction échoue.</td></tr>
+<tr><td align="center" style="padding:26px 0 8px"><a href="${APP}/app/translate" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:14px 26px;border-radius:12px">Traduire une vidéo</a></td></tr>`, unsub),
+    text: (unsub) => `Bonjour,
+
+Nouveauté sur Storyit : la traduction de vidéos. Une vidéo, plusieurs langues, plusieurs fois plus de vues.
+
+- une nouvelle voix en anglais, français ou espagnol, calée sur le rythme d'origine,
+- la musique et les effets d'origine gardés,
+- les sous-titres incrustés remplacés par des sous-titres traduits,
+- le montage reste exactement le même.
+
+Envoyez simplement votre vidéo verticale (3 minutes maximum). 15 crédits par minute de vidéo, remboursés si la traduction échoue.
+
+Traduire une vidéo : ${APP}/app/translate
+
+À très vite,
+L'équipe Storyit
+
+Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${unsub}`,
+  },
   trial_launch: {
     subject: '🎉 Testez Storyit Creator pendant 3 jours pour 1 $',
     audience: 'free_no_trial',
