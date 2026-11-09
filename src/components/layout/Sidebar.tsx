@@ -1,7 +1,7 @@
 import {
-  BookOpen, CalendarDays, Clapperboard, Languages, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, Wand2 } from 'lucide-react';
+  BookOpen, CalendarDays, Clapperboard, Handshake, Languages, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, Wand2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
-import { useCredits } from '@/hooks/useStore';
+import { useCredits, useProfile } from '@/hooks/useStore';
 import { creditLevel, projectsFor } from '@/services/credits';
 import { cn } from '@/lib/cn';
 
@@ -34,6 +34,8 @@ export function Sidebar() {
   const { balance } = useCredits();
   const level = creditLevel(balance);
   const openPaywall = usePaywall();
+  const { data: profile } = useProfile();
+  const isAdmin = !!(profile as { is_admin?: boolean } | null)?.is_admin;
 
   const sections: { title: string; items: Item[] }[] = [
     {
@@ -68,6 +70,7 @@ export function Sidebar() {
         { to: '/app/billing', label: 'Plan & credits', icon: CreditCard },
         { to: '/app/settings', label: 'Settings', icon: Settings },
         { to: '/app/help', label: 'Help', icon: LifeBuoy },
+        ...(isAdmin ? [{ to: '/app/partners', label: 'Partenaires', icon: Handshake }] : []),
       ],
     },
   ];

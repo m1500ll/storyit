@@ -4,6 +4,7 @@ import { subscribeToRealtime } from '@/services/repository/supabaseRepository';
 import { store } from '@/services/store';
 import { supabase } from './supabase';
 import { claimPendingReferral } from './referral';
+import { claimPendingAffiliate } from './affiliate';
 
 interface AuthState {
   /** `undefined` while the initial session is loading. Always a truthy stub in mock mode. */
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabase || !session) return;
     void claimPendingReferral(); // a visitor who arrived through a referral link and now has an account
+    void claimPendingAffiliate(); // and through an influencer link
     return subscribeToRealtime(supabase);
   }, [session]);
 

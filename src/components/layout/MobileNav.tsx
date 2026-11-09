@@ -1,10 +1,11 @@
 import {
-  BookOpen, CalendarDays, Clapperboard, Languages, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Menu, Send,
+  BookOpen, CalendarDays, Clapperboard, Handshake, Languages, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Menu, Send,
   Settings, TrendingUp, Wand2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/cn';
 import { useBetaAccess } from '@/hooks/useBeta';
+import { useProfile } from '@/hooks/useStore';
 
 const tabs = [
   { to: '/app', label: 'Home', icon: LayoutDashboard, end: true },
@@ -38,6 +39,10 @@ const sections = [
 /** Bottom tab bar for phones (the sidebar is hidden below lg) + a full menu sheet. */
 export function MobileNav() {
   const beta = useBetaAccess();
+  const { data: profile } = useProfile();
+  const menu = (profile as { is_admin?: boolean } | null)?.is_admin
+    ? [...sections, { title: 'Admin', items: [{ to: '/app/partners', label: 'Partenaires', icon: Handshake }] }]
+    : sections;
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   useEffect(() => setOpen(false), [pathname]);
@@ -47,7 +52,7 @@ export function MobileNav() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
-  const inMenu = sections.some((s) => !('soon' in s) && s.items.some((i) => pathname.startsWith(i.to)));
+  const inMenu = menu.some((s) => !('soon' in s) && s.items.some((i) => pathname.startsWith(i.to)));
 
   return (
     <>
@@ -59,7 +64,7 @@ export function MobileNav() {
               <p className="text-sm font-semibold text-zinc-100">Menu</p>
               <button onClick={() => setOpen(false)} aria-label="Close menu" className="grid h-10 w-10 place-items-center rounded-full text-zinc-400 hover:bg-line/5"><X className="h-5 w-5" /></button>
             </div>
-            {sections.filter((s) => ('beta' in s ? beta : 'soon' in s ? !beta : true)).map((s) => (
+            {menu.filter((s) => ('beta' in s ? beta : 'soon' in s ? !beta : true)).map((s) => (
               <div key={s.title} className="mt-3">
                 <p className="label mb-1 px-2">{s.title}</p>
                 <ul>

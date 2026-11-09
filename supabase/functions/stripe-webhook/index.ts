@@ -139,6 +139,12 @@ Deno.serve(async (req) => {
         // referral: the friend's first real payment of a plan (never the $1 trial)
         // the programme is paused unless REFERRAL_ENABLED=true is set in the function secrets
         if (env('REFERRAL_ENABLED') === 'true' && obj.amount_paid > 0 && (!line || line.amount > 0)) await rewardReferral(userId);
+        // influencer programme: 20 % of the customer's first real subscription payment (7 days after their last click)
+        if (obj.amount_paid > 0 && (!line || line.amount > 0)) {
+          const { data: c, error: affErr } = await admin.rpc('record_affiliate_payment', { p_user: userId, p_invoice: obj.id, p_amount: obj.amount_paid, p_currency: obj.currency, p_product: product });
+          if (affErr) console.error('affiliate', affErr.message); // never blocks the payment itself
+          else if (c) console.log(JSON.stringify({ audit: 'affiliate_commission', user: userId, invoice: obj.id, commission: c }));
+        }
         break;
       }
       case 'customer.subscription.updated':

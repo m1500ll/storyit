@@ -17,7 +17,7 @@ export interface Database {
   public: {
     Tables: {
       profiles: {
-        Row: { id: UUID; display_name: string | null; plan: 'free' | 'creator' | 'pro' | 'studio'; credit_balance: number; created_at: Timestamp; beta_access?: boolean; trial_used?: boolean };
+        Row: { id: UUID; display_name: string | null; plan: 'free' | 'creator' | 'pro' | 'studio'; credit_balance: number; created_at: Timestamp; beta_access?: boolean; trial_used?: boolean; is_admin?: boolean };
         Insert: { id: UUID; display_name?: string | null; plan?: 'free' | 'creator' | 'pro' | 'studio'; credit_balance?: number };
         Update: { display_name?: string | null; plan?: 'free' | 'creator' | 'pro' | 'studio' };
         Relationships: [];
