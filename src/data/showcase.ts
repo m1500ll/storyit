@@ -4,7 +4,7 @@ export interface ShowcaseVideo {
   title: string;
   /** Short hook shown on the card. */
   hook: string;
-  format: '3D animation';
+  format: '3D animation' | 'Original · FR' | 'Translated · EN';
   seconds: number;
 }
 

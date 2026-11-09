@@ -1,5 +1,6 @@
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
 import { VideosPerMonth } from '@/components/landing/VideosPerMonth';
+import { TranslateFeature } from '@/components/landing/TranslateFeature';
 import { FeatureGrid } from '@/components/landing/FeatureGrid';
 import { Hero } from '@/components/landing/Hero';
 import { Pricing } from '@/components/landing/Pricing';
@@ -30,6 +31,7 @@ export default function LandingPage() {
       <Hero />
       <Showcase />
       <VideosPerMonth />
+      <TranslateFeature />
       <Results />
       <InlineCTA title="Want 3D videos like these for your channel?" sub="Launch offer: $29/mo instead of $45. Cancel anytime." />
       <TimeSaved />

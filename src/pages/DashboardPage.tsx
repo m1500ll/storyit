@@ -1,4 +1,5 @@
-import { ArrowRight, Clapperboard, Plus, Sparkles } from 'lucide-react';
+import { ArrowRight, Clapperboard, Languages, Plus, Sparkles } from 'lucide-react';
+import { DUB_CREDITS_PER_MIN } from '@/services/credits';
 import { useNavigate } from 'react-router-dom';
 import { DistributionOverview } from '@/components/dashboard/DistributionOverview';
 import { PromptStudioHero } from '@/components/dashboard/PromptStudioHero';
@@ -39,6 +40,15 @@ export default function DashboardPage() {
         </Card>
         <CreditCard />
       </div>
+      <Card className="mt-6 border-violet-500/30 bg-violet-500/[0.04]">
+        <p className="label mb-2">Nouveau · Traduction vidéo</p>
+        <h2 className="text-balance font-display text-2xl text-zinc-50">Une vidéo, toutes les langues</h2>
+        <p className="mt-2 text-sm text-zinc-400">Envoyez une vidéo verticale : Storyit la traduit en français, anglais ou espagnol avec une nouvelle voix, garde la musique d’origine et remplace les sous-titres incrustés.</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Button onClick={() => navigate('/app/translate')}><Languages className="h-4 w-4" /> Traduire une vidéo</Button>
+          <span className="text-xs text-zinc-500 tabular-nums">{DUB_CREDITS_PER_MIN} crédits par minute · remboursés en cas d’échec</span>
+        </div>
+      </Card>
     </>
   );
 }
