@@ -143,23 +143,30 @@ def _erase_chunk(args):
                             "-c:v", "libx264", "-crf", "18", "-preset", "fast", "-pix_fmt", "yuv420p", dst], stdin=subprocess.PIPE)
     k3 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)); k9 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
     k25 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 25)); k41 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (41, 41))
-    bands = [(int(H * 0.45), int(H * 0.86)), (int(H * 0.08), int(H * 0.45))]
+    bands = [(int(H * 0.45), int(H * 0.86), False), (int(H * 0.08), int(H * 0.45), True)]
+    k15 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15)); k101 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (161, 161))
+    f = 0
     while True:
         buf = dec.stdout.read(W * H * 3)
         if len(buf) < W * H * 3: break
         img = np.frombuffer(buf, np.uint8).reshape(H, W, 3).copy()
-        for y0, y1 in bands:
+        title_time = start + f / FPS < 5.0                             # hook titles sit at the top during the first seconds
+        for y0, y1, top in bands:
             part = img[y0:y1]
             b, g, r = [part[:, :, i].astype(np.int16) for i in range(3)]
             white = ((b > 205) & (g > 205) & (r > 205) & (np.abs(r - b) < 30)).astype(np.uint8)
             dark = ((b < 70) & (g < 60) & (r < 75)).astype(np.uint8)
             m = white & cv2.dilate(dark, k41)                          # white fill that touches an ink outline = letters
+            if top and title_time:                                     # title styles: yellow marker / kicker, dark letters on it
+                yl = ((r > 190) & (g > 150) & (b < 110)).astype(np.uint8)
+                near = cv2.dilate(yl, k101) if yl.any() else yl          # the title's white words sit around the marker
+                m = m | yl | (dark & cv2.dilate(yl, k15)) | (white & near)
             m = cv2.morphologyEx(m, cv2.MORPH_OPEN, k3)
             if not m.any(): continue
             m = m | (dark & cv2.dilate(m, k25))                       # and their outline
             m = cv2.dilate(m, k9) * 255
             img[y0:y1] = cv2.inpaint(part, m, 5, cv2.INPAINT_TELEA)
-        enc.stdin.write(img.tobytes())
+        enc.stdin.write(img.tobytes()); f += 1
     enc.stdin.close(); enc.wait(); dec.wait()
     return dst
 
