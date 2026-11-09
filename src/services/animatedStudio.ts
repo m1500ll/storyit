@@ -30,6 +30,9 @@ async function call<T>(body: Record<string, unknown>): Promise<T> {
   return data as T;
 }
 
+/** style of the big hook title at the start of the video (render-engine Overlay) */
+export type TitleStyle = 'choc' | 'bandeau' | 'cinema';
+
 export const animatedStudio = {
   available: Boolean(supabase),
   async list(): Promise<AnimatedProject[]> {
@@ -47,8 +50,8 @@ export const animatedStudio = {
     return r;
   },
   /** Charges ANIMATED_SHORT_COST credits once and queues the render (refunded by the worker if it fails). */
-  async generate(projectId: string, language: string, voiceId?: string): Promise<void> {
-    await call({ action: 'generate', project_id: projectId, language, voice_id: voiceId });
+  async generate(projectId: string, language: string, voiceId?: string, titleStyle?: TitleStyle): Promise<void> {
+    await call({ action: 'generate', project_id: projectId, language, voice_id: voiceId, title_style: titleStyle });
     store.notify();
   },
   /** Short-lived URL of the finished MP4 (private bucket). With `download`, the file is served as an attachment under

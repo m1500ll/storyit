@@ -90,7 +90,7 @@ const Captions: React.FC<{ words: Word[]; from: number }> = ({ words, from }) =>
   return (
     <AbsoluteFill style={{ alignItems: "center" }}>
       <div style={{ position: "absolute", top: 1180, left: 40, right: 40, textAlign: "center", transform: `scale(${s})` }}>
-        <span style={textStyle(len > 12 ? 96 : len > 8 ? 112 : 128)}>{w.word}</span>
+        <span style={textStyle(len > 12 ? 82 : len > 8 ? 96 : 110)}>{w.word}</span>
       </div>
     </AbsoluteFill>
   );

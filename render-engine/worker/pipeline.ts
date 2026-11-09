@@ -26,7 +26,7 @@ const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_
 const WORKER = `${os.hostname()}-${process.pid}`;
 
 type Line = { role: string; text: string; choices?: { step: string; options: { title: string; detail: string }[] }; brief?: { title: string; hook: string; format: string; decor: string; language: string; facts: { fact: string; source: string }[] } };
-type Job = { id: string; user_id: string; transcript: Line[]; language: string; voice_id: string | null; credits_charged: number; spec: unknown | null };
+type Job = { id: string; user_id: string; transcript: Line[]; language: string; voice_id: string | null; title_style?: string | null; credits_charged: number; spec: unknown | null };
 
 const set = (id: string, patch: Record<string, unknown>) => db.from("animated_projects").update(patch).eq("id", id);
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
@@ -86,6 +86,8 @@ export async function produce(job: Job) {
       log(job.id, `spec ok: ${w.spec.shots.length} shots, $${usd(w.usage).toFixed(2)}`);
       spec = w.spec;
     }
+    // the title style is the customer's choice (not Claude's); the engine reads it from the spec
+    if (spec.hook_title) spec = { ...spec, hook_title: { ...spec.hook_title, style: job.title_style ?? "choc" } as typeof spec.hook_title };
     await set(job.id, { spec, title: spec.title, status: "voicing", progress: 15 });
     // 2. voice
     const voiceId = job.voice_id ?? process.env.ELEVENLABS_DEFAULT_VOICE;

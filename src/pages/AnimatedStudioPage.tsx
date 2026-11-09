@@ -7,7 +7,7 @@ import { useLiveQuery } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
 import { InsufficientCreditsError } from '@/services/errors';
 import { ANIMATED_SHORT_COST } from '@/services/credits';
-import { animatedStudio, type AnimatedProject, type AnimatedStatus, type Brief, type ChatLine, type Choices } from '@/services/animatedStudio';
+import { animatedStudio, type AnimatedProject, type AnimatedStatus, type Brief, type ChatLine, type Choices, type TitleStyle } from '@/services/animatedStudio';
 import { voicesFor, type Voice } from '@/services/voices';
 
 /** theme cards: each shows a still of the matching decor, rendered by the engine (public/studio/themes) */
@@ -225,6 +225,37 @@ function BriefCard({ brief }: { brief: Brief }) {
   );
 }
 
+const TITLE_STYLES: { id: TitleStyle; name: string; text: string }[] = [
+  { id: 'choc', name: 'Choc', text: 'Grosses lettres, mot-choc en jaune' },
+  { id: 'bandeau', name: 'Bandeau info', text: 'Bandeau rouge « histoire vraie »' },
+  { id: 'cinema', name: 'Cinéma', text: 'Date et lieu, mot-choc surligné' },
+];
+
+/** style of the big hook title shown at the start of the video */
+function TitleStylePicker({ value, onChange }: { value: TitleStyle; onChange: (s: TitleStyle) => void }) {
+  return (
+    <div role="radiogroup" aria-label="Style du titre d’accroche" className="grid grid-cols-3 gap-2">
+      {TITLE_STYLES.map((t) => {
+        const on = t.id === value;
+        return (
+          <button key={t.id} type="button" role="radio" aria-checked={on} onClick={() => onChange(t.id)}
+            className={cn('surface overflow-hidden rounded-2xl text-left transition-colors [touch-action:manipulation] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50',
+              on && 'border-violet-500/60 bg-violet-500/10')}>
+            <img src={`/studio/titles/${t.id}.webp`} alt="" width={320} height={284} loading="lazy" decoding="async" className="aspect-[9/8] w-full object-cover" />
+            <span className="flex items-start gap-1.5 p-2.5">
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium text-zinc-100">{t.name}</span>
+                <span className="mt-0.5 block text-[11px] leading-snug text-zinc-400">{t.text}</span>
+              </span>
+              {on && <Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden />}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** narrator voices with their sample; one shared <audio> so only one plays at a time */
 function VoicePicker({ voices, value, onChange }: { voices: Voice[]; value: string; onChange: (id: string) => void }) {
   const audio = useRef<HTMLAudioElement | null>(null);
@@ -278,6 +309,7 @@ function Project({ id }: { id: string }) {
   const [url, setUrl] = useState<string | null>(null);
   const [dlUrl, setDlUrl] = useState<string | null>(null);
   const [voice, setVoice] = useState<string | null>(null);
+  const [titleStyle, setTitleStyle] = useState<TitleStyle>('choc');
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => animatedStudio.watch(id, () => undefined), [id]);
@@ -308,7 +340,7 @@ function Project({ id }: { id: string }) {
   };
   const generate = async () => {
     setLaunching(true); setError(null);
-    try { await animatedStudio.generate(id, project.language, chosenVoice); toast('Vidéo lancée. Vous pouvez quitter la page.'); }
+    try { await animatedStudio.generate(id, project.language, chosenVoice, titleStyle); toast('Vidéo lancée. Vous pouvez quitter la page.'); }
     catch (e) {
       if (e instanceof InsufficientCreditsError) openPaywall();
       setError(e instanceof Error ? e.message : String(e));
@@ -390,6 +422,9 @@ function Project({ id }: { id: string }) {
           <BriefCard brief={brief} />
           <h2 className="mb-2 mt-5 text-sm font-semibold text-zinc-100">Choisissez la voix du narrateur</h2>
           <VoicePicker voices={voices} value={chosenVoice ?? ''} onChange={setVoice} />
+          <h2 className="mb-2 mt-5 text-sm font-semibold text-zinc-100">Choisissez le style du titre d’accroche</h2>
+          <p className="mb-2 text-xs text-zinc-400">La phrase-choc s’affiche en grand au début de la vidéo, puis les sous-titres prennent le relais.</p>
+          <TitleStylePicker value={titleStyle} onChange={setTitleStyle} />
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button loading={launching} disabled={sending} onClick={() => void generate()}>
               <Clapperboard className="h-4 w-4" /> Générer la vidéo · {ANIMATED_SHORT_COST} crédits

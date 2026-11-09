@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
   const uid = auth.user.id;
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-  let body: { action?: string; project_id?: string; message?: string; voice_id?: string; language?: string };
+  let body: { action?: string; project_id?: string; message?: string; voice_id?: string; language?: string; title_style?: string };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
   const action = body.action ?? 'chat';
   const load = async (id: string) =>
@@ -187,11 +187,12 @@ Deno.serve(async (req) => {
     if (p.status !== 'brief') return json({ error: 'Cette vidéo est déjà lancée.' }, 409);
     if (p.transcript.filter((m) => m.role === 'assistant').length < 1) return json({ error: "Discutez d'abord de votre idée avec le studio." }, 400);
     if (body.voice_id && !/^[A-Za-z0-9]{16,32}$/.test(body.voice_id)) return json({ error: 'Voix inconnue.' }, 400);
+    if (body.title_style && !['choc', 'bandeau', 'cinema'].includes(body.title_style)) return json({ error: 'Style de titre inconnu.' }, 400);
     // charge first (atomic, fails when the balance is too low), then queue; the worker refunds on failure
     const { error: credErr } = await user.rpc('consume_credits', { p_amount: ANIMATED_COST, p_story_id: null, p_description: 'Animated Studio — vidéo animée' });
     if (credErr) return json({ error: `Il vous faut ${ANIMATED_COST} crédits pour générer cette vidéo.`, code: 'insufficient_credits' }, 402);
     const { error } = await admin.from('animated_projects').update({
-      status: 'queued', progress: 1, credits_charged: ANIMATED_COST, voice_id: body.voice_id ?? null, language: body.language ?? p.language, error: null,
+      status: 'queued', progress: 1, credits_charged: ANIMATED_COST, voice_id: body.voice_id ?? null, title_style: body.title_style ?? 'choc', language: body.language ?? p.language, error: null,
     }).eq('id', p.id).eq('status', 'brief');
     if (error) {
       await admin.rpc('grant_credits', { p_user_id: uid, p_amount: ANIMATED_COST, p_type: 'refund', p_description: 'Animated Studio — remboursement (file indisponible)' });
