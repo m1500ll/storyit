@@ -10,12 +10,20 @@ export const backups = () => ['', '_2', '_3'].map((n) => ({
 })).filter((b) => b.base && b.key && b.model)
   .flatMap((b) => b.model!.split(',').map((m) => ({ base: b.base!, key: b.key!, model: m.trim() })).filter((x) => x.model));
 
+/** OpenAI (ChatGPT) as the main writer when OPENAI_API_KEY is set; OPENAI_MODEL may list several models (tried in order). */
+export const openaiModels = () => {
+  const key = Deno.env.get('OPENAI_API_KEY');
+  if (!key) return [];
+  return (Deno.env.get('OPENAI_MODEL') ?? 'gpt-5-mini,gpt-4.1-mini').split(',').map((m) => ({ base: 'https://api.openai.com/v1', key, model: m.trim() })).filter((x) => x.model);
+};
+
 export async function backupText(b: { base: string; key: string; model: string }, system: string, prompt: string, schema: unknown, timeoutMs: number) {
+  const isOpenAI = /api\.openai\.com/.test(b.base);
   const res = await fetch(`${b.base.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST', signal: AbortSignal.timeout(timeoutMs),
     headers: { Authorization: `Bearer ${b.key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: b.model, temperature: 1, max_tokens: 16000, response_format: { type: 'json_object' },
+      model: b.model, ...(isOpenAI ? { max_completion_tokens: 32000 } : { temperature: 1, max_tokens: 16000 }), response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: `${system}\n\nRéponds UNIQUEMENT avec un objet JSON valide qui respecte ce schéma (types Gemini : OBJECT, ARRAY, STRING, INTEGER) :\n${JSON.stringify(schema)}` },
         { role: 'user', content: prompt },

@@ -9,7 +9,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { FIX_PROBLEMS, FIX_SCHEMA, MASTER_PROMPT, PHASES, STYLES, buildFixPrompt, buildPhasePrompt, buildRepairPrompt, normalizePhase, paceProblems, styleOf, type PhaseKey } from '../_shared/promptStudio.ts';
 import { classifyGeminiError, GeminiError, KEY_MESSAGES, keyHint, looksLikeGeminiKey } from '../_shared/geminiKey.ts';
 import { decrypt, encrypt } from '../_shared/social.ts';
-import { backups, backupText } from '../_shared/backupLlm.ts';
+import { backups, backupText, openaiModels } from '../_shared/backupLlm.ts';
 import { reserveAi } from '../_shared/aiBudget.ts';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
@@ -48,6 +48,15 @@ async function callGemini(key: string, model: string, body: unknown, timeoutMs: 
 async function generateText(key: string, prompt: string, schema: unknown, allowBackup = false, check: (raw: unknown) => unknown = (r) => r) {
   const started = Date.now();
   let last: GeminiError = new GeminiError('other', 0);
+  // ChatGPT (OpenAI API) first when OPENAI_API_KEY is set; then Gemini, then the free backups
+  for (const m of openaiModels()) {
+    const left = 140_000 - (Date.now() - started);
+    if (left < 30_000) break;
+    try { await reserveAi('text'); } catch { break; }
+    const out = await backupText(m, MASTER_PROMPT, prompt, schema, Math.min(left - 5_000, 120_000)).catch((e) => { console.error('openai', m.model, e instanceof Error ? e.message : e); return null; });
+    if (!out) continue;
+    try { return check(out); } catch (e) { console.error('openai invalid', m.model, e instanceof Error ? e.message : e); }
+  }
   for (const model of [TEXT_MODEL, TEXT_FALLBACK]) {
     const left = 140_000 - (Date.now() - started);
     if (left < 20_000) break;
