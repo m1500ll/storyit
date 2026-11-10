@@ -266,7 +266,7 @@ export function V4Project({ project, run, busy, error }: {
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {Object.entries(FIX_PROBLEMS).filter(([k]) => k !== 'hook' || i === 0).map(([k, p]) => (
                               <button key={k} type="button" onClick={() => setProblem(k)} aria-pressed={problem === k}
-                                className={cn('rounded-full border px-3 py-1.5 text-xs', problem === k ? 'border-violet-500/60 bg-violet-500/15 text-violet-100' : 'border-line/10 text-zinc-300 hover:bg-line/[0.05]')}>{p.label}</button>
+                                className={cn('rounded-full border px-3 py-1.5 text-xs', problem === k ? 'border-violet-600 bg-violet-600 text-white' : 'border-line/10 text-zinc-300 hover:bg-line/[0.05]')}>{p.label}</button>
                             ))}
                           </div>
                           <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={400} placeholder="Précision (facultatif) : ce qui se passe dans le clip raté"

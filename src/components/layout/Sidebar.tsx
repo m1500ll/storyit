@@ -70,7 +70,7 @@ export function Sidebar() {
         { to: '/app/billing', label: 'Plan & credits', icon: CreditCard },
         { to: '/app/settings', label: 'Settings', icon: Settings },
         { to: '/app/help', label: 'Help', icon: LifeBuoy },
-        ...(isAdmin ? [{ to: '/app/partners', label: 'Partenaires', icon: Handshake }] : []),
+        ...(isAdmin ? [{ to: '/app/partners', label: 'Partenaires', icon: Handshake }, { to: '/app/trends', label: 'Tendances', icon: TrendingUp }] : []),
       ],
     },
   ];

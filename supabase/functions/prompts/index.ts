@@ -200,7 +200,16 @@ Deno.serve(async (req) => {
 
   const idea = String(body.idea ?? body.story ?? project?.idea ?? '').trim().slice(0, 600);
   try {
-    const phasePrompt = buildPhasePrompt(phase, { ...data, feedback: String(body.feedback ?? '').slice(0, 600) });
+    let trends: unknown;
+    if (phase === 'concepts') { // the latest daily trend report inspires the 3 stories (formats that work, not copies)
+      const { data: rep } = await admin.from('trend_reports').select('day, insights').order('day', { ascending: false }).limit(1).maybeSingle();
+      if (rep) {
+        const { data: cs } = await admin.from('trend_concepts').select('title, fr_status, kind, hook, ending, repeat_line, screen_line').eq('day', rep.day).limit(200);
+        const pick = [...(cs ?? [])].sort(() => Math.random() - 0.5).sort((a, b) => (a.fr_status === 'green' ? 0 : 1) - (b.fr_status === 'green' ? 0 : 1)).slice(0, 12);
+        trends = { insights: rep.insights, concepts: pick };
+      }
+    }
+    const phasePrompt = buildPhasePrompt(phase, { ...data, trends, feedback: String(body.feedback ?? '').slice(0, 600) });
     const valid = (r: unknown) => normalizePhase(phase, r);
     let raw;
     if (ownKey) {

@@ -9,6 +9,8 @@ import { InsufficientCreditsError } from '@/services/errors';
 import { PROMPT_PROJECT_COST } from '@/services/credits';
 import { promptStudio, type PhaseKey, type StyleKey } from '@/services/promptStudio';
 import { V4Project, V4_STEPS } from '@/components/prompts/V4Project';
+import { TrendIdeas } from '@/components/prompts/TrendIdeas';
+import { conceptToStory } from '@shared/trends.ts';
 import { STYLES } from '@shared/promptStudio.ts';
 
 const STEPS: { key: PhaseKey; label: string; waiting: string }[] = [
@@ -164,6 +166,11 @@ function Start() {
           {error && <p role="alert" className="mt-3 text-xs text-coral-300">{error}</p>}
         </Card>
       )}
+      {!busy && <TrendIdeas onUse={(c) => {
+        setStory(conceptToStory({ title: c.title, cast_text: c.cast_text ?? '', hook: c.hook ?? '', outline: c.outline ?? '', ending: c.ending ?? '', repeat_line: c.repeat_line ?? '', screen_line: c.screen_line ?? '' }));
+        document.getElementById('story')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('story')?.focus({ preventScroll: true });
+      }} />}
       <h2 className="mb-3 mt-8 text-sm font-semibold text-zinc-100">Vos projets</h2>
       {loading ? <LoadState loading error={null} /> : projects.length === 0 ? <p className="text-xs text-zinc-500">Aucun projet pour l'instant.</p> : (
         <ul className="grid gap-2 sm:grid-cols-2">

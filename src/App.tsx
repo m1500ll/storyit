@@ -20,6 +20,7 @@ const AnimatedStudioPage = lazy(() => import('@/pages/AnimatedStudioPage'));
 const TranslatePage = lazy(() => import('@/pages/TranslatePage'));
 const PartnerPage = lazy(() => import('@/pages/PartnerPage'));
 const PartnersAdminPage = lazy(() => import('@/pages/PartnersAdminPage'));
+const TrendsAdminPage = lazy(() => import('@/pages/TrendsAdminPage'));
 const AccountsPage = lazy(() => import('@/pages/AccountsPage'));
 const LibraryPage = lazy(() => import('@/pages/LibraryPage'));
 const DistributePage = lazy(() => import('@/pages/DistributePage'));
@@ -50,6 +51,7 @@ export default function App() {
               <Route path="studio" element={<AnimatedStudioPage />} />
               <Route path="translate" element={<TranslatePage />} />
               <Route path="partners" element={<PartnersAdminPage />} />
+              <Route path="trends" element={<TrendsAdminPage />} />
               <Route path="studio/:projectId" element={<AnimatedStudioPage />} />
               {/* the old Gemini/Veo episode studio was replaced by the Animated Studio */}
               {['new', 'review', 'episodes', 'characters', 'stories/*'].map((p) => <Route key={p} path={p} element={<Navigate to="/app/studio" replace />} />)}

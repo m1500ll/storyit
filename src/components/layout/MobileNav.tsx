@@ -41,7 +41,7 @@ export function MobileNav() {
   const beta = useBetaAccess();
   const { data: profile } = useProfile();
   const menu = (profile as { is_admin?: boolean } | null)?.is_admin
-    ? [...sections, { title: 'Admin', items: [{ to: '/app/partners', label: 'Partenaires', icon: Handshake }] }]
+    ? [...sections, { title: 'Admin', items: [{ to: '/app/partners', label: 'Partenaires', icon: Handshake }, { to: '/app/trends', label: 'Tendances', icon: TrendingUp }] }]
     : sections;
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
