@@ -1,20 +1,40 @@
 import { supabase } from '@/lib/supabase';
 import { InsufficientCreditsError } from './errors';
 import { store } from './store';
-import type { PhaseKey } from '@shared/promptStudio.ts';
+import type { PhaseKey, StyleKey } from '@shared/promptStudio.ts';
 import { PROMPT_PROJECT_COST } from '@/services/credits';
 import { dedupe } from '@/lib/dedupe';
 
-export type { PhaseKey };
+export type { PhaseKey, StyleKey };
 export interface Concept { title: string; synopsis: string; characters: { name: string; fruit: string; role: string; look: string }[]; locations: string[]; themes: string[] }
 export interface Line { character: string; voice_accent_tone: string; line: string }
 export interface Script { characters: { name: string; fruit: string; archetype: string; look: string }[]; locations: string[]; scenes: { scene_number: number; location: string; emotional_beat: string; action: string; dialogue: Line[] }[] }
 export interface ImagePrompt { scene_number: number; aspect_ratio: '9:16'; location_environment: string; style: string; prompt: string }
 export interface VideoPrompt { scene_number: number; aspect_ratio: '9:16'; camera_motion: string; character_action: string; dialogue: Line[]; prompt: string }
 export interface Pack { thumbnail: { aspect_ratio: '9:16'; style: string; prompt: string }; titles: string[]; caption: string; hashtags: string[] }
+/** V4 studio (mini-drama): the shapes the `prompts` Edge Function stores (see supabase/functions/_shared/promptStudio.ts). */
+export interface V4Line { character: string; start: number; end: number; text: string }
+export interface V4Character { name: string; phonetic: string; head: string; face: string; hands_neck: string; outfit: string; accessory: string; voice: string; role: string }
+export interface V4Clip { seconds: number; location: string; characters: string[]; summary: string; open_question: string; new_thing: string; mini_hook: string; lines: V4Line[] }
+export interface V4Script {
+  title: string; paradox: string; synopsis: string; characters: V4Character[]; locations: string[];
+  hook_candidates: { mechanic: string; line: string }[]; hook: { image: string; why: string }; backup_hooks: { image: string; line: string }[];
+  clips: V4Clip[]; cliffhanger: string;
+  engagement: { levers: string[]; references: string[]; cult_line: string; target_comment: string; scores: Record<'villain' | 'debate' | 'cult_line' | 'share' | 'part2' | 'detail', number> };
+}
+export interface V4Concept { title: string; paradox: string; synopsis: string; hook: string; characters: { name: string; head: string; role: string }[]; locations: string[] }
+export interface V4Data {
+  v4: true; style: StyleKey; story: string; part: number; previous_end: string;
+  concepts?: V4Concept[]; chosen?: number; script?: V4Script;
+  images?: { sheet: { name: string; description: string }[]; clips: { setting: string; continuity: string; characters: { name: string; action: string }[] }[] };
+  videos?: { clips: { head_lock: { name: string; head: string }[]; look_lock: string; shots: { start: number; end: number; text: string }[]; sound: string }[] };
+  pack?: { cover: { setting: string; glow: string; characters: { name: string; pose: string }[] }; caption: string; pinned_comment: string; hashtags: string[] };
+  fixes?: Record<string, { problem: string; explanation: string; at: string }>;
+}
+
 export interface PromptProject {
   id: string; title: string; idea: string | null; phase: number; created_at: string; updated_at: string;
-  data: { concepts?: Concept[]; chosen?: number; script?: Script; images?: ImagePrompt[]; videos?: VideoPrompt[]; pack?: Pack; image_files?: Record<string, string> };
+  data: { v4?: boolean; concepts?: Concept[]; chosen?: number; script?: Script; images?: ImagePrompt[]; videos?: VideoPrompt[]; pack?: Pack; image_files?: Record<string, string> } & Partial<Omit<V4Data, 'concepts' | 'script' | 'images' | 'videos' | 'pack'>>;
 }
 
 const DEMO = 'Le Prompt Studio a besoin du serveur Storyit (mode démo).';
@@ -52,8 +72,14 @@ export const promptStudio = {
     return (data as unknown as PromptProject) ?? null;
   },
   /** Generates one phase server-side (the master prompt never reaches the browser). 1 credit, charged on success only. */
-  async generate(input: { phase: PhaseKey; project_id?: string; idea?: string; choice?: number; feedback?: string }): Promise<PromptProject> {
+  async generate(input: { phase: PhaseKey; project_id?: string; idea?: string; choice?: number; feedback?: string; style?: StyleKey; story?: string; part?: number; previous_end?: string }): Promise<PromptProject> {
     const { project } = await call<{ project: PromptProject }>({ action: 'phase', ...input });
+    store.notify();
+    return project;
+  },
+  /** Dépannage: the corrected prompts of ONE clip (included in the project). */
+  async fix(input: { project_id: string; scene: number; problem: string; note?: string }): Promise<PromptProject> {
+    const { project } = await call<{ project: PromptProject }>({ action: 'fix', ...input });
     store.notify();
     return project;
   },

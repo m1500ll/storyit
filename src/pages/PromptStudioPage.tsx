@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, Copy, ExternalLink, Loader2, RefreshCw, Sparkles, Trash2 } from 'lucide-react';
+import { Check, ChevronLeft, Copy, ExternalLink, Lightbulb, Loader2, Sparkles, Trash2, Wand2 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button, Card, LoadState, PageHeader, useToast } from '@/components/ui';
@@ -7,7 +7,9 @@ import { useLiveQuery } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
 import { InsufficientCreditsError } from '@/services/errors';
 import { PROMPT_PROJECT_COST } from '@/services/credits';
-import { promptStudio, type PhaseKey } from '@/services/promptStudio';
+import { promptStudio, type PhaseKey, type StyleKey } from '@/services/promptStudio';
+import { V4Project, V4_STEPS } from '@/components/prompts/V4Project';
+import { STYLES } from '@shared/promptStudio.ts';
 
 const STEPS: { key: PhaseKey; label: string; waiting: string }[] = [
   { key: 'concepts', label: 'Concepts', waiting: 'Écriture de 3 concepts…' },
@@ -84,29 +86,81 @@ function Waiting({ text }: { text: string }) {
   );
 }
 
+const VEILLE = [
+  'On ne cherche pas l’idée géniale : on part d’une histoire qui a DÉJÀ cartonné ailleurs (souvent aux États-Unis), et on l’adapte.',
+  'Sur TikTok, cherchez « fruit story ai part 1 » ou « ai fruit drama » et triez par vidéos récentes. Une extension qui affiche les vues et la date aide beaucoup.',
+  'Gardez une vidéo qui a beaucoup de vues et de partages, publiée il y a moins de 48 h.',
+  'Vérifiez qu’elle n’existe pas encore en français : cherchez 3 ou 4 mots-clés du sujet. S’il y a déjà des copies, passez à la suivante.',
+  'Résumez l’histoire en quelques lignes ici.',
+  'On l’adapte : têtes, prénoms, décors et 2-3 détails changés, avec vos propres vannes. On ne recopie jamais le titre, le texte ni les visuels.',
+];
+
 function Start() {
   const cost = useCost();
   const [params] = useSearchParams();
-  const [idea, setIdea] = useState(() => params.get('idea')?.slice(0, 600) ?? ''); // prefilled from the dashboard
+  const [style, setStyle] = useState<StyleKey>('fruits');
+  const [story, setStory] = useState(() => params.get('idea')?.slice(0, 3000) ?? ''); // prefilled from the dashboard
+  const [part2, setPart2] = useState(false);
+  const [part, setPart] = useState(2);
+  const [previousEnd, setPreviousEnd] = useState('');
+  const [veille, setVeille] = useState(false);
   const { run, busy, error } = useGenerate();
   const navigate = useNavigate();
   const { data: projects = [], loading } = useLiveQuery(() => promptStudio.list(), 'prompt-projects');
+  const common = { style, ...(part2 ? { part, previous_end: previousEnd } : {}) };
+  const start = async (phase: 'script' | 'concepts') => { const p = await run({ phase, story, ...common }); if (p) navigate(`/app/prompts/${p.id}`); };
   return (
     <>
-      <PageHeader eyebrow="Studio IA · Bêta" title="Prompt Studio"
-        description="Storyit écrit avec vous une histoire Fruit Drama de plus d'une minute, étape par étape, puis vous donne les prompts JSON à coller dans Gemini (images) et Grok Imagine (vidéos)." />
+      <PageHeader eyebrow="Studio IA · V4" title="Prompt Studio"
+        description="Votre histoire devient un mini-drama 3D vertical de plus d’une minute : hook, découpage minuté, prompts d’images pour ChatGPT et prompts d’animation pour Grok Imagine, pensés pour la rétention et l’engagement." />
       {!promptStudio.available && <div className="mb-4"><LoadState loading={false} error="Le Prompt Studio a besoin du serveur Storyit (mode démo)." /></div>}
-      {busy ? <Waiting text={STEPS[0]!.waiting} /> : (
+      {busy ? <Waiting text={V4_STEPS.find((x) => x.key === busy)?.waiting ?? 'Écriture…'} /> : (
         <Card>
-          <label htmlFor="idea" className="text-sm font-medium text-zinc-100">Une idée de départ ? <span className="font-normal text-zinc-500">(facultatif)</span></label>
-          <textarea id="idea" rows={3} maxLength={600} value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="Une fraise trahie par sa sœur pastèque le jour de son mariage…"
-            className="mt-2 w-full rounded-xl border border-line/10 bg-transparent p-3 text-sm text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" />
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <Button disabled={!promptStudio.available} onClick={async () => { const p = await run({ phase: 'concepts', idea }); if (p) navigate(`/app/prompts/${p.id}`); }}>
-              <Sparkles className="h-4 w-4" /> Générer un prompt complet · {cost.label}
-            </Button>
-            <span className="text-xs text-zinc-500">{`${PROMPT_PROJECT_COST} crédits pour le projet complet, débités une seule fois au démarrage. Les 5 étapes et les régénérations sont incluses.`}</span>
+          <h2 className="text-sm font-semibold text-zinc-100">1. Le style des personnages <span className="font-normal text-zinc-500">(verrouillé pour toute la série)</span></h2>
+          <div role="radiogroup" aria-label="Style des personnages" className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
+            {(Object.keys(STYLES) as StyleKey[]).map((k) => (
+              <button key={k} type="button" role="radio" aria-checked={style === k} onClick={() => setStyle(k)}
+                className={cn('surface rounded-2xl p-3 text-left transition-colors [touch-action:manipulation] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50', style === k && 'border-violet-500/60 bg-violet-500/10')}>
+                <span className="flex items-center gap-2 text-sm font-medium text-zinc-100"><span aria-hidden className="text-lg">{STYLES[k].emoji}</span>{STYLES[k].label}{k === 'fruits' && <span className="rounded-full bg-violet-500/15 px-1.5 text-[10px] text-violet-200">conseillé</span>}{style === k && <Check className="ml-auto h-4 w-4 text-violet-300" aria-hidden />}</span>
+                <span className="mt-1 block text-xs text-zinc-400">{STYLES[k].text}</span>
+              </button>
+            ))}
           </div>
+
+          <label htmlFor="story" className="mt-6 block text-sm font-semibold text-zinc-100">2. Votre histoire <span className="font-normal text-zinc-500">(quelques lignes, même en vrac)</span></label>
+          <textarea id="story" rows={4} maxLength={3000} value={story} onChange={(e) => setStory(e.target.value)}
+            placeholder="Un livreur fraise trouve un sac de billets dans son scooter. Son patron citron l’accuse de l’avoir volé devant toute la pizzeria…"
+            className="mt-2 w-full rounded-xl border border-line/10 bg-transparent p-3 text-base text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 sm:text-sm" />
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-zinc-300">
+              <input type="checkbox" checked={part2} onChange={(e) => setPart2(e.target.checked)} className="h-4 w-4 accent-violet-500" /> C’est une suite
+            </label>
+            <button type="button" onClick={() => setVeille(!veille)} aria-expanded={veille} className="inline-flex items-center gap-1.5 text-xs text-violet-300 hover:underline">
+              <Lightbulb className="h-3.5 w-3.5" aria-hidden /> Pas d’idée ? La méthode de veille
+            </button>
+          </div>
+          {part2 && (
+            <div className="mt-3 grid gap-3 sm:grid-cols-[120px_1fr]">
+              <label className="text-xs text-zinc-400">Numéro de partie
+                <input type="number" min={2} max={20} value={part} onChange={(e) => setPart(Math.max(2, Math.min(20, Number(e.target.value) || 2)))}
+                  className="mt-1 block h-11 w-full rounded-xl border border-line/10 bg-transparent px-3 text-base text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 sm:text-sm" />
+              </label>
+              <label className="text-xs text-zinc-400">La fin de la partie précédente (le cliffhanger)
+                <textarea rows={2} maxLength={1500} value={previousEnd} onChange={(e) => setPreviousEnd(e.target.value)}
+                  className="mt-1 block w-full rounded-xl border border-line/10 bg-transparent p-3 text-base text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 sm:text-sm" />
+              </label>
+            </div>
+          )}
+          {veille && (
+            <ol className="mt-3 list-decimal space-y-1.5 rounded-xl border border-line/10 bg-line/[0.02] py-3 pl-8 pr-4 text-xs leading-relaxed text-zinc-300">
+              {VEILLE.map((v) => <li key={v}>{v}</li>)}
+            </ol>
+          )}
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <Button disabled={!promptStudio.available || !story.trim()} onClick={() => void start('script')}><Wand2 className="h-4 w-4" /> Créer mon mini-drama · {cost.label}</Button>
+            <Button variant="secondary" disabled={!promptStudio.available} onClick={() => void start('concepts')}><Sparkles className="h-4 w-4" /> Propose-moi 3 histoires</Button>
+          </div>
+          <p className="mt-2 text-xs text-zinc-500">{`${PROMPT_PROJECT_COST} crédits pour le projet complet, débités une seule fois au démarrage. Les 5 étapes, les régénérations et les dépannages sont inclus.`}</p>
           {error && <p role="alert" className="mt-3 text-xs text-coral-300">{error}</p>}
         </Card>
       )}
@@ -117,7 +171,7 @@ function Start() {
             <li key={p.id} className="surface flex items-center gap-3 px-4 py-3">
               <Link to={`/app/prompts/${p.id}`} className="min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
                 <span className="block truncate text-sm text-zinc-100">{p.title}</span>
-                <span className="block text-[11px] text-zinc-500">Étape {p.phase}/5 · {STEPS[p.phase - 1]?.label} · {new Date(p.updated_at).toLocaleDateString()}</span>
+                <span className="block text-[11px] text-zinc-500">Étape {p.phase}/5 · {V4_STEPS[p.phase - 1]?.label} · {new Date(p.updated_at).toLocaleDateString()}</span>
               </Link>
               <button aria-label={`Supprimer ${p.title}`} onClick={() => window.confirm('Supprimer ce projet ?') && promptStudio.remove(p.id)}
                 className="rounded-lg p-2 text-zinc-500 hover:bg-line/5 hover:text-coral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><Trash2 className="h-4 w-4" /></button>
@@ -139,23 +193,24 @@ function Project({ id }: { id: string }) {
   const current: PhaseKey = useMemo(() => (d.pack ? 'pack' : d.videos ? 'videos' : d.images ? 'images' : d.script ? 'script' : 'concepts'), [d]);
   useEffect(() => { setView(null); setFeedback(''); }, [current]);
   if (!project) return <LoadState loading={loading} error={loadError ?? (loading ? null : 'Projet introuvable')} />;
+  if (project.data.v4) return (
+    <>
+      <Link to="/app/prompts" className="mb-4 inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300"><ChevronLeft className="h-3 w-3" /> Tous les projets</Link>
+      <PageHeader eyebrow="Prompt Studio" title={project.title} description={project.data.story || undefined} />
+      {busy && <Waiting text={V4_STEPS.find((x) => x.key === busy)?.waiting ?? 'Écriture…'} />}
+      <V4Project project={project} run={run} busy={busy} error={error} />
+    </>
+  );
   const shown = view ?? current;
   const has: Record<PhaseKey, boolean> = { concepts: Boolean(d.concepts), script: Boolean(d.script), images: Boolean(d.images), videos: Boolean(d.videos), pack: Boolean(d.pack) };
   const next = (phase: PhaseKey, extra: { choice?: number } = {}) => run({ phase, project_id: id, feedback: feedback || undefined, ...extra });
   const redo = (phase: PhaseKey) => run({ phase, project_id: id, feedback: feedback || undefined, ...(phase === 'script' ? { choice: d.chosen } : {}) });
 
-  // A render helper (not a component), so the input keeps focus while typing.
-  const adjust = (phase: PhaseKey, children?: ReactNode) => (
-    <Card className="mt-4">
-      <label htmlFor="fb" className="text-xs text-zinc-400">Un ajustement avant de régénérer ou de passer à la suite ? (facultatif)</label>
-      <input id="fb" value={feedback} maxLength={600} onChange={(e) => setFeedback(e.target.value)} placeholder="Plus de suspense dans la scène 5, un méchant plus drôle…"
-        className="mt-1.5 h-10 w-full rounded-xl border border-line/10 bg-transparent px-3 text-sm text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" />
-      <div className="mt-3 flex flex-wrap gap-2">
-        {children}
-        <Button variant="ghost" onClick={() => redo(phase)} disabled={Boolean(busy)}><RefreshCw className="h-4 w-4" /> Régénérer cette étape</Button>
-      </div>
-    </Card>
+  // Projects made before the V4 studio are read-only (the server refuses new steps on them).
+  const adjust = (_phase: PhaseKey, _children?: ReactNode) => (
+    <Card className="mt-4 text-xs text-zinc-400">Ce projet a été créé avec l’ancienne version du studio : il reste consultable, mais pour les nouvelles étapes (hooks, découpage minuté, prompts Grok multi-plans), <Link to="/app/prompts" className="text-violet-300 underline">créez un nouveau projet</Link>.</Card>
   );
+  void next; void redo; void feedback; void setFeedback;
 
   return (
     <>

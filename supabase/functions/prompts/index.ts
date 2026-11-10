@@ -6,7 +6,7 @@
 // - Scene images: generated with the user's key only (Google bills the user), stored privately in `renders`.
 // - Keys: AES-GCM encrypted (TOKEN_ENCRYPTION_KEY), never returned to the browser.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { MASTER_PROMPT, PHASES, buildPhasePrompt, normalizePhase, type PhaseKey } from '../_shared/promptStudio.ts';
+import { FIX_PROBLEMS, FIX_SCHEMA, MASTER_PROMPT, PHASES, STYLES, buildFixPrompt, buildPhasePrompt, buildRepairPrompt, normalizePhase, paceProblems, styleOf, type PhaseKey } from '../_shared/promptStudio.ts';
 import { classifyGeminiError, GeminiError, KEY_MESSAGES, keyHint, looksLikeGeminiKey } from '../_shared/geminiKey.ts';
 import { decrypt, encrypt } from '../_shared/social.ts';
 import { backups, backupText } from '../_shared/backupLlm.ts';
@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
   const uid = auth.user.id;
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-  let body: { action?: string; project_id?: string; phase?: PhaseKey; idea?: string; choice?: number; feedback?: string; key?: string; scene?: number };
+  let body: { action?: string; project_id?: string; phase?: PhaseKey; idea?: string; choice?: number; feedback?: string; key?: string; scene?: number; style?: string; story?: string; part?: number; previous_end?: string; problem?: string; note?: string };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
   const action = body.action ?? 'phase';
 
@@ -137,11 +137,45 @@ Deno.serve(async (req) => {
   // Scene image generation was removed from the product (the Animated Studio replaces it).
   if (action === 'image') return json({ error: 'La génération d’images a été retirée de Storyit.' }, 410);
 
+  // Projects made before the V4 studio keep their results but are read-only: the new steps expect the new format.
+  if (project && !project.data?.v4 && (action === 'phase' || action === 'fix')) return json({ error: 'Ce projet a été créé avec l’ancienne version du studio : créez un nouveau projet pour utiliser la nouvelle.' }, 409);
+
+  // ---------- Dépannage: the corrected prompt of ONE clip (included in the project) ----------
+  if (action === 'fix') {
+    if (!project) return json({ error: 'Projet introuvable' }, 404);
+    const d = { ...project.data } as Record<string, any>;
+    const i = Number(body.scene);
+    if (!d.script?.clips?.[i]) return json({ error: 'Clip introuvable' }, 400);
+    if (!(String(body.problem) in FIX_PROBLEMS)) return json({ error: 'Problème inconnu' }, 400);
+    try {
+      const out: any = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', buildFixPrompt(d, i, String(body.problem), String(body.note ?? '').slice(0, 400)), FIX_SCHEMA, true,
+        (r: any) => { if (!Array.isArray(r?.lines) || !r.lines.length || !Array.isArray(r?.shots) || !r.shots.length) throw new Error('Correction incomplète'); return r; });
+      const fixed = normalizePhase('script', { clips: [{ ...d.script.clips[i], lines: out.lines }, ...d.script.clips.slice(0, 3)] }).clips[0];
+      d.script = { ...d.script, clips: d.script.clips.map((c: any, k: number) => (k === i ? { ...c, lines: fixed.lines } : c)) };
+      if (d.videos?.clips?.[i]) {
+        const v = normalizePhase('videos', { clips: [{ head_lock: out.head_lock, look_lock: out.look_lock, shots: out.shots, sound: out.sound }, ...d.videos.clips.slice(0, 4)] }).clips[0];
+        d.videos = { ...d.videos, clips: d.videos.clips.map((c: any, k: number) => (k === i ? v : c)) };
+      }
+      if (d.images?.clips?.[i] && out.image?.setting) {
+        const im = normalizePhase('images', { sheet: d.images.sheet, clips: [out.image, ...d.images.clips.slice(0, 4)] }).clips[0];
+        d.images = { ...d.images, clips: d.images.clips.map((c: any, k: number) => (k === i ? im : c)) };
+      }
+      d.fixes = { ...(d.fixes ?? {}), [i]: { problem: body.problem, explanation: String(out.explanation ?? '').slice(0, 400), at: new Date().toISOString() } };
+      const saved = await admin.from('prompt_projects').update({ data: d, updated_at: new Date().toISOString() }).eq('id', project.id).eq('user_id', uid).select('*').single();
+      if (saved.error) throw new Error('Impossible d’enregistrer le projet');
+      return json({ project: saved.data });
+    } catch (e) {
+      const msg = e instanceof GeminiError ? 'Le service de génération est très demandé en ce moment. Réessayez dans quelques minutes.' : (e instanceof Error ? e.message : 'Échec');
+      return json({ error: `${msg} Aucun crédit n’a été utilisé.` }, 502);
+    }
+  }
+
   // ---------- Text phases ----------
   if (action !== 'phase') return json({ error: 'Action inconnue' }, 400);
   const phase = body.phase;
   if (!phase || !(phase in PHASES)) return json({ error: 'Étape inconnue' }, 400);
-  if (!project && phase !== 'concepts') return json({ error: 'Commencez par les concepts' }, 400);
+  if (!project && phase !== 'concepts' && phase !== 'script') return json({ error: 'Commencez par votre histoire' }, 400);
+  if (!project && phase === 'script' && !String(body.story ?? '').trim()) return json({ error: 'Écrivez votre histoire (même en vrac) ou demandez 3 histoires.' }, 400);
 
   const ownKey = await userKey();
   const billable = !ownKey && !project; // only a brand-new project is charged
@@ -151,15 +185,22 @@ Deno.serve(async (req) => {
   }
 
   const data: Record<string, any> = { ...(project?.data ?? {}) };
-  if (phase === 'script') {
-    if (typeof body.choice !== 'number' || !data.concepts?.[body.choice]) return json({ error: 'Choisissez un concept' }, 400);
+  if (!project) {
+    data.v4 = true;
+    data.style = styleOf(body.style);
+    data.story = String(body.story ?? '').trim().slice(0, 3000);
+    data.part = Math.max(1, Math.min(20, Number(body.part) || 1));
+    data.previous_end = String(body.previous_end ?? '').trim().slice(0, 1500);
+  }
+  if (phase === 'script' && typeof body.choice === 'number') {
+    if (!data.concepts?.[body.choice]) return json({ error: 'Choisissez une histoire' }, 400);
     data.chosen = body.choice;
   }
   if (PHASES[phase].requires.some((k) => data[k] === undefined)) return json({ error: 'Validez d’abord l’étape précédente' }, 400);
 
-  const idea = String(body.idea ?? project?.idea ?? '').trim().slice(0, 600);
+  const idea = String(body.idea ?? body.story ?? project?.idea ?? '').trim().slice(0, 600);
   try {
-    const phasePrompt = buildPhasePrompt(phase, { ...data, idea, feedback: String(body.feedback ?? '').slice(0, 600) });
+    const phasePrompt = buildPhasePrompt(phase, { ...data, feedback: String(body.feedback ?? '').slice(0, 600) });
     const valid = (r: unknown) => normalizePhase(phase, r);
     let raw;
     if (ownKey) {
@@ -174,12 +215,22 @@ Deno.serve(async (req) => {
     } else {
       raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true, valid);
     }
+    if (phase === 'script') { // one automatic repair round when some clips are out of the word budget (pace = rule n°1)
+      const probs = paceProblems(raw);
+      if (probs.length) {
+        try {
+          const fixed: any = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', buildRepairPrompt(raw, probs), PHASES.script.schema, true, valid);
+          if (paceProblems(fixed).length < probs.length) raw = fixed;
+        } catch (e) { console.error('pace repair', e instanceof Error ? e.message : e); } // keep the first version
+      }
+    }
     data[PHASES[phase].key] = raw; // already normalized and checked by `valid`
     for (const later of PHASES[phase].invalidates) delete data[later];
     if (phase === 'concepts' || phase === 'script' || phase === 'images') delete data.image_files; // images no longer match
 
     const concept = data.concepts?.[Number(data.chosen ?? 0)];
-    const row = { user_id: uid, data, idea: idea || null, phase: PHASES[phase].number, title: concept?.title ?? 'Nouveau projet', updated_at: new Date().toISOString() };
+    const title = data.script?.title ?? concept?.title ?? 'Nouveau mini-drama';
+    const row = { user_id: uid, data, idea: idea || null, phase: PHASES[phase].number, title: `${STYLES[styleOf(data.style)].emoji} ${title}${Number(data.part) > 1 ? ` · Partie ${data.part}` : ''}`, updated_at: new Date().toISOString() };
     const saved = project
       ? await admin.from('prompt_projects').update(row).eq('id', project.id).eq('user_id', uid).select('*').single()
       : await admin.from('prompt_projects').insert(row).select('*').single();

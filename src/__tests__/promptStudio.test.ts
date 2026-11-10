@@ -1,39 +1,75 @@
 import { describe, expect, it } from 'vitest';
-import { buildPhasePrompt, MASTER_PROMPT, normalizePhase, PHASES } from '@shared/promptStudio.ts';
+import { buildFixPrompt, buildPhasePrompt, checklist, clipStats, coverPrompt, FIX_PROBLEMS, grokPrompt, imagePrompt, MASTER_PROMPT, normalizePhase, PHASES, sheetPrompt, STYLES, words } from '@shared/promptStudio.ts';
 
-const scenes = (n: number) => Array.from({ length: n }, (_, i) => ({ scene_number: 99 - i, location: `L${i}`, emotional_beat: 'rage', action: 'a', dialogue: [] }));
+const line = (character: string, start: number, end: number, text: string) => ({ character, start, end, text });
+const W = (n: number) => Array.from({ length: n }, (_, i) => `mot${i}`).join(' ');
+// a 10-second clip at 4.4 words/s: 44 words in 3 lines, contiguous, ends 0.2 s before the end
+const clip10 = () => ({ seconds: 10, location: 'kitchen', characters: ['Kévin', 'Lila'], summary: 's', open_question: 'q', new_thing: 'n', mini_hook: 'm',
+  lines: [line('Kévin', 0.1, 3.3, W(15)), line('Lila', 3.4, 6.6, W(15)), line('Kévin', 6.7, 9.8, W(14))] });
+const script = () => normalizePhase('script', {
+  title: 'Le billet déchiré', paradox: 'p', synopsis: 's',
+  characters: [{ name: 'Kévin', phonetic: 'Ké-vin', head: 'big glossy watermelon head', face: 'f', hands_neck: 'green', outfit: 'red hoodie', accessory: 'cap', voice: 'young street voice', role: 'héros' },
+    { name: 'Lila', phonetic: 'Li-la', head: 'angular lemon head', face: 'f', hands_neck: 'yellow', outfit: 'black suit', accessory: 'ring', voice: 'cold sharp voice', role: 'méchante' }],
+  locations: ['kitchen'], hook_candidates: [1, 2, 3, 4, 5].map((i) => ({ mechanic: `m${i}`, line: 'l' })), hook: { image: 'i', why: 'w' }, backup_hooks: [{ image: 'a', line: 'b' }, { image: 'c', line: 'd' }],
+  clips: Array.from({ length: 7 }, clip10), cliffhanger: 'c',
+  engagement: { levers: ['a'], references: ['Jul', 'Squid Game'], cult_line: 'c', target_comment: 't', scores: { villain: 2, debate: 2, cult_line: 2, share: 1, part2: 2, detail: 1 } },
+});
 
-describe('Prompt Studio', () => {
-  it('master prompt keeps the rules: French, 9:16, 15-20 scenes, 6-8 locations, text only', () => {
-    for (const rule of ['FRANÇAIS', '9:16', '15 à 20 scènes', '6 à 8 lieux', 'NE GÉNÈRE AUCUNE IMAGE']) expect(MASTER_PROMPT).toContain(rule);
+describe('Prompt Studio V4', () => {
+  it('master prompt keeps the key rules of the meta-prompt', () => {
+    for (const rule of ['66 à 75 s', '4,2 à 4,6 mots/s', '6 mots minimum', '5 hooks', 'cliffhanger', 'Grille /10', 'HISTOIRE ET RYTHME']) expect(MASTER_PROMPT).toContain(rule);
   });
-  it('each phase requires the previous validated ones and invalidates what depends on it', () => {
-    expect(PHASES.script.requires).toEqual(['concepts', 'chosen']);
-    expect(PHASES.videos.requires).toContain('images');
-    expect(PHASES.concepts.invalidates).toEqual(expect.arrayContaining(['script', 'images', 'videos', 'pack']));
+  it('the story is enough to start: the script step needs no concepts', () => {
+    expect(PHASES.script.requires).toEqual([]);
+    expect(PHASES.videos.requires).toEqual(expect.arrayContaining(['script', 'images']));
+    expect(buildPhasePrompt('script', { style: 'ongles', story: 'Un ongle rouge vole un contrat', feedback: 'plus drôle' })).toMatch(/Ongles[\s\S]*Un ongle rouge vole un contrat[\s\S]*plus drôle/);
+    expect(buildPhasePrompt('script', { style: 'fruits', part: 2, previous_end: 'la porte claque', story: 'x' })).toContain('PARTIE 2');
   });
-  it('builds phase prompts only from validated data, with the chosen concept and user tweaks', () => {
-    const p = buildPhasePrompt('script', { concepts: [{ title: 'A' }, { title: 'La fraise trahie' }], chosen: 1, feedback: 'plus de suspense' });
-    expect(p).toContain('La fraise trahie');
-    expect(p).not.toContain('"A"');
-    expect(p).toContain('plus de suspense');
+  it('counts words and pace per clip', () => {
+    expect(words('« Cent mille euros pour dormir chez moi ?! »')).toBe(7);
+    const st = clipStats(clip10());
+    expect(st.words).toBe(44);
+    expect(st.wps).toBeCloseTo(4.4);
+    expect(st.short).toBe(0);
   });
-  it('forces 9:16, renumbers scenes 1..n and caps at 20', () => {
-    const imgs = normalizePhase('images', { scenes: scenes(24).map((s) => ({ ...s, aspect_ratio: '16:9', prompt: 'x' })) });
-    expect(imgs).toHaveLength(20);
-    expect(imgs.map((s: { scene_number: number }) => s.scene_number)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
-    expect(imgs.every((s: { aspect_ratio: string }) => s.aspect_ratio === '9:16')).toBe(true);
-  });
-  it('rejects unusable answers instead of saving them (no credit charged)', () => {
+  it('clip lengths snap to 6, 10 or 15 s and unusable answers are rejected (no credit charged)', () => {
+    expect(normalizePhase('script', { clips: [7, 11, 14, 30].map((s) => ({ ...clip10(), seconds: s })) }).clips.map((c: { seconds: number }) => c.seconds)).toEqual([6, 10, 15, 15]);
+    expect(() => normalizePhase('script', { clips: [clip10()] })).toThrow(/trop court/);
     expect(() => normalizePhase('concepts', { concepts: [] })).toThrow();
-    expect(() => normalizePhase('script', { scenes: scenes(5) })).toThrow(/trop court/);
   });
-  it('keeps exactly 3 concepts, 5 titles, clean hashtags', () => {
-    expect(normalizePhase('concepts', { concepts: [1, 2, 3, 4].map((i) => ({ title: `C${i}` })) })).toHaveLength(3);
-    const pack = normalizePhase('pack', { thumbnail: { prompt: 'p' }, titles: ['1', '2', '3', '4', '5', '6'], caption: 'c', hashtags: ['AIFruit', '#FruitDrama', 'Fruit Drama', 'AIFruit'] });
-    expect(pack.titles).toHaveLength(5);
-    expect(pack.hashtags).toEqual(['#AIFruit', '#FruitDrama']);
-    expect(pack.thumbnail.aspect_ratio).toBe('9:16');
-    expect(normalizePhase('pack', { hashtags: ['#FruitDrama #AIFruit #PixarStyle', 'DrameFamilial'] }).hashtags).toEqual(['#FruitDrama', '#AIFruit', '#PixarStyle', '#DrameFamilial']);
+  it('the checklist passes a clean 70 s script and flags the problems', () => {
+    const s = script();
+    const ok = checklist({ style: 'fruits', script: s });
+    expect(ok.find((c) => c.label.startsWith('Durée'))!.ok).toBe(true);
+    expect(ok.find((c) => c.label.startsWith('Rythme'))!.ok).toBe(true);
+    const slow = { ...s, clips: s.clips.map((c: ReturnType<typeof clip10>, i: number) => (i === 2 ? { ...c, lines: [line('Kévin', 0.1, 9.8, W(12))] } : c)) };
+    expect(checklist({ style: 'fruits', script: slow }).find((c) => c.label.startsWith('Rythme'))!.detail).toContain('clip 3');
+  });
+  it('image prompts copy the character sheet and the full style block word for word', () => {
+    const d = { style: 'pierres', script: script(), images: { sheet: [{ name: 'Kévin', description: 'big ruby head, red hoodie' }, { name: 'Lila', description: 'sapphire head, black suit' }], clips: [{ setting: 'a kitchen', continuity: 'stain on the hoodie', characters: [{ name: 'Kévin', action: 'tearing a ticket' }, { name: 'Lila', action: 'pointing' }] }] } };
+    expect(sheetPrompt(d)).toContain('2 characters standing side by side');
+    expect(sheetPrompt(d).endsWith(STYLES.pierres.block)).toBe(true);
+    const img = imagePrompt(d, 0);
+    expect(img).toContain('Same characters as the attached character reference sheet.');
+    expect(img).toContain('KÉVIN, big ruby head, red hoodie, tearing a ticket');
+    expect(img).toContain('Both fully visible');
+    expect(img).toContain('stain on the hoodie');
+    expect(img.endsWith(STYLES.pierres.block)).toBe(true);
+  });
+  it('Grok prompts carry the 8 blocks, the timed French dialogue, voices and pronunciation', () => {
+    const d = { style: 'fruits', script: script(), videos: { clips: [{ head_lock: [{ name: 'Kévin', head: 'watermelon' }, { name: 'Lila', head: 'lemon' }], look_lock: '', shots: [{ start: 0, end: 3.3, text: 'push-in on KÉVIN TALKING' }], sound: 'kitchen ambience, a slap at 0.0s' }] } };
+    const g = grokPrompt(d, 0);
+    for (const b of ['① Animate this image: 10-second', 'glossy whole fruit heads, never cut', '② HEAD LOCK: KÉVIN and LILA', '③ SPEAKER LOCK', '④ PACE', '⑤ Camera always moving', '⑥ SHOT LIST:', '⑦ DIALOGUE (in French, spoken fast):', '⑧ PRONUNCIATION: "Kévin" = "Ké-vin"', 'No music, no subtitles, no text.']) expect(g).toContain(b);
+    expect(g).toMatch(/KÉVIN \(young street voice\) 0\.1-3\.\ds: «/);
+    expect(g).toContain('LILA (cold sharp voice)');
+    expect(g).toContain('Fast push-in from the very first frame'); // clip 1 only
+  });
+  it('cover, hashtags and the troubleshooting list', () => {
+    const d = { style: 'fruits', part: 2, script: script(), pack: normalizePhase('pack', { cover: { setting: 's', glow: 'red', characters: [{ name: 'Kévin', pose: 'crying' }, { name: 'Lila', pose: 'smirking' }] }, caption: 'c', pinned_comment: 'Team Kévin ou Team Lila ?', hashtags: ['#a1', 'b2 c3', '#d4', 'e5', 'f6', 'a1'] }) };
+    expect(d.pack.hashtags).toHaveLength(5);
+    expect(coverPrompt(d)).toContain('« PARTIE 2 »');
+    expect(coverPrompt(d)).toContain('3:4 vertical format');
+    expect(Object.keys(FIX_PROBLEMS)).toEqual(expect.arrayContaining(['slow', 'speaker', 'look', 'hook']));
+    expect(buildFixPrompt({ style: 'fruits', script: script() }, 2, 'speaker', '')).toContain('clip 3');
   });
 });
