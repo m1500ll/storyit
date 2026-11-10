@@ -282,7 +282,8 @@ export function normalizePhase(phase: PhaseKey, raw: any): any {
         shots: (Array.isArray(c.shots) ? c.shots : []).slice(0, 12).map((s: any) => ({ start: num(s.start), end: num(s.end), text: str(s.text, 400) })).filter((s: any) => s.text),
         sound: str(c.sound, 400),
       }));
-      if (clips.length < 4 || clips.some((c: any) => !c.shots.length)) throw new Error('Prompts Grok incomplets reçus. Réessayez.');
+      // a clip without shots is rebuilt from its lines by retimeShots (close-ups of each speaker): only an empty answer is rejected
+      if (clips.length < 4 || clips.every((c: any) => !c.shots.length)) throw new Error('Prompts Grok incomplets reçus. Réessayez.');
       return { clips };
     }
     case 'pack':
