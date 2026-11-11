@@ -34,6 +34,8 @@ export interface V4Data {
 
 export interface PromptProject {
   id: string; title: string; idea: string | null; phase: number; created_at: string; updated_at: string;
+  /** list view only: the character style of the series */
+  style?: StyleKey | null;
   data: { v4?: boolean; concepts?: Concept[]; chosen?: number; script?: Script; images?: ImagePrompt[]; videos?: VideoPrompt[]; pack?: Pack; image_files?: Record<string, string> } & Partial<Omit<V4Data, 'concepts' | 'script' | 'images' | 'videos' | 'pack'>>;
 }
 
@@ -62,10 +64,12 @@ export const promptStudio = {
   /** List view: only the columns the cards show (the heavy `data` JSON is loaded when a project opens). */
   async list(): Promise<PromptProject[]> {
     if (!supabase) return [];
-    const { data, error } = await supabase.from('prompt_projects' as never).select('id, title, idea, phase, created_at, updated_at').order('updated_at', { ascending: false }).limit(50);
+    const { data, error } = await supabase.from('prompt_projects' as never).select('id, title, idea, phase, created_at, updated_at, style:data->>style').order('updated_at', { ascending: false }).limit(50);
     if (error) throw new Error(error.message);
     return (data ?? []) as unknown as PromptProject[];
   },
+  /** illustration of a character style (generated with the style's own prompt block) */
+  styleImage: (style?: string | null) => `/studio/styles/${style && ['fruits', 'ongles', 'objets', 'pierres'].includes(style) ? style : 'fruits'}.webp`,
   async get(id: string): Promise<PromptProject | null> {
     if (!supabase) return null;
     const { data } = await supabase.from('prompt_projects' as never).select('*').eq('id', id).maybeSingle();

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from '@/hooks/useStore';
 import { PROMPT_PROJECT_COST } from '@/services/credits';
 import { promptStudio } from '@/services/promptStudio';
+import { STYLES } from '@shared/promptStudio.ts';
 
 const IDEAS = [
   'A strawberry betrayed by her watermelon sister on her wedding day',
@@ -33,6 +34,18 @@ export function PromptStudioHero() {
           <Sparkles className="h-4 w-4" aria-hidden /> Write my story
         </button>
       </form>
+      <p className="mt-5 text-xs text-zinc-400">Or start from a character style</p>
+      <ul className="mt-2 grid grid-cols-4 gap-2 sm:gap-3">
+        {(Object.keys(STYLES) as (keyof typeof STYLES)[]).map((k) => (
+          <li key={k}>
+            <Link to={`/app/prompts?style=${k}`} className="group relative block overflow-hidden rounded-2xl border border-line/10 transition hover:border-violet-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60">
+              <img src={promptStudio.styleImage(k)} alt="" width={640} height={854} loading="lazy" className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-[1.05]" />
+              <span className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              <span className="absolute inset-x-0 bottom-0 truncate p-2 text-[11px] font-semibold text-white sm:p-3 sm:text-sm">{STYLES[k].label}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
       <div className="mt-3 flex flex-wrap gap-2">
         {IDEAS.map((i) => (
           <button key={i} type="button" onClick={() => setIdea(i)} className="touch-hit rounded-full border border-line/10 bg-line/[0.04] px-3 py-1 text-xs text-zinc-300 hover:border-violet-400/40 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">{i}</button>
@@ -45,7 +58,8 @@ export function PromptStudioHero() {
           <ul className="grid gap-2 sm:grid-cols-3">
             {projects.slice(0, 3).map((p) => (
               <li key={p.id}>
-                <Link to={`/app/prompts/${p.id}`} className="flex items-center gap-2 rounded-xl bg-line/[0.05] px-3 py-2.5 text-sm text-zinc-200 hover:bg-line/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
+                <Link to={`/app/prompts/${p.id}`} className="flex items-center gap-3 rounded-xl bg-line/[0.05] py-2 pl-2 pr-3 text-sm text-zinc-200 hover:bg-line/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
+                  <img src={promptStudio.styleImage(p.style)} alt="" width={36} height={48} loading="lazy" className="h-12 w-9 shrink-0 rounded-lg object-cover" />
                   <span className="min-w-0 flex-1"><span className="block truncate">{p.title}</span><span className="block text-[11px] text-zinc-500">Step {p.phase}/5</span></span>
                   <ArrowRight className="h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
                 </Link>

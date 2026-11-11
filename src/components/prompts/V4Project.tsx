@@ -117,7 +117,7 @@ export function V4Project({ project, run, busy, error }: {
   const s = d.script;
   return (
     <>
-      <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-line/10 px-3 py-1 text-xs text-zinc-300">{style.emoji} Style {style.label} · verrouillé pour la série{d.part > 1 ? ` · Partie ${d.part}` : ''}</p>
+      <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-line/10 py-1 pl-1 pr-3 text-xs text-zinc-300"><img src={promptStudio.styleImage(d.style)} alt="" width={24} height={24} className="h-6 w-6 rounded-full object-cover" /> Style {style.label} · verrouillé pour la série{d.part > 1 ? ` · Partie ${d.part}` : ''}</p>
       <ol className="mb-6 flex gap-1.5 overflow-x-auto pb-1" aria-label="Étapes">
         {steps.map((st, i) => (
           <li key={st.key}>

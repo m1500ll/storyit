@@ -100,7 +100,7 @@ const VEILLE = [
 function Start() {
   const cost = useCost();
   const [params] = useSearchParams();
-  const [style, setStyle] = useState<StyleKey>('fruits');
+  const [style, setStyle] = useState<StyleKey>(() => { const q = params.get('style'); return q && q in STYLES ? (q as StyleKey) : 'fruits'; });
   const [story, setStory] = useState(() => params.get('idea')?.slice(0, 3000) ?? ''); // prefilled from the dashboard
   const [part2, setPart2] = useState(false);
   const [part, setPart] = useState(2);
@@ -119,12 +119,19 @@ function Start() {
       {busy ? <Waiting text={V4_STEPS.find((x) => x.key === busy)?.waiting ?? 'Écriture…'} /> : (
         <Card>
           <h2 className="text-sm font-semibold text-zinc-100">1. Le style des personnages <span className="font-normal text-zinc-500">(verrouillé pour toute la série)</span></h2>
-          <div role="radiogroup" aria-label="Style des personnages" className="mt-3 grid grid-cols-2 gap-2 lg:grid-cols-4">
+          <div role="radiogroup" aria-label="Style des personnages" className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
             {(Object.keys(STYLES) as StyleKey[]).map((k) => (
               <button key={k} type="button" role="radio" aria-checked={style === k} onClick={() => setStyle(k)}
-                className={cn('surface rounded-2xl p-3 text-left transition-colors [touch-action:manipulation] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50', style === k && 'border-violet-500/60 bg-violet-500/10')}>
-                <span className="flex items-center gap-2 text-sm font-medium text-zinc-100"><span aria-hidden className="text-lg">{STYLES[k].emoji}</span>{STYLES[k].label}{k === 'fruits' && <span className="rounded-full bg-violet-500/15 px-1.5 text-[10px] text-violet-200">conseillé</span>}{style === k && <Check className="ml-auto h-4 w-4 text-violet-300" aria-hidden />}</span>
-                <span className="mt-1 block text-xs text-zinc-400">{STYLES[k].text}</span>
+                className={cn('group relative overflow-hidden rounded-2xl border text-left transition [touch-action:manipulation] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60',
+                  style === k ? 'border-violet-500 ring-2 ring-violet-500/40' : 'border-line/10 hover:border-violet-400/50')}>
+                <img src={promptStudio.styleImage(k)} alt="" width={640} height={854} loading="lazy" className="aspect-[4/5] w-full object-cover transition duration-500 group-hover:scale-[1.04]" />
+                <span className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+                {k === 'fruits' && <span className="absolute left-2 top-2 rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-semibold text-white">Conseillé</span>}
+                {style === k && <span className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-violet-600 text-white"><Check className="h-3.5 w-3.5" aria-hidden /></span>}
+                <span className="absolute inset-x-0 bottom-0 p-3">
+                  <span className="block text-sm font-semibold text-white">{STYLES[k].label}</span>
+                  <span className="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-white/75">{STYLES[k].text}</span>
+                </span>
               </button>
             ))}
           </div>
@@ -175,7 +182,8 @@ function Start() {
       {loading ? <LoadState loading error={null} /> : projects.length === 0 ? <p className="text-xs text-zinc-500">Aucun projet pour l'instant.</p> : (
         <ul className="grid gap-2 sm:grid-cols-2">
           {projects.map((p) => (
-            <li key={p.id} className="surface flex items-center gap-3 px-4 py-3">
+            <li key={p.id} className="surface flex items-center gap-3 py-2 pl-2 pr-3">
+              <img src={promptStudio.styleImage(p.style)} alt="" width={48} height={64} loading="lazy" className="h-16 w-12 shrink-0 rounded-xl object-cover" />
               <Link to={`/app/prompts/${p.id}`} className="min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
                 <span className="block truncate text-sm text-zinc-100">{p.title}</span>
                 <span className="block text-[11px] text-zinc-500">Étape {p.phase}/5 · {V4_STEPS[p.phase - 1]?.label} · {new Date(p.updated_at).toLocaleDateString()}</span>
