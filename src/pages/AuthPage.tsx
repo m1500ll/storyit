@@ -2,7 +2,8 @@ import { ArrowLeft, Gift } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useSeo } from '@/lib/seo';
-import { Button, Card, Logo, ThemeToggle } from '@/components/ui';
+import { Button, Logo } from '@/components/ui';
+import { AuthShowcase, AuthShowcaseStrip } from '@/components/auth/AuthShowcase';
 import { GoogleIcon } from '@/components/ui/GoogleIcon';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -88,12 +89,15 @@ export default function AuthPage() {
   const copy = COPY[mode];
   const invited = !!pendingReferral();
   return (
-    <div className="grid min-h-screen place-items-center bg-ink-950 px-4 py-10">
-      <div className="pointer-events-none fixed left-1/2 top-0 h-[400px] w-[700px] -translate-x-1/2 rounded-full bg-violet-600/15 blur-[120px]" />
-      <ThemeToggle className="fixed right-4 top-4" />
-      <Card className="relative w-full max-w-sm p-8">
-        <Logo />
-        <h1 className="mt-8 font-display text-3xl text-zinc-50">{copy.title}</h1>
+    <div className="theme-light min-h-screen bg-ink-950 text-zinc-100 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]" style={{ colorScheme: 'light' }}>
+      <main className="relative flex min-h-screen flex-col overflow-hidden px-4 py-6 sm:px-8">
+        <div className="pointer-events-none absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-violet-400/25 blur-[110px]" />
+        <div className="pointer-events-none absolute -bottom-40 right-0 h-[380px] w-[380px] rounded-full bg-coral-500/20 blur-[110px]" />
+        <Link to="/" className="relative self-start rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" aria-label="Storyit home"><Logo /></Link>
+        <div className="relative mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10">
+        <AuthShowcaseStrip />
+        <div className="rounded-3xl border border-line/[0.07] bg-ink-900/90 p-7 shadow-[0_30px_80px_-30px_rgba(76,29,149,0.35)] backdrop-blur sm:p-8">
+        <h1 className="font-display text-4xl leading-tight text-zinc-50">{copy.title}</h1>
         <p className="mt-1 text-sm text-zinc-500">{copy.sub}</p>
         {mode === 'signup' && invited && (
           <p className="mt-4 flex items-start gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs text-zinc-100">
@@ -154,7 +158,10 @@ export default function AuthPage() {
         <p className="mt-6 text-center text-[11px] leading-relaxed text-zinc-600">
           By continuing you agree to how we handle your data in our <Link to="/privacy" className="underline hover:text-zinc-400">Privacy Policy</Link>.
         </p>
-      </Card>
+        </div>
+        </div>
+      </main>
+      <AuthShowcase />
     </div>
   );
 }

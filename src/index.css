@@ -17,8 +17,9 @@
     --sky-300: 125 211 252;
     --grid-alpha: 0.1;
   }
-  /* Light: soft paper background, white cards, ink text; accents darkened for contrast. */
-  :root[data-theme='light'] {
+  /* Light: soft paper background, white cards, ink text; accents darkened for contrast.
+     `.theme-light` forces the light palette on one part of the page (e.g. the sign-in screen). */
+  :root[data-theme='light'], .theme-light {
     color-scheme: light;
     --ink-950: 247 246 251; --ink-900: 255 255 255; --ink-850: 243 242 248; --ink-800: 236 234 243; --ink-700: 226 223 235; --ink-600: 210 206 222;
     --zinc-50: 12 11 18; --zinc-100: 22 21 30; --zinc-200: 36 35 46; --zinc-300: 58 56 70;
@@ -49,6 +50,9 @@
   }
 }
 
+/* sign-in showcase: endless vertical scroll of video cards (the column holds its list twice) */
+@keyframes marquee-up { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+@keyframes float-soft { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes fadein { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 
