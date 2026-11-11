@@ -2,6 +2,7 @@ import { AlertTriangle, Check, ChevronDown, Copy, ExternalLink, RefreshCw, Wrenc
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card } from '@/components/ui';
+import { AutoVideo } from './AutoVideo';
 import { cn } from '@/lib/cn';
 import { promptStudio, type PhaseKey, type PromptProject, type V4Data } from '@/services/promptStudio';
 import { checklist, clipStats, coverPrompt, FIX_PROBLEMS, grokPrompt, imagePrompt, sheetPrompt, STYLES } from '@shared/promptStudio.ts';
@@ -128,6 +129,7 @@ export function V4Project({ project, run, busy, error }: {
           </li>
         ))}
       </ol>
+      {d.videos && !busy && (shown === 'videos' || shown === 'pack') && <AutoVideo projectId={id} data={d} />}
       {error && <p role="alert" className="mb-4 rounded-xl border border-coral-500/30 bg-coral-500/10 px-4 py-3 text-xs text-coral-300">{error}</p>}
       {busy && busy !== 'fix' ? null : (
         <>

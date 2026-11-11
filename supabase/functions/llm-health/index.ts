@@ -14,6 +14,21 @@ Deno.serve(async (req) => {
   const token = Deno.env.get('PUBLISHER_CRON_TOKEN');
   if (!token || token.length < 32 || !timingSafeEqual(req.headers.get('Authorization') ?? '', `Bearer ${token}`)) return json({ error: 'Forbidden' }, 403);
   const url = new URL(req.url);
+  if (url.searchParams.get('providers') === '1') {
+    // Video generation keys: do they work, and which image / video models does each account see? (free calls)
+    const check = async (base: string, key: string | undefined, keep: RegExp) => {
+      if (!key) return { ok: false, error: 'missing key' };
+      const r = await fetch(`${base}/models`, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(15_000) });
+      const d = await r.json().catch(() => ({}));
+      return { ok: r.ok, status: r.status, ids: (d.data ?? d.models ?? []).map((m: { id: string }) => m.id).filter((id: string) => keep.test(id)), error: r.ok ? undefined : JSON.stringify(d).slice(0, 300) };
+    };
+    const [openai, xai, xaiVideo] = await Promise.all([
+      check('https://api.openai.com/v1', Deno.env.get('OPENAI_API_KEY'), /image|gpt-5|dall/i),
+      check('https://api.x.ai/v1', Deno.env.get('XAI_API_KEY'), /.*/),
+      Deno.env.get('XAI_API_KEY') ? fetch('https://api.x.ai/v1/video-generation-models', { headers: { Authorization: `Bearer ${Deno.env.get('XAI_API_KEY')}` }, signal: AbortSignal.timeout(15_000) }).then(async (r) => ({ status: r.status, body: (await r.text()).slice(0, 1500) })).catch((e) => ({ error: String(e) })) : null,
+    ]);
+    return json({ openai, xai, xaiVideo });
+  }
   if (url.searchParams.get('full')) {
     // End-to-end: concepts then script on one backup model, as a real project would.
     const b = backups()[Number(url.searchParams.get('full')) || 0];

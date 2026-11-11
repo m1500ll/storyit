@@ -4,6 +4,8 @@
 # - poll:  every 5 minutes, in case a wake-up was missed.
 # - drain: claims queued shorts one by one and produces them (worker/pipeline.ts).
 # - drain_dub: claims queued video translations (dub_jobs) and produces them (dub/dub.py); api /wake-dub starts it.
+# - drain_prompt: claims queued Prompt Studio videos (prompt_videos) and produces them (promptvideo/run.py): OpenAI images,
+#   xAI Grok Imagine animation, ffmpeg montage; api /wake-prompt starts it. Light machine: the heavy work is done by the APIs.
 # Rendering: software WebGL (swangle) on 32 CPU cores by default: proven, ~15-25 min per 60 s short.
 # GPU option: deploy with DEPLOY_GPU=1 (needs a payment method on Modal), then set RENDER_MODE=gpu in the secret to
 # render on an L4 with ANGLE/EGL (faster; verify one render first).
@@ -68,6 +70,11 @@ def drain_dub():
     subprocess.run(["python3", "dub/dub.py"], cwd="/app", env=dict(os.environ), check=True)
 
 
+@app.function(secrets=[secret], cpu=4.0, memory=8192, timeout=2 * 60 * 60, max_containers=3)
+def drain_prompt():
+    subprocess.run(["python3", "promptvideo/run.py"], cwd="/app", env=dict(os.environ), check=True)
+
+
 def _start():
     gpu = os.environ.get("RENDER_MODE") == "gpu" and "drain_gpu" in globals()
     (globals()["drain_gpu"] if gpu else drain_cpu).spawn()
@@ -94,6 +101,13 @@ def api():
         drain_dub.spawn()
         return {"started": True}
 
+    @web.post("/wake-prompt")
+    def wake_prompt_route(authorization: str = Header(default="")):
+        if authorization != f"Bearer {os.environ['RENDER_WORKER_TOKEN']}":
+            raise HTTPException(status_code=401)
+        drain_prompt.spawn()
+        return {"started": True}
+
     return web
 
 
@@ -113,3 +127,8 @@ def poll():
     with urllib.request.urlopen(req, timeout=20) as r:
         if json.load(r):
             drain_dub.spawn()
+    req = urllib.request.Request(os.environ["SUPABASE_URL"].rstrip("/") + "/rest/v1/prompt_videos?status=eq.queued&select=id&limit=1",
+                                 headers={"apikey": key, "Authorization": f"Bearer {key}"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        if json.load(r):
+            drain_prompt.spawn()
