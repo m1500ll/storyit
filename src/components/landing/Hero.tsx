@@ -10,6 +10,7 @@ import { Button } from '../ui';
 import { VideoCard } from './VideoCard';
 import { VideoLightbox } from './VideoLightbox';
 import { StartLink } from './StartLink';
+import { HeroBackdrop } from './HeroBackdrop';
 
 const FAN = [
   { tilt: -6, y: 18 }, { tilt: -3, y: 4 }, { tilt: 0, y: -6 }, { tilt: 3, y: 4 }, { tilt: 6, y: 18 },
@@ -20,6 +21,7 @@ export function Hero() {
   const [open, setOpen] = useState<ShowcaseVideo | null>(null);
   return (
     <section className="relative overflow-hidden">
+      <HeroBackdrop />
       <div aria-hidden="true" className="bg-grid mask-fade-radial pointer-events-none absolute inset-0" />
       <div className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px]" />
       <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-20 text-center md:px-6 md:pt-28">
