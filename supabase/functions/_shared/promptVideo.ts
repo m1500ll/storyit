@@ -17,6 +17,13 @@ export const videoCost = (q: VideoQuality, seconds: number) => Math.max(5, Math.
 /** total length of the project's clips, or 0 */
 export const projectSeconds = (d: any): number => (d?.script?.clips ?? []).reduce((s: number, c: any) => s + (Number(c?.seconds) || 0), 0);
 
+/** how many clips from the start fit in `max` seconds (at least one) */
+export function firstClips(clips: { seconds: number }[], max: number): number {
+  let total = 0, n = 0;
+  for (const c of clips) { if (n > 0 && total + Number(c.seconds) > max) break; total += Number(c.seconds); n++; }
+  return Math.max(1, n);
+}
+
 /** why the project cannot be turned into a video yet (French, for the customer), or null when it can */
 export function videoBlocker(d: any): string | null {
   if (!d?.v4) return 'Ce projet a été créé avec l’ancienne version du studio.';

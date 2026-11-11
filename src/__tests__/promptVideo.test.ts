@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizePhase } from '@shared/promptStudio.ts';
-import { buildVideoPlan, projectSeconds, VIDEO_TIERS, videoBlocker, videoCost } from '@shared/promptVideo.ts';
+import { buildVideoPlan, firstClips, projectSeconds, VIDEO_TIERS, videoBlocker, videoCost } from '@shared/promptVideo.ts';
 
 const line = (character: string, start: number, end: number, text: string) => ({ character, start, end, text });
 const clip = (seconds: number) => ({ seconds, location: 'kitchen', characters: ['Kévin', 'Lila'], summary: 's', open_question: 'q', new_thing: 'n', mini_hook: 'm',
@@ -29,6 +29,10 @@ describe('Prompt Studio → video', () => {
     expect(videoCost('eco', 70)).toBe(85);
     expect(videoCost('premium', 72)).toBe(360);
     expect(videoCost('eco', 1) % 5).toBe(0);
+  });
+  it('an admin test keeps the first clips that fit', () => {
+    expect(firstClips([6, 10, 10, 15, 15, 10].map((seconds) => ({ seconds })), 30)).toBe(3);
+    expect(firstClips([{ seconds: 15 }], 5)).toBe(1);
   });
   it('the cheapest tier is the Lite animation in 480p', () => {
     expect(VIDEO_TIERS.eco).toMatchObject({ video_model: 'grok-imagine-video-1.5-lite', resolution: '480p' });

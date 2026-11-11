@@ -7,7 +7,7 @@
 //   these keys live in one place (Edge Function secrets)
 // Secrets: OPENAI_API_KEY, XAI_API_KEY, RENDER_WORKER_URL (…/wake; the worker is woken on …/wake-prompt), RENDER_WORKER_TOKEN.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { buildVideoPlan, isQuality, projectSeconds, videoBlocker, videoCost } from '../_shared/promptVideo.ts';
+import { buildVideoPlan, firstClips, isQuality, projectSeconds, videoBlocker, videoCost } from '../_shared/promptVideo.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -25,7 +25,7 @@ const COLS = 'id,project_id,title,quality,seconds,status,step,progress,error,vid
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
-  let body: { action?: string; id?: string; project_id?: string; quality?: string; download?: string };
+  let body: { action?: string; id?: string; project_id?: string; quality?: string; download?: string; max_seconds?: number };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
 
   if (body.action === 'worker_keys') {
@@ -56,9 +56,16 @@ Deno.serve(async (req) => {
     if (blocker) return json({ error: blocker }, 409);
     const { count } = await admin.from('prompt_videos').select('id', { count: 'exact', head: true }).eq('user_id', uid).in('status', ['queued', 'working']);
     if ((count ?? 0) >= 2) return json({ error: 'Deux vidéos sont déjà en cours. Attendez qu’une soit terminée.' }, 429);
-    const seconds = projectSeconds(project.data);
+    let data = project.data;
+    if (body.max_seconds) { // admin test: only the first clips that fit in max_seconds
+      const { data: me } = await admin.from('profiles').select('is_admin').eq('id', uid).single();
+      if (!me?.is_admin) return json({ error: 'Réservé à l’administrateur.' }, 403);
+      const clips = firstClips(data.script.clips, Number(body.max_seconds));
+      data = { ...data, script: { ...data.script, clips: data.script.clips.slice(0, clips) } };
+    }
+    const seconds = projectSeconds(data);
     const cost = videoCost(body.quality, seconds);
-    const plan = buildVideoPlan(project.data, body.quality);
+    const plan = buildVideoPlan(data, body.quality);
     const { error: credErr } = await user.rpc('consume_credits', { p_amount: cost, p_story_id: null, p_description: `Vidéo Prompt Studio (${body.quality}, ${Math.round(seconds)} s)` });
     if (credErr) return json({ error: `Il vous faut ${cost} crédits pour cette vidéo.`, code: 'insufficient_credits', needed: cost }, 402);
     const { data: job, error } = await admin.from('prompt_videos').insert({
