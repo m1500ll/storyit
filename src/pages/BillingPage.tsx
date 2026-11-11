@@ -5,7 +5,7 @@ import { PlanPicker } from '@/components/billing/PlanPicker';
 import { Button, Card, CardHeader, PageHeader } from '@/components/ui';
 import { useCredits, useProfile } from '@/hooks/useStore';
 import { billingService } from '@/services/billing';
-import { PLANS } from '@/services/credits';
+import { PLANS, formatCredits } from '@/services/credits';
 import { TrialUpgrade } from '@/components/billing/TrialUpgrade';
 
 function CheckoutBanner() {
@@ -36,17 +36,17 @@ export default function BillingPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <p className="label">Balance</p>
-          <p className="mt-2 font-display text-4xl tabular-nums text-zinc-50">{balance}</p>
+          <p className="mt-2 font-display text-4xl tabular-nums text-zinc-50">{formatCredits(balance)}</p>
           <p className="text-xs text-zinc-500">Used only by the AI studio (beta)</p>
         </Card>
         <Card>
           <p className="label">Current plan</p>
           <p className="mt-2 font-display text-4xl text-zinc-50">{plan?.name ?? '—'}</p>
-          <p className="text-xs text-zinc-500">{plan ? `${plan.credits} credits ${plan.period === 'month' ? '/ month' : 'on signup'}` : ''}</p>
+          <p className="text-xs text-zinc-500">{plan ? `${formatCredits(plan.credits)} credits ${plan.period === 'month' ? '/ month' : 'on signup'}` : ''}</p>
         </Card>
         <Card className="flex flex-col">
           <p className="label">Credits used</p>
-          <p className="mt-2 font-display text-4xl tabular-nums text-zinc-50">{spent}</p>
+          <p className="mt-2 font-display text-4xl tabular-nums text-zinc-50">{formatCredits(spent)}</p>
           {profile?.plan && profile.plan !== 'free' && (
             <Button size="sm" variant="secondary" className="mt-auto" onClick={() => billingService.openPortal().catch((e: Error) => setPortalError(e.message))}>
               <CardIcon className="h-3.5 w-3.5" /> Manage billing & invoices
@@ -71,7 +71,7 @@ export default function BillingPage() {
               <tr key={t.id}>
                 <td className="py-2.5 text-xs text-zinc-500">{new Date(t.created_at).toLocaleDateString()}</td>
                 <td className="py-2.5 text-zinc-300">{t.description}</td>
-                <td className={`py-2.5 text-right tabular-nums ${t.amount < 0 ? 'text-coral-300' : 'text-emerald-300'}`}>{t.amount > 0 ? '+' : ''}{t.amount}</td>
+                <td className={`py-2.5 text-right tabular-nums ${t.amount < 0 ? 'text-coral-300' : 'text-emerald-300'}`}>{t.amount > 0 ? '+' : ''}{formatCredits(t.amount)}</td>
                 <td className="py-2.5 text-right tabular-nums text-zinc-400">{t.balance_after}</td>
               </tr>
             ))}

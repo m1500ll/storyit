@@ -45,7 +45,7 @@ const CAMPAIGNS: Record<string, Campaign> = {
 <tr><td>🎵 la <strong>musique et les effets d’origine</strong> gardés,</td></tr>
 <tr><td>💬 les <strong>sous-titres incrustés remplacés</strong> par des sous-titres traduits,</td></tr>
 <tr><td>🎬 le montage reste exactement le même.</td></tr></table></td></tr>
-<tr><td style="font-size:14px;line-height:1.6;color:#4b4560">Envoyez simplement votre vidéo verticale (3 minutes maximum). 35 crédits par minute de vidéo, remboursés si la traduction échoue.</td></tr>
+<tr><td style="font-size:14px;line-height:1.6;color:#4b4560">Envoyez simplement votre vidéo verticale (3 minutes maximum). 3 500 crédits par minute de vidéo, remboursés si la traduction échoue.</td></tr>
 <tr><td align="center" style="padding:26px 0 8px"><a href="${APP}/app/translate" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:14px 26px;border-radius:12px">Traduire une vidéo</a></td></tr>`, unsub),
     text: (unsub) => `Bonjour,
 
@@ -56,7 +56,7 @@ Nouveauté sur Storyit : la traduction de vidéos. Une vidéo, plusieurs langues
 - les sous-titres incrustés remplacés par des sous-titres traduits,
 - le montage reste exactement le même.
 
-Envoyez simplement votre vidéo verticale (3 minutes maximum). 35 crédits par minute de vidéo, remboursés si la traduction échoue.
+Envoyez simplement votre vidéo verticale (3 minutes maximum). 3 500 crédits par minute de vidéo, remboursés si la traduction échoue.
 
 Traduire une vidéo : ${APP}/app/translate
 
@@ -70,7 +70,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
     audience: 'free_no_trial',
     html: (unsub) => shell(`<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Pour le lancement, on vous offre l’accès complet à Storyit pendant <strong>3 jours pour seulement 1 $</strong>.</td></tr>
 <tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.9">
-<tr><td>🎬 <strong>60 crédits</strong> pour créer votre première vidéo animée,</td></tr>
+<tr><td>🎬 <strong>6 000 crédits</strong> pour créer votre première vidéo animée,</td></tr>
 <tr><td>📲 vos vidéos publiées sur <strong>tous vos comptes TikTok et Instagram</strong>,</td></tr>
 <tr><td>💸 ensuite <span style="text-decoration:line-through;color:#7a7390">45 $</span> <strong>29 $/mois</strong> (offre de lancement), sans engagement.</td></tr></table></td></tr>
 <tr><td style="font-size:14px;line-height:1.6;color:#4b4560">Valable sur Creator et Studio, une fois par compte. Annulez à tout moment avant la fin des 3 jours pour ne rien payer de plus.</td></tr>
@@ -79,7 +79,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 
 Pour le lancement, on vous offre l'accès complet à Storyit pendant 3 jours pour seulement 1 $.
 
-- 60 crédits pour créer votre première vidéo animée,
+- 6 000 crédits pour créer votre première vidéo animée,
 - vos vidéos publiées sur tous vos comptes TikTok et Instagram,
 - ensuite 29 $/mois au lieu de 45 $ (offre de lancement), sans engagement.
 
@@ -103,7 +103,7 @@ Partagez votre lien personnel (dans votre bio TikTok, sous vos vidéos ou par me
 <tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.9">
 <tr><td>🎁 <strong>vous gagnez 1 mois gratuit</strong>,</td></tr>
 <tr><td>🚀 <strong>au 5ᵉ ami, vous gagnez 6 mois d’un coup</strong>,</td></tr>
-<tr><td>💜 <strong>votre ami reçoit 100 crédits offerts</strong>.</td></tr></table></td></tr>
+<tr><td>💜 <strong>votre ami reçoit 10 000 crédits offerts</strong>.</td></tr></table></td></tr>
 <tr><td style="font-size:15px;line-height:1.6;color:#4b4560">Les mois offerts sont déduits automatiquement de vos prochaines factures.</td></tr>
 <tr><td align="center" style="padding:26px 0 8px"><a href="${APP}/app/referrals" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:14px 26px;border-radius:12px">Récupérer mon lien de parrainage</a></td></tr>
 <tr><td style="font-size:15px;line-height:1.6;padding-top:18px">À très vite,<br>L’équipe Storyit</td></tr>
@@ -117,7 +117,7 @@ Nouveauté sur Storyit : le parrainage.
 Partagez votre lien personnel (dans votre bio TikTok, sous vos vidéos ou par message). Pour chaque ami qui s'abonne :
 - vous gagnez 1 mois gratuit,
 - au 5e ami, vous gagnez 6 mois d'un coup,
-- votre ami reçoit 100 crédits offerts.
+- votre ami reçoit 10 000 crédits offerts.
 
 Les mois offerts sont déduits automatiquement de vos prochaines factures.
 

@@ -13,7 +13,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 // Supabase stops a function after ~150s (free plan) without a usable response, so stay well below it.
 const TOTAL_BUDGET_MS = 100_000;
 const REQUEST_TIMEOUT_MS = 45_000;
-const COSTS = { concepts: 1, scenes: 2, publish_pack: 1 } as const;
+const COSTS = { concepts: 100, scenes: 200, publish_pack: 100 } as const;
 type Task = keyof typeof COSTS;
 
 const cors = {

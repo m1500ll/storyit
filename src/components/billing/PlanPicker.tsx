@@ -2,7 +2,7 @@ import { Check, Coins } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { billingService } from '@/services/billing';
-import { CREDIT_PACKS, PLANS, TRIAL, TRIAL_ENABLED, projectsFor, type ProductKey } from '@/services/credits';
+import { CREDIT_PACKS, PLANS, TRIAL, TRIAL_ENABLED, projectsFor, type ProductKey, formatCredits } from '@/services/credits';
 import { store } from '@/services/store';
 import { Button, useToast } from '../ui';
 
@@ -53,7 +53,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed }: { currentPlan?: 
                 <span>${p.price}<span className="font-sans text-xs text-zinc-500">{p.period === 'month' ? '/mo' : ''}</span></span>
                 {'compareAt' in p && <span className="self-center rounded-full bg-coral-500/15 px-2 py-0.5 font-sans text-[11px] font-medium leading-4 text-coral-300">Launch offer</span>}
               </p>
-              <p className="text-xs text-violet-300">{p.credits} credits {p.period === 'month' ? '/ month' : 'to start'} · ≈ {projectsFor(p.credits)} Prompt Studio projects</p>
+              <p className="text-xs text-violet-300">{formatCredits(p.credits)} credits {p.period === 'month' ? '/ month' : 'to start'} · ≈ {projectsFor(p.credits)} Prompt Studio projects</p>
               {!compact && (
                 <ul className="mt-3 space-y-1.5">
                   {p.perks.map((k) => <li key={k} className="flex gap-1.5 text-xs text-zinc-400"><Check className="h-3.5 w-3.5 shrink-0 text-violet-400" />{k}</li>)}
@@ -66,7 +66,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed }: { currentPlan?: 
                     Try {TRIAL.days} days for ${TRIAL.price}
                   </Button>
                   <p className="mt-1.5 text-[11px] leading-snug text-zinc-500">
-                    ${TRIAL.price} today, then ${p.price}/mo after {TRIAL.days} days. Cancel anytime before. {TRIAL.credits} credits during the trial.
+                    ${TRIAL.price} today, then ${p.price}/mo after {TRIAL.days} days. Cancel anytime before. {formatCredits(TRIAL.credits)} credits during the trial.
                   </p>
                   <button type="button" onClick={() => buy(p.id as ProductKey)} disabled={pending !== null}
                     className="touch-hit mt-1 text-[11px] text-violet-300 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50">
@@ -91,7 +91,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed }: { currentPlan?: 
           <button key={pack.id} onClick={() => buy(pack.id)} disabled={pending !== null}
             className="flex items-center justify-between rounded-xl border border-line/[0.08] bg-ink-850 px-4 py-3 text-left transition hover:border-violet-500/40 disabled:opacity-50">
             <span className="flex items-center gap-2 text-sm text-zinc-100">
-              <Coins className="h-4 w-4 text-violet-300" />{pack.credits} credits
+              <Coins className="h-4 w-4 text-violet-300" />{formatCredits(pack.credits)} credits
               {'badge' in pack && <span className="rounded-full bg-coral-500/15 px-2 py-0.5 text-[11px] text-coral-300">{pack.badge}</span>}
             </span>
             <span className="text-right"><span className="block text-sm font-semibold text-zinc-100">{pending === pack.id ? '…' : `$${pack.price}`}</span><span className="block text-[11px] text-zinc-500">≈ {projectsFor(pack.credits)} projects</span></span>

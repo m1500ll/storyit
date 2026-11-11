@@ -41,7 +41,7 @@ export function Hero() {
           <StartLink to="/app/studio"><Button size="lg">Create my 3D video <ArrowRight className="h-4 w-4" /></Button></StartLink>
           <a href="#examples"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> Watch examples</Button></a>
         </div>
-        <p className="mt-4 text-xs text-zinc-400"><strong className="text-zinc-200">Up to {videosFor(PLANS.find((p) => p.id === 'creator')!.credits)} videos a month</strong> with Creator, <s className="text-zinc-500">$45</s> $29/mo. Cancel anytime. Or <StartLink to="/app" className="touch-hit text-violet-300 underline-offset-2 hover:underline">start free with 30 credits</StartLink>, no card.</p>
+        <p className="mt-4 text-xs text-zinc-400"><strong className="text-zinc-200">Up to {videosFor(PLANS.find((p) => p.id === 'creator')!.credits)} videos a month</strong> with Creator, <s className="text-zinc-500">$45</s> $29/mo. Cancel anytime. Or <StartLink to="/app" className="touch-hit text-violet-300 underline-offset-2 hover:underline">start free with 3,000 credits</StartLink>, no card.</p>
         <a href="#results" className="group mx-auto mt-6 flex max-w-fit flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] px-5 py-3 transition hover:border-emerald-500/40">
           {RESULT_HIGHLIGHTS.slice(0, 2).map((h) => (
             <span key={h.label} className="text-sm text-zinc-300"><strong className="font-display text-xl tabular-nums text-zinc-50">{h.value}</strong> {h.label}</span>

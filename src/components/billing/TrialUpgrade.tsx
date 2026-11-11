@@ -1,7 +1,7 @@
 import { Rocket } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { billingService, type TrialStatus } from '@/services/billing';
-import { PLANS } from '@/services/credits';
+import { PLANS, formatCredits } from '@/services/credits';
 import { store } from '@/services/store';
 import { Button, useToast } from '../ui';
 
@@ -40,7 +40,7 @@ export function TrialUpgrade() {
         {plans.map((p) => (
           <Button key={p.id} size="sm" variant={p.id === (status.product ?? 'creator') ? 'primary' : 'secondary'} loading={pending === p.id} disabled={pending !== null}
             onClick={() => void activate(p.id as 'creator' | 'pro' | 'studio')}>
-            Activer {p.name} maintenant · ${p.price}/mo · {p.credits} crédits
+            Activer {p.name} maintenant · ${p.price}/mo · {formatCredits(p.credits)} crédits
           </Button>
         ))}
       </div>

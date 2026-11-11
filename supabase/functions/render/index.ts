@@ -18,7 +18,7 @@ const CLIP_MAX_S = 6;
 const VOICE_MODE = Deno.env.get('VOICE_MODE') ?? 'native';
 const TTS_MODEL = Deno.env.get('GEMINI_TTS_MODEL') ?? 'gemini-3.8-flash-tts';
 const TTS_VOICE = Deno.env.get('TTS_VOICE') ?? 'Kore';
-const CREDITS_PER_SCENE = Number(Deno.env.get('RENDER_CREDITS_PER_SCENE') ?? 20); // keep in sync with src/services/credits.ts
+const CREDITS_PER_SCENE = Number(Deno.env.get('RENDER_CREDITS_PER_SCENE') ?? 2000); // keep in sync with src/services/credits.ts
 const BUDGET_MS = 95_000;
 const CONCURRENCY = Number(Deno.env.get('RENDER_CONCURRENCY') ?? 2);
 const MAX_ATTEMPTS = 3;
@@ -175,7 +175,7 @@ async function generateVoice(scene: SceneRow) {
 
 // ---------- Phase 5: thumbnail ----------
 
-const THUMBNAIL_CREDITS = Number(Deno.env.get('THUMBNAIL_CREDITS') ?? 2); // ≈ $0.07 image at our cheapest credit price
+const THUMBNAIL_CREDITS = Number(Deno.env.get('THUMBNAIL_CREDITS') ?? 200); // ≈ $0.07 image at our cheapest credit price
 
 /** Generates one thumbnail variant from the publish pack prompt. Credits are refunded if Google returns no image. */
 async function thumbnail(admin: SupabaseClient, userClient: SupabaseClient, userId: string, storyId: string, aspect: '9:16' | '16:9') {

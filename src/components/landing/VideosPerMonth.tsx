@@ -1,5 +1,5 @@
 import { Clapperboard } from 'lucide-react';
-import { ANIMATED_LENGTHS, PLANS, videosFor } from '@/services/credits';
+import { ANIMATED_LENGTHS, PLANS, videosFor, formatCredits } from '@/services/credits';
 import { StartLink } from './StartLink';
 
 /** The headline number: how many 3D videos each plan makes every month (counted on 30-second videos). */
@@ -13,7 +13,7 @@ export function VideosPerMonth() {
         <p className="label relative inline-flex items-center gap-2"><Clapperboard className="h-4 w-4 text-violet-300" aria-hidden /> Your monthly 3D videos</p>
         <h2 id="vpm-title" className="relative mt-3 font-display text-4xl text-zinc-50 md:text-5xl">Up to {videosFor(Math.max(...plans.map((p) => p.credits)))} 3D videos a month</h2>
         <p className="relative mx-auto mt-3 max-w-xl text-sm text-zinc-400">
-          Every plan comes with credits each month. A 30-second video costs {short.credits} credits, a 1-minute one {ANIMATED_LENGTHS[1].credits}, a 2-minute one {ANIMATED_LENGTHS[2].credits}.
+          Every plan comes with credits each month. A 30-second video costs {formatCredits(short.credits)} credits, a 1-minute one {ANIMATED_LENGTHS[1].credits}, a 2-minute one {ANIMATED_LENGTHS[2].credits}.
         </p>
         <ul className="relative mt-10 grid gap-4 sm:grid-cols-3">
           {plans.map((p) => (

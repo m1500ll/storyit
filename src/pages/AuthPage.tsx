@@ -8,13 +8,13 @@ import { GoogleIcon } from '@/components/ui/GoogleIcon';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { pendingReferral } from '@/lib/referral';
-import { REFERRAL_FRIEND_BONUS } from '@/services/credits';
+import { REFERRAL_FRIEND_BONUS, formatCredits } from '@/services/credits';
 
 type Mode = 'signin' | 'signup' | 'forgot';
 
 const COPY: Record<Mode, { title: string; sub: string; cta: string }> = {
   signin: { title: 'Welcome back', sub: 'Sign in to continue your series.', cta: 'Sign In' },
-  signup: { title: 'Create your studio', sub: 'Free plan with 30 credits. No card required.', cta: 'Create Account' },
+  signup: { title: 'Create your studio', sub: 'Free plan with 3,000 credits. No card required.', cta: 'Create Account' },
   forgot: { title: 'Reset your password', sub: 'We’ll email you a link to choose a new one.', cta: 'Send Reset Link' },
 };
 
@@ -103,12 +103,12 @@ export default function AuthPage() {
         {mode === 'signup' && invited && (
           <p className="mt-4 flex items-start gap-2 rounded-xl border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs text-zinc-100">
             <Gift className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden />
-            Invité par un ami : {REFERRAL_FRIEND_BONUS} crédits offerts avec votre premier abonnement.
+            Invité par un ami : {formatCredits(REFERRAL_FRIEND_BONUS)} crédits offerts avec votre premier abonnement.
           </p>
         )}
         {mode === 'signup' && (
           <ul className="mt-4 space-y-1.5 text-xs text-zinc-400">
-            {['30 free credits to try the Prompt Studio', 'Post each video on all your TikTok and Instagram accounts', 'Free plan, no card, cancel anytime'].map((t) => (
+            {['3,000 free credits to try the Prompt Studio', 'Post each video on all your TikTok and Instagram accounts', 'Free plan, no card, cancel anytime'].map((t) => (
               <li key={t} className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-violet-400" />{t}</li>
             ))}
           </ul>

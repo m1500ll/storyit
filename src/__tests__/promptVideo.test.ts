@@ -22,13 +22,13 @@ const project = () => {
 };
 
 describe('Prompt Studio → video', () => {
-  it('prices follow the length: about 70 / 150 / 300 credits a minute, rounded up to 5', () => {
-    expect(videoCost('eco', 60)).toBe(70);
-    expect(videoCost('standard', 60)).toBe(150);
-    expect(videoCost('premium', 60)).toBe(300);
-    expect(videoCost('eco', 70)).toBe(85);
-    expect(videoCost('premium', 72)).toBe(360);
-    expect(videoCost('eco', 1) % 5).toBe(0);
+  it('prices follow the length: about 7,000 / 15,000 / 30,000 credits a minute, rounded up to 500', () => {
+    expect(videoCost('eco', 60)).toBe(7000);
+    expect(videoCost('standard', 60)).toBe(15000);
+    expect(videoCost('premium', 60)).toBe(30000);
+    expect(videoCost('eco', 70)).toBe(8500);
+    expect(videoCost('premium', 72)).toBe(36000);
+    expect(videoCost('eco', 1) % 500).toBe(0);
   });
   it('an admin test keeps the first clips that fit', () => {
     expect(firstClips([6, 10, 10, 15, 15, 10].map((seconds) => ({ seconds })), 30)).toBe(3);

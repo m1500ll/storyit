@@ -1,7 +1,7 @@
 import { Sparkles } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useProfile } from '@/hooks/useStore';
-import { PROMPT_PROJECT_COST, projectsFor } from '@/services/credits';
+import { PROMPT_PROJECT_COST, projectsFor, formatCredits } from '@/services/credits';
 import { PlanPicker } from './PlanPicker';
 import { TrialUpgrade } from './TrialUpgrade';
 
@@ -35,13 +35,13 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
             <h2 className="relative mt-3 font-display text-3xl text-zinc-50">{HEADLINE[state.reason ?? 'credits']}</h2>
             <p className="relative mt-1 text-sm text-zinc-400">
               {state.required
-                ? <>This step needs <strong className="text-zinc-200">{state.required} credit{state.required > 1 ? 's' : ''}</strong>; you have {profile?.credit_balance ?? 0}. </>
-                : <>You have <strong className="text-zinc-200">{profile?.credit_balance ?? 0} credits</strong>. </>}
+                ? <>This step needs <strong className="text-zinc-200">{formatCredits(state.required)} credits</strong>; you have {formatCredits(profile?.credit_balance ?? 0)}. </>
+                : <>You have <strong className="text-zinc-200">{formatCredits(profile?.credit_balance ?? 0)} credits</strong>. </>}
               {SUB[state.reason ?? 'credits']}
             </p>
             <ul className="relative mt-4 grid gap-1.5 text-xs text-zinc-300 sm:grid-cols-3">
-              <li className="rounded-lg bg-line/[0.04] px-3 py-2">1 Prompt Studio project = {PROMPT_PROJECT_COST} credits</li>
-              <li className="rounded-lg bg-line/[0.04] px-3 py-2">100 credits ≈ {projectsFor(100)} full projects</li>
+              <li className="rounded-lg bg-line/[0.04] px-3 py-2">1 Prompt Studio project = {formatCredits(PROMPT_PROJECT_COST)} credits</li>
+              <li className="rounded-lg bg-line/[0.04] px-3 py-2">10,000 credits ≈ {projectsFor(10000)} full projects</li>
               <li className="rounded-lg bg-line/[0.04] px-3 py-2">Top-up credits never expire</li>
             </ul>
             <div className="relative mt-6"><TrialUpgrade /><PlanPicker currentPlan={profile?.plan} trialUsed={profile?.trial_used} compact /></div>

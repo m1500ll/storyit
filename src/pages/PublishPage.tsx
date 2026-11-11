@@ -10,7 +10,7 @@ import {
   isReadyPack, packIsStale, platformCopy, PLATFORM_LABEL, productionPhases, validateCopy,
   type Platform, type PublishPack, type PublishPackContent, type Thumbnail,
 } from '@/lib/publishPack';
-import { CREDIT_COSTS } from '@/services/credits';
+import { CREDIT_COSTS, formatCredits } from '@/services/credits';
 import { InsufficientCreditsError } from '@/services/errors';
 import { repository } from '@/services/repository';
 import { useCredits } from '@/hooks/useStore';
@@ -142,7 +142,7 @@ function ThumbnailTab({ pack, thumbnails, busy, balance, onGenerate, onSelect }:
           <div className="flex flex-wrap items-center gap-2">
             {(['9:16', '16:9'] as const).map((a) => (
               <Button key={a} variant={a === '9:16' ? 'primary' : 'secondary'} loading={busy === `thumb-${a}`} disabled={Boolean(busy) || balance < CREDIT_COSTS.thumbnail} onClick={() => onGenerate(a)}>
-                <ImageIcon className="h-4 w-4" /> Generate {a === '9:16' ? 'vertical cover' : '16:9 variant'} · {CREDIT_COSTS.thumbnail} credits
+                <ImageIcon className="h-4 w-4" /> Generate {a === '9:16' ? 'vertical cover' : '16:9 variant'} · {formatCredits(CREDIT_COSTS.thumbnail)} credits
               </Button>
             ))}
           </div>

@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { CREDIT_PACKS, PLANS, videosFor } from '@/services/credits';
+import { CREDIT_PACKS, PLANS, videosFor, formatCredits } from '@/services/credits';
 import { Button } from '../ui';
 import { StartLink } from './StartLink';
 
@@ -44,7 +44,7 @@ export function Pricing() {
         })}
       </div>
       <p className="mt-6 text-center text-xs text-zinc-500">
-        AI studio top-ups: {CREDIT_PACKS.map((k) => `${k.credits} credits for $${k.price}`).join(', ')}. They never expire.
+        AI studio top-ups: {CREDIT_PACKS.map((k) => `${formatCredits(k.credits)} credits for $${k.price}`).join(', ')}. They never expire.
       </p>
     </section>
   );

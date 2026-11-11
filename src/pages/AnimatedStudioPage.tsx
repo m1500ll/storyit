@@ -6,7 +6,7 @@ import { usePaywall } from '@/components/billing/Paywall';
 import { useLiveQuery } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
 import { InsufficientCreditsError } from '@/services/errors';
-import { ANIMATED_LENGTHS, type AnimatedLength } from '@/services/credits';
+import { ANIMATED_LENGTHS, type AnimatedLength, formatCredits } from '@/services/credits';
 import { animatedStudio, type AnimatedProject, type AnimatedStatus, type Brief, type ChatLine, type Choices, type TitleStyle } from '@/services/animatedStudio';
 import { voicesFor } from '@/services/voices';
 import { VoicePicker } from '@/components/studio/VoicePicker';
@@ -83,7 +83,7 @@ function Start() {
           className="h-11 rounded-xl border border-line/10 bg-ink-950 px-3 text-base sm:h-10 text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 sm:text-sm">
           {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
         </select>
-        <span className="text-xs text-zinc-500">La discussion est gratuite. La vidéo coûte de 35 à 120 crédits selon sa durée, remboursés si le rendu échoue.</span>
+        <span className="text-xs text-zinc-500">La discussion est gratuite. La vidéo coûte de 3 500 à 12 000 crédits selon sa durée, remboursés si le rendu échoue.</span>
       </div>
       <h2 className="mb-3 text-sm font-semibold text-zinc-100">1. Choisissez un thème</h2>
       <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Thèmes">
@@ -251,7 +251,7 @@ function LengthPicker({ value, onChange }: { value: AnimatedLength; onChange: (s
               <Clock className="h-4 w-4 shrink-0 text-violet-300" aria-hidden />{l.label}
               {on && <Check className="ml-auto h-4 w-4 shrink-0 text-violet-300" aria-hidden />}
             </span>
-            <span className="mt-0.5 text-xs tabular-nums text-zinc-400">{l.credits} crédits</span>
+            <span className="mt-0.5 text-xs tabular-nums text-zinc-400">{formatCredits(l.credits)} crédits</span>
           </button>
         );
       })}
@@ -425,7 +425,7 @@ function Project({ id }: { id: string }) {
           <LengthPicker value={length} onChange={setLength} />
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <Button loading={launching} disabled={sending} onClick={() => void generate()}>
-              <Clapperboard className="h-4 w-4" /> Générer la vidéo · {cost} crédits
+              <Clapperboard className="h-4 w-4" /> Générer la vidéo · {formatCredits(cost)} crédits
             </Button>
             <span className="text-xs text-zinc-500">Débités une seule fois, remboursés si le rendu échoue. Environ {length === 120 ? '1 heure' : length === 30 ? '15 minutes' : '30 minutes'}.</span>
           </div>

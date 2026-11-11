@@ -15,7 +15,7 @@ import { reserveAi } from '../_shared/aiBudget.ts';
 const API = 'https://generativelanguage.googleapis.com/v1beta';
 const TEXT_MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
 const TEXT_FALLBACK = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? 'gemini-3.5-flash-lite';
-const PROJECT_COST = 15;
+const PROJECT_COST = 1500;
 
 
 const cors = {

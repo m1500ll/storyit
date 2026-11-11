@@ -29,11 +29,11 @@ describe('mock repository: production workflow', () => {
 
   it('debits the render price once, not again on later ticks', async () => {
     const story = await repo.createStory('idée', concept, drafts);
-    mockDb.profile.credit_balance = 500;
+    mockDb.profile.credit_balance = 50000;
     await repo.startRender(story.id);
-    expect(mockDb.profile.credit_balance).toBe(500 - 3 * CREDIT_COSTS.sceneRender);
+    expect(mockDb.profile.credit_balance).toBe(50000 - 3 * CREDIT_COSTS.sceneRender);
     await repo.startRender(story.id); // already generating: must not charge twice
-    expect(mockDb.profile.credit_balance).toBe(500 - 3 * CREDIT_COSTS.sceneRender);
+    expect(mockDb.profile.credit_balance).toBe(50000 - 3 * CREDIT_COSTS.sceneRender);
   });
 
   it('refuses work without enough credits and leaves the balance untouched', async () => {
@@ -55,9 +55,9 @@ describe('mock repository: production workflow', () => {
 describe('mock repository: phase 5', () => {
   it('generates, saves and reloads the publish pack, charging its price', async () => {
     const story = await repo.createStory('idée', concept, drafts);
-    mockDb.profile.credit_balance = 10;
+    mockDb.profile.credit_balance = 1000;
     await repo.generatePublishPack(story.id);
-    expect(mockDb.profile.credit_balance).toBe(10 - CREDIT_COSTS.publishPack);
+    expect(mockDb.profile.credit_balance).toBe(1000 - CREDIT_COSTS.publishPack);
     const { pack } = await repo.getPublishPack(story.id);
     expect(pack?.status).toBe('ready');
     const content = pack!.content as unknown as { titles: unknown[]; thumbnail: Record<string, unknown> };

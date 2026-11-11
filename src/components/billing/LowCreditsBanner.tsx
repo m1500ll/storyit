@@ -2,7 +2,7 @@ import { Coins, X } from 'lucide-react';
 import { useState } from 'react';
 import { useCredits } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
-import { creditLevel, LOW_CREDITS } from '@/services/credits';
+import { creditLevel, formatCredits, LOW_CREDITS } from '@/services/credits';
 import { usePaywall } from './Paywall';
 
 const KEY = 'storyit:low-credits-dismissed-at';
@@ -26,7 +26,7 @@ export function LowCreditsBanner() {
       <p className="flex-1 text-sm text-zinc-200">
         {empty
           ? <>You’re out of credits. Top up to keep using the Prompt Studio and AI features. Publishing to your accounts keeps working.</>
-          : <>Only <strong className="tabular-nums">{balance}</strong> credit{balance > 1 ? 's' : ''} left (alert under {LOW_CREDITS}). Top up now so you’re not stopped mid-project.</>}
+          : <>Only <strong className="tabular-nums">{formatCredits(balance)}</strong> credits left (alert under {formatCredits(LOW_CREDITS)}). Top up now so you’re not stopped mid-project.</>}
       </p>
       <div className="flex shrink-0 items-center gap-1">
         <button onClick={() => openPaywall()}

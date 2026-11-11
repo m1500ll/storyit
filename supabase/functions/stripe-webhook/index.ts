@@ -40,7 +40,7 @@ async function stripeApi(path: string, params?: Record<string, string>, idempote
 /** rewards the referral of `referredId` (their first paid subscription invoice). Retry-safe: flags in the database plus
  *  an idempotency key per referral on the Stripe balance transaction. */
 async function rewardReferral(referredId: string) {
-  const bonus = Number(env('REFERRAL_FRIEND_BONUS') ?? '100');
+  const bonus = Number(env('REFERRAL_FRIEND_BONUS') ?? '10000');
   const { data, error } = await admin.rpc('qualify_referral', { p_referred: referredId, p_friend_bonus: bonus });
   if (error) throw new Error('qualify_referral: ' + error.message);
   const r = (data as { referral_id: string; referrer_id: string; months: number; rank: number; reward_applied: boolean; bonus_applied: boolean; friend_bonus: number }[] | null)?.[0];

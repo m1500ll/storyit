@@ -5,11 +5,11 @@ import { useLiveQuery } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
 import { referralLink } from '@/lib/referral';
 import { repository } from '@/services/repository';
-import { REFERRAL_BIG_MONTHS, REFERRAL_FRIEND_BONUS, REFERRAL_GOAL } from '@/services/credits';
+import { REFERRAL_BIG_MONTHS, REFERRAL_FRIEND_BONUS, REFERRAL_GOAL, formatCredits } from '@/services/credits';
 
 const STEPS = [
   { icon: Share2, title: 'Partagez votre lien', text: 'Mettez-le dans votre bio TikTok (ou Instagram), sous vos vidéos, ou envoyez-le à vos amis.' },
-  { icon: UserPlus, title: 'Votre ami s’abonne', text: `Il crée son compte avec votre lien et prend un abonnement Creator ou Studio : il reçoit ${REFERRAL_FRIEND_BONUS} crédits offerts.` },
+  { icon: UserPlus, title: 'Votre ami s’abonne', text: `Il crée son compte avec votre lien et prend un abonnement Creator ou Studio : il reçoit ${formatCredits(REFERRAL_FRIEND_BONUS)} crédits offerts.` },
   { icon: Gift, title: 'Vous gagnez des mois gratuits', text: `1 mois offert par ami abonné, et ${REFERRAL_BIG_MONTHS} mois d’un coup au ${REFERRAL_GOAL}e ami.` },
 ];
 
@@ -30,14 +30,14 @@ export default function ReferralPage() {
     catch { toast('Copie impossible : sélectionnez le lien et copiez-le à la main.'); }
   };
   const share = async () => {
-    try { await navigator.share({ title: 'Storyit', text: `Crée tes vidéos animées avec Storyit : ${REFERRAL_FRIEND_BONUS} crédits offerts avec mon lien.`, url: link }); }
+    try { await navigator.share({ title: 'Storyit', text: `Crée tes vidéos animées avec Storyit : ${formatCredits(REFERRAL_FRIEND_BONUS)} crédits offerts avec mon lien.`, url: link }); }
     catch { /* cancelled or unsupported: the copy button stays */ }
   };
 
   return (
     <>
       <PageHeader eyebrow="Programme" title="Parrainage"
-        description={`Invitez vos amis sur Storyit. Chaque ami qui s’abonne vous offre 1 mois gratuit, et ${REFERRAL_BIG_MONTHS} mois au ${REFERRAL_GOAL}e ami. Vos amis reçoivent ${REFERRAL_FRIEND_BONUS} crédits.`} />
+        description={`Invitez vos amis sur Storyit. Chaque ami qui s’abonne vous offre 1 mois gratuit, et ${REFERRAL_BIG_MONTHS} mois au ${REFERRAL_GOAL}e ami. Vos amis reçoivent ${formatCredits(REFERRAL_FRIEND_BONUS)} crédits.`} />
 
       <Card>
         <label htmlFor="ref-link" className="text-sm font-medium text-zinc-100">Votre lien de parrainage</label>

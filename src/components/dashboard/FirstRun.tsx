@@ -1,6 +1,6 @@
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { CREDIT_COSTS, estimateEpisodeCost } from '@/services/credits';
+import { CREDIT_COSTS, estimateEpisodeCost, formatCredits } from '@/services/credits';
 import { SCENES_PER_EPISODE } from '@/types/domain';
 import { FruitArt } from '../ui';
 
@@ -14,7 +14,7 @@ const IDEAS = [
 export function FirstRun({ balance }: { balance: number }) {
   const steps = [
     `Write one sentence (${CREDIT_COSTS.conceptGeneration} credit)`,
-    `Pick a concept & get ${SCENES_PER_EPISODE} scenes (${CREDIT_COSTS.sceneBreakdown} credits)`,
+    `Pick a concept & get ${SCENES_PER_EPISODE} scenes (${formatCredits(CREDIT_COSTS.sceneBreakdown)} credits)`,
     `Render & approve (${estimateEpisodeCost(SCENES_PER_EPISODE)} credits)`,
   ];
   return (
@@ -38,7 +38,7 @@ export function FirstRun({ balance }: { balance: number }) {
           </Link>
         ))}
       </div>
-      <p className="mt-5 text-xs text-zinc-500">You have <span className="text-violet-300">{balance} credits</span> — enough for {Math.floor(balance / (CREDIT_COSTS.conceptGeneration + CREDIT_COSTS.sceneBreakdown))} storyboards.</p>
+      <p className="mt-5 text-xs text-zinc-500">You have <span className="text-violet-300">{formatCredits(balance)} credits</span> — enough for {Math.floor(balance / (CREDIT_COSTS.conceptGeneration + CREDIT_COSTS.sceneBreakdown))} storyboards.</p>
     </div>
   );
 }

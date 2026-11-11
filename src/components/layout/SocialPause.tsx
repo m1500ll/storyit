@@ -19,7 +19,7 @@ export function SocialPause({ children }: { children: ReactNode }) {
         </p>
         <p className="mt-4 flex items-start gap-2 rounded-xl bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-200">
           <Gift className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
-          <span>Pour nous excuser, tous les abonnés reçoivent <strong>200 crédits offerts</strong>, déjà ajoutés à leur solde.</span>
+          <span>Pour nous excuser, tous les abonnés reçoivent <strong>20 000 crédits offerts</strong>, déjà ajoutés à leur solde.</span>
         </p>
         <p className="mt-4 text-xs text-zinc-400">En attendant, vous pouvez télécharger vos vidéos depuis la bibliothèque et les publier directement dans l’appli TikTok.</p>
       </Card>

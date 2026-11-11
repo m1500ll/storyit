@@ -1,7 +1,7 @@
 import { ArrowRight, Languages } from 'lucide-react';
 import { useState } from 'react';
 import type { ShowcaseVideo } from '@/data/showcase';
-import { DUB_CREDITS_PER_MIN } from '@/services/credits';
+import { DUB_CREDITS_PER_MIN, formatCredits } from '@/services/credits';
 import { StartLink } from './StartLink';
 import { VideoCard } from './VideoCard';
 import { VideoLightbox } from './VideoLightbox';
@@ -28,7 +28,7 @@ export function TranslateFeature() {
             <li>French, English and Spanish</li>
             <li>Original music and effects kept</li>
             <li>Captions translated word by word</li>
-            <li>{DUB_CREDITS_PER_MIN} credits per minute of video</li>
+            <li>{formatCredits(DUB_CREDITS_PER_MIN)} credits per minute of video</li>
           </ul>
           <StartLink to="/app/translate" className="mt-6 inline-block">
             <span className="inline-flex h-11 items-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">

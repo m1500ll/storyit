@@ -6,7 +6,7 @@ import { usePaywall } from '@/components/billing/Paywall';
 import { useLiveQuery } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
 import { InsufficientCreditsError } from '@/services/errors';
-import { PROMPT_PROJECT_COST } from '@/services/credits';
+import { PROMPT_PROJECT_COST, formatCredits } from '@/services/credits';
 import { promptStudio, type PhaseKey, type StyleKey } from '@/services/promptStudio';
 import { V4Project, V4_STEPS } from '@/components/prompts/V4Project';
 import { TrendIdeas } from '@/components/prompts/TrendIdeas';
@@ -23,7 +23,7 @@ const STEPS: { key: PhaseKey; label: string; waiting: string }[] = [
 const pretty = (o: unknown) => JSON.stringify(o, null, 2);
 /** A project costs PROMPT_PROJECT_COST credits once, at the start. */
 function useCost() {
-  return { label: `${PROMPT_PROJECT_COST} crédits` };
+  return { label: `${formatCredits(PROMPT_PROJECT_COST)} crédits` };
 }
 
 function CopyBtn({ text, label = 'Copier' }: { text: string; label?: string }) {
@@ -169,7 +169,7 @@ function Start() {
             <Button disabled={!promptStudio.available || !story.trim()} onClick={() => void start('script')}><Wand2 className="h-4 w-4" /> Créer mon mini-drama · {cost.label}</Button>
             <Button variant="secondary" disabled={!promptStudio.available} onClick={() => void start('concepts')}><Sparkles className="h-4 w-4" /> Propose-moi 3 histoires</Button>
           </div>
-          <p className="mt-2 text-xs text-zinc-500">{`${PROMPT_PROJECT_COST} crédits pour le projet complet, débités une seule fois au démarrage. Les 5 étapes, les régénérations et les dépannages sont inclus.`}</p>
+          <p className="mt-2 text-xs text-zinc-500">{`${formatCredits(PROMPT_PROJECT_COST)} crédits pour le projet complet, débités une seule fois au démarrage. Les 5 étapes, les régénérations et les dépannages sont inclus.`}</p>
           {error && <p role="alert" className="mt-3 text-xs text-coral-300">{error}</p>}
         </Card>
       )}

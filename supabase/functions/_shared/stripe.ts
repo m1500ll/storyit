@@ -7,11 +7,11 @@ export const PRICE_ENV: Record<ProductKey, string> = {
 
 /** What each product grants. Keep in sync with src/services/credits.ts (PLANS / CREDIT_PACKS). */
 export const GRANTS: Record<ProductKey, { credits: number; plan?: 'creator' | 'pro' | 'studio'; label: string }> = {
-  creator: { credits: 430, plan: 'creator', label: 'Creator plan — monthly credits' },
-  pro: { credits: 1050, plan: 'pro', label: 'Pro plan — monthly credits' },
-  studio: { credits: 1600, plan: 'studio', label: 'Studio plan — monthly credits' },
-  pack_100: { credits: 100, label: 'Top-up pack — 100 credits' },
-  pack_500: { credits: 500, label: 'Top-up pack — 500 credits' },
+  creator: { credits: 43000, plan: 'creator', label: 'Creator plan — monthly credits' },
+  pro: { credits: 105000, plan: 'pro', label: 'Pro plan — monthly credits' },
+  studio: { credits: 160000, plan: 'studio', label: 'Studio plan — monthly credits' },
+  pack_100: { credits: 10000, label: 'Top-up pack — 10,000 credits' },
+  pack_500: { credits: 50000, label: 'Top-up pack — 50,000 credits' },
 };
 
 /** Product for a Stripe price id, using the configured price env vars (source of truth, not client metadata). */
@@ -42,7 +42,7 @@ export function planLine(invoice: any, env: (k: string) => string | undefined): 
 
 /** $1 three-day trial: price of the one-time fee (cents), length, credits given during the trial. Keep in sync with
  *  src/services/credits.ts (TRIAL). */
-export const TRIAL = { feeCents: 100, days: 3, credits: 60 };
+export const TRIAL = { feeCents: 100, days: 3, credits: 6000 };
 
 /** Plan a subscription should give right now. Unpaid/cancelled subscriptions fall back to free. */
 export function planForSubscription(sub: any, env: (k: string) => string | undefined): 'free' | 'creator' | 'pro' | 'studio' | null {

@@ -38,15 +38,15 @@ function story(id: string, title: string, status: StoryWithScenes['status'], ep:
 }
 
 export const mockDb = {
-  profile: { id: USER_ID, display_name: 'Ana Studio', plan: 'creator', credit_balance: 184, created_at: iso(60 * 24 * 30), beta_access: true } as Profile,
+  profile: { id: USER_ID, display_name: 'Ana Studio', plan: 'creator', credit_balance: 18400, created_at: iso(60 * 24 * 30), beta_access: true } as Profile,
   stories: [
     story('st-3', 'Zest & Jealousy — Ep. 3', 'in_review', 3, sceneStatuses, 90),
     story('st-2', 'Zest & Jealousy — Ep. 2', 'generating', 2, Array(15).fill('generated').fill('generating', 9).fill('queued', 11), 60 * 26),
     story('st-1', 'Zest & Jealousy — Ep. 1', 'published', 1, Array(15).fill('generated'), 60 * 72),
   ] as StoryWithScenes[],
   transactions: [
-    { id: 't3', user_id: USER_ID, type: 'consumption', amount: -45, balance_after: 184, story_id: 'st-3', description: 'Episode 3 — 15 scene renders', created_at: iso(90) },
-    { id: 't2', user_id: USER_ID, type: 'consumption', amount: -45, balance_after: 229, story_id: 'st-2', description: 'Episode 2 — 15 scene renders', created_at: iso(60 * 26) },
-    { id: 't1', user_id: USER_ID, type: 'subscription_grant', amount: 300, balance_after: 274, story_id: null, description: 'Creator plan — monthly credits', created_at: iso(60 * 24 * 3) },
+    { id: 't3', user_id: USER_ID, type: 'consumption', amount: -4500, balance_after: 18400, story_id: 'st-3', description: 'Episode 3 — 15 scene renders', created_at: iso(90) },
+    { id: 't2', user_id: USER_ID, type: 'consumption', amount: -4500, balance_after: 22900, story_id: 'st-2', description: 'Episode 2 — 15 scene renders', created_at: iso(60 * 26) },
+    { id: 't1', user_id: USER_ID, type: 'subscription_grant', amount: 30000, balance_after: 27400, story_id: null, description: 'Creator plan — monthly credits', created_at: iso(60 * 24 * 3) },
   ] as CreditTransaction[],
 };

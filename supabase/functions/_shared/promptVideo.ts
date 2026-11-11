@@ -5,14 +5,14 @@
 import { coverPrompt, grokPrompt, imagePrompt, sheetPrompt } from './promptStudio.ts';
 
 export type VideoQuality = 'eco' | 'standard' | 'premium';
-/** credits per minute of video; the price of a project is rounded up to the next 5 credits */
+/** credits per minute of video; the price of a project is rounded up to the next 500 credits */
 export const VIDEO_TIERS: Record<VideoQuality, { perMin: number; image_model: string; image_quality: 'low' | 'medium' | 'high'; video_model: string; resolution: '480p' | '720p' }> = {
-  eco: { perMin: 70, image_model: 'gpt-image-1.5', image_quality: 'medium', video_model: 'grok-imagine-video-1.5-lite', resolution: '480p' },
-  standard: { perMin: 150, image_model: 'gpt-image-1.5', image_quality: 'medium', video_model: 'grok-imagine-video', resolution: '720p' },
-  premium: { perMin: 300, image_model: 'gpt-image-1.5', image_quality: 'high', video_model: 'grok-imagine-video-1.5', resolution: '720p' },
+  eco: { perMin: 7000, image_model: 'gpt-image-1.5', image_quality: 'medium', video_model: 'grok-imagine-video-1.5-lite', resolution: '480p' },
+  standard: { perMin: 15000, image_model: 'gpt-image-1.5', image_quality: 'medium', video_model: 'grok-imagine-video', resolution: '720p' },
+  premium: { perMin: 30000, image_model: 'gpt-image-1.5', image_quality: 'high', video_model: 'grok-imagine-video-1.5', resolution: '720p' },
 };
 export const isQuality = (q: unknown): q is VideoQuality => typeof q === 'string' && q in VIDEO_TIERS;
-export const videoCost = (q: VideoQuality, seconds: number) => Math.max(5, Math.ceil((VIDEO_TIERS[q].perMin * seconds) / 60 / 5) * 5);
+export const videoCost = (q: VideoQuality, seconds: number) => Math.max(500, Math.ceil((VIDEO_TIERS[q].perMin * seconds) / 60 / 500) * 500);
 
 /** total length of the project's clips, or 0 */
 export const projectSeconds = (d: any): number => (d?.script?.clips ?? []).reduce((s: number, c: any) => s + (Number(c?.seconds) || 0), 0);

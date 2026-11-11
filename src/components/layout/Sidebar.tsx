@@ -2,7 +2,7 @@ import {
   BookOpen, CalendarDays, Clapperboard, Handshake, Languages, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, Wand2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useCredits, useProfile } from '@/hooks/useStore';
-import { creditLevel, projectsFor } from '@/services/credits';
+import { creditLevel, projectsFor, formatCredits } from '@/services/credits';
 import { cn } from '@/lib/cn';
 
 import { usePaywall } from '../billing/Paywall';
@@ -89,7 +89,7 @@ export function Sidebar() {
       <div className="mt-auto pt-6">
         <div className={cn('surface p-4', level === 'low' && 'border-amber-500/40', level === 'empty' && 'border-coral-500/40')}>
           <p className="label flex items-center gap-1.5 text-[11px]"><Coins className="h-3 w-3" /> Credits</p>
-          <p className={cn('mt-1 font-display text-3xl tabular-nums', level === 'ok' ? 'text-zinc-50' : level === 'low' ? 'text-amber-300' : 'text-coral-300')}>{balance}</p>
+          <p className={cn('mt-1 font-display text-3xl tabular-nums', level === 'ok' ? 'text-zinc-50' : level === 'low' ? 'text-amber-300' : 'text-coral-300')}>{formatCredits(balance)}</p>
           <p className="text-[11px] text-zinc-500">
             {level === 'empty' ? 'Out of credits: top up to keep creating.' : level === 'low' ? 'Running low.' : `≈ ${projectsFor(balance)} Prompt Studio projects`}
           </p>

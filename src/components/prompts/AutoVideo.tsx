@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 import { InsufficientCreditsError } from '@/services/errors';
 import { promptVideos, type PromptVideo, type VideoQuality } from '@/services/promptVideos';
 import { projectSeconds, videoBlocker, videoCost } from '@shared/promptVideo.ts';
+import { formatCredits } from '@/services/credits';
 
 const QUALITIES: { key: VideoQuality; label: string; detail: string }[] = [
   { key: 'eco', label: 'Éco', detail: '480p · idéal pour tester une histoire' },
@@ -110,7 +111,7 @@ export function AutoVideo({ projectId, data }: { projectId: string; data: unknow
                   <label key={q.key} className={cn('flex cursor-pointer flex-col rounded-xl border px-3 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-violet-500/50',
                     quality === q.key ? 'border-violet-500/60 bg-violet-500/10' : 'border-line/10 hover:bg-line/[0.04]')}>
                     <input type="radio" name="pv-quality" value={q.key} checked={quality === q.key} onChange={() => setQuality(q.key)} className="sr-only" />
-                    <span className="flex items-center justify-between gap-2 text-sm font-medium text-zinc-100">{q.label}<span className="tabular-nums text-violet-300">{videoCost(q.key, seconds)} crédits</span></span>
+                    <span className="flex items-center justify-between gap-2 text-sm font-medium text-zinc-100">{q.label}<span className="tabular-nums text-violet-300">{formatCredits(videoCost(q.key, seconds))} crédits</span></span>
                     <span className="mt-0.5 text-xs text-zinc-400">{q.detail}</span>
                   </label>
                 ))}
@@ -118,7 +119,7 @@ export function AutoVideo({ projectId, data }: { projectId: string; data: unknow
               {error && <p role="alert" className="mt-3 text-sm text-coral-300">{error}</p>}
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <Button onClick={() => void start()} disabled={busy || running}>
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Générer la vidéo · {videoCost(quality, seconds)} crédits
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Générer la vidéo · {formatCredits(videoCost(quality, seconds))} crédits
                 </Button>
                 <span className="text-xs text-zinc-500">Si la génération échoue, vos crédits sont rendus automatiquement.</span>
               </div>

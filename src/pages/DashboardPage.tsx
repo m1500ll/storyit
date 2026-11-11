@@ -1,5 +1,5 @@
 import { ArrowRight, Clapperboard, Languages, Plus, Sparkles } from 'lucide-react';
-import { DUB_CREDITS_PER_MIN } from '@/services/credits';
+import { DUB_CREDITS_PER_MIN, formatCredits } from '@/services/credits';
 import { useNavigate } from 'react-router-dom';
 import { DistributionOverview } from '@/components/dashboard/DistributionOverview';
 import { PromptStudioHero } from '@/components/dashboard/PromptStudioHero';
@@ -23,7 +23,7 @@ export default function DashboardPage() {
           <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-coral-500/15 text-coral-300"><Sparkles className="h-5 w-5" /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold text-zinc-100">Launch offer: Creator at $29/mo instead of $45</span>
-            <span className="block text-xs text-zinc-400">430 credits every month, posting to all your accounts. Cancel anytime.</span>
+            <span className="block text-xs text-zinc-400">43,000 credits every month, posting to all your accounts. Cancel anytime.</span>
           </span>
           <ArrowRight className="h-4 w-4 shrink-0 text-coral-300" aria-hidden />
         </button>
@@ -39,7 +39,7 @@ export default function DashboardPage() {
               <p className="mt-2 text-sm text-zinc-400">Pick a true story, a decor and a voice. Storyit produces the whole vertical video: 3D world, characters, narration, music and captions.</p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <Button variant="secondary" onClick={() => navigate('/app/studio')}><Clapperboard className="h-4 w-4" /> Open the Animated Studio</Button>
-                <span className="text-xs text-zinc-500 tabular-nums">From 35 credits · refunded if the render fails</span>
+                <span className="text-xs text-zinc-500 tabular-nums">From 3,500 credits · refunded if the render fails</span>
               </div>
             </div>
             <div aria-hidden className="flex justify-center gap-2">
@@ -60,7 +60,7 @@ export default function DashboardPage() {
             <p className="mt-2 text-sm text-zinc-400">Envoyez une vidéo verticale : Storyit la traduit en français, anglais ou espagnol avec une nouvelle voix, garde la musique d’origine et remplace les sous-titres incrustés.</p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <Button onClick={() => navigate('/app/translate')}><Languages className="h-4 w-4" /> Traduire une vidéo</Button>
-              <span className="text-xs text-zinc-500 tabular-nums">{DUB_CREDITS_PER_MIN} crédits par minute · remboursés en cas d’échec</span>
+              <span className="text-xs text-zinc-500 tabular-nums">{formatCredits(DUB_CREDITS_PER_MIN)} crédits par minute · remboursés en cas d’échec</span>
             </div>
           </div>
           <div aria-hidden className="flex items-center justify-center gap-2">

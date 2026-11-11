@@ -7,7 +7,7 @@ import { Flag } from '@/components/ui/Flag';
 import { BeforeAfter } from '@/components/studio/BeforeAfter';
 import { useLiveQuery } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
-import { dubCost, DUB_CREDITS_PER_MIN } from '@/services/credits';
+import { dubCost, DUB_CREDITS_PER_MIN, formatCredits } from '@/services/credits';
 import { dubbing, type DubJob, type DubLanguage } from '@/services/dubbing';
 import { InsufficientCreditsError } from '@/services/errors';
 import { store } from '@/services/store';
@@ -70,7 +70,7 @@ export default function TranslatePage() {
       const path = await dubbing.upload(file, () => undefined);
       setBusy('Lancement…');
       const r = await dubbing.create({ sourcePath: path, language: lang, voiceId: chosenVoice, replaceCaptions: captions, seconds: meta.seconds, title });
-      toast(`Traduction lancée (${r.credits} crédits). Vous pouvez quitter la page.`);
+      toast(`Traduction lancée (${formatCredits(r.credits)} crédits). Vous pouvez quitter la page.`);
       setFile(null); setMeta(null); setTitle(''); if (input.current) input.current.value = '';
     } catch (e) {
       if (e instanceof InsufficientCreditsError) openPaywall();
@@ -131,9 +131,9 @@ export default function TranslatePage() {
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Button disabled={!file || !!busy || !dubbing.available} loading={!!busy} onClick={() => void start()}>
-            <Languages className="h-4 w-4" /> {busy ?? `Traduire · ${cost} crédits`}
+            <Languages className="h-4 w-4" /> {busy ?? `Traduire · ${formatCredits(cost)} crédits`}
           </Button>
-          <span className="text-xs text-zinc-500">{DUB_CREDITS_PER_MIN} crédits par minute de vidéo, remboursés si la traduction échoue. Environ 5 à 10 minutes.</span>
+          <span className="text-xs text-zinc-500">{formatCredits(DUB_CREDITS_PER_MIN)} crédits par minute de vidéo, remboursés si la traduction échoue. Environ 5 à 10 minutes.</span>
         </div>
       </Card>
 
