@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { usePaywall } from '@/components/billing/Paywall';
 import { VoicePicker } from '@/components/studio/VoicePicker';
 import { Button, Card, LoadState, PageHeader, useToast } from '@/components/ui';
+import { Flag } from '@/components/ui/Flag';
+import { BeforeAfter } from '@/components/studio/BeforeAfter';
 import { useLiveQuery } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
 import { dubCost, DUB_CREDITS_PER_MIN } from '@/services/credits';
@@ -85,6 +87,7 @@ export default function TranslatePage() {
         description="Envoyez une vidéo verticale : Storyit la traduit avec une nouvelle voix, garde la musique et les effets d’origine, et remplace les sous-titres incrustés par des sous-titres traduits." />
       {!dubbing.available && <div className="mb-4"><LoadState loading={false} error="La traduction a besoin du serveur Storyit (mode démo)." /></div>}
 
+      <BeforeAfter />
       <Card>
         <h2 className="text-sm font-semibold text-zinc-100">1. Votre vidéo</h2>
         <label htmlFor="dub-file" className={cn('mt-3 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed px-4 py-8 text-center transition-colors',
@@ -110,7 +113,7 @@ export default function TranslatePage() {
             <button key={l.code} type="button" role="radio" aria-checked={lang === l.code} onClick={() => setLang(l.code)}
               className={cn('surface flex min-h-[48px] items-center justify-center gap-1.5 rounded-2xl px-3 text-sm font-medium text-zinc-100 [touch-action:manipulation] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50',
                 lang === l.code && 'border-violet-500/60 bg-violet-500/10')}>
-              {lang === l.code && <Check className="h-4 w-4 text-violet-300" aria-hidden />}{l.label}
+              <Flag code={l.code} className="h-4 w-6" />{l.label}{lang === l.code && <Check className="h-4 w-4 text-violet-300" aria-hidden />}
             </button>
           ))}
         </div>

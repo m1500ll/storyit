@@ -24,7 +24,7 @@ export function AppShell() {
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar />
-          <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-8 md:px-8 lg:pb-8"><LowCreditsBanner /><Outlet /></main>
+          <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 pb-28 pt-8 md:px-8 lg:pb-8"><LowCreditsBanner /><div key={pathname} className="motion-safe:animate-[pagein_0.35s_ease-out]"><Outlet /></div></main>
         </div>
         <MobileNav />
         <WizardNotifier />

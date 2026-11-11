@@ -10,9 +10,10 @@ import { ANIMATED_LENGTHS, type AnimatedLength } from '@/services/credits';
 import { animatedStudio, type AnimatedProject, type AnimatedStatus, type Brief, type ChatLine, type Choices, type TitleStyle } from '@/services/animatedStudio';
 import { voicesFor } from '@/services/voices';
 import { VoicePicker } from '@/components/studio/VoicePicker';
+import { StudioReel } from '@/components/studio/StudioReel';
 
 /** theme cards: each shows a still of the matching decor, rendered by the engine (public/studio/themes) */
-const THEMES: { icon: LucideIcon; img: string; label: string; hint: string }[] = [
+const THEMES: { icon: LucideIcon; img: string; label: string; hint: string }[] = [ // img = a frame of a real Animated Studio video (public/showcase)
   { icon: Landmark, img: 'histoire', label: 'Histoire vraie absurde', hint: 'Des faits réels qui semblent inventés' },
   { icon: FlaskConical, img: 'inventions', label: 'Inventions et sciences ratées', hint: 'Les accidents qui ont tout changé' },
   { icon: Trophy, img: 'sport', label: 'Sport insolite', hint: 'Matchs, courses et records improbables' },
@@ -22,6 +23,12 @@ const THEMES: { icon: LucideIcon; img: string; label: string; hint: string }[] =
   { icon: Building2, img: 'chantiers', label: 'Ponts, bâtiments et chantiers fous', hint: 'Ce qui n’aurait jamais dû tenir' },
   { icon: Dices, img: 'surprise', label: 'Surprends-moi', hint: 'Le studio choisit un thème pour vous' },
 ];
+const THEME_VIDEO: Record<string, string> = {"histoire": "harengs-du-balcon", "inventions": "cache-oreilles", "sport": "grecs-150-contre-1", "animaux": "shogun-des-chiens", "lois": "interdit-de-mourir", "rois": "premiers-passagers", "chantiers": "pont-rompez-le-pas", "surprise": "palais-de-glace"};
+/** on hover (mouse) the theme card plays the real video it was taken from */
+function ThemePreview({ slug }: { slug: string }) {
+  return <video aria-hidden src={`/showcase/${slug}-preview.mp4`} muted loop playsInline preload="none"
+    className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100 motion-reduce:hidden" />;
+}
 const LANGS: { code: string; label: string }[] = [{ code: 'fr', label: 'Français' }, { code: 'en', label: 'English' }, { code: 'es', label: 'Español' }];
 
 const STAGES: { key: AnimatedStatus; label: string; doing: string }[] = [
@@ -69,6 +76,7 @@ function Start() {
       <PageHeader eyebrow="Studio IA · Bêta" title="Animated Studio"
         description="Choisissez un thème, puis cliquez sur les propositions du studio : un format, une histoire vraie, un décor et une voix. Storyit produit ensuite une vidéo animée verticale de 60 secondes, avec décor 3D, personnages, narration, musique et bruitages." />
       {!animatedStudio.available && <div className="mb-4"><LoadState loading={false} error={"L'Animated Studio a besoin du serveur Storyit (mode démo)."} /></div>}
+      <StudioReel />
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <label className="text-xs text-zinc-400" htmlFor="lang">Langue de la narration</label>
         <select id="lang" value={lang} onChange={(e) => setLang(e.target.value)}
@@ -82,11 +90,14 @@ function Start() {
         {THEMES.map((t) => (
           <li key={t.label} className="min-w-0">
             <button type="button" disabled={!animatedStudio.available || busy} onClick={() => void start(`Thème choisi : ${t.label}`, t.label)}
+              onMouseEnter={(e) => { void e.currentTarget.querySelector('video')?.play().catch(() => undefined); }} onMouseLeave={(e) => e.currentTarget.querySelector('video')?.pause()}
               className={cn('surface group flex h-full w-full flex-col overflow-hidden rounded-2xl text-left [touch-action:manipulation] transition-colors hover:border-violet-500/40 hover:bg-violet-500/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50',
                 busyTheme === t.label && 'border-violet-500/60 bg-violet-500/10')}>
               <span className="relative block aspect-[4/3] w-full overflow-hidden bg-line/[0.06]">
-                <img src={`/studio/themes/${t.img}.jpg`} alt="" width={400} height={300} decoding="async"
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transition-none" />
+                <img src={`/studio/themes/${t.img}.webp`} alt="" width={800} height={600} decoding="async"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transition-none" />
+                <ThemePreview slug={THEME_VIDEO[t.img]!} />
+                <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                 <span aria-hidden className="absolute left-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-ink-950/70 text-violet-200 backdrop-blur"><t.icon className="h-4 w-4" /></span>
               </span>
               <span className="flex flex-1 flex-col gap-1 p-3">
