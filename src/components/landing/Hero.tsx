@@ -1,7 +1,10 @@
 import { ArrowRight, Play } from 'lucide-react';
 import { useState } from 'react';
 import { RESULT_HIGHLIGHTS } from '@/data/results';
-import { SHOWCASE, type ShowcaseVideo } from '@/data/showcase';
+import { SHOWCASE, SHOWCASE_FRUIT, type ShowcaseVideo } from '@/data/showcase';
+
+// the fan mixes 3D shorts and Fruit Dramas, a 3D short in the middle
+const FAN_VIDEOS = [SHOWCASE[1], SHOWCASE_FRUIT[0], SHOWCASE[0], SHOWCASE_FRUIT[2], SHOWCASE[2]].filter(Boolean) as ShowcaseVideo[];
 import { PLANS, videosFor } from '@/services/credits';
 import { Button } from '../ui';
 import { VideoCard } from './VideoCard';
@@ -45,7 +48,7 @@ export function Hero() {
         </a>
 
         <div className="mx-auto mt-14 flex max-w-4xl items-start justify-center gap-2 sm:gap-4">
-          {SHOWCASE.slice(0, 5).map((v, i) => (
+          {FAN_VIDEOS.map((v, i) => (
             <div key={v.slug} className={i === 0 || i === 4 ? 'hidden w-1/5 max-w-[170px] sm:block' : 'w-1/3 max-w-[170px] sm:w-1/5'}
               style={{ transform: `translateY(${FAN[i]!.y}px) rotate(${FAN[i]!.tilt}deg)` }}>
               <VideoCard video={v} compact onOpen={() => setOpen(v)} />
