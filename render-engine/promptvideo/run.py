@@ -13,6 +13,7 @@ SB = os.environ["SUPABASE_URL"].rstrip("/")
 KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 WORKER = os.environ.get("MODAL_TASK_ID", "pv-" + uuid.uuid4().hex[:6])
 W, H, FPS = 1080, 1920, 30
+MAX_BYTES = 45 * 1024 * 1024   # Supabase storage refuses uploads above 50 MB
 IMG_W, IMG_H = 1024, 1536          # the OpenAI portrait size; cropped to 9:16 (864x1536) before animation
 GAP_KEEP, END_KEEP = 0.1, 0.5      # silence kept at each join / after the very last word
 VIDEO_TIMEOUT = 25 * 60            # one Grok clip may take this long at most
@@ -193,11 +194,20 @@ def montage(clips, out, tmp):
         run("ffmpeg", "-v", "error", "-y", "-i", src, *audio, "-ss", f"{start:.3f}", "-to", f"{end:.3f}",
             "-vf", f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS},setsar=1",
             "-map", "0:v:0", "-map", amap, "-af", "aresample=48000", "-ac", "2",
-            "-c:v", "libx264", "-crf", "19", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", part)
+            # bitrate cap keeps a ~80 s film well under the 50 MB storage upload limit
+            "-c:v", "libx264", "-crf", "20", "-maxrate", "3500k", "-bufsize", "7000k", "-preset", "medium",
+            "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", part)
         parts.append(part)
     lst = os.path.join(tmp, "list.txt")
     open(lst, "w").write("".join(f"file '{p}'\n" for p in parts))
     run("ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", lst, "-c", "copy", "-movflags", "+faststart", out)
+    if os.path.getsize(out) > MAX_BYTES:   # safety net: re-encode to a size that fits
+        kbps = max(800, int(MAX_BYTES * 8 / 1000 / max(1.0, duration(out))) - 200)
+        big = out + ".big.mp4"
+        os.replace(out, big)
+        run("ffmpeg", "-v", "error", "-y", "-i", big, "-c:v", "libx264", "-b:v", f"{kbps}k", "-maxrate", f"{kbps}k",
+            "-bufsize", f"{kbps * 2}k", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k",
+            "-movflags", "+faststart", out)
 
 
 # ---------------------------------------------------------------- one job
