@@ -7,9 +7,9 @@ import { promptStudio } from '@/services/promptStudio';
 import { STYLES } from '@shared/promptStudio.ts';
 
 const IDEAS = [
-  'A strawberry betrayed by her watermelon sister on her wedding day',
-  'A banana dad hides a secret from his kids',
-  'Two rival apples inherit the same orchard',
+  'Une fraise trahie par sa sœur pastèque le jour de son mariage',
+  'Un papa banane cache un secret à ses enfants',
+  'Deux pommes rivales héritent du même verger',
 ];
 
 /** First thing on the dashboard: start a Prompt Studio project from an idea, or reopen a recent one. */
@@ -22,19 +22,19 @@ export function PromptStudioHero() {
   return (
     <section aria-labelledby="ps-hero" className="relative mb-8 overflow-hidden rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-600/20 via-ink-950 to-coral-500/10 p-5 sm:p-7">
       <div className="flex items-center gap-2 text-xs font-medium text-violet-300"><Wand2 className="h-4 w-4" aria-hidden /> Prompt Studio</div>
-      <h2 id="ps-hero" className="mt-2 font-display text-3xl leading-tight text-zinc-50 sm:text-4xl">Your next viral Fruit Drama, written for you</h2>
-      <p className="mt-2 max-w-2xl text-sm text-zinc-300">3 story options, a 60-second script with dialogue, then every image and video prompt ready to paste. {formatCredits(PROMPT_PROJECT_COST)} credits for the whole project.</p>
+      <h2 id="ps-hero" className="mt-2 font-display text-3xl leading-tight text-zinc-50 sm:text-4xl">Votre prochain Fruit Drama viral, écrit et créé pour vous</h2>
+      <p className="mt-2 max-w-2xl text-sm text-zinc-300">3 histoires au choix, un script de plus d’une minute avec dialogues, tous les prompts, puis la vidéo finale en un clic. {formatCredits(PROMPT_PROJECT_COST)} crédits pour le projet complet.</p>
 
       <form className="mt-5 flex flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); go(); }}>
-        <label htmlFor="hero-idea" className="sr-only">Your story idea (optional)</label>
+        <label htmlFor="hero-idea" className="sr-only">Votre idée d’histoire (facultatif)</label>
         <input id="hero-idea" value={idea} onChange={(e) => setIdea(e.target.value)} maxLength={600} autoComplete="off"
-          placeholder="Your idea (optional): a pear who lies to her mother…"
+          placeholder="Votre idée (facultatif) : une poire qui ment à sa mère…"
           className="h-12 min-w-0 flex-1 rounded-xl border border-line/15 bg-ink-950/70 px-4 text-sm text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60" />
         <button type="submit" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
-          <Sparkles className="h-4 w-4" aria-hidden /> Write my story
+          <Sparkles className="h-4 w-4" aria-hidden /> Écrire mon histoire
         </button>
       </form>
-      <p className="mt-5 text-xs text-zinc-400">Or start from a character style</p>
+      <p className="mt-5 text-xs text-zinc-400">Ou partez d’un style de personnages</p>
       <ul className="mt-2 grid grid-cols-4 gap-2 sm:gap-3">
         {(Object.keys(STYLES) as (keyof typeof STYLES)[]).map((k) => (
           <li key={k}>
@@ -54,13 +54,13 @@ export function PromptStudioHero() {
 
       {projects.length > 0 && (
         <div className="mt-6 border-t border-line/10 pt-4">
-          <p className="mb-2 text-xs text-zinc-400">Continue a project</p>
+          <p className="mb-2 text-xs text-zinc-400">Reprendre un projet</p>
           <ul className="grid gap-2 sm:grid-cols-3">
             {projects.slice(0, 3).map((p) => (
               <li key={p.id}>
                 <Link to={`/app/prompts/${p.id}`} className="flex items-center gap-3 rounded-xl bg-line/[0.05] py-2 pl-2 pr-3 text-sm text-zinc-200 hover:bg-line/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
                   <img src={promptStudio.styleImage(p.style)} alt="" width={36} height={48} loading="lazy" className="h-12 w-9 shrink-0 rounded-lg object-cover" />
-                  <span className="min-w-0 flex-1"><span className="block truncate">{p.title}</span><span className="block text-[11px] text-zinc-500">Step {p.phase}/5</span></span>
+                  <span className="min-w-0 flex-1"><span className="block truncate">{p.title}</span><span className="block text-[11px] text-zinc-500">Étape {p.phase}/5</span></span>
                   <ArrowRight className="h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
                 </Link>
               </li>

@@ -1,4 +1,4 @@
-import { Archive, CalendarPlus, Search, Upload } from 'lucide-react';
+import { Archive, CalendarPlus, Download, Search, Upload } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { accountLabel, inputCls, ModeBanner, Notice, PubBadge } from '@/components/distribution/bits';
@@ -66,7 +66,7 @@ export default function LibraryPage() {
     for (const file of Array.from(files)) {
       const name = file.name;
       const fail = (msg: string) => setUploads((u) => [...u.filter((x) => x.name !== name), { name, pct: 0, error: msg }]);
-      if (!ACCEPTED.includes(file.type)) { fail('Unsupported format: use MP4, MOV or WebM'); continue; }
+      if (!ACCEPTED.includes(file.type)) { fail('Format non pris en charge : utilisez MP4, MOV ou WebM'); continue; }
       const limit = maxMb * 1024 * 1024;
       const set = (patch: Partial<UploadItem>) => setUploads((u) => u.map((x) => (x.name === name ? { ...x, ...patch } : x)));
       setUploads((u) => [...u.filter((x) => x.name !== name), { name, pct: 0 }]);
@@ -75,19 +75,19 @@ export default function LibraryPage() {
         let toUpload = file;
         if (file.size > limit) {
           // Too big for storage: compress on this device first (nothing is sent until it fits).
-          if (!meta.duration) throw new Error('Could not read this video\'s duration to compress it. Export it as MP4 and retry.');
-          set({ label: 'Compressing on your device', pct: 0 });
+          if (!meta.duration) throw new Error('Impossible de lire la durée de cette vidéo pour la compresser. Exportez-la en MP4 et réessayez.');
+          set({ label: 'Compression sur votre appareil', pct: 0 });
           toUpload = await compressVideo(file, meta.duration, meta.height, limit - 512 * 1024,
-            (p) => set({ label: p.step === 'loading' ? 'Loading the compressor' : 'Compressing on your device', pct: Math.round(p.ratio * 100) }));
+            (p) => set({ label: p.step === 'loading' ? 'Chargement du compresseur' : 'Compression sur votre appareil', pct: Math.round(p.ratio * 100) }));
           Object.assign(meta, await probe(toUpload));
           toast(`${name}: ${Math.round(file.size / 1048576)} MB → ${Math.round(toUpload.size / 1048576)} MB.`);
         }
-        set({ label: 'Uploading', pct: 0 });
+        set({ label: 'Envoi', pct: 0 });
         await distribution.uploadMedia(toUpload, { title: name.replace(/\.[^.]+$/, '').slice(0, 200), tags: [], ...meta },
           (pct) => setUploads((u) => u.map((x) => (x.name === name ? { ...x, pct } : x))));
         setUploads((u) => u.filter((x) => x.name !== name));
-        toast(`${name} imported.`);
-      } catch (e) { fail(e instanceof Error ? e.message : 'Upload failed'); }
+        toast(`${name} importée.`);
+      } catch (e) { fail(e instanceof Error ? e.message : 'L’envoi a échoué'); }
     }
     if (fileRef.current) fileRef.current.value = '';
   };
@@ -95,10 +95,10 @@ export default function LibraryPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Distribution" title="Video library" description="Import each video once, then send it to any of your accounts. Nothing is published from here."
+      <PageHeader eyebrow="Vidéos" title="Bibliothèque vidéo" description="Toutes vos vidéos : celles créées par Storyit et celles que vous importez. Regardez-les, téléchargez-les ou programmez-les."
         actions={<>
-          <input ref={fileRef} type="file" accept={ACCEPTED.join(',')} multiple className="sr-only" id="upload" aria-label="Import videos" tabIndex={-1} onChange={(e) => onFiles(e.target.files)} />
-          <Button onClick={() => fileRef.current?.click()}><Upload className="h-4 w-4" /> Import videos</Button>
+          <input ref={fileRef} type="file" accept={ACCEPTED.join(',')} multiple className="sr-only" id="upload" aria-label="Importer des vidéos" tabIndex={-1} onChange={(e) => onFiles(e.target.files)} />
+          <Button onClick={() => fileRef.current?.click()}><Upload className="h-4 w-4" /> Importer des vidéos</Button>
         </>} />
       <div className="mb-4 space-y-2">
         {integ && <ModeBanner {...integ} />}
@@ -106,7 +106,7 @@ export default function LibraryPage() {
           <div key={u.name} className="surface px-4 py-3" aria-live="polite">
             <div className="flex justify-between gap-2 text-xs"><span className="truncate text-zinc-200">{u.name}</span><span className={u.error ? 'text-coral-300' : 'tabular-nums text-zinc-400'}>{u.error ?? `${u.label ? u.label + ' · ' : ''}${u.pct}%`}</span></div>
             {!u.error && <div className="mt-2"><ProgressBar value={u.pct} max={100} /></div>}
-            {!u.error && u.label?.startsWith('Compress') && <p className="mt-1.5 text-[11px] text-zinc-500">Keep this tab open: large videos take a few minutes. Nothing is sent until the file fits the {maxMb} MB limit.</p>}
+            {!u.error && u.label?.startsWith('Compression') && <p className="mt-1.5 text-[11px] text-zinc-500">Gardez cet onglet ouvert : les grosses vidéos prennent quelques minutes. Rien n’est envoyé tant que le fichier dépasse la limite de {maxMb} Mo.</p>}
           </div>
         ))}
       </div>
@@ -114,33 +114,33 @@ export default function LibraryPage() {
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <div className="relative min-w-0 flex-1 sm:max-w-xs">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" aria-hidden />
-          <label htmlFor="lib-q" className="sr-only">Search videos</label>
-          <input id="lib-q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, notes, tags…" className={cn(inputCls, 'pl-9')} />
+          <label htmlFor="lib-q" className="sr-only">Rechercher des vidéos</label>
+          <input id="lib-q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Rechercher un titre, une note, un tag…" className={cn(inputCls, 'pl-9')} />
         </div>
-        <label htmlFor="lib-state" className="sr-only">Status</label>
+        <label htmlFor="lib-state" className="sr-only">Statut</label>
         <select id="lib-state" value={stateFilter} onChange={(e) => setStateFilter(e.target.value as VideoState | '')} className={cn(inputCls, 'w-auto')}>
-          <option value="">All statuses</option>
+          <option value="">Tous les statuts</option>
           {Object.entries(VIDEO_STATE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
         {tags.length > 0 && <>
           <label htmlFor="lib-tag" className="sr-only">Tag</label>
           <select id="lib-tag" value={tag} onChange={(e) => setTag(e.target.value)} className={cn(inputCls, 'w-auto')}>
-            <option value="">All tags</option>{tags.map((t) => <option key={t}>{t}</option>)}
+            <option value="">Tous les tags</option>{tags.map((t) => <option key={t}>{t}</option>)}
           </select>
         </>}
         <Button className="ml-auto" disabled={!selected.size} onClick={() => navigate(`/app/distribute?videos=${[...selected].join(',')}`)}>
-          <CalendarPlus className="h-4 w-4" /> Schedule {selected.size ? `${selected.size} video${selected.size > 1 ? 's' : ''}` : ''}
+          <CalendarPlus className="h-4 w-4" /> Programmer {selected.size ? `${selected.size} vidéo${selected.size > 1 ? 's' : ''}` : ''}
         </Button>
       </div>
 
       {loading || error ? <LoadState loading={loading} error={error} /> : media.length === 0 ? (
         <Card className="py-10 text-center">
           <Upload className="mx-auto h-6 w-6 text-violet-300" aria-hidden />
-          <p className="mt-3 text-sm text-zinc-200">Your library is empty</p>
-          <p className="mx-auto mt-1 max-w-md text-xs text-zinc-500">Import MP4, MOV or WebM files. Videos over {maxMb} MB are compressed on your device before upload. Vertical 9:16 works best for TikTok and Reels.</p>
-          <Button className="mt-4" onClick={() => fileRef.current?.click()}>Import your first video</Button>
+          <p className="mt-3 text-sm text-zinc-200">Votre bibliothèque est vide</p>
+          <p className="mx-auto mt-1 max-w-md text-xs text-zinc-500">Les vidéos créées par le Prompt Studio, l’Animated Studio et la traduction arrivent ici automatiquement. Vous pouvez aussi importer des fichiers MP4, MOV ou WebM (au-delà de {maxMb} Mo, ils sont compressés sur votre appareil).</p>
+          <Button className="mt-4" onClick={() => fileRef.current?.click()}>Importer une vidéo</Button>
         </Card>
-      ) : rows.length === 0 ? <Notice>No video matches these filters.</Notice> : (
+      ) : rows.length === 0 ? <Notice>Aucune vidéo ne correspond à ces filtres.</Notice> : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {rows.map(({ m, state }) => {
             const its = byMedia.get(m.id) ?? [];
@@ -149,30 +149,34 @@ export default function LibraryPage() {
               <li key={m.id} className={cn('surface overflow-hidden', sel && 'ring-2 ring-violet-500')}>
                 <div className="relative aspect-[9/16] bg-black">
                   {m.preview_url ? <video src={m.preview_url} preload="metadata" muted playsInline controls className="h-full w-full object-cover" />
-                    : <div className="flex h-full items-center justify-center p-3 text-center text-[11px] text-zinc-500">{m.status === 'uploading' ? 'Uploading…' : m.status === 'error' ? 'Upload failed' : 'No preview'}</div>}
+                    : <div className="flex h-full items-center justify-center p-3 text-center text-[11px] text-zinc-500">{m.status === 'uploading' ? 'Envoi…' : m.status === 'error' ? 'Échec de l’envoi' : 'Pas d’aperçu'}</div>}
                   {state !== 'archived' && m.status === 'available' && (
                     <label className="absolute left-2 top-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg bg-black/60">
-                      <input type="checkbox" checked={sel} onChange={() => toggle(m.id)} aria-label={`Select ${m.title}`} className="h-4 w-4 accent-violet-500" />
+                      <input type="checkbox" checked={sel} onChange={() => toggle(m.id)} aria-label={`Sélectionner ${m.title}`} className="h-4 w-4 accent-violet-500" />
                     </label>
                   )}
                 </div>
                 <div className="p-2.5">
                   <p className="truncate text-xs font-medium text-zinc-100" title={m.title}>{m.title}</p>
                   <p className="mt-0.5 text-[11px] tabular-nums text-zinc-500">
-                    {[m.duration_seconds && `${m.duration_seconds}s`, m.width && m.height && `${m.width}×${m.height}`, `${(m.size_bytes / 1048576).toFixed(1)} MB`].filter(Boolean).join(' · ')}
+                    {[m.duration_seconds && `${m.duration_seconds}s`, m.width && m.height && `${m.width}×${m.height}`, `${(m.size_bytes / 1048576).toFixed(1)} Mo`].filter(Boolean).join(' · ')}
                   </p>
                   {state && <span className={cn('mt-1.5 inline-block rounded-full px-2 py-0.5 text-[11px]', STATE_CLS[state])}>{VIDEO_STATE_LABEL[state]}</span>}
                   <div className="mt-2 flex items-center gap-1">
                     <button onClick={() => setHistory(m)} className="rounded px-1.5 py-1 text-[11px] text-zinc-400 hover:bg-line/5 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
-                      History · {its.filter((p) => p.status !== 'cancelled').length}
+                      Historique · {its.filter((p) => p.status !== 'cancelled').length}
                     </button>
-                    {m.status === 'available' && state !== 'archived' && (
-                      <button aria-label={`Archive ${m.title}`} onClick={() => distribution.updateMedia(m.id, { status: 'archived' })} className="ml-auto rounded p-1 text-zinc-500 hover:bg-line/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><Archive className="h-3.5 w-3.5" /></button>
+                    {m.preview_url && m.status === 'available' && (
+                      <a href={m.preview_url} download target="_blank" rel="noreferrer" aria-label={`Télécharger ${m.title}`} title="Télécharger"
+                        className="rounded p-1 text-zinc-400 hover:bg-line/5 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><Download className="h-3.5 w-3.5" /></a>
                     )}
-                    {state === 'archived' && <button onClick={() => distribution.updateMedia(m.id, { status: 'available' })} className="ml-auto rounded px-1.5 py-1 text-[11px] text-zinc-400 hover:text-zinc-100">Restore</button>}
+                    {m.status === 'available' && state !== 'archived' && (
+                      <button aria-label={`Archiver ${m.title}`} onClick={() => distribution.updateMedia(m.id, { status: 'archived' })} className="ml-auto rounded p-1 text-zinc-500 hover:bg-line/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><Archive className="h-3.5 w-3.5" /></button>
+                    )}
+                    {state === 'archived' && <button onClick={() => distribution.updateMedia(m.id, { status: 'available' })} className="ml-auto rounded px-1.5 py-1 text-[11px] text-zinc-400 hover:text-zinc-100">Restaurer</button>}
                     {(m.status === 'error' || m.status === 'uploading') && (
-                      <button onClick={() => distribution.deleteFailedMedia(m.id).then(() => toast('Failed upload removed.'), (e: Error) => toast(e.message))}
-                        className="ml-auto rounded px-1.5 py-1 text-[11px] text-coral-300 hover:bg-coral-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">Remove</button>
+                      <button onClick={() => distribution.deleteFailedMedia(m.id).then(() => toast('Envoi échoué supprimé.'), (e: Error) => toast(e.message))}
+                        className="ml-auto rounded px-1.5 py-1 text-[11px] text-coral-300 hover:bg-coral-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">Supprimer</button>
                     )}
                   </div>
                 </div>
@@ -182,18 +186,18 @@ export default function LibraryPage() {
         </ul>
       )}
 
-      <Modal open={Boolean(history)} onClose={() => setHistory(null)} title={`Distribution history · ${history?.title ?? ''}`}>
+      <Modal open={Boolean(history)} onClose={() => setHistory(null)} title={`Historique de diffusion · ${history?.title ?? ''}`}>
         {history && <MediaEditor media={history} />}
         <ul className="mt-4 max-h-72 space-y-2 overflow-y-auto">
           {(history ? byMedia.get(history.id) ?? [] : []).map((p) => (
             <li key={p.id} className="rounded-xl border border-line/[0.07] px-3 py-2 text-xs">
               <div className="flex items-center justify-between gap-2"><span className="truncate text-zinc-200">{accountLabel(accounts.find((a) => a.id === p.account_id))}</span><PubBadge status={p.status} /></div>
-              <p className="mt-1 text-zinc-500">Planned {new Date(p.scheduled_at).toLocaleString()}{p.published_at && ` · published ${new Date(p.published_at).toLocaleString()}`}</p>
+              <p className="mt-1 text-zinc-500">Prévue le {new Date(p.scheduled_at).toLocaleString('fr-FR')}{p.published_at && ` · publiée le ${new Date(p.published_at).toLocaleString('fr-FR')}`}</p>
               {p.last_error && <p className="mt-1 text-coral-300">{p.last_error}</p>}
-              {p.external_url && <a href={p.external_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-violet-300">Open post</a>}
+              {p.external_url && <a href={p.external_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-violet-300">Voir la publication</a>}
             </li>
           ))}
-          {history && !(byMedia.get(history.id) ?? []).length && <li className="text-xs text-zinc-500">Not scheduled anywhere yet.</li>}
+          {history && !(byMedia.get(history.id) ?? []).length && <li className="text-xs text-zinc-500">Pas encore programmée.</li>}
         </ul>
       </Modal>
     </>
@@ -206,16 +210,16 @@ function MediaEditor({ media }: { media: MediaAsset }) {
   const [tags, setTags] = useState(media.tags.join(', '));
   const toast = useToast();
   const save = () => distribution.updateMedia(media.id, { title: title.trim() || media.title, notes: notes || null, tags: tags.split(',').map((t) => t.trim()).filter(Boolean) })
-    .then(() => toast('Video details saved.'), (e: Error) => toast(e.message));
+    .then(() => toast('Infos de la vidéo enregistrées.'), (e: Error) => toast(e.message));
   return (
     <div className="grid gap-2">
-      <label htmlFor="m-title" className="text-xs text-zinc-400">Internal title</label>
+      <label htmlFor="m-title" className="text-xs text-zinc-400">Titre interne</label>
       <input id="m-title" className={inputCls} value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} />
-      <label htmlFor="m-notes" className="text-xs text-zinc-400">Notes (used by AI captions: describe what happens)</label>
+      <label htmlFor="m-notes" className="text-xs text-zinc-400">Notes (utilisées par les légendes IA : décrivez ce qui se passe)</label>
       <textarea id="m-notes" rows={2} className={cn(inputCls, 'h-auto py-2')} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Un citron père sauve sa fille figue sous la tempête…" />
-      <label htmlFor="m-tags" className="text-xs text-zinc-400">Tags (comma-separated)</label>
+      <label htmlFor="m-tags" className="text-xs text-zinc-400">Tags (séparés par des virgules)</label>
       <input id="m-tags" className={inputCls} value={tags} onChange={(e) => setTags(e.target.value)} placeholder="fruit drama, famille…" />
-      <Button size="sm" variant="secondary" className="justify-self-end" onClick={save}>Save details</Button>
+      <Button size="sm" variant="secondary" className="justify-self-end" onClick={save}>Enregistrer</Button>
     </div>
   );
 }

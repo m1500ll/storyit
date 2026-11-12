@@ -8,9 +8,9 @@ import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 
 const TITLES: Record<string, string> = {
-  '/app': 'Overview', '/app/library': 'Video library', '/app/distribute': 'Distribute', '/app/calendar': 'Calendar', '/app/history': 'History',
-  '/app/accounts': 'Social accounts', '/app/billing': 'Plan & credits', '/app/settings': 'Settings', '/app/help': 'Help', '/app/studio': 'Animated Studio', '/app/translate': 'Traduire une vidéo', '/app/partners': 'Partenaires', '/app/trends': 'Tendances', '/app/prompts': 'Prompt Studio',
-  '/app/monetisation': 'Monetisation', '/app/guide': 'Creator guide',
+  '/app': 'Accueil', '/app/library': 'Bibliothèque vidéo', '/app/distribute': 'Diffuser', '/app/calendar': 'Calendrier', '/app/history': 'Historique',
+  '/app/accounts': 'Comptes sociaux', '/app/billing': 'Offre et crédits', '/app/settings': 'Réglages', '/app/help': 'Aide', '/app/studio': 'Animated Studio', '/app/translate': 'Traduire une vidéo', '/app/partners': 'Partenaires', '/app/trends': 'Tendances', '/app/prompts': 'Prompt Studio',
+  '/app/monetisation': 'Monétisation', '/app/guide': 'Guide du créateur',
 };
 
 export function AppShell() {
@@ -19,7 +19,7 @@ export function AppShell() {
   useSeo({ title: TITLES[pathname] ?? 'Studio', noindex: true });
   return (
     <PaywallProvider>
-      <a href="#main" className="sr-only z-50 rounded-lg bg-violet-500 px-4 py-2 text-sm text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to content</a>
+      <a href="#main" className="sr-only z-50 rounded-lg bg-violet-500 px-4 py-2 text-sm text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Aller au contenu</a>
       <div className="flex min-h-screen bg-ink-950">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">

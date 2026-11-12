@@ -241,7 +241,7 @@ Deno.serve(async (req) => {
   if (task !== 'concepts' && task !== 'scenes' && task !== 'publish_pack') return json({ error: 'Unknown task' }, 400);
 
   const { data: profile } = await supabase.from('profiles').select('credit_balance').eq('id', auth.user.id).single();
-  if (!profile || profile.credit_balance < COSTS[task]) return json({ error: 'Not enough Story Credits.' }, 402);
+  if (!profile || profile.credit_balance < COSTS[task]) return json({ error: 'Crédits insuffisants : rechargez votre solde pour continuer.' }, 402);
 
   try {
     let result: unknown;
@@ -297,7 +297,7 @@ Deno.serve(async (req) => {
       p_amount: COSTS[task], p_story_id: task === 'publish_pack' ? String(body.story_id) : null,
       p_description: ({ concepts: 'AI concepts (Gemini)', scenes: 'AI scene breakdown (Gemini)', publish_pack: 'Publish pack: titles, captions, hashtags, thumbnail prompt' } satisfies Record<Task, string>)[task],
     });
-    if (error) return json({ error: error.message.includes('insufficient') ? 'Not enough Story Credits.' : error.message }, 402);
+    if (error) return json({ error: error.message.includes('insufficient') ? 'Crédits insuffisants : rechargez votre solde pour continuer.' : error.message }, 402);
 
     return json(result);
   } catch (e) {

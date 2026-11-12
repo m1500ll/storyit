@@ -13,10 +13,10 @@ export default function DashboardPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Overview" title={profile?.display_name ? `Good to see you, ${profile.display_name.split(' ')[0]}` : 'Your studio'}
-        description="Write your next story, then post it everywhere."
+      <PageHeader eyebrow="Accueil" title={profile?.display_name ? `Content de vous revoir, ${profile.display_name.split(' ')[0]}` : 'Votre studio'}
+        description="Écrivez votre prochaine histoire, Storyit crée la vidéo."
         actions={<Button variant="secondary" onClick={() => navigate('/app/distribute')}><Plus className="h-4 w-4" />
- Distribute videos</Button>} />
+ Diffuser des vidéos</Button>} />
       {profile && profile.plan === 'free' && (
         <button type="button" onClick={() => navigate('/app/billing')}
           className="mb-6 flex w-full items-center gap-3 rounded-2xl border border-coral-400/40 bg-gradient-to-r from-coral-500/15 via-violet-500/10 to-transparent px-4 py-3 text-left transition hover:border-coral-400/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
@@ -50,11 +50,11 @@ export default function DashboardPage() {
           <div className="grid items-center gap-5 sm:grid-cols-[1fr_auto]">
             <div className="min-w-0">
               <p className="label mb-2">Animated Studio</p>
-              <h2 className="text-balance font-display text-2xl text-zinc-50">One idea, one finished 3D short</h2>
-              <p className="mt-2 text-sm text-zinc-400">Pick a true story, a decor and a voice. Storyit produces the whole vertical video: 3D world, characters, narration, music and captions.</p>
+              <h2 className="text-balance font-display text-2xl text-zinc-50">Une idée, une vidéo 3D terminée</h2>
+              <p className="mt-2 text-sm text-zinc-400">Choisissez une histoire vraie, un décor et une voix. Storyit produit toute la vidéo verticale : monde 3D, personnages, narration, musique et sous-titres.</p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Button variant="secondary" onClick={() => navigate('/app/studio')}><Clapperboard className="h-4 w-4" /> Open the Animated Studio</Button>
-                <span className="text-xs text-zinc-500 tabular-nums">From 3,500 credits · refunded if the render fails</span>
+                <Button variant="secondary" onClick={() => navigate('/app/studio')}><Clapperboard className="h-4 w-4" /> Ouvrir l’Animated Studio</Button>
+                <span className="text-xs text-zinc-500 tabular-nums">Dès 3 500 crédits · remboursés si le rendu échoue</span>
               </div>
             </div>
             <div aria-hidden className="flex justify-center gap-2">

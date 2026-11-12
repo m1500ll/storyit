@@ -25,16 +25,16 @@ export function LowCreditsBanner() {
       <Coins className={cn('hidden h-4 w-4 shrink-0 sm:block', empty ? 'text-coral-300' : 'text-amber-300')} aria-hidden />
       <p className="flex-1 text-sm text-zinc-200">
         {empty
-          ? <>You’re out of credits. Top up to keep using the Prompt Studio and AI features. Publishing to your accounts keeps working.</>
-          : <>Only <strong className="tabular-nums">{formatCredits(balance)}</strong> credits left (alert under {formatCredits(LOW_CREDITS)}). Top up now so you’re not stopped mid-project.</>}
+          ? <>Vous n’avez plus de crédits. Rechargez pour continuer à utiliser les studios IA.</>
+          : <>Plus que <strong className="tabular-nums">{formatCredits(balance)}</strong> crédits (alerte sous {formatCredits(LOW_CREDITS)}). Rechargez maintenant pour ne pas être bloqué en plein projet.</>}
       </p>
       <div className="flex shrink-0 items-center gap-1">
         <button onClick={() => openPaywall()}
           className="touch-hit rounded-lg bg-gradient-to-r from-[#c2410c] to-[#b45309] px-3.5 py-2 text-xs font-semibold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-400/60">
-          Buy credits
+          Acheter des crédits
         </button>
         {!empty && (
-          <button aria-label="Hide for 24 hours" onClick={() => { setHidden(true); try { localStorage.setItem(KEY, String(Date.now())); } catch { /* private mode */ } }}
+          <button aria-label="Masquer pendant 24 heures" onClick={() => { setHidden(true); try { localStorage.setItem(KEY, String(Date.now())); } catch { /* private mode */ } }}
             className="rounded-lg p-2 text-zinc-500 hover:bg-line/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><X className="h-4 w-4" /></button>
         )}
       </div>

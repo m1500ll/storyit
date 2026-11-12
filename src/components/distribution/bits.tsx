@@ -9,18 +9,18 @@ export function PlatformDot({ platform, className }: { platform: Platform; class
 }
 
 export const accountLabel = (a?: Pick<SocialAccount, 'username' | 'display_name' | 'platform'> | null) =>
-  a ? `${a.username ? '@' + a.username : a.display_name ?? 'Account'} · ${PLATFORM_NAME[a.platform]}` : 'Unknown account';
+  a ? `${a.username ? '@' + a.username : a.display_name ?? 'Compte'} · ${PLATFORM_NAME[a.platform]}` : 'Compte inconnu';
 
 const PUB_STYLE: Record<PubStatus, { label: string; cls: string }> = {
-  draft: { label: 'Draft', cls: 'text-zinc-400 bg-line/5' },
-  scheduled: { label: 'Scheduled', cls: 'text-sky-300 bg-sky-500/10' },
-  queued: { label: 'Queued', cls: 'text-sky-300 bg-sky-500/10' },
-  processing: { label: 'Uploading', cls: 'text-violet-300 bg-violet-500/10' },
-  submitted: { label: 'Processing on platform', cls: 'text-violet-300 bg-violet-500/10' },
-  published: { label: 'Published', cls: 'text-emerald-300 bg-emerald-500/10' },
-  failed: { label: 'Failed', cls: 'text-coral-300 bg-coral-500/10' },
-  cancelled: { label: 'Cancelled', cls: 'text-zinc-500 bg-line/5' },
-  needs_attention: { label: 'Check manually', cls: 'text-amber-300 bg-amber-500/10' },
+  draft: { label: 'Brouillon', cls: 'text-zinc-400 bg-line/5' },
+  scheduled: { label: 'Programmée', cls: 'text-sky-300 bg-sky-500/10' },
+  queued: { label: 'En file', cls: 'text-sky-300 bg-sky-500/10' },
+  processing: { label: 'Envoi', cls: 'text-violet-300 bg-violet-500/10' },
+  submitted: { label: 'Traitement sur la plateforme', cls: 'text-violet-300 bg-violet-500/10' },
+  published: { label: 'Publiée', cls: 'text-emerald-300 bg-emerald-500/10' },
+  failed: { label: 'Échec', cls: 'text-coral-300 bg-coral-500/10' },
+  cancelled: { label: 'Annulée', cls: 'text-zinc-500 bg-line/5' },
+  needs_attention: { label: 'À vérifier', cls: 'text-amber-300 bg-amber-500/10' },
 };
 export function PubBadge({ status }: { status: PubStatus }) {
   const s = PUB_STYLE[status];
@@ -52,13 +52,13 @@ export function Field({ label, htmlFor, hint, children }: { label: string; htmlF
 }
 
 export const fmtDateTime = (iso: string, tz?: string) =>
-  new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short', timeZone: tz }).format(new Date(iso));
+  new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'short', timeZone: tz }).format(new Date(iso));
 export const browserTz = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 export const TIMEZONES = ['Europe/Paris', 'Europe/London', 'Europe/Brussels', 'Europe/Madrid', 'America/New_York', 'America/Los_Angeles', 'America/Montreal', 'Africa/Casablanca', 'Asia/Dubai', 'UTC'];
 
 /** Demo / not-configured banner shared by every distribution page. */
 export function ModeBanner({ live, tiktok, instagram }: { live: boolean; tiktok: boolean; instagram: boolean }) {
-  if (!live) return <Notice tone="warn">Demo mode: this browser is not connected to a Storyit server. Accounts shown are examples, and nothing is ever published.</Notice>;
-  if (!tiktok && !instagram) return <Notice tone="warn">Account connection is being set up: TikTok and Instagram apps are not configured on this server yet. You can already build your library and plan your calendar.</Notice>;
+  if (!live) return <Notice tone="warn">Mode démo : ce navigateur n’est pas relié à un serveur Storyit. Les comptes affichés sont des exemples, rien n’est publié.</Notice>;
+  if (!tiktok && !instagram) return <Notice tone="warn">La connexion des comptes est en cours de mise en place : la publication TikTok et Instagram est en pause. Vous pouvez déjà remplir votre bibliothèque et préparer votre calendrier.</Notice>;
   return null;
 }

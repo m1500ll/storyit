@@ -7,7 +7,7 @@ export function LoadState({ loading, error, rows = 3 }: { loading: boolean; erro
 
 export function Skeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="space-y-3" role="status" aria-label="Loading">
+    <div className="space-y-3" role="status" aria-label="Chargement">
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="surface flex items-center gap-4 p-4">
           <div className="h-10 w-10 shrink-0 animate-pulse rounded-xl bg-line/[0.07]" />
@@ -17,7 +17,7 @@ export function Skeleton({ rows = 3 }: { rows?: number }) {
           </div>
         </div>
       ))}
-      <span className="sr-only">Loading…</span>
+      <span className="sr-only">Chargement…</span>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { posterSrc, previewSrc, SHOWCASE, SHOWCASE_FRUIT, type ShowcaseVideo } from '@/data/showcase';
 
+const FR = typeof navigator !== 'undefined' && /^fr\b/i.test(navigator.language || '');
 const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const useMedia = (q: string) => {
   const [on, setOn] = useState(() => typeof window !== 'undefined' && window.matchMedia(q).matches);
@@ -52,9 +53,9 @@ export function AuthShowcase() {
       </div>
       <div className="absolute inset-x-0 bottom-0 p-10">
         <div className="max-w-md rounded-3xl border border-white/50 bg-white/70 p-6 shadow-xl backdrop-blur-xl">
-          <p className="inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-2.5 py-1 text-[11px] font-semibold text-white"><Sparkles className="h-3.5 w-3.5" /> Made with Storyit</p>
-          <p className="mt-3 font-display text-3xl leading-tight text-zinc-900">One idea in. A video people watch to the end.</p>
-          <p className="mt-2 text-sm text-zinc-900/70">3D animated stories, Fruit Dramas and translated videos, ready for TikTok, Reels and Shorts.</p>
+          <p className="inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-2.5 py-1 text-[11px] font-semibold text-white"><Sparkles className="h-3.5 w-3.5" /> {FR ? 'Créé avec Storyit' : 'Made with Storyit'}</p>
+          <p className="mt-3 font-display text-3xl leading-tight text-zinc-900">{FR ? 'Une idée. Une vidéo qu’on regarde jusqu’au bout.' : 'One idea in. A video people watch to the end.'}</p>
+          <p className="mt-2 text-sm text-zinc-900/70">{FR ? 'Histoires animées en 3D, Fruit Dramas et vidéos traduites, prêtes pour TikTok, Reels et Shorts.' : '3D animated stories, Fruit Dramas and translated videos, ready for TikTok, Reels and Shorts.'}</p>
         </div>
       </div>
     </aside>

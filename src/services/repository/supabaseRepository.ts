@@ -52,7 +52,7 @@ async function invokeRender(db: SupabaseClient<Database>, body: Record<string, u
 export function createSupabaseRepository(db: SupabaseClient<Database>): Repository {
   const uid = async () => {
     const { data } = await db.auth.getUser();
-    if (!data.user) throw new Error('Not signed in');
+    if (!data.user) throw new Error('Veuillez vous reconnecter.');
     return data.user.id;
   };
 

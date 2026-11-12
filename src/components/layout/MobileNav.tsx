@@ -8,31 +8,31 @@ import { useBetaAccess } from '@/hooks/useBeta';
 import { useProfile } from '@/hooks/useStore';
 
 const tabs = [
-  { to: '/app', label: 'Home', icon: LayoutDashboard, end: true },
-  { to: '/app/library', label: 'Library', icon: FolderOpen },
-  { to: '/app/distribute', label: 'Distribute', icon: Send },
-  { to: '/app/calendar', label: 'Calendar', icon: CalendarDays },
+  { to: '/app', label: 'Accueil', icon: LayoutDashboard, end: true },
+  { to: '/app/library', label: 'Vidéos', icon: FolderOpen },
+  { to: '/app/distribute', label: 'Diffuser', icon: Send },
+  { to: '/app/calendar', label: 'Calendrier', icon: CalendarDays },
 ];
 
 /** Everything the desktop sidebar offers, so no page is unreachable on a phone. */
 const sections = [
-  { title: 'Distribute', items: [
-    { to: '/app/history', label: 'History', icon: History },
-    { to: '/app/accounts', label: 'Social accounts', icon: Link2 },
+  { title: 'Diffuser', items: [
+    { to: '/app/history', label: 'Historique', icon: History },
+    { to: '/app/accounts', label: 'Comptes sociaux', icon: Link2 },
   ] },
-  { title: 'Create', items: [
-    { to: '/app/studio', label: 'Animated Studio', icon: Clapperboard, badge: 'New' },
-    { to: '/app/translate', label: 'Traduire une vidéo', icon: Languages, badge: 'New' },
+  { title: 'Créer', items: [
+    { to: '/app/studio', label: 'Animated Studio', icon: Clapperboard, badge: 'Nouveau' },
+    { to: '/app/translate', label: 'Traduire une vidéo', icon: Languages, badge: 'Nouveau' },
     { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2 },
   ] },
-  { title: 'Grow', items: [
-    { to: '/app/monetisation', label: 'Monetisation', icon: TrendingUp },
-    { to: '/app/guide', label: 'Creator guide', icon: BookOpen },
+  { title: 'Grandir', items: [
+    { to: '/app/monetisation', label: 'Monétisation', icon: TrendingUp },
+    { to: '/app/guide', label: 'Guide du créateur', icon: BookOpen },
   ] },
-  { title: 'Account', items: [
-    { to: '/app/billing', label: 'Plan & credits', icon: CreditCard },
-    { to: '/app/settings', label: 'Settings', icon: Settings },
-    { to: '/app/help', label: 'Help', icon: LifeBuoy },
+  { title: 'Compte', items: [
+    { to: '/app/billing', label: 'Offre et crédits', icon: CreditCard },
+    { to: '/app/settings', label: 'Réglages', icon: Settings },
+    { to: '/app/help', label: 'Aide', icon: LifeBuoy },
   ] },
 ];
 
@@ -58,11 +58,11 @@ export function MobileNav() {
     <>
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-          <button className="absolute inset-0 bg-black/60" aria-label="Close menu" onClick={() => setOpen(false)} />
+          <button className="absolute inset-0 bg-black/60" aria-label="Fermer le menu" onClick={() => setOpen(false)} />
           <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line/10 bg-ink-950 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-sm font-semibold text-zinc-100">Menu</p>
-              <button onClick={() => setOpen(false)} aria-label="Close menu" className="grid h-10 w-10 place-items-center rounded-full text-zinc-400 hover:bg-line/5"><X className="h-5 w-5" /></button>
+              <button onClick={() => setOpen(false)} aria-label="Fermer le menu" className="grid h-10 w-10 place-items-center rounded-full text-zinc-400 hover:bg-line/5"><X className="h-5 w-5" /></button>
             </div>
             {menu.filter((s) => ('beta' in s ? beta : 'soon' in s ? !beta : true)).map((s) => (
               <div key={s.title} className="mt-3">
@@ -88,7 +88,7 @@ export function MobileNav() {
           </div>
         </div>
       )}
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line/[0.06] bg-ink-950/90 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Main">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line/[0.06] bg-ink-950/90 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden" aria-label="Menu principal">
         {tabs.map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end}
             className={({ isActive }) => cn('relative flex flex-col items-center gap-1 py-2.5 text-[11px] [touch-action:manipulation]', isActive ? 'text-violet-300' : 'text-zinc-500')}>

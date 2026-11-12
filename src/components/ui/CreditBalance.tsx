@@ -14,7 +14,7 @@ export function CreditBalance({ className }: { className?: string }) {
       level === 'empty' && 'border-coral-500/40 bg-coral-500/15', className)}>
       <Coins className={cn('h-3.5 w-3.5', level === 'ok' ? 'text-violet-300' : level === 'low' ? 'text-amber-300' : 'text-coral-300')} aria-hidden />
       <span className="text-xs font-semibold tabular-nums text-zinc-100">{formatCredits(balance)}</span>
-      <span className="hidden text-[11px] text-zinc-400 sm:inline">credits</span>
+      <span className="hidden text-[11px] text-zinc-400 sm:inline">crédits</span>
     </div>
   );
 }

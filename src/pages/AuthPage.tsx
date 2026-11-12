@@ -13,18 +13,41 @@ import { REFERRAL_FRIEND_BONUS, formatCredits } from '@/services/credits';
 
 type Mode = 'signin' | 'signup' | 'forgot';
 
-const COPY: Record<Mode, { title: string; sub: string; cta: string }> = {
+/** French for French-speaking browsers (most customers), English otherwise (visitors from the English landing page) */
+const FR = typeof navigator !== 'undefined' && /^fr\b/i.test(navigator.language || '');
+const COPY: Record<Mode, { title: string; sub: string; cta: string }> = FR ? {
+  signin: { title: 'Content de vous revoir', sub: 'Connectez-vous pour continuer vos séries.', cta: 'Se connecter' },
+  signup: { title: 'Créez votre studio', sub: 'Offre gratuite avec 3 000 crédits. Sans carte bancaire.', cta: 'Créer mon compte' },
+  forgot: { title: 'Réinitialiser le mot de passe', sub: 'Nous vous envoyons un lien par e-mail pour en choisir un nouveau.', cta: 'Envoyer le lien' },
+} : {
   signin: { title: 'Welcome back', sub: 'Sign in to continue your series.', cta: 'Sign In' },
   signup: { title: 'Create your studio', sub: 'Free plan with 3,000 credits. No card required.', cta: 'Create Account' },
   forgot: { title: 'Reset your password', sub: 'We’ll email you a link to choose a new one.', cta: 'Send Reset Link' },
 };
+const L = FR ? {
+  wrong: 'E-mail ou mot de passe incorrect. Réessayez, ou réinitialisez votre mot de passe.', exists: 'Cet e-mail a déjà un compte : connectez-vous plutôt.',
+  noGoogle: 'La connexion Google n’est pas encore activée.', confirm: 'Confirmez d’abord votre e-mail : regardez votre boîte de réception.',
+  resetSent: 'Si un compte existe pour cet e-mail, un lien de réinitialisation est en route.', checkInbox: 'Regardez votre boîte de réception pour confirmer votre e-mail, puis connectez-vous.',
+  perks: ['3 000 crédits offerts pour essayer les studios', 'Des vidéos IA prêtes pour TikTok, Reels et Shorts', 'Offre gratuite, sans carte, sans engagement'],
+  redirect: 'Redirection vers Google…', google: 'Continuer avec Google', orEmail: 'ou avec un e-mail', password: 'Mot de passe', passNew: 'Mot de passe (6 caractères minimum)…', pass: 'Mot de passe…',
+  forgotQ: 'Mot de passe oublié ?', back: 'Retour à la connexion', noAccount: 'Pas de compte ? Créez-en un', haveAccount: 'Déjà un compte ? Connectez-vous',
+  privacy1: 'En continuant, vous acceptez la façon dont nous traitons vos données, décrite dans notre', privacy2: 'politique de confidentialité', email: 'vous@studio.com…', seo: 'Connexion',
+} : {
+  wrong: 'Wrong email or password. Try again, or reset your password.', exists: 'This email already has an account — sign in instead.',
+  noGoogle: 'Google sign-in isn’t enabled yet on this project.', confirm: 'Confirm your email first — check your inbox.',
+  resetSent: 'If an account exists for this email, a reset link is on its way.', checkInbox: 'Check your inbox to confirm your email, then sign in.',
+  perks: ['3,000 free credits to try the studios', 'AI videos ready for TikTok, Reels and Shorts', 'Free plan, no card, cancel anytime'],
+  redirect: 'Redirecting to Google…', google: 'Continue with Google', orEmail: 'or with email', password: 'Password', passNew: 'Password (6+ characters)…', pass: 'Password…',
+  forgotQ: 'Forgot password?', back: 'Back to sign in', noAccount: 'No account? Create one', haveAccount: 'Already have an account? Sign in',
+  privacy1: 'By continuing you agree to how we handle your data in our', privacy2: 'Privacy Policy', email: 'you@studio.com…', seo: 'Sign in',
+};
 
 /** Turns Supabase auth errors into a next step the user can act on. */
 function friendly(message: string): string {
-  if (/invalid login credentials/i.test(message)) return 'Wrong email or password. Try again, or reset your password.';
-  if (/already registered/i.test(message)) return 'This email already has an account — sign in instead.';
-  if (/provider is not enabled/i.test(message)) return 'Google sign-in isn’t enabled yet on this project.';
-  if (/email not confirmed/i.test(message)) return 'Confirm your email first — check your inbox.';
+  if (/invalid login credentials/i.test(message)) return L.wrong;
+  if (/already registered/i.test(message)) return L.exists;
+  if (/provider is not enabled/i.test(message)) return L.noGoogle;
+  if (/email not confirmed/i.test(message)) return L.confirm;
   return message;
 }
 
@@ -42,7 +65,7 @@ export default function AuthPage() {
   const [loading, setLoading] = useState<'form' | 'google' | null>(null);
   const [message, setMessage] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   // Show "Continue with Google" only when the provider is really enabled on the auth server.
-  useSeo({ title: 'Sign in', path: '/login', noindex: true });
+  useSeo({ title: L.seo, path: '/login', noindex: true });
   useEffect(() => { keepAffiliateInUrl(); }, []);
   const [googleEnabled, setGoogleEnabled] = useState(false);
   useEffect(() => {
@@ -77,7 +100,7 @@ export default function AuthPage() {
     if (mode === 'forgot') {
       const { error } = await supabase!.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
       setLoading(null);
-      return setMessage(error ? { kind: 'error', text: friendly(error.message) } : { kind: 'info', text: 'If an account exists for this email, a reset link is on its way.' });
+      return setMessage(error ? { kind: 'error', text: friendly(error.message) } : { kind: 'info', text: L.resetSent });
     }
     const { data, error } = mode === 'signin'
       ? await supabase!.auth.signInWithPassword({ email, password })
@@ -85,7 +108,7 @@ export default function AuthPage() {
     setLoading(null);
     if (error) return setMessage({ kind: 'error', text: friendly(error.message) });
     if (data.session) return navigate(from, { replace: true });
-    setMessage({ kind: 'info', text: 'Check your inbox to confirm your email, then sign in.' });
+    setMessage({ kind: 'info', text: L.checkInbox });
   };
 
   const copy = COPY[mode];
@@ -110,7 +133,7 @@ export default function AuthPage() {
         )}
         {mode === 'signup' && (
           <ul className="mt-4 space-y-1.5 text-xs text-zinc-400">
-            {['3,000 free credits to try the Prompt Studio', 'Post each video on all your TikTok and Instagram accounts', 'Free plan, no card, cancel anytime'].map((t) => (
+            {L.perks.map((t) => (
               <li key={t} className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-violet-400" />{t}</li>
             ))}
           </ul>
@@ -120,10 +143,10 @@ export default function AuthPage() {
           <>
             <button onClick={google} disabled={loading !== null}
               className="mt-6 flex h-11 w-full items-center justify-center gap-3 rounded-xl bg-white text-sm font-medium text-zinc-900 transition hover:bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-60">
-              <GoogleIcon />{loading === 'google' ? 'Redirecting to Google…' : 'Continue with Google'}
+              <GoogleIcon />{loading === 'google' ? L.redirect : L.google}
             </button>
             <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-widest text-zinc-600">
-              <span className="h-px flex-1 bg-line/10" />or with email<span className="h-px flex-1 bg-line/10" />
+              <span className="h-px flex-1 bg-line/10" />{L.orEmail}<span className="h-px flex-1 bg-line/10" />
             </div>
           </>
         )}
@@ -131,17 +154,17 @@ export default function AuthPage() {
         <form onSubmit={submit} className={mode === 'forgot' ? 'mt-6 space-y-3' : 'space-y-3'}>
           <label className="sr-only" htmlFor="email">Email</label>
           <input id="email" className="input" type="email" name="email" required autoComplete="email" spellCheck={false}
-            placeholder="you@studio.com…" value={email} onChange={(e) => setEmail(e.target.value)} />
+            placeholder={L.email} value={email} onChange={(e) => setEmail(e.target.value)} />
           {mode !== 'forgot' && (
             <>
-              <label className="sr-only" htmlFor="password">Password</label>
+              <label className="sr-only" htmlFor="password">{L.password}</label>
               <input id="password" className="input" type="password" name="password" required minLength={6}
                 autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-                placeholder={mode === 'signup' ? 'Password (6+ characters)…' : 'Password…'} value={password} onChange={(e) => setPassword(e.target.value)} />
+                placeholder={mode === 'signup' ? L.passNew : L.pass} value={password} onChange={(e) => setPassword(e.target.value)} />
             </>
           )}
           {mode === 'signin' && (
-            <button type="button" onClick={() => switchMode('forgot')} className="block text-xs text-zinc-500 hover:text-zinc-300">Forgot password?</button>
+            <button type="button" onClick={() => switchMode('forgot')} className="block text-xs text-zinc-500 hover:text-zinc-300">{L.forgotQ}</button>
           )}
           <div aria-live="polite">
             {message && <p className={message.kind === 'error' ? 'text-xs text-coral-300' : 'text-xs text-emerald-300'}>{message.text}</p>}
@@ -151,15 +174,15 @@ export default function AuthPage() {
 
         {mode === 'forgot' ? (
           <button onClick={() => switchMode('signin')} className="mt-5 flex w-full items-center justify-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300">
-            <ArrowLeft className="h-3 w-3" /> Back to sign in
+            <ArrowLeft className="h-3 w-3" /> {L.back}
           </button>
         ) : (
           <button onClick={() => switchMode(mode === 'signin' ? 'signup' : 'signin')} className="mt-5 w-full text-center text-xs text-zinc-500 hover:text-zinc-300">
-            {mode === 'signin' ? 'No account? Create one' : 'Already have an account? Sign in'}
+            {mode === 'signin' ? L.noAccount : L.haveAccount}
           </button>
         )}
         <p className="mt-6 text-center text-[11px] leading-relaxed text-zinc-600">
-          By continuing you agree to how we handle your data in our <Link to="/privacy" className="underline hover:text-zinc-400">Privacy Policy</Link>.
+          {L.privacy1} <Link to="/privacy" className="underline hover:text-zinc-400">{L.privacy2}</Link>.
         </p>
         </div>
         </div>

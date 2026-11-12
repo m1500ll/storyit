@@ -9,9 +9,9 @@ export function CreditCard() {
   return (
     <Card className="relative overflow-hidden">
       <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
-      <p className="label flex items-center gap-1.5"><Coins className="h-3 w-3" /> AI studio credits</p>
+      <p className="label flex items-center gap-1.5"><Coins className="h-3 w-3" /> Crédits des studios IA</p>
       <p className="mt-2 font-display text-5xl text-zinc-50 tabular-nums">{formatCredits(balance)}</p>
-      <p className="mt-1 text-xs text-zinc-500">Used only by the AI studio (beta). Publishing is included in your plan.</p>
+      <p className="mt-1 text-xs text-zinc-500">Utilisés par les studios IA. Ils se rechargent avec votre abonnement.</p>
       <ul className="mt-5 space-y-2 border-t border-line/5 pt-4">
         {transactions.slice(0, 3).map((t) => (
           <li key={t.id} className="flex items-center justify-between text-xs">
@@ -23,7 +23,7 @@ export function CreditCard() {
           </li>
         ))}
       </ul>
-      <Link to="/app/billing" className="touch-hit mt-4 inline-block text-xs font-medium text-violet-300 hover:text-violet-200">Top up credits →</Link>
+      <Link to="/app/billing" className="touch-hit mt-4 inline-block text-xs font-medium text-violet-300 hover:text-violet-200">Recharger des crédits →</Link>
     </Card>
   );
 }

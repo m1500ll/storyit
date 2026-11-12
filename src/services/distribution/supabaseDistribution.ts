@@ -25,7 +25,7 @@ export function createSupabaseDistribution(db: SupabaseClient): DistributionRepo
   const any = db as SupabaseClient<any>;
   const uid = async () => {
     const { data } = await db.auth.getUser();
-    if (!data.user) throw new Error('Not signed in');
+    if (!data.user) throw new Error('Veuillez vous reconnecter.');
     return data.user.id;
   };
   const invoke = async <T>(fn: string, body: Record<string, unknown>): Promise<T> => {
@@ -100,8 +100,8 @@ export function createSupabaseDistribution(db: SupabaseClient): DistributionRepo
     },
     async deleteFailedMedia(id) {
       const row = check(await any.from('media_assets').select('storage_path, status').eq('id', id).maybeSingle()) as { storage_path: string; status: string };
-      if (!row?.storage_path) throw new Error('Video not found');
-      if (!['error', 'uploading'].includes(row.status)) throw new Error('Only failed uploads can be removed. Archive the video instead.');
+      if (!row?.storage_path) throw new Error('Vidéo introuvable.');
+      if (!['error', 'uploading'].includes(row.status)) throw new Error('Seuls les envois échoués peuvent être supprimés. Archivez plutôt la vidéo.');
       await db.storage.from('library').remove([row.storage_path]).catch(() => undefined);
       check(await any.from('media_assets').delete().eq('id', id));
       store.notify();

@@ -1,20 +1,20 @@
 import { Card, PageHeader } from '@/components/ui';
 
 const TIPS = [
-  { title: 'Hook in the first 2 seconds', body: 'Open on conflict or a shocking line, not on context. The concept card’s “hook” is designed for this — keep it as scene 1.' },
-  { title: 'Make it longer than one minute', body: 'TikTok only rewards videos over 1 minute. Storyit episodes are ~60–75 s; keep at least 15 scenes or add a longer final scene.' },
-  { title: 'End every episode on a cliffhanger', body: 'Cliffhangers bring viewers back for part 2 and push them to follow. Title parts “Partie 1, 2, 3…”.' },
-  { title: 'Keep the same characters', body: 'Recurring characters build a fan base. Reuse your cast across episodes — their look stays consistent in every prompt.' },
-  { title: 'Post daily, at the same time', body: 'Consistency matters more than perfection. Batch 3–5 storyboards on one day, render and schedule them.' },
-  { title: 'Label AI content', body: 'Platforms require AI-generated content to be labelled. Turn on the AI label when you post to stay eligible for rewards.' },
-  { title: 'Burned-in captions', body: 'Most viewers watch muted. Storyit’s final MP4 includes captions; you can also export the .srt for CapCut.' },
-  { title: 'Watch retention, not just views', body: 'In TikTok analytics, look at average watch time and “watched full video”. If people drop early, tighten scene 1–3.' },
+  { title: 'Accrocher dans les 2 premières secondes', body: 'Ouvrez sur le conflit ou une réplique choc, jamais sur le contexte. Le hook du studio est pensé pour ça : gardez-le en première scène.' },
+  { title: 'Dépasser une minute', body: 'TikTok ne rémunère que les vidéos de plus d’une minute. Les épisodes du Prompt Studio font 66 à 75 s : gardez tous les plans.' },
+  { title: 'Finir chaque épisode sur un cliffhanger', body: 'Le suspense fait revenir les spectateurs pour la partie 2 et les pousse à s’abonner. Titrez « Partie 1, 2, 3… ».' },
+  { title: 'Garder les mêmes personnages', body: 'Des personnages récurrents créent une communauté de fans. Utilisez « C’est une suite » : leur apparence reste la même dans chaque épisode.' },
+  { title: 'Publier chaque jour, à la même heure', body: 'La régularité compte plus que la perfection. Préparez 3 à 5 épisodes le même jour, puis publiez-les un par jour.' },
+  { title: 'Signaler le contenu IA', body: 'Les plateformes exigent que le contenu généré par IA soit signalé. Activez le label IA à la publication pour rester éligible à la rémunération.' },
+  { title: 'Des sous-titres incrustés', body: 'La plupart des gens regardent sans le son. Les vidéos 3D de Storyit ont déjà des sous-titres mot à mot ; pour les autres, ajoutez-les dans CapCut.' },
+  { title: 'Regarder la rétention, pas seulement les vues', body: 'Dans les statistiques TikTok, suivez la durée moyenne de visionnage et « vidéo regardée en entier ». Si les gens partent tôt, resserrez les 3 premiers plans.' },
 ];
 
 export default function GuidePage() {
   return (
     <>
-      <PageHeader eyebrow="Grow" title="Creator guide" description="What works for story series on short-form platforms. Practical, no fluff." />
+      <PageHeader eyebrow="Grandir" title="Guide du créateur" description="Ce qui marche pour les séries d’histoires sur TikTok, Reels et Shorts. Du concret, sans blabla." />
       <div className="grid gap-4 md:grid-cols-2">
         {TIPS.map((t, i) => (
           <Card key={t.title} className="relative">

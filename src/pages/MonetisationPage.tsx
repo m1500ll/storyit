@@ -5,12 +5,12 @@ import { Results } from '@/components/landing/Results';
 import { Card, CardHeader, PageHeader } from '@/components/ui';
 
 const CHECKLIST = [
-  'I am 18+ and live in an eligible country',
-  'My account has 10,000+ followers',
-  'My videos got 100,000+ views in the last 30 days',
-  'My episodes are longer than 1 minute',
-  'I label AI-generated content when I post',
-  'I post consistently (ideally daily)',
+  'J’ai 18 ans ou plus et je vis dans un pays éligible',
+  'Mon compte a plus de 10 000 abonnés',
+  'Mes vidéos ont fait plus de 100 000 vues sur les 30 derniers jours',
+  'Mes épisodes durent plus d’une minute',
+  'Je signale le contenu généré par IA à la publication',
+  'Je publie régulièrement (idéalement chaque jour)',
 ];
 const KEY = 'storyit:monetisation-checklist';
 
@@ -24,9 +24,9 @@ export default function MonetisationPage() {
   };
   return (
     <>
-      <PageHeader eyebrow="Grow" title="Monetisation" description="Where the money comes from, what each platform requires, and how close you are." />
+      <PageHeader eyebrow="Grandir" title="Monétisation" description="D’où vient l’argent, ce que demande chaque plateforme, et où vous en êtes." />
       <Card>
-        <CardHeader title="TikTok Creator Rewards — my eligibility" subtitle={`${done.length}/${CHECKLIST.length} done · saved on this device`} />
+        <CardHeader title="Programme créateurs TikTok — mon éligibilité" subtitle={`${done.length}/${CHECKLIST.length} validés · enregistré sur cet appareil`} />
         <ul className="grid gap-2 sm:grid-cols-2">
           {CHECKLIST.map((item) => {
             const ok = done.includes(item);
@@ -42,8 +42,8 @@ export default function MonetisationPage() {
           })}
         </ul>
       </Card>
-      <div className="-mx-4 md:-mx-6"><Monetization /></div>
-      <div className="-mx-4 -mt-10 md:-mx-6"><Results /></div>
+      <div className="-mx-4 md:-mx-6"><Monetization lang="fr" /></div>
+      <div className="-mx-4 -mt-10 md:-mx-6"><Results lang="fr" /></div>
     </>
   );
 }

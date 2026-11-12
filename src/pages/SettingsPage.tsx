@@ -28,36 +28,36 @@ export default function SettingsPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Account" title="Settings" />
+      <PageHeader eyebrow="Compte" title="Réglages" />
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader title="Profile" />
-          <label className="label" htmlFor="name">Display name</label>
+          <CardHeader title="Profil" />
+          <label className="label" htmlFor="name">Nom affiché</label>
           <div className="mt-2 flex gap-2">
             <input id="name" className="input" value={value} onChange={(e) => setName(e.target.value)} maxLength={60} autoComplete="name" />
-            {isSupabaseConfigured && <Button variant="secondary" onClick={save} loading={saving} disabled={name === null}>Save</Button>}
+            {isSupabaseConfigured && <Button variant="secondary" onClick={save} loading={saving} disabled={name === null}>Enregistrer</Button>}
           </div>
-          <p className="mt-4 text-xs text-zinc-500">Backend: {isSupabaseConfigured ? <span className="text-emerald-300">Supabase connected</span> : <span className="text-amber-300">Demo mode</span>}</p>
+          <p className="mt-4 text-xs text-zinc-500">Serveur : {isSupabaseConfigured ? <span className="text-emerald-300">connecté</span> : <span className="text-amber-300">mode démo</span>}</p>
         </Card>
         <Card>
-          <CardHeader title="Appearance" subtitle="Applies on this device." />
+          <CardHeader title="Apparence" subtitle="S’applique sur cet appareil." />
           <div className="grid grid-cols-2 gap-2">
             {(['dark', 'light'] as const).map((t) => (
               <button key={t} onClick={() => theme !== t && toggle()} aria-pressed={theme === t}
                 className={`flex items-center justify-center gap-2 rounded-xl border py-3 text-sm transition ${theme === t ? 'border-violet-500/50 bg-violet-500/10 text-zinc-100' : 'border-line/10 text-zinc-400 hover:text-zinc-200'}`}>
-                {t === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}{t === 'dark' ? 'Dark' : 'Light'}
+                {t === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}{t === 'dark' ? 'Sombre' : 'Clair'}
               </button>
             ))}
           </div>
         </Card>
         <Card>
-          <CardHeader title="Plan & credits" subtitle="Upgrade, top up and see your credit history." />
-          <Link to="/app/billing"><Button variant="secondary">Open Plan & credits</Button></Link>
+          <CardHeader title="Offre et crédits" subtitle="Changez d’offre, rechargez et consultez l’historique de vos crédits." />
+          <Link to="/app/billing"><Button variant="secondary">Ouvrir Offre et crédits</Button></Link>
         </Card>
         {isSupabaseConfigured && (
           <Card>
-            <CardHeader title="Session" subtitle={`Need to delete your account? Email support@storyit.fun.`} />
-            <Button variant="danger" onClick={() => signOut().then(() => navigate('/'))}><LogOut className="h-4 w-4" /> Sign out</Button>
+            <CardHeader title="Session" subtitle={`Pour supprimer votre compte, écrivez à support@storyit.fun.`} />
+            <Button variant="danger" onClick={() => signOut().then(() => navigate('/'))}><LogOut className="h-4 w-4" /> Se déconnecter</Button>
           </Card>
         )}
       </div>

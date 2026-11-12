@@ -24,7 +24,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
       <div className="surface relative w-full max-w-lg p-6 shadow-2xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold text-zinc-100">{title}</h2>
-          <button onClick={onClose} className="rounded-lg p-1 text-zinc-500 hover:bg-line/5 hover:text-zinc-200" aria-label="Close">
+          <button onClick={onClose} className="rounded-lg p-1 text-zinc-500 hover:bg-line/5 hover:text-zinc-200" aria-label="Fermer">
             <X className="h-4 w-4" />
           </button>
         </div>

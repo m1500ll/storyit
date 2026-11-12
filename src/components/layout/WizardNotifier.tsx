@@ -14,7 +14,7 @@ export function WizardNotifier() {
     if (!lastCompleted || lastCompleted.at === seen.current) return;
     seen.current = lastCompleted.at;
     if (pathname.startsWith('/app/new')) return;
-    toast(lastCompleted.kind === 'concepts' ? 'Your 3 concepts are ready — open New episode to pick one.' : 'Your 15-scene storyboard is ready — open New episode to review it.', 'info');
+    toast(lastCompleted.kind === 'concepts' ? 'Vos 3 concepts sont prêts — ouvrez le nouvel épisode pour en choisir un.' : 'Votre storyboard de 15 scènes est prêt — ouvrez le nouvel épisode pour le relire.', 'info');
     // Also update the tab title so it is noticeable from another tab.
     const prev = document.title;
     document.title = '✓ Ready — Storyit';

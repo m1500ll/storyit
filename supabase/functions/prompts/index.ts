@@ -190,7 +190,7 @@ Deno.serve(async (req) => {
   const billable = !ownKey && !project; // only a brand-new project is charged
   if (billable) {
     const { data: profile } = await user.from('profiles').select('credit_balance').eq('id', uid).single();
-    if (!profile || profile.credit_balance < PROJECT_COST) return json({ error: 'Not enough Story Credits.' }, 402);
+    if (!profile || profile.credit_balance < PROJECT_COST) return json({ error: 'Crédits insuffisants : rechargez votre solde pour continuer.' }, 402);
   }
 
   const data: Record<string, any> = { ...(project?.data ?? {}) };

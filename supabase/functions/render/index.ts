@@ -184,7 +184,7 @@ async function thumbnail(admin: SupabaseClient, userClient: SupabaseClient, user
   if (!spec?.prompt) return json({ error: 'Generate the publish pack first.' }, 409);
 
   const { error: debit } = await userClient.rpc('consume_credits', { p_amount: THUMBNAIL_CREDITS, p_story_id: storyId, p_description: `Thumbnail (${aspect})` });
-  if (debit) return json({ error: debit.message.includes('insufficient') ? 'Not enough Story Credits.' : debit.message }, 402);
+  if (debit) return json({ error: debit.message.includes('insufficient') ? 'Crédits insuffisants : rechargez votre solde pour continuer.' : debit.message }, 402);
 
   const prompt = { ...spec, aspect_ratio: aspect };
   const { data: row } = await admin.from('thumbnails').insert({ story_id: storyId, user_id: userId, aspect_ratio: aspect, prompt, status: 'generating' }).select('id').single();
@@ -371,7 +371,7 @@ Deno.serve(async (req) => {
         const { count } = await admin.from('scenes').select('id', { count: 'exact', head: true }).eq('story_id', story.id);
         const cost = (count ?? 0) * CREDITS_PER_SCENE;
         const { error } = await userClient.rpc('consume_credits', { p_amount: cost, p_story_id: story.id, p_description: `${story.title} — ${count} scene renders` });
-        if (error) return json({ error: error.message.includes('insufficient') ? 'Not enough Story Credits.' : error.message }, 402);
+        if (error) return json({ error: error.message.includes('insufficient') ? 'Crédits insuffisants : rechargez votre solde pour continuer.' : error.message }, 402);
         await admin.from('scenes').update({ stage: 'image', status: 'queued', attempts: 0, claimed_at: null, error_message: null }).eq('story_id', story.id);
         await admin.from('stories').update({ status: 'generating', render_started_at: new Date().toISOString() }).eq('id', story.id);
         return json(await tick(admin, auth.user.id, story.id));

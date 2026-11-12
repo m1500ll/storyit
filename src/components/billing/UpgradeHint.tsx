@@ -15,7 +15,7 @@ export function UpgradeHint({ message, reason }: { message: string; reason?: Pay
       <p className="flex-1 text-xs text-zinc-200">{message}</p>
       <button onClick={() => openPaywall({ reason: reason ?? REASON_FROM_MESSAGE(message) })}
         className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg bg-violet-600 px-3 py-2 text-xs font-semibold text-white hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
-        Upgrade <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+        Changer d’offre <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
       </button>
     </div>
   );

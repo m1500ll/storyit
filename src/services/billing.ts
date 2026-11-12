@@ -2,19 +2,19 @@ import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type { ProductKey } from './credits';
 
 async function call(body: Record<string, unknown>): Promise<string> {
-  if (!isSupabaseConfigured) throw new Error('Payments need Supabase to be configured.');
+  if (!isSupabaseConfigured) throw new Error('Le paiement a besoin du serveur Storyit (mode démo).');
   const { data, error } = await supabase!.functions.invoke<{ url: string }>('billing', { body });
   if (error) {
     const ctx = (error as { context?: Response }).context;
     const msg = ctx && typeof ctx.json === 'function' ? ((await ctx.json().catch(() => ({}))) as { error?: string }).error : undefined;
     throw new Error(msg ?? error.message);
   }
-  if (!data?.url) throw new Error('No checkout URL returned');
+  if (!data?.url) throw new Error('Le paiement n’a pas pu démarrer. Réessayez.');
   return data.url;
 }
 
 async function callJson<T>(body: Record<string, unknown>): Promise<T> {
-  if (!isSupabaseConfigured) throw new Error('Payments need Supabase to be configured.');
+  if (!isSupabaseConfigured) throw new Error('Le paiement a besoin du serveur Storyit (mode démo).');
   const { data, error } = await supabase!.functions.invoke<T>('billing', { body });
   if (error) {
     const ctx = (error as { context?: Response }).context;
@@ -35,10 +35,10 @@ export const billingService = {
     // already on a plan: upgraded in place (only the price difference is billed), or the running trial was ended
     if (r.upgraded || r.ok) {
       if (!r.paid && r.invoice_url) { window.location.assign(r.invoice_url); return { upgraded: true, paid: false }; }
-      if (!r.paid) throw new Error('Le paiement est en attente. Vérifiez votre moyen de paiement dans « Manage billing & invoices ».');
+      if (!r.paid) throw new Error('Le paiement est en attente. Vérifiez votre moyen de paiement dans « Gérer la facturation ».');
       return { upgraded: true, paid: true };
     }
-    throw new Error('No checkout URL returned');
+    throw new Error('Le paiement n’a pas pu démarrer. Réessayez.');
   },
   /** the running $1 trial, if any */
   async trialStatus(): Promise<TrialStatus> {

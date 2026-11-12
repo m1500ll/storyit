@@ -1,8 +1,8 @@
 import type { MediaAsset, Publication, VideoState } from './types';
 
 export const VIDEO_STATE_LABEL: Record<VideoState, string> = {
-  available: 'Available', scheduled: 'Scheduled', publishing: 'Publishing', partially_published: 'Partially published',
-  published: 'Published on selected accounts', error: 'Error on an account', archived: 'Archived',
+  available: 'Disponible', scheduled: 'Programmée', publishing: 'En publication', partially_published: 'Publiée en partie',
+  published: 'Publiée sur les comptes choisis', error: 'Erreur sur un compte', archived: 'Archivée',
 };
 
 /** Computes a video's state from its actual publications. */

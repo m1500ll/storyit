@@ -16,8 +16,8 @@ function CheckoutBanner() {
   return (
     <div className={`mb-6 flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm ${ok ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200' : 'border-line/10 bg-line/5 text-zinc-300'}`}>
       <span className="flex items-center gap-2">{ok && <CheckCircle2 className="h-4 w-4" />}
-        {ok ? 'Payment confirmed — your credits will appear in a few seconds.' : 'Checkout cancelled. No charge was made.'}</span>
-      <button onClick={() => setParams({})} aria-label="Dismiss"><X className="h-4 w-4" /></button>
+        {ok ? 'Paiement confirmé : vos crédits arrivent dans quelques secondes.' : 'Paiement annulé. Aucun montant n’a été débité.'}</span>
+      <button onClick={() => setParams({})} aria-label="Fermer"><X className="h-4 w-4" /></button>
     </div>
   );
 }
@@ -31,25 +31,25 @@ export default function BillingPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Account" title="Plan & credits" />
+      <PageHeader eyebrow="Compte" title="Offre et crédits" />
       <CheckoutBanner />
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
-          <p className="label">Balance</p>
+          <p className="label">Solde</p>
           <p className="mt-2 font-display text-4xl tabular-nums text-zinc-50">{formatCredits(balance)}</p>
-          <p className="text-xs text-zinc-500">Used only by the AI studio (beta)</p>
+          <p className="text-xs text-zinc-500">Utilisés par les studios IA</p>
         </Card>
         <Card>
-          <p className="label">Current plan</p>
+          <p className="label">Offre actuelle</p>
           <p className="mt-2 font-display text-4xl text-zinc-50">{plan?.name ?? '—'}</p>
-          <p className="text-xs text-zinc-500">{plan ? `${formatCredits(plan.credits)} credits ${plan.period === 'month' ? '/ month' : 'on signup'}` : ''}</p>
+          <p className="text-xs text-zinc-500">{plan ? `${formatCredits(plan.credits)} crédits ${plan.period === 'month' ? '/ mois' : 'à l’inscription'}` : ''}</p>
         </Card>
         <Card className="flex flex-col">
-          <p className="label">Credits used</p>
+          <p className="label">Crédits utilisés</p>
           <p className="mt-2 font-display text-4xl tabular-nums text-zinc-50">{formatCredits(spent)}</p>
           {profile?.plan && profile.plan !== 'free' && (
             <Button size="sm" variant="secondary" className="mt-auto" onClick={() => billingService.openPortal().catch((e: Error) => setPortalError(e.message))}>
-              <CardIcon className="h-3.5 w-3.5" /> Manage billing & invoices
+              <CardIcon className="h-3.5 w-3.5" /> Gérer la facturation et les factures
             </Button>
           )}
           {portalError && <p className="mt-2 text-xs text-coral-300">{portalError}</p>}
@@ -57,22 +57,22 @@ export default function BillingPage() {
       </div>
       <Card className="mt-6">
         {profile?.plan === 'studio'
-          ? <CardHeader title="Top up credits" subtitle="You're on Studio, our top plan. Top-up packs never expire." />
-          : <CardHeader title="Upgrade or top up" subtitle="Plans renew monthly. Top-up packs never expire." />}
+          ? <CardHeader title="Recharger des crédits" subtitle="Vous avez Studio, notre offre la plus complète. Les packs de crédits n’expirent jamais." />
+          : <CardHeader title="Changer d’offre ou recharger" subtitle="Les offres se renouvellent chaque mois. Les packs de crédits n’expirent jamais." />}
         <TrialUpgrade />
         <PlanPicker currentPlan={profile?.plan} trialUsed={profile?.trial_used} />
       </Card>
-      <Card className="mt-6 overflow-x-auto" tabIndex={0} role="region" aria-label="Credit history">
-        <CardHeader title="Credit history" />
+      <Card className="mt-6 overflow-x-auto" tabIndex={0} role="region" aria-label="Historique des crédits">
+        <CardHeader title="Historique des crédits" />
         <table className="w-full min-w-[480px] text-left text-sm">
-          <thead className="label"><tr><th className="pb-3 font-medium">Date</th><th className="pb-3 font-medium">Description</th><th className="pb-3 text-right font-medium">Amount</th><th className="pb-3 text-right font-medium">Balance</th></tr></thead>
+          <thead className="label"><tr><th className="pb-3 font-medium">Date</th><th className="pb-3 font-medium">Description</th><th className="pb-3 text-right font-medium">Montant</th><th className="pb-3 text-right font-medium">Solde</th></tr></thead>
           <tbody className="divide-y divide-line/5">
             {transactions.map((t) => (
               <tr key={t.id}>
                 <td className="py-2.5 text-xs text-zinc-500">{new Date(t.created_at).toLocaleDateString()}</td>
                 <td className="py-2.5 text-zinc-300">{t.description}</td>
                 <td className={`py-2.5 text-right tabular-nums ${t.amount < 0 ? 'text-coral-300' : 'text-emerald-300'}`}>{t.amount > 0 ? '+' : ''}{formatCredits(t.amount)}</td>
-                <td className="py-2.5 text-right tabular-nums text-zinc-400">{t.balance_after}</td>
+                <td className="py-2.5 text-right tabular-nums text-zinc-400">{formatCredits(t.balance_after)}</td>
               </tr>
             ))}
           </tbody>

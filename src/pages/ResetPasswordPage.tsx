@@ -22,7 +22,7 @@ export default function ResetPasswordPage() {
     const { error: err } = await supabase!.auth.updateUser({ password });
     setLoading(false);
     if (err) return setError(err.message);
-    toast('Password updated.');
+    toast('Mot de passe mis à jour.');
     navigate('/app', { replace: true });
   };
 
@@ -30,13 +30,13 @@ export default function ResetPasswordPage() {
     <div className="grid min-h-screen place-items-center bg-ink-950 px-4">
       <Card className="w-full max-w-sm p-8">
         <Logo />
-        <h1 className="mt-8 font-display text-3xl text-zinc-50">Choose a new password</h1>
+        <h1 className="mt-8 font-display text-3xl text-zinc-50">Choisissez un nouveau mot de passe</h1>
         <form onSubmit={submit} className="mt-6 space-y-3">
-          <label className="sr-only" htmlFor="new-password">New password</label>
+          <label className="sr-only" htmlFor="new-password">Nouveau mot de passe</label>
           <input id="new-password" className="input" type="password" name="new-password" autoComplete="new-password" required minLength={6}
-            placeholder="New password (6+ characters)…" value={password} onChange={(e) => setPassword(e.target.value)} />
+            placeholder="Nouveau mot de passe (6 caractères minimum)…" value={password} onChange={(e) => setPassword(e.target.value)} />
           <div aria-live="polite">{error && <p className="text-xs text-coral-300">{error}</p>}</div>
-          <Button type="submit" className="w-full" loading={loading}>Save Password</Button>
+          <Button type="submit" className="w-full" loading={loading}>Enregistrer le mot de passe</Button>
         </form>
       </Card>
     </div>

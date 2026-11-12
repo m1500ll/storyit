@@ -18,17 +18,17 @@ export function Topbar() {
       <div className="hidden lg:block" />
       <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">
         <ThemeToggle className="hidden sm:inline-flex" />
-        <button onClick={() => openPaywall()} aria-label="Your credits — buy more" className="touch-hit rounded-full transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><CreditBalance /></button>
+        <button onClick={() => openPaywall()} aria-label="Vos crédits — en acheter" className="touch-hit rounded-full transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><CreditBalance /></button>
         <button onClick={() => openPaywall()}
           className="touch-hit inline-flex h-8 items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#c2410c] to-[#b45309] px-3 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-400/60">
-          <Coins className="h-3.5 w-3.5" aria-hidden /><span className="hidden sm:inline">Buy credits</span><span className="sm:hidden">Buy</span>
+          <Coins className="h-3.5 w-3.5" aria-hidden /><span className="hidden sm:inline">Acheter des crédits</span><span className="sm:hidden">Crédits</span>
         </button>
-        <Button size="sm" variant="secondary" onClick={() => navigate('/app/distribute')} className="hidden lg:inline-flex"><Plus className="h-3.5 w-3.5" /> Distribute</Button>
+        <Button size="sm" variant="secondary" onClick={() => navigate('/app/distribute')} className="hidden lg:inline-flex"><Plus className="h-3.5 w-3.5" /> Diffuser</Button>
         <div className="hidden h-8 w-8 place-items-center rounded-full bg-ink-700 text-xs font-semibold text-zinc-200 sm:grid" title={name}>
           {name[0]?.toUpperCase()}
         </div>
         {isSupabaseConfigured && (
-          <button onClick={() => signOut().then(() => navigate('/'))} className="touch-hit rounded-lg p-2 text-zinc-500 hover:bg-line/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" aria-label="Sign out" title="Sign out">
+          <button onClick={() => signOut().then(() => navigate('/'))} className="touch-hit rounded-lg p-2 text-zinc-500 hover:bg-line/5 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" aria-label="Se déconnecter" title="Se déconnecter">
             <LogOut className="h-4 w-4" />
           </button>
         )}
