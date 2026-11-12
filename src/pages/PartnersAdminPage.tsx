@@ -96,7 +96,7 @@ export default function PartnersAdminPage() {
   return (
     <>
       <PageHeader eyebrow="Administration" title="Partenaires"
-        description="Créez un lien de promo par influenceur. Chaque abonné venu par son lien dans les 7 jours lui rapporte 20 % de son premier paiement." />
+        description="Créez un lien de promo par influenceur. Chaque abonné venu par son lien dans les 7 jours lui rapporte 15 % de son premier paiement." />
       <Card>
         <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-100"><Plus className="h-4 w-4 text-violet-300" aria-hidden /> Nouveau partenaire</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_200px_auto] sm:items-end">

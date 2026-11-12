@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
   if (action === 'admin_create') {
     const name = String(body.name ?? '').trim().slice(0, 80);
     const code = String(body.code ?? '').trim().toLowerCase();
-    const rate = body.rate == null ? 0.2 : Number(body.rate);
+    const rate = body.rate == null ? 0.15 : Number(body.rate);
     if (!name) return json({ error: 'Donnez un nom au partenaire.' }, 400);
     if (!CODE.test(code)) return json({ error: 'Code : 2 à 24 caractères, lettres minuscules, chiffres ou tirets.' }, 400);
     if (!(rate >= 0 && rate <= 1)) return json({ error: 'Commission invalide.' }, 400);
