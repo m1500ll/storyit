@@ -9,8 +9,10 @@ import { RequireAuth } from '@/components/layout/RequireAuth';
 import { ToastProvider } from '@/components/ui';
 import { AuthProvider } from '@/lib/auth';
 import { ThemeProvider } from '@/lib/theme';
+import { SEO_PAGES } from '@/data/seoPages';
 
 const AuthPage = lazy(() => import('@/pages/AuthPage'));
+const SeoPage = lazy(() => import('@/pages/SeoPage'));
 const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
 const TermsPage = lazy(() => import('@/pages/TermsPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
@@ -41,6 +43,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<AuthPage />} />
+            {SEO_PAGES.map((p) => <Route key={p.path} path={p.path} element={<SeoPage page={p} />} />)}
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
