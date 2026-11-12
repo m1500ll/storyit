@@ -1,4 +1,4 @@
-import { Check, Coins } from 'lucide-react';
+import { Check, Coins, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { billingService } from '@/services/billing';
@@ -68,7 +68,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
                 <span>{yearly ? Math.round(yearly / 12) : p.price} $<span className="font-sans text-xs text-zinc-500">{p.period === 'month' ? '/mois' : ''}</span></span>
                 {!yearly && 'compareAt' in p && <span className="self-center rounded-full bg-coral-500/15 px-2 py-0.5 font-sans text-[11px] font-medium leading-4 text-coral-300">Offre de lancement</span>}
               </p>
-              {yearly ? <p className="text-[11px] text-zinc-400">Facturé {yearly} $ par an · <span className="font-semibold text-emerald-300">vous économisez {p.price * 12 - yearly} $</span></p>
+              {yearly ? <p className="text-[11px] text-zinc-400">{yearly} $ réglés une fois pour l’année · <span className="font-semibold text-emerald-300">vous économisez {p.price * 12 - yearly} $</span></p>
                 : p.price > 0 && <p className="text-[11px] text-zinc-500">Facturé chaque mois</p>}
               <p className="text-xs text-violet-300">{yearly ? `${formatCredits(p.credits * 12)} crédits d’un coup (12 mois)` : `${formatCredits(p.credits)} crédits ${p.period === 'month' ? '/ mois' : 'pour commencer'}`} · ≈ {projectsFor(p.credits)} projets Prompt Studio / mois</p>
               </>); })()}
@@ -96,7 +96,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
                 interval === 'year' && 'yearly' in p ? (
                   <Button size="sm" className="mt-4 w-full" variant={featured && !included ? 'primary' : 'secondary'} disabled={included}
                     loading={pending === `${p.id}_year`} onClick={() => buy(`${p.id}_year` as ProductKey)}>
-                    {included ? 'Inclus dans votre offre' : current ? 'Passer à l’annuel (−20 %)' : `Choisir ${p.name} à l’année`}
+                    {included ? 'Inclus dans votre offre' : current ? 'Passer à l’annuel (−20 %)' : `Choisir ${p.name} · ${Math.round(p.yearly / 12)} $/mois`}
                   </Button>
                 ) : (
                 <Button size="sm" className="mt-4 w-full" variant={featured && !included ? 'primary' : 'secondary'} disabled={current || included}
@@ -127,7 +127,12 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
         <p className="mt-3 text-[11px] text-zinc-500">Votre date de facturation ne change pas : vous payez seulement la différence aujourd’hui, et vous recevez tout de suite les crédits en plus de la nouvelle offre.</p>
       )}
       {error && <p role="alert" className="mt-3 text-xs text-coral-300">{error}</p>}
-      <p className="mt-4 text-[11px] text-zinc-600">Paiement sécurisé par Stripe. Résiliable à tout moment.</p>
+      <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-zinc-500">
+        <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" aria-hidden />Paiement sécurisé par Stripe</span>
+        <span>Carte, Apple Pay ou Google Pay</span>
+        <span>Résiliable en 1 clic</span>
+        <span>Crédits disponibles tout de suite</span>
+      </p>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { useCredits, useProfile } from '@/hooks/useStore';
 import { billingService } from '@/services/billing';
 import { PLANS, formatCredits } from '@/services/credits';
 import { TrialUpgrade } from '@/components/billing/TrialUpgrade';
+import { cn } from '@/lib/cn';
 
 function CheckoutBanner() {
   const [params, setParams] = useSearchParams();
@@ -34,6 +35,8 @@ export default function BillingPage() {
     <>
       <PageHeader eyebrow="Compte" title="Offre et crédits" />
       <CheckoutBanner />
+      {/* free accounts: the offers come first (on a phone the three stat cards pushed them below the fold) */}
+      <div className={cn('flex flex-col', (profile?.plan ?? 'free') === 'free' && 'flex-col-reverse justify-end [&>*:last-child]:mt-0 [&>*:first-child]:mt-6')}>
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <p className="label">Solde</p>
@@ -63,6 +66,7 @@ export default function BillingPage() {
         <TrialUpgrade />
         <PlanPicker currentPlan={profile?.plan} trialUsed={profile?.trial_used} initialInterval={params.get('interval') === 'month' ? 'month' : 'year'} />
       </Card>
+      </div>
       <Card className="mt-6 overflow-x-auto" tabIndex={0} role="region" aria-label="Historique des crédits">
         <CardHeader title="Historique des crédits" />
         <table className="w-full min-w-[480px] text-left text-sm">

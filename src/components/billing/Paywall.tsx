@@ -39,7 +39,8 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
                 : <>Vous avez <strong className="text-zinc-200">{formatCredits(profile?.credit_balance ?? 0)} crédits</strong>. </>}
               {SUB[state.reason ?? 'credits']}
             </p>
-            <ul className="relative mt-4 grid gap-1.5 text-xs text-zinc-300 sm:grid-cols-3">
+            {/* hidden on phones so the first offer and its button show without scrolling */}
+            <ul className="relative mt-4 hidden gap-1.5 text-xs text-zinc-300 sm:grid sm:grid-cols-3">
               <li className="rounded-lg bg-line/[0.04] px-3 py-2">1 projet Prompt Studio = {formatCredits(PROMPT_PROJECT_COST)} crédits</li>
               <li className="rounded-lg bg-line/[0.04] px-3 py-2">10 000 crédits ≈ {projectsFor(10000)} projets complets</li>
               <li className="rounded-lg bg-line/[0.04] px-3 py-2">Les crédits rechargés n’expirent jamais</li>

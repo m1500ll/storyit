@@ -65,11 +65,25 @@ Deno.serve(async (req) => {
   const appUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173';
 
   try {
-    const { action, product, trial } = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial'; product?: ProductKey; trial?: boolean };
+    const { action, product, trial } = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts'; product?: ProductKey; trial?: boolean };
+
+    // Admin: the latest checkout pages (what was picked, at what price, did it end in a payment) to study drop-off.
+    if (action === 'recent_checkouts') {
+      const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
+      if (!me?.is_admin) return json({ error: 'Forbidden' }, 403);
+      const list = await stripe('checkout/sessions?limit=50&expand[]=data.line_items');
+      return json({ sessions: (list?.data ?? []).map((s: any) => ({
+        created: s.created, status: s.status, paid: s.payment_status, mode: s.mode, product: s.metadata?.product ?? null,
+        amount: s.amount_total, currency: s.currency, methods: s.payment_method_types, locale: s.locale,
+        recovered: Boolean(s.recovered_from), user: s.client_reference_id ?? null,
+      })) });
+    }
 
     // Get or create the Stripe customer for this user.
     const { data: profile } = await admin.from('profiles').select('stripe_customer_id, plan, trial_used').eq('id', user.id).single();
     let customerId = profile?.stripe_customer_id as string | null;
+    // just looking at the plans must not create a Stripe customer (it showed up as a "new customer" who never paid)
+    if (!customerId && action === 'status') return json({ trialing: false, trial_end: null, product: null });
     if (!customerId) {
       const customer = await stripe('customers', { email: user.email ?? '', 'metadata[user_id]': user.id });
       customerId = customer.id as string;
@@ -121,6 +135,10 @@ Deno.serve(async (req) => {
       success_url: `${appUrl}/app/billing?checkout=success`,
       cancel_url: `${appUrl}/app/billing?checkout=cancelled`,
       allow_promotion_codes: 'true',
+      // reassurance right under Stripe's pay button
+      'custom_text[submit][message]': mode === 'subscription'
+        ? 'Résiliable à tout moment en 1 clic depuis Storyit. Vos crédits arrivent dès le paiement.'
+        : 'Paiement unique, sans abonnement. Vos crédits arrivent dès le paiement et n’expirent jamais.',
       'metadata[user_id]': user.id,
       'metadata[product]': product,
     };
