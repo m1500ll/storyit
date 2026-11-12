@@ -31,7 +31,7 @@ export function PromoVideo() {
   };
 
   return (
-    <section id="film" aria-labelledby="film-title" className="mx-auto max-w-5xl px-4 pb-8 pt-4 md:px-6">
+    <section id="film" aria-labelledby="film-title" className="relative mx-auto max-w-5xl px-4 pb-2 pt-8 md:px-6 md:pt-12">
       <h2 id="film-title" className="sr-only">Storyit in 18 seconds</h2>
       <div ref={ref} className="group relative overflow-hidden rounded-3xl border border-line/10 bg-black shadow-[0_40px_120px_-40px_rgba(124,58,237,0.55)]">
         <video ref={vid} src="/showcase/storyit-promo.mp4" poster="/showcase/storyit-promo.webp" muted loop playsInline preload="metadata"

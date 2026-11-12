@@ -29,8 +29,8 @@ export default function LandingPage() {
     <div className="min-h-screen bg-ink-950">
       <MarketingNavbar />
       <main id="main">
-      <Hero />
       <PromoVideo />
+      <Hero />
       <Showcase />
       <VideosPerMonth />
       <TranslateFeature />
