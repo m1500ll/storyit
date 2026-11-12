@@ -185,10 +185,10 @@ def montage(clips, out, tmp):
         end = min(dur, b + (END_KEEP if i == len(clips) - 1 else GAP_KEEP))
         part = os.path.join(tmp, f"part{i}.mp4")
         audio = [] if has_audio(src) else ["-f", "lavfi", "-t", f"{dur}", "-i", "anullsrc=r=48000:cl=stereo"]
-        amap = "0:a" if not audio else "1:a"
+        amap = "0:a:0" if not audio else "1:a:0"   # Grok clips also carry a cover picture: take the first video stream only
         run("ffmpeg", "-v", "error", "-y", "-i", src, *audio, "-ss", f"{start:.3f}", "-to", f"{end:.3f}",
             "-vf", f"scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},fps={FPS},setsar=1",
-            "-map", "0:v", "-map", amap, "-af", "aresample=48000", "-ac", "2",
+            "-map", "0:v:0", "-map", amap, "-af", "aresample=48000", "-ac", "2",
             "-c:v", "libx264", "-crf", "19", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", part)
         parts.append(part)
     lst = os.path.join(tmp, "list.txt")
