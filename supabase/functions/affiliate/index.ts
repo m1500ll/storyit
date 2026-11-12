@@ -89,8 +89,19 @@ Deno.serve(async (req) => {
     if (!CODE.test(code) || !VISITOR.test(visitor)) return json({ result: 'invalid' }, 400);
     const { data: a } = await admin.from('affiliates').select('id').eq('code', code).eq('active', true).maybeSingle();
     if (!a) return json({ result: 'unknown_code' });
-    const { data: click } = await admin.from('affiliate_clicks').select('created_at').eq('affiliate_id', a.id).eq('visitor', visitor)
-      .gte('created_at', new Date(Date.now() - WINDOW_DAYS * 864e5).toISOString()).order('created_at', { ascending: false }).limit(1).maybeSingle();
+    const since = new Date(Date.now() - WINDOW_DAYS * 864e5).toISOString();
+    let { data: click } = await admin.from('affiliate_clicks').select('created_at').eq('affiliate_id', a.id).eq('visitor', visitor)
+      .gte('created_at', since).order('created_at', { ascending: false }).limit(1).maybeSingle();
+    if (!click) {
+      // The visitor clicked in another browser (TikTok / Instagram in-app browser, then "Open in Safari"): this browser
+      // only has the code from the address. Accept it for an account created in the last 2 hours, when the link has a
+      // recent click; the click is recorded now for this visitor.
+      const fresh = Date.now() - new Date(user.created_at).getTime() < 2 * 3600e3;
+      const { count } = await admin.from('affiliate_clicks').select('id', { count: 'exact', head: true }).eq('affiliate_id', a.id).gte('created_at', since);
+      if (!fresh || !count) return json({ result: 'expired' });
+      const { data: rec } = await admin.from('affiliate_clicks').insert({ affiliate_id: a.id, visitor }).select('created_at').single();
+      click = rec;
+    }
     if (!click) return json({ result: 'expired' });
     const { data: paidConv } = await admin.from('affiliate_conversions').select('id').eq('user_id', user.id).eq('status', 'paid').maybeSingle();
     const { data: prof } = await admin.from('profiles').select('plan').eq('id', user.id).single();

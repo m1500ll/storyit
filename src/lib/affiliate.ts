@@ -23,6 +23,27 @@ export function captureAffiliate() {
   } catch { /* storage blocked: the link simply is not remembered */ }
 }
 
+/** the partner code remembered in this browser (last 7 days), if any */
+export function pendingAffiliate(): string | null {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return null;
+    const { code, at } = JSON.parse(raw) as { code: string; at: number };
+    return Date.now() - at <= WINDOW && CODE.test(code) ? code : null;
+  } catch { return null; }
+}
+
+/** keeps ?via=CODE in the address bar of the sign-in page: TikTok and Instagram open links in their own browser, and
+ *  "Open in Safari / Chrome" copies the address, so the partner follows the visitor into the other browser */
+export function keepAffiliateInUrl() {
+  const code = pendingAffiliate();
+  if (!code) return;
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('via') === code) return;
+  url.searchParams.set('via', code);
+  window.history.replaceState(window.history.state, '', url.toString());
+}
+
 /** attaches the signed-in account to the partner whose link was clicked in the last 7 days */
 export async function claimPendingAffiliate() {
   try {

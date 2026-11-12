@@ -8,6 +8,7 @@ import { GoogleIcon } from '@/components/ui/GoogleIcon';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { pendingReferral } from '@/lib/referral';
+import { keepAffiliateInUrl } from '@/lib/affiliate';
 import { REFERRAL_FRIEND_BONUS, formatCredits } from '@/services/credits';
 
 type Mode = 'signin' | 'signup' | 'forgot';
@@ -42,6 +43,7 @@ export default function AuthPage() {
   const [message, setMessage] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   // Show "Continue with Google" only when the provider is really enabled on the auth server.
   useSeo({ title: 'Sign in', path: '/login', noindex: true });
+  useEffect(() => { keepAffiliateInUrl(); }, []);
   const [googleEnabled, setGoogleEnabled] = useState(false);
   useEffect(() => {
     const url = import.meta.env.VITE_SUPABASE_URL;
