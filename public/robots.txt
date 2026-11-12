@@ -4,4 +4,4 @@ Disallow: /app
 Disallow: /login
 Disallow: /reset-password
 
-Sitemap: https://storyit.fun/sitemap.xml
+Sitemap: https://www.storyit.fun/sitemap.xml

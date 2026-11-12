@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
 const { render, ROUTES, pageMeta } = await import(join(root, 'dist-ssr', 'entry-server.js'));
-const SITE = 'https://storyit.fun';
+const SITE = 'https://www.storyit.fun';
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 const template = readFileSync(join(dist, 'index.html'), 'utf8');
