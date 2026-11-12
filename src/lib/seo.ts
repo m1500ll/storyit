@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 
 const SITE = 'https://storyit.fun';
-const DEFAULT_TITLE = 'Storyit — 3D animated videos from true stories, made by AI';
-const DEFAULT_DESC = 'Pick a true story, a decor and a voice: Storyit makes a finished 3D animated video with narration, music, hook title and captions, ready for TikTok, Reels and Shorts.';
+const DEFAULT_TITLE = 'Storyit — AI Video Generator for Viral TikTok Videos (3D & Fruit Dramas)';
+const DEFAULT_DESC = 'Create viral AI videos that earn money: 3D animated true stories and Fruit Drama mini-series, with voice, music and captions, ready for TikTok, Reels and Shorts. Translate any video in one click. Start free.';
 
 function setMeta(attr: 'name' | 'property', key: string, value: string) {
   let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);

@@ -15,15 +15,13 @@ import { Showcase } from '@/components/landing/Showcase';
 import { TimeSaved } from '@/components/landing/TimeSaved';
 import { StickyCTA } from '@/components/landing/StickyCTA';
 import { Link } from 'react-router-dom';
-import { faqs } from '@/components/landing/FAQ';
 import { useSeo } from '@/lib/seo';
 
 /** FAQPage structured data built from the visible FAQ, so both always match. */
-const FAQ_LD = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) };
 import { Logo } from '@/components/ui';
 
 export default function LandingPage() {
-  useSeo({ path: '/', jsonLd: FAQ_LD });
+  useSeo({ path: '/' }); // the FAQ and video structured data are written into the pre-rendered HTML (scripts/prerender.mjs)
   return (
     <div className="min-h-screen bg-ink-950">
       <MarketingNavbar overlay />

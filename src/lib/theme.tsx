@@ -5,6 +5,7 @@ const KEY = 'storyit:theme';
 
 /** Stored choice, else the OS preference. Must match the inline script in index.html. */
 function initialTheme(): Theme {
+  if (typeof window === 'undefined') return 'dark'; // build-time pre-rendering
   try {
     const saved = localStorage.getItem(KEY);
     if (saved === 'light' || saved === 'dark') return saved;

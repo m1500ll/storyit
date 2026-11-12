@@ -7,9 +7,9 @@ export function FinalCTA() {
     <section className="mx-auto max-w-6xl px-4 pb-24 md:px-6">
       <div className="relative overflow-hidden rounded-3xl border border-violet-500/20 bg-gradient-to-br from-violet-600/20 via-ink-900 to-coral-500/10 px-6 py-16 text-center">
         <div aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,#000_20%,transparent_75%)]" />
-        <h2 className="relative font-display text-4xl text-zinc-50 md:text-5xl">Your videos, on every account, on time.</h2>
-        <p className="relative mx-auto mt-3 max-w-md text-sm text-zinc-400">Launch offer: Creator at <s className="text-zinc-500">$45</s> $29/mo. Cancel anytime.</p>
-        <StartLink to="/app/billing" className="relative mt-8 inline-block"><Button size="lg">Get started for $29/mo <ArrowRight className="h-4 w-4" /></Button></StartLink>
+        <h2 className="relative font-display text-4xl text-zinc-50 md:text-5xl">Your next viral AI video starts here.</h2>
+        <p className="relative mx-auto mt-3 max-w-md text-sm text-zinc-400">3,000 free credits to start, no card. Then Creator at <s className="text-zinc-500">$45</s> $29/mo, cancel anytime.</p>
+        <StartLink to="/app" className="relative mt-8 inline-block"><Button size="lg">Create my first AI video <ArrowRight className="h-4 w-4" /></Button></StartLink>
       </div>
     </section>
   );

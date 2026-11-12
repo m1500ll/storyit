@@ -1,19 +1,19 @@
-import { CalendarDays, Copy, History, Layers, MessageSquareText, Sparkles } from 'lucide-react';
+import { Captions, Clapperboard, Languages, Sparkles, TrendingUp, Wand2 } from 'lucide-react';
 
 const features = [
-  { icon: Layers, title: 'Every account in one place', body: 'Connect several TikTok and Instagram accounts and group them, for example “Fruit Drama FR” or “International”.' },
-  { icon: CalendarDays, title: 'Simultaneous or rotation', body: 'Post a video everywhere at once, or plan a daily rotation. You see the exact number of posts before you activate it.' },
-  { icon: MessageSquareText, title: 'A caption per account', body: 'Each post gets its own caption and hashtags, written by AI or by you. Your edits are never overwritten.' },
-  { icon: Copy, title: 'No accidental duplicates', body: 'A video is never sent twice to the same account. If a result is uncertain, Storyit asks you instead of reposting.' },
-  { icon: History, title: 'Real status, full history', body: 'A post shows “Published” only when the platform confirms it. Every attempt and error is logged.' },
-  { icon: Sparkles, title: 'Prompt Studio', body: 'Get a full 60-second Fruit Drama: 3 story options, a 15-20 scene script, and ready-to-paste image and video prompts. Images can be generated for you.' },
+  { icon: Clapperboard, title: 'AI 3D animated videos', body: 'True stories told by a narrator in a 3D world with cartoon characters, music and sound effects. 30 seconds, 1 minute or 2 minutes.' },
+  { icon: Sparkles, title: 'Fruit Drama generator', body: 'Mini-dramas with fruit, nail, object or gemstone characters: the format that explodes on TikTok, written for retention and comments.' },
+  { icon: Wand2, title: 'Fully automatic videos', body: 'ChatGPT draws the characters and scenes, Grok animates every clip, and the video is edited for you. Pick the quality and see the price first.' },
+  { icon: TrendingUp, title: 'Trending ideas every day', body: 'Fresh concepts from what works right now on TikTok, with the hook, the outline and the ending, ready to turn into your video.' },
+  { icon: Languages, title: 'AI video translation', body: 'The same video in French, English or Spanish: new voice, original music kept, captions replaced. Reach new countries with one click.' },
+  { icon: Captions, title: 'Hook title & captions', body: 'A bold hook title for the first seconds and word-by-word captions, the two things that keep viewers watching.' },
 ];
 
 export function FeatureGrid() {
   return (
     <section id="features" className="mx-auto max-w-6xl px-4 py-20 md:px-6">
-      <p className="label text-center">Built for creators with several accounts</p>
-      <h2 className="mt-3 text-center font-display text-4xl text-zinc-50">Your posting team, running on a server</h2>
+      <p className="label text-center">Everything you need to go viral</p>
+      <h2 className="mt-3 text-center font-display text-4xl text-zinc-50">An AI video studio in your browser</h2>
       <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line/[0.06] bg-line/[0.06] sm:grid-cols-2 lg:grid-cols-3">
         {features.map(({ icon: Icon, title, body }) => (
           <div key={title} className="bg-ink-900 p-6">
