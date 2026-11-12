@@ -56,7 +56,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
           const included = !current && rank(p.id) < rank(currentPlan);
           const featured = 'featured' in p && p.featured;
           return (
-            <div key={p.id} className={cn('rounded-xl border p-4', featured ? 'border-violet-500/40 bg-violet-500/[0.06]' : 'border-line/[0.08] bg-ink-850')}>
+            <div key={p.id} className={cn('rounded-xl border p-4', p.id === 'free' && current && 'hidden sm:block', featured ? 'border-violet-500/40 bg-violet-500/[0.06]' : 'border-line/[0.08] bg-ink-850')}>
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-zinc-100">{p.name}</p>
                 {current ? <span className="rounded-full bg-line/10 px-2 py-0.5 text-[11px] text-zinc-300">Actuelle</span>
