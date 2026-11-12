@@ -16,7 +16,7 @@ export function MarketingNavbar({ overlay = false, langTo }: { overlay?: boolean
   return (
     <header className={`sticky top-0 z-40 px-3 pt-3 sm:px-4 ${overlay ? '-mb-[68px] sm:-mb-[76px]' : ''}`}>
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 rounded-full border border-white/10 bg-[linear-gradient(90deg,rgba(18,16,30,0.92),rgba(10,9,18,0.92))] pl-3 pr-2 shadow-[0_12px_40px_-12px_rgba(20,10,50,0.6)] backdrop-blur-xl sm:h-16 sm:pl-5">
-        <Link to={fr ? '/' : '/en'} aria-label={fr ? 'Accueil Storyit' : 'Storyit home'} className="flex shrink-0 items-center gap-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
+        <Link to={fr ? '/' : '/en'} aria-label={fr ? 'Accueil Storyit' : 'Storyit home'} className="flex shrink-0 items-center gap-2 rounded-full text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
           <LogoMark className="h-8 w-8" />
           <span className="text-base font-bold tracking-tight text-white">storyit</span>
         </Link>
