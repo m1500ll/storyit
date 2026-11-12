@@ -11,6 +11,7 @@ import { VideoCard } from './VideoCard';
 import { VideoLightbox } from './VideoLightbox';
 import { StartLink } from './StartLink';
 import { HeroBackdrop } from './HeroBackdrop';
+import { PromoVideo } from './PromoVideo';
 
 const FAN = [
   { tilt: -6, y: 18 }, { tilt: -3, y: 4 }, { tilt: 0, y: -6 }, { tilt: 3, y: 4 }, { tilt: 6, y: 18 },
@@ -34,6 +35,7 @@ export function Hero() {
         <h1 className="mx-auto mt-6 max-w-4xl font-display text-5xl leading-[1.05] text-zinc-50 md:text-7xl">
           Turn any true story into a <span className="text-violet-300">3D animated video</span>.
         </h1>
+        <PromoVideo className="relative mx-auto mt-8 max-w-4xl text-left" />
         <p className="mx-auto mt-6 max-w-2xl text-base text-zinc-400 md:text-lg">
           Pick a story, a decor and a voice. Storyit writes the script, animates the 3D world and its characters, records the narrator and adds the hook title, captions and music. A finished vertical video, ready to post.
         </p>

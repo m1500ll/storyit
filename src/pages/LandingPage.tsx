@@ -1,4 +1,3 @@
-import { PromoVideo } from '@/components/landing/PromoVideo';
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
 import { VideosPerMonth } from '@/components/landing/VideosPerMonth';
 import { TranslateFeature } from '@/components/landing/TranslateFeature';
@@ -29,7 +28,6 @@ export default function LandingPage() {
     <div className="min-h-screen bg-ink-950">
       <MarketingNavbar />
       <main id="main">
-      <PromoVideo />
       <Hero />
       <Showcase />
       <VideosPerMonth />
