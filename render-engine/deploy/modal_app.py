@@ -23,21 +23,40 @@ CHROME_DEPS = ["libnss3", "libdbus-1-3", "libatk1.0-0", "libatk-bridge2.0-0", "l
                "libxkbcommon0", "libxfixes3", "libxcomposite1", "libxdamage1", "libpango-1.0-0", "libcairo2", "libcups2",
                "libdrm2", "libxshmfence1", "libegl1", "libgles2", "fonts-liberation"]
 
-image = (
+# base layers (system, Node, Python libs): no project code, so a code change never rebuilds them
+base = (
     modal.Image.debian_slim(python_version="3.12")
     .apt_install("ffmpeg", "curl", "ca-certificates", "gnupg", *CHROME_DEPS)
     .run_commands("curl -fsSL https://deb.nodesource.com/setup_22.x | bash -", "apt-get install -y nodejs")
     .pip_install("numpy==2.3.*", "scipy==1.16.*", "pillow==11.*", "fastapi[standard]")
-    .add_local_dir(str(HERE), "/app", copy=True, ignore=["node_modules", "out", ".rtmp", "**/__pycache__"])
-    .run_commands("cd /app && npm ci --no-audit --no-fund", "cd /app && npx remotion browser ensure")
-    .env({"PYTHON": "python3", "REMOTION_GL": "swangle", "RENDER_CHUNKS": "4", "RENDER_CONCURRENCY": "4"})
 )
 
-# video translation (dub/dub.py): the render image plus Demucs (voice / music separation, model baked in) and OpenCV
-dub_image = (
-    image.pip_install("torch==2.5.1", "torchaudio==2.5.1", index_url="https://download.pytorch.org/whl/cpu")
+
+def with_code(img):
+    """the project (render-engine/) on top of an image, with its Node dependencies and the Remotion browser"""
+    return (
+        img.add_local_dir(str(HERE), "/app", copy=True, ignore=["node_modules", "out", ".rtmp", "**/__pycache__"])
+        .run_commands("cd /app && npm ci --no-audit --no-fund", "cd /app && npx remotion browser ensure")
+        .env({"PYTHON": "python3", "REMOTION_GL": "swangle", "RENDER_CHUNKS": "4", "RENDER_CONCURRENCY": "4"})
+    )
+
+
+image = with_code(base)
+
+# video translation (dub/dub.py): the base plus Demucs (voice / music separation, model baked in) and OpenCV, then the
+# code. The model file is checked against the SHA-256 prefix in its name (8726e21a), so it is the genuine file even when
+# its host's certificate is broken (it expired in Nov 2026): first a normal download, then one without the certificate
+# check, and the build fails if the checksum does not match.
+DEMUCS = "https://dl.fbaipublicfiles.com/demucs/hybrid_transformer/955717e8-8726e21a.th"
+DEMUCS_DIR = "/root/.cache/torch/hub/checkpoints"
+dub_image = with_code(
+    base.pip_install("torch==2.5.1", "torchaudio==2.5.1", index_url="https://download.pytorch.org/whl/cpu")
     .pip_install("demucs==4.0.1", "soundfile==0.12.*", "opencv-python-headless==4.10.*")
-    .run_commands("python -c \"from demucs.pretrained import get_model; get_model('htdemucs')\"")
+    .run_commands(
+        f"mkdir -p {DEMUCS_DIR} && (curl -fsSL -o {DEMUCS_DIR}/955717e8-8726e21a.th {DEMUCS} || curl -fsSLk -o {DEMUCS_DIR}/955717e8-8726e21a.th {DEMUCS})",
+        f"sha256sum {DEMUCS_DIR}/955717e8-8726e21a.th | grep -q '^8726e21a'",
+        "python -c \"from demucs.pretrained import get_model; get_model('htdemucs')\"",
+    )
 )
 
 app = modal.App("storyit-render", image=image)
