@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/((?!assets/|fonts/|brand/|showcase/|results/|.*\\..*).*)",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ],
   "headers": [
