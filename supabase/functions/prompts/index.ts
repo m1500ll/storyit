@@ -45,20 +45,26 @@ async function callGemini(key: string, model: string, body: unknown, timeoutMs: 
 }
 
 /** Text phase: one long attempt on the main model, then the fallback; stays under the Edge Function limit. */
-async function generateText(key: string, prompt: string, schema: unknown, allowBackup = false, check: (raw: unknown) => unknown = (r) => r) {
+// One request must answer before the 150 s gateway limit, or the browser only sees "Failed to send a request".
+const REQUEST_BUDGET = 135_000;
+
+async function generateText(key: string, prompt: string, schema: unknown, allowBackup = false, check: (raw: unknown) => unknown = (r) => r, deadline = Date.now() + REQUEST_BUDGET) {
   const started = Date.now();
+  const budget = deadline - started;
   let last: GeminiError = new GeminiError('other', 0);
   // ChatGPT (OpenAI API) first when OPENAI_API_KEY is set; then Gemini, then the free backups
   for (const m of openaiModels()) {
-    const left = 140_000 - (Date.now() - started);
+    const left = budget - (Date.now() - started);
     if (left < 30_000) break;
     try { await reserveAi('text'); } catch { break; }
-    const out = await backupText(m, MASTER_PROMPT, prompt, schema, Math.min(left - 5_000, 120_000)).catch((e) => { console.error('openai', m.model, e instanceof Error ? e.message : e); return null; });
+    // leave the fallbacks a real chance when ChatGPT is slow
+    const out = await backupText(m, MASTER_PROMPT, prompt, schema, Math.min(left - 5_000, 90_000)).catch((e) => { console.error('openai', m.model, e instanceof Error ? e.message : e); return null; });
+    console.log('openai', m.model, out ? 'ok' : 'failed', `${Math.round((Date.now() - started) / 1000)}s`);
     if (!out) continue;
     try { return check(out); } catch (e) { console.error('openai invalid', m.model, e instanceof Error ? e.message : e); }
   }
   for (const model of [TEXT_MODEL, TEXT_FALLBACK]) {
-    const left = 140_000 - (Date.now() - started);
+    const left = budget - (Date.now() - started);
     if (left < 20_000) break;
     try {
       const out = await callGemini(key, model, {
@@ -78,7 +84,7 @@ async function generateText(key: string, prompt: string, schema: unknown, allowB
   }
   if (allowBackup && last.problem !== 'blocked') {
     for (const bk of backups()) {
-      const left = 140_000 - (Date.now() - started);
+      const left = budget - (Date.now() - started);
       if (left < 15_000) break;
       const out = await backupText(bk, MASTER_PROMPT, prompt, schema, left - 5_000).catch(() => null);
       if (!out) continue;
@@ -208,6 +214,7 @@ Deno.serve(async (req) => {
   if (PHASES[phase].requires.some((k) => data[k] === undefined)) return json({ error: 'Validez d’abord l’étape précédente' }, 400);
 
   const idea = String(body.idea ?? body.story ?? project?.idea ?? '').trim().slice(0, 600);
+  const deadline = Date.now() + REQUEST_BUDGET; // shared by every generation of this request
   try {
     let trends: unknown;
     if (phase === 'concepts') { // the latest daily trend report inspires the 3 stories (formats that work, not copies)
@@ -224,20 +231,21 @@ Deno.serve(async (req) => {
     if (ownKey) {
       // The user's key first (their quota). If Google refuses it (no billing, quota, overload), the user still gets their
       // story: Storyit's own chain takes over at no cost to them (free tiers / backup providers).
-      try { raw = await generateText(ownKey, phasePrompt, PHASES[phase].schema, false, valid); } catch (e) {
+      try { raw = await generateText(ownKey, phasePrompt, PHASES[phase].schema, false, valid, deadline); } catch (e) {
         const g = e instanceof GeminiError ? e : null;
         if (g?.problem === 'blocked') throw e;
         if (g?.problem === 'invalid' || g?.problem === 'no_billing') await flag(g.problem, g.message);
-        raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true, valid);
+        raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true, valid, deadline);
       }
     } else {
-      raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true, valid);
+      raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true, valid, deadline);
     }
     if (phase === 'script') { // one automatic repair round when some clips are out of the word budget (pace = rule n°1)
       const probs = paceProblems(raw);
-      if (probs.length) {
+      console.log('pace check', probs.length, 'problems', `${Math.round((deadline - Date.now()) / 1000)}s left`);
+      if (probs.length && deadline - Date.now() > 45_000) { // only when there is time left: a good script now beats a perfect one too late
         try {
-          const fixed: any = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', buildRepairPrompt(raw, probs), PHASES.script.schema, true, valid);
+          const fixed: any = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', buildRepairPrompt(raw, probs), PHASES.script.schema, true, valid, deadline);
           if (paceProblems(fixed).length < probs.length) raw = fixed;
         } catch (e) { console.error('pace repair', e instanceof Error ? e.message : e); } // keep the first version
       }

@@ -24,6 +24,8 @@ export async function backupText(b: { base: string; key: string; model: string }
     headers: { Authorization: `Bearer ${b.key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: b.model, ...(isOpenAI ? { max_completion_tokens: 32000 } : { temperature: 1, max_tokens: 16000 }), response_format: { type: 'json_object' },
+      // reasoning models: light thinking keeps a long script well inside the Edge Function time limit
+      ...(isOpenAI && /^(gpt-5|o\d)/.test(b.model) ? { reasoning_effort: 'low' } : {}),
       messages: [
         { role: 'system', content: `${system}\n\nRéponds UNIQUEMENT avec un objet JSON valide qui respecte ce schéma (types Gemini : OBJECT, ARRAY, STRING, INTEGER) :\n${JSON.stringify(schema)}` },
         { role: 'user', content: prompt },

@@ -47,6 +47,9 @@ function call<T>(body: Record<string, unknown>): Promise<T> {
   return dedupe(`prompts:${JSON.stringify(body)}`, () => callOnce<T>(body));
 }
 
+/** The answer never arrived (phone network drop, app in the background, gateway timeout) but the server may still finish. */
+class LostAnswerError extends Error {}
+
 async function callOnce<T>(body: Record<string, unknown>): Promise<T> {
   if (!supabase) throw new Error(DEMO);
   const { data, error } = await supabase.functions.invoke<T>('prompts', { body });
@@ -54,9 +57,31 @@ async function callOnce<T>(body: Record<string, unknown>): Promise<T> {
     const ctx = (error as { context?: Response }).context;
     const msg = ctx && typeof ctx.json === 'function' ? ((await ctx.json().catch(() => ({}))) as { error?: string }).error : undefined;
     if (msg && /not enough story credits/i.test(msg)) throw new InsufficientCreditsError(PROMPT_PROJECT_COST, 0);
+    const status = ctx && typeof ctx.status === 'number' ? ctx.status : 0;
+    if (!msg && (status === 0 || status >= 500)) throw new LostAnswerError(error.message);
     throw new Error(msg ?? error.message);
   }
   return data as T;
+}
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** After a lost answer: the server keeps working and saves the step, so watch the database for it (up to ~3 min). */
+async function awaitSavedPhase(input: { phase: PhaseKey; project_id?: string }, since: number): Promise<PromptProject | null> {
+  if (!supabase) return null;
+  const after = new Date(since - 5_000).toISOString();
+  for (let i = 0; i < 36; i++) {
+    await wait(5_000);
+    if (input.project_id) {
+      const { data } = await supabase.from('prompt_projects' as never).select('*').eq('id', input.project_id).gte('updated_at', after).maybeSingle();
+      const p = data as unknown as PromptProject | null;
+      if (p && (p.data as Record<string, unknown>)?.[input.phase] !== undefined) return p;
+    } else {
+      const { data } = await supabase.from('prompt_projects' as never).select('*').gte('created_at', after).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (data) return data as unknown as PromptProject;
+    }
+  }
+  return null;
 }
 
 export const promptStudio = {
@@ -77,9 +102,18 @@ export const promptStudio = {
   },
   /** Generates one phase server-side (the master prompt never reaches the browser). 1 credit, charged on success only. */
   async generate(input: { phase: PhaseKey; project_id?: string; idea?: string; choice?: number; feedback?: string; style?: StyleKey; story?: string; part?: number; previous_end?: string }): Promise<PromptProject> {
-    const { project } = await call<{ project: PromptProject }>({ action: 'phase', ...input });
-    store.notify();
-    return project;
+    const since = Date.now();
+    try {
+      const { project } = await call<{ project: PromptProject }>({ action: 'phase', ...input });
+      store.notify();
+      return project;
+    } catch (e) {
+      if (!(e instanceof LostAnswerError)) throw e;
+      const saved = await awaitSavedPhase(input, since);
+      if (!saved) throw new Error('La connexion a été coupée pendant la génération. Vérifiez votre réseau puis réessayez : aucun crédit n’a été utilisé si l’étape n’apparaît pas.');
+      store.notify();
+      return saved;
+    }
   },
   /** Dépannage: the corrected prompts of ONE clip (included in the project). */
   async fix(input: { project_id: string; scene: number; problem: string; note?: string }): Promise<PromptProject> {
