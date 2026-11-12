@@ -1,3 +1,4 @@
+import { AutoVideoFeature } from '@/components/landing/AutoVideoFeature';
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
 import { VideosPerMonth } from '@/components/landing/VideosPerMonth';
 import { TranslateFeature } from '@/components/landing/TranslateFeature';
@@ -27,6 +28,7 @@ export default function LandingPage() {
       <main id="main">
       <Hero />
       <Showcase />
+      <AutoVideoFeature />
       <VideosPerMonth />
       <TranslateFeature />
       <Results />

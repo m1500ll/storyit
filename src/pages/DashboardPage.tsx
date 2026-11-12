@@ -29,6 +29,21 @@ export default function DashboardPage() {
         </button>
       )}
       <PromptStudioHero />
+      <Card className="mb-8 overflow-hidden border-coral-400/30 bg-gradient-to-r from-coral-500/[0.08] via-violet-500/[0.06] to-transparent">
+        <div className="grid items-center gap-5 sm:grid-cols-[auto_1fr]">
+          <video src="/showcase/treize-gemmes-preview.mp4" poster="/showcase/treize-gemmes.webp" muted loop playsInline autoPlay preload="metadata" aria-hidden
+            className="mx-auto aspect-[9/16] w-28 rounded-xl border border-line/10 object-cover shadow-lg motion-reduce:hidden sm:w-32" />
+          <div className="min-w-0">
+            <p className="label mb-2 text-coral-300">Nouveau · Vidéo automatique</p>
+            <h2 className="text-balance font-display text-2xl text-zinc-50">Le Prompt Studio crée maintenant la vidéo finale</h2>
+            <p className="mt-2 text-sm text-zinc-400">ChatGPT dessine les personnages et les scènes, Grok anime chaque plan avec les voix, et le montage est fait pour vous. La vidéo arrive dans votre bibliothèque.</p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <Button onClick={() => navigate('/app/prompts')}><Clapperboard className="h-4 w-4" /> Créer ma vidéo</Button>
+              <span className="text-xs text-zinc-500">Éco, Standard ou Premium · prix affiché avant de lancer · crédits rendus en cas d’échec</span>
+            </div>
+          </div>
+        </div>
+      </Card>
       <div className="mb-8"><DistributionOverview /></div>
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <Card className="min-w-0 overflow-hidden">

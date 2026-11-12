@@ -37,6 +37,34 @@ const shell = (inner: string, unsub: string) => `<!doctype html><html lang="fr">
 </td></tr></table></body></html>`;
 
 const CAMPAIGNS: Record<string, Campaign> = {
+  auto_video_launch: {
+    subject: '🎬 Nouveau : Storyit crée maintenant vos vidéos IA de A à Z',
+    html: (unsub) => shell(`<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Grosse nouveauté dans le <strong>Prompt Studio</strong> : il ne s’arrête plus aux prompts. Il <strong>crée la vidéo finale pour vous</strong>.</td></tr>
+<tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.9">
+<tr><td>🎨 <strong>ChatGPT</strong> dessine vos personnages et chaque scène, toujours les mêmes d’un plan à l’autre,</td></tr>
+<tr><td>🎞️ <strong>Grok</strong> anime chaque plan avec les voix et les bruitages,</td></tr>
+<tr><td>✂️ le <strong>montage est fait automatiquement</strong> (blancs coupés, rythme rapide),</td></tr>
+<tr><td>📥 la vidéo arrive dans votre <strong>bibliothèque</strong>, prête à publier.</td></tr></table></td></tr>
+<tr><td style="font-size:14px;line-height:1.6;color:#4b4560">Fruits, ongles, objets ou pierres précieuses : choisissez votre style, écrivez votre histoire, puis cliquez sur « Générer la vidéo ». Trois qualités au choix (Éco, Standard, Premium), le prix est affiché avant de lancer et vos crédits sont rendus si la génération échoue.</td></tr>
+<tr><td align="center" style="padding:26px 0 8px"><a href="${APP}/app/prompts" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:14px 26px;border-radius:12px">Créer ma vidéo</a></td></tr>`, unsub),
+    text: (unsub) => `Bonjour,
+
+Grosse nouveauté dans le Prompt Studio : il ne s'arrête plus aux prompts. Il crée la vidéo finale pour vous.
+
+- ChatGPT dessine vos personnages et chaque scène, toujours les mêmes d'un plan à l'autre,
+- Grok anime chaque plan avec les voix et les bruitages,
+- le montage est fait automatiquement (blancs coupés, rythme rapide),
+- la vidéo arrive dans votre bibliothèque, prête à publier.
+
+Fruits, ongles, objets ou pierres précieuses : choisissez votre style, écrivez votre histoire, puis cliquez sur « Générer la vidéo ». Trois qualités au choix (Éco, Standard, Premium), le prix est affiché avant de lancer et vos crédits sont rendus si la génération échoue.
+
+Créer ma vidéo : ${APP}/app/prompts
+
+À très vite,
+L'équipe Storyit
+
+Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${unsub}`,
+  },
   dubbing_launch: {
     subject: '🌍 Nouveau : traduisez vos vidéos en anglais, français ou espagnol',
     html: (unsub) => shell(`<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Nouveauté sur Storyit : la <strong>traduction de vidéos</strong>. Une vidéo, plusieurs langues, plusieurs fois plus de vues.</td></tr>
