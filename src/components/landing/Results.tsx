@@ -1,9 +1,12 @@
 import { X, ZoomIn } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { RESULT_HIGHLIGHTS, RESULTS, type ResultProof } from '@/data/results';
+import { useLang } from '@/lib/lang';
 
 /** Owner's own monetisation proof: headline numbers + zoomable screenshots. Hidden until data exists. */
-export function Results({ lang = 'en' }: { lang?: 'en' | 'fr' }) {
+export function Results({ lang: forced }: { lang?: 'en' | 'fr' }) {
+  const ctx = useLang();
+  const lang = forced ?? ctx;
   const fr = lang === 'fr';
   const [zoom, setZoom] = useState<ResultProof | null>(null);
 

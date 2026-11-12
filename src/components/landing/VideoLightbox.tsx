@@ -1,9 +1,11 @@
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
 import { posterSrc, videoSrc, type ShowcaseVideo } from '@/data/showcase';
+import { useLang } from '@/lib/lang';
 
 /** Full episode with sound. Escape / backdrop closes. */
 export function VideoLightbox({ video, onClose }: { video: ShowcaseVideo | null; onClose: () => void }) {
+  const fr = useLang() === 'fr';
   useEffect(() => {
     if (!video) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -20,8 +22,8 @@ export function VideoLightbox({ video, onClose }: { video: ShowcaseVideo | null;
         <video src={videoSrc(video.slug)} poster={posterSrc(video.slug)} controls autoPlay playsInline
           className="aspect-[9/16] w-full rounded-2xl bg-black object-cover shadow-2xl" />
         <p className="mt-3 text-center text-sm font-medium text-zinc-100">{video.title}</p>
-        <p className="text-center text-xs text-zinc-500">Produced by the Storyit team · {video.format}</p>
-        <button onClick={onClose} aria-label="Close video" className="absolute -right-2 -top-2 grid h-9 w-9 place-items-center rounded-full bg-white text-ink-950 shadow-lg sm:-right-12 sm:top-0">
+        <p className="text-center text-xs text-zinc-500">{fr ? 'Créée avec Storyit' : 'Made with Storyit'} · {video.format}</p>
+        <button onClick={onClose} aria-label={fr ? 'Fermer la vidéo' : 'Close video'} className="absolute -right-2 -top-2 grid h-9 w-9 place-items-center rounded-full bg-white text-ink-950 shadow-lg sm:-right-12 sm:top-0">
           <X className="h-4 w-4" />
         </button>
       </div>

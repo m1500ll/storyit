@@ -9,6 +9,7 @@ import { VideoLightbox } from '@/components/landing/VideoLightbox';
 import { SHOWCASE, SHOWCASE_FRUIT, type ShowcaseVideo } from '@/data/showcase';
 import { SEO_PAGES, type SeoPageData } from '@/data/seoPages';
 import { useSeo } from '@/lib/seo';
+import { LangProvider } from '@/lib/lang';
 
 const EXTRA: ShowcaseVideo[] = [{ slug: 'fenetres-murees-en', title: 'The bricked-up windows of 1696', hook: 'Translated by Storyit', format: 'Translated · EN', seconds: 61 }];
 const ALL = [...SHOWCASE, ...SHOWCASE_FRUIT, ...EXTRA];
@@ -26,8 +27,9 @@ export default function SeoPage({ page }: { page: SeoPageData }) {
   const related = SEO_PAGES.filter((p) => p.lang === page.lang && p.path !== page.path);
 
   return (
+    <LangProvider value={page.lang}>
     <div lang={page.lang} className="min-h-screen bg-ink-950">
-      <MarketingNavbar overlay />
+      <MarketingNavbar overlay langTo={page.alt} />
       <main id="main">
         <section className="relative overflow-hidden">
           <div aria-hidden="true" className="bg-grid mask-fade-radial pointer-events-none absolute inset-0" />
@@ -105,11 +107,12 @@ export default function SeoPage({ page }: { page: SeoPageData }) {
       <SeoFooter lang={page.lang} />
       <VideoLightbox video={open} onClose={() => setOpen(null)} />
     </div>
+    </LangProvider>
   );
 }
 
 /** footer links shared by the landing and the search pages (internal links for search engines) */
-export function SeoFooter({ lang = 'en' }: { lang?: 'fr' | 'en' }) {
+export function SeoFooter({ lang = 'fr' }: { lang?: 'fr' | 'en' }) {
   return (
     <footer className="border-t border-line/[0.05] pb-28 pt-10 md:pb-10">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 text-xs text-zinc-500 sm:grid-cols-[1fr_auto_auto] md:px-6">
@@ -119,12 +122,12 @@ export function SeoFooter({ lang = 'en' }: { lang?: 'fr' | 'en' }) {
             <img src="https://semilaunch.com/assets/badge.png" alt="Featured on SemiLaunch" width={165} height={58} loading="lazy" />
           </a>
         </div>
-        {(['en', 'fr'] as const).map((l) => (
+        {(['fr', 'en'] as const).map((l) => (
           <nav key={l} aria-label={l === 'fr' ? 'Guides en français' : 'Guides in English'} className="flex flex-col gap-2">
-            <span className="font-semibold text-zinc-400">{l === 'fr' ? 'En français' : 'Guides'}</span>
-            {l === 'en' && <Link to="/" className="hover:text-zinc-200">{lang === 'fr' ? 'Storyit (English)' : 'Home'}</Link>}
-            {SEO_PAGES.filter((p) => p.lang === l).map((p) => <Link key={p.path} to={p.path} className="hover:text-zinc-200">{p.path === '/fr' ? 'Storyit en français' : `${p.h1} ${p.highlight}`.replace(/\.$/, '')}</Link>)}
-            {l === 'en' && <><Link to="/privacy" className="hover:text-zinc-200">Privacy</Link><Link to="/terms" className="hover:text-zinc-200">Terms</Link><a href="mailto:support@storyit.fun" className="hover:text-zinc-200">Contact</a></>}
+            <span className="font-semibold text-zinc-400">{l === 'fr' ? 'En français' : 'In English'}</span>
+            <Link to={l === 'fr' ? '/' : '/en'} className="hover:text-zinc-200">{l === 'fr' ? 'Storyit (accueil)' : 'Storyit (home)'}</Link>
+            {SEO_PAGES.filter((p) => p.lang === l).map((p) => <Link key={p.path} to={p.path} className="hover:text-zinc-200">{`${p.h1} ${p.highlight}`.replace(/\.$/, '')}</Link>)}
+            {l === 'en' && <><Link to="/privacy" className="hover:text-zinc-200">{lang === 'fr' ? 'Confidentialité' : 'Privacy'}</Link><Link to="/terms" className="hover:text-zinc-200">{lang === 'fr' ? 'Conditions' : 'Terms'}</Link><a href="mailto:support@storyit.fun" className="hover:text-zinc-200">Contact</a></>}
           </nav>
         ))}
       </div>

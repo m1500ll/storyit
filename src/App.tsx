@@ -41,7 +41,9 @@ export default function App() {
       <BrowserRouter>
         <Suspense fallback={<div className="min-h-screen bg-ink-950" />}>
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<LandingPage lang="fr" />} />
+            <Route path="/en" element={<LandingPage lang="en" />} />
+            <Route path="/fr" element={<Navigate to="/" replace />} />
             <Route path="/login" element={<AuthPage />} />
             {SEO_PAGES.map((p) => <Route key={p.path} path={p.path} element={<SeoPage page={p} />} />)}
             <Route path="/privacy" element={<PrivacyPage />} />

@@ -6,7 +6,7 @@
 // plan): Stripe bills the full plan price at once and the webhook grants the plan's credits.
 // checkout on a higher plan while a plan is already running = upgrade of that subscription: the customer pays only the
 // price difference now (one invoice) and stripe-webhook switches the plan and grants only the credit difference.
-// Secrets: STRIPE_SECRET_KEY, STRIPE_PRICE_CREATOR, STRIPE_PRICE_PRO, STRIPE_PRICE_STUDIO, STRIPE_PRICE_PACK_100, STRIPE_PRICE_PACK_500
+// Secrets: STRIPE_SECRET_KEY, STRIPE_PRICE_CREATOR, STRIPE_PRICE_PRO, STRIPE_PRICE_STUDIO, STRIPE_PRICE_{CREATOR,PRO,STUDIO}_YEAR, STRIPE_PRICE_PACK_100, STRIPE_PRICE_PACK_500
 // Optional: APP_URL (default http://localhost:5173)
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { GRANTS, TRIAL } from '../_shared/stripe.ts';
@@ -24,6 +24,9 @@ const PRODUCTS = {
   creator: { env: 'STRIPE_PRICE_CREATOR', mode: 'subscription' },
   pro: { env: 'STRIPE_PRICE_PRO', mode: 'subscription' },
   studio: { env: 'STRIPE_PRICE_STUDIO', mode: 'subscription' },
+  creator_year: { env: 'STRIPE_PRICE_CREATOR_YEAR', mode: 'subscription' },
+  pro_year: { env: 'STRIPE_PRICE_PRO_YEAR', mode: 'subscription' },
+  studio_year: { env: 'STRIPE_PRICE_STUDIO_YEAR', mode: 'subscription' },
   pack_100: { env: 'STRIPE_PRICE_PACK_100', mode: 'payment' },
   pack_500: { env: 'STRIPE_PRICE_PACK_500', mode: 'payment' },
 } as const;
@@ -32,6 +35,8 @@ const PLAN_KEYS = ['creator', 'pro', 'studio'] as const;
 type PlanKey = (typeof PLAN_KEYS)[number];
 const PLAN_NAMES: Record<PlanKey, string> = { creator: 'Creator', pro: 'Pro', studio: 'Studio' };
 const planOfPrice = (priceId?: string | null) => PLAN_KEYS.find((p) => priceId && Deno.env.get(PRODUCTS[p].env) === priceId) ?? null;
+/** yearly product → its plan (creator_year → creator) */
+const yearlyPlanOfPrice = (priceId?: string | null) => PLAN_KEYS.find((p) => priceId && Deno.env.get(PRODUCTS[`${p}_year` as ProductKey].env) === priceId) ?? null;
 
 async function stripe(path: string, params?: Record<string, string>) {
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
@@ -124,6 +129,27 @@ Deno.serve(async (req) => {
       const subs = await stripe(`subscriptions?customer=${customerId}&status=all&limit=20`);
       const sub = (subs?.data ?? []).find((x: any) => ['active', 'trialing', 'past_due', 'incomplete'].includes(x.status));
       if (sub) {
+        // monthly ↔ yearly, or any change involving a yearly plan: Stripe switches the price and bills the prorated
+        // difference at once (the unused part of the current period is credited); stripe-webhook grants the new plan
+        const targetYear = product.endsWith('_year');
+        const curYear = yearlyPlanOfPrice(sub.items.data[0].price.id);
+        if (targetYear || curYear) {
+          const curPlan = curYear ?? planOfPrice(sub.items.data[0].price.id);
+          const tgtPlan = product.replace('_year', '') as PlanKey;
+          if (!curPlan) return json({ error: 'Votre abonnement actuel ne peut pas être modifié ici. Utilisez « Gérer la facturation ».' }, 409);
+          if (sub.items.data[0].price.id === price) return json({ error: 'Vous avez déjà cette offre.' }, 409);
+          if (curYear && !targetYear) return json({ error: 'Pour repasser au mensuel, utilisez « Gérer la facturation » : le changement se fera à la fin de votre année.', code: 'downgrade' }, 409);
+          if (PLAN_KEYS.indexOf(tgtPlan) < PLAN_KEYS.indexOf(curPlan)) return json({ error: 'Pour passer à une offre inférieure, utilisez « Gérer la facturation ».', code: 'downgrade' }, 409);
+          if (sub.status !== 'active' && sub.status !== 'trialing') return json({ error: 'Une facture est en attente : réglez-la dans « Gérer la facturation », puis réessayez.' }, 409);
+          const updated = await stripe(`subscriptions/${sub.id}`, {
+            'items[0][id]': sub.items.data[0].id, 'items[0][price]': price, proration_behavior: 'always_invoice',
+            payment_behavior: 'pending_if_incomplete', 'metadata[product]': product, ...(sub.status === 'trialing' ? { trial_end: 'now' } : {}),
+            'expand[]': 'latest_invoice',
+          });
+          const inv = updated?.latest_invoice;
+          const paid = inv?.status === 'paid';
+          return json({ upgraded: true, paid, product, invoice_url: paid ? null : inv?.hosted_invoice_url ?? null });
+        }
         const target = product as PlanKey;
         const current = planOfPrice(sub.items.data[0].price.id);
         if (!current) return json({ error: 'Votre abonnement actuel ne peut pas être modifié ici. Utilisez « Manage billing ».' }, 409);

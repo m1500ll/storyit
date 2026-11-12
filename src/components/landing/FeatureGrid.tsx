@@ -1,4 +1,5 @@
 import { Captions, Clapperboard, Languages, Sparkles, TrendingUp, Wand2 } from 'lucide-react';
+import { useLang } from '@/lib/lang';
 
 const features = [
   { icon: Clapperboard, title: 'AI 3D animated videos', body: 'True stories told by a narrator in a 3D world with cartoon characters, music and sound effects. 30 seconds, 1 minute or 2 minutes.' },
@@ -8,14 +9,23 @@ const features = [
   { icon: Languages, title: 'AI video translation', body: 'The same video in French, English or Spanish: new voice, original music kept, captions replaced. Reach new countries with one click.' },
   { icon: Captions, title: 'Hook title & captions', body: 'A bold hook title for the first seconds and word-by-word captions, the two things that keep viewers watching.' },
 ];
+const featuresFr = [
+  { icon: Clapperboard, title: 'Vidéos animées 3D par IA', body: 'Des histoires vraies racontées par un narrateur dans un monde 3D, avec personnages cartoon, musique et bruitages. 30 s, 1 min ou 2 min.' },
+  { icon: Sparkles, title: 'Générateur de Fruit Drama', body: 'Des mini-dramas avec des personnages fruits, ongles, objets ou pierres précieuses : le format qui explose sur TikTok, écrit pour la rétention et les commentaires.' },
+  { icon: Wand2, title: 'Vidéos 100 % automatiques', body: 'ChatGPT dessine les personnages et les scènes, Grok anime chaque plan, et la vidéo est montée pour toi. Choisis la qualité et vois le prix avant.' },
+  { icon: TrendingUp, title: 'Des idées tendance chaque jour', body: 'Des concepts tirés de ce qui marche en ce moment sur TikTok, avec le hook, le déroulé et la fin, prêts à devenir ta vidéo.' },
+  { icon: Languages, title: 'Traduction vidéo par IA', body: 'La même vidéo en français, anglais ou espagnol : nouvelle voix, musique d’origine gardée, sous-titres remplacés. Touche d’autres pays en un clic.' },
+  { icon: Captions, title: 'Titre accrocheur et sous-titres', body: 'Un grand titre pour les premières secondes et des sous-titres mot à mot : les deux choses qui font rester les spectateurs.' },
+];
 
 export function FeatureGrid() {
+  const fr = useLang() === 'fr';
   return (
     <section id="features" className="mx-auto max-w-6xl px-4 py-20 md:px-6">
-      <p className="label text-center">Everything you need to go viral</p>
-      <h2 className="mt-3 text-center font-display text-4xl text-zinc-50">An AI video studio in your browser</h2>
+      <p className="label text-center">{fr ? 'Tout pour devenir viral' : 'Everything you need to go viral'}</p>
+      <h2 className="mt-3 text-center font-display text-4xl text-zinc-50">{fr ? 'Un studio vidéo IA dans ton navigateur' : 'An AI video studio in your browser'}</h2>
       <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line/[0.06] bg-line/[0.06] sm:grid-cols-2 lg:grid-cols-3">
-        {features.map(({ icon: Icon, title, body }) => (
+        {(fr ? featuresFr : features).map(({ icon: Icon, title, body }) => (
           <div key={title} className="bg-ink-900 p-6">
             <Icon className="h-5 w-5 text-violet-400" aria-hidden="true" />
             <h3 className="mt-4 text-sm font-semibold text-zinc-100">{title}</h3>

@@ -1,8 +1,10 @@
 /** Stripe helpers shared by `stripe-webhook` and tests (pure, no Deno APIs). */
 
-export type ProductKey = 'creator' | 'pro' | 'studio' | 'pack_100' | 'pack_500';
+export type ProductKey = 'creator' | 'pro' | 'studio' | 'creator_year' | 'pro_year' | 'studio_year' | 'pack_100' | 'pack_500';
 export const PRICE_ENV: Record<ProductKey, string> = {
-  creator: 'STRIPE_PRICE_CREATOR', pro: 'STRIPE_PRICE_PRO', studio: 'STRIPE_PRICE_STUDIO', pack_100: 'STRIPE_PRICE_PACK_100', pack_500: 'STRIPE_PRICE_PACK_500',
+  creator: 'STRIPE_PRICE_CREATOR', pro: 'STRIPE_PRICE_PRO', studio: 'STRIPE_PRICE_STUDIO',
+  creator_year: 'STRIPE_PRICE_CREATOR_YEAR', pro_year: 'STRIPE_PRICE_PRO_YEAR', studio_year: 'STRIPE_PRICE_STUDIO_YEAR',
+  pack_100: 'STRIPE_PRICE_PACK_100', pack_500: 'STRIPE_PRICE_PACK_500',
 };
 
 /** What each product grants. Keep in sync with src/services/credits.ts (PLANS / CREDIT_PACKS). */
@@ -10,6 +12,10 @@ export const GRANTS: Record<ProductKey, { credits: number; plan?: 'creator' | 'p
   creator: { credits: 43000, plan: 'creator', label: 'Creator plan — monthly credits' },
   pro: { credits: 105000, plan: 'pro', label: 'Pro plan — monthly credits' },
   studio: { credits: 160000, plan: 'studio', label: 'Studio plan — monthly credits' },
+  // yearly plans (−20 %): the 12 months of credits at once, on each yearly invoice
+  creator_year: { credits: 43000 * 12, plan: 'creator', label: 'Creator plan (yearly) — 12 months of credits' },
+  pro_year: { credits: 105000 * 12, plan: 'pro', label: 'Pro plan (yearly) — 12 months of credits' },
+  studio_year: { credits: 160000 * 12, plan: 'studio', label: 'Studio plan (yearly) — 12 months of credits' },
   pack_100: { credits: 10000, label: 'Top-up pack — 10,000 credits' },
   pack_500: { credits: 50000, label: 'Top-up pack — 50,000 credits' },
 };
@@ -33,11 +39,16 @@ const linePrice = (line: any): string | null => line?.price?.id ?? line?.pricing
 /** the line of an invoice that bills a plan (creator/pro/studio), with what that line charged (0 during a trial); null when
  *  the invoice bills no plan. A trial's first invoice holds the plan line at 0 plus the one-time trial fee. */
 export function planLine(invoice: any, env: (k: string) => string | undefined): { product: ProductKey; amount: number } | null {
+  // a plan change billed with proration (e.g. monthly → yearly) holds a negative line for the unused old plan and a
+  // positive line for the new one: the plan bought is the line with the highest amount
+  let best: { product: ProductKey; amount: number } | null = null;
   for (const line of invoice?.lines?.data ?? []) {
     const product = productForPrice(linePrice(line), env);
-    if (product && GRANTS[product].plan) return { product, amount: Number(line.amount ?? 0) };
+    if (!product || !GRANTS[product].plan) continue;
+    const amount = Number(line.amount ?? 0);
+    if (!best || amount > best.amount) best = { product, amount };
   }
-  return null;
+  return best;
 }
 
 /** $1 three-day trial: price of the one-time fee (cents), length, credits given during the trial. Keep in sync with

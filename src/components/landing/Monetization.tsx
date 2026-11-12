@@ -1,6 +1,7 @@
 import { ExternalLink, Info } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
+import { useLang } from '@/lib/lang';
 
 /** Platform rules as published by each platform. Re-check the links when updating copy. */
 const PLATFORMS = [
@@ -30,7 +31,9 @@ const PLATFORMS = [
 const fmtL = (n: number, l: string) => n.toLocaleString(l, { style: 'currency', currency: 'USD', maximumFractionDigits: n < 100 ? 2 : 0 });
 const VIEW_STEPS = [100_000, 250_000, 500_000, 1_000_000, 2_500_000, 5_000_000, 10_000_000, 25_000_000];
 
-export function Monetization({ lang = 'en' }: { lang?: 'en' | 'fr' }) {
+export function Monetization({ lang: forced }: { lang?: 'en' | 'fr' }) {
+  const ctx = useLang();
+  const lang = forced ?? ctx;
   const fr = lang === 'fr';
   const loc = fr ? 'fr-FR' : 'en-US';
   const fmt = (n: number) => fmtL(n, loc);

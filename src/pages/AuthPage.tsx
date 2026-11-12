@@ -2,7 +2,8 @@ import { ArrowLeft, Gift } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useSeo } from '@/lib/seo';
-import { Button, Logo, ThemeToggle } from '@/components/ui';
+import { Button, LangSwitch, Logo, ThemeToggle } from '@/components/ui';
+import { storedLang, type Lang } from '@/lib/lang';
 import { AuthShowcase, AuthShowcaseStrip } from '@/components/auth/AuthShowcase';
 import { GoogleIcon } from '@/components/ui/GoogleIcon';
 import { useAuth } from '@/lib/auth';
@@ -14,17 +15,17 @@ import { REFERRAL_FRIEND_BONUS, formatCredits } from '@/services/credits';
 type Mode = 'signin' | 'signup' | 'forgot';
 
 /** French for French-speaking browsers (most customers), English otherwise (visitors from the English landing page) */
-const FR = typeof navigator !== 'undefined' && /^fr\b/i.test(navigator.language || '');
-const COPY: Record<Mode, { title: string; sub: string; cta: string }> = FR ? {
+const COPY_FR: Record<Mode, { title: string; sub: string; cta: string }> = {
   signin: { title: 'Content de vous revoir', sub: 'Connectez-vous pour continuer vos séries.', cta: 'Se connecter' },
   signup: { title: 'Créez votre studio', sub: 'Offre gratuite avec 3 000 crédits. Sans carte bancaire.', cta: 'Créer mon compte' },
   forgot: { title: 'Réinitialiser le mot de passe', sub: 'Nous vous envoyons un lien par e-mail pour en choisir un nouveau.', cta: 'Envoyer le lien' },
-} : {
+};
+const COPY_EN: Record<Mode, { title: string; sub: string; cta: string }> = {
   signin: { title: 'Welcome back', sub: 'Sign in to continue your series.', cta: 'Sign In' },
   signup: { title: 'Create your studio', sub: 'Free plan with 3,000 credits. No card required.', cta: 'Create Account' },
   forgot: { title: 'Reset your password', sub: 'We’ll email you a link to choose a new one.', cta: 'Send Reset Link' },
 };
-const L = FR ? {
+const L_FR = {
   wrong: 'E-mail ou mot de passe incorrect. Réessayez, ou réinitialisez votre mot de passe.', exists: 'Cet e-mail a déjà un compte : connectez-vous plutôt.',
   noGoogle: 'La connexion Google n’est pas encore activée.', confirm: 'Confirmez d’abord votre e-mail : regardez votre boîte de réception.',
   resetSent: 'Si un compte existe pour cet e-mail, un lien de réinitialisation est en route.', checkInbox: 'Regardez votre boîte de réception pour confirmer votre e-mail, puis connectez-vous.',
@@ -32,7 +33,8 @@ const L = FR ? {
   redirect: 'Redirection vers Google…', google: 'Continuer avec Google', orEmail: 'ou avec un e-mail', password: 'Mot de passe', passNew: 'Mot de passe (6 caractères minimum)…', pass: 'Mot de passe…',
   forgotQ: 'Mot de passe oublié ?', back: 'Retour à la connexion', noAccount: 'Pas de compte ? Créez-en un', haveAccount: 'Déjà un compte ? Connectez-vous',
   privacy1: 'En continuant, vous acceptez la façon dont nous traitons vos données, décrite dans notre', privacy2: 'politique de confidentialité', email: 'vous@studio.com…', seo: 'Connexion',
-} : {
+};
+const L_EN = {
   wrong: 'Wrong email or password. Try again, or reset your password.', exists: 'This email already has an account — sign in instead.',
   noGoogle: 'Google sign-in isn’t enabled yet on this project.', confirm: 'Confirm your email first — check your inbox.',
   resetSent: 'If an account exists for this email, a reset link is on its way.', checkInbox: 'Check your inbox to confirm your email, then sign in.',
@@ -43,7 +45,7 @@ const L = FR ? {
 };
 
 /** Turns Supabase auth errors into a next step the user can act on. */
-function friendly(message: string): string {
+function friendly(message: string, L: typeof L_FR): string {
   if (/invalid login credentials/i.test(message)) return L.wrong;
   if (/already registered/i.test(message)) return L.exists;
   if (/provider is not enabled/i.test(message)) return L.noGoogle;
@@ -52,6 +54,9 @@ function friendly(message: string): string {
 }
 
 export default function AuthPage() {
+  const [lang, setLang] = useState<Lang>(storedLang);
+  const L = lang === 'fr' ? L_FR : L_EN;
+  const COPY = lang === 'fr' ? COPY_FR : COPY_EN;
   const { session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -90,7 +95,7 @@ export default function AuthPage() {
       options: { redirectTo: `${window.location.origin}${from}`, queryParams: { prompt: 'select_account' } },
     });
     // On success the browser leaves for Google; we only get here on error.
-    if (error) { setLoading(null); setMessage({ kind: 'error', text: friendly(error.message) }); }
+    if (error) { setLoading(null); setMessage({ kind: 'error', text: friendly(error.message, L) }); }
   };
 
   const submit = async (e: FormEvent) => {
@@ -100,13 +105,13 @@ export default function AuthPage() {
     if (mode === 'forgot') {
       const { error } = await supabase!.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/reset-password` });
       setLoading(null);
-      return setMessage(error ? { kind: 'error', text: friendly(error.message) } : { kind: 'info', text: L.resetSent });
+      return setMessage(error ? { kind: 'error', text: friendly(error.message, L) } : { kind: 'info', text: L.resetSent });
     }
     const { data, error } = mode === 'signin'
       ? await supabase!.auth.signInWithPassword({ email, password })
       : await supabase!.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}${from}` } });
     setLoading(null);
-    if (error) return setMessage({ kind: 'error', text: friendly(error.message) });
+    if (error) return setMessage({ kind: 'error', text: friendly(error.message, L) });
     if (data.session) return navigate(from, { replace: true });
     setMessage({ kind: 'info', text: L.checkInbox });
   };
@@ -118,8 +123,8 @@ export default function AuthPage() {
       <main className="relative flex min-h-screen flex-col overflow-hidden px-4 py-6 sm:px-8">
         <div className="pointer-events-none absolute -left-32 -top-32 h-[420px] w-[420px] rounded-full bg-violet-400/25 blur-[110px]" />
         <div className="pointer-events-none absolute -bottom-40 right-0 h-[380px] w-[380px] rounded-full bg-coral-500/20 blur-[110px]" />
-        <ThemeToggle className="absolute right-4 top-5 z-10 sm:right-8" />
-        <Link to="/" className="relative self-start rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" aria-label="Storyit home"><Logo /></Link>
+        <div className="absolute right-4 top-5 z-10 flex items-center gap-2 sm:right-8"><LangSwitch lang={lang} onChange={setLang} className="border-line/10 text-zinc-300 hover:bg-line/[0.06]" /><ThemeToggle /></div>
+        <Link to={lang === 'fr' ? '/' : '/en'} className="relative self-start rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" aria-label="Storyit home"><Logo /></Link>
         <div className="relative mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10">
         <AuthShowcaseStrip />
         <div className="rounded-3xl border border-line/[0.07] bg-ink-900/90 p-7 shadow-[0_30px_80px_-30px_rgba(76,29,149,0.35)] backdrop-blur sm:p-8">
@@ -187,7 +192,7 @@ export default function AuthPage() {
         </div>
         </div>
       </main>
-      <AuthShowcase />
+      <AuthShowcase lang={lang} />
     </div>
   );
 }

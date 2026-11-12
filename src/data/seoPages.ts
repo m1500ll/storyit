@@ -20,39 +20,6 @@ const EN_CTA = { label: 'Create my video for free', to: '/app' };
 
 export const SEO_PAGES: SeoPageData[] = [
   {
-    path: '/fr', lang: 'fr', alt: '/',
-    title: 'Storyit — Générateur de vidéos IA virales pour TikTok (3D et Fruit Drama)',
-    description: 'Crée des vidéos IA virales qui peuvent rapporter : histoires animées en 3D et mini-dramas de fruits, avec voix, musique et sous-titres, prêtes pour TikTok, Reels et Shorts. 3 000 crédits offerts.',
-    eyebrow: 'Générateur de vidéos IA', h1: 'Crée des vidéos IA virales', highlight: 'qui rapportent.',
-    intro: 'Storyit transforme une idée d’histoire en vidéo verticale terminée : histoires vraies animées en 3D, mini-séries de fruits (Fruit Drama), voix, musique, titre accrocheur et sous-titres. Tu choisis l’histoire, l’IA fait le reste.',
-    cta: FR_CTA,
-    videos: ['banane-honnete', 'fenetres-murees', 'plaque-de-cuisson', 'coq-oeuf', 'chevelure-sans-fin', 'interdit-de-mourir'],
-    steps: [
-      { title: 'Choisis une histoire', body: 'Écris quelques lignes, prends une des idées du studio ou un concept tendance du jour.' },
-      { title: 'L’IA écrit tout', body: 'Le hook qui arrête le scroll, un script minuté de plus d’une minute, les personnages et chaque prompt.' },
-      { title: 'L’IA crée la vidéo', body: 'Images, animation de chaque plan avec les voix et le son, puis montage automatique.' },
-      { title: 'Publie et grandis', body: 'Télécharge la vidéo verticale pour TikTok, Reels et Shorts, et traduis-la pour d’autres pays.' },
-    ],
-    sections: [
-      { h2: 'Les formats qui cartonnent sur TikTok, sans montage', body: [
-        'Les mini-dramas de fruits qui se disputent et les histoires vraies racontées en 3D font partie des formats les plus regardés sur TikTok, Instagram Reels et YouTube Shorts. Ils retiennent l’attention jusqu’à la fin, génèrent des commentaires et donnent envie de voir la suite.',
-        'Avec Storyit, tu n’as besoin ni de logiciel 3D, ni de logiciel de montage, ni de comptes ChatGPT, Grok ou ElevenLabs : tout est inclus dans tes crédits.',
-      ] },
-      { h2: 'Pensé pour la monétisation', body: [
-        'Le programme de rémunération des créateurs de TikTok récompense les vidéos originales de plus d’une minute. Les vidéos du Prompt Studio dépassent la minute et sont écrites pour la rétention : hook dès la première seconde, rythme rapide, cliffhanger à la fin pour la partie suivante.',
-        'Les revenus dépendent de ton compte, de ton audience et des règles de chaque plateforme : personne ne peut les garantir, mais tu pars avec le bon format.',
-      ] },
-      { h2: 'Une vidéo, plusieurs langues', body: [
-        'La traduction vidéo de Storyit sépare la voix de la musique, traduit chaque phrase au même tempo, enregistre une nouvelle voix en français, anglais ou espagnol et remplace les sous-titres incrustés. Une seule vidéo peut ainsi toucher plusieurs pays.',
-      ] },
-    ],
-    faqs: [
-      { q: 'Storyit est-il gratuit ?', a: 'Tu reçois 3 000 crédits offerts à l’inscription, sans carte bancaire, de quoi réaliser deux projets complets du Prompt Studio. Les abonnements commencent à 29 $ par mois avec 43 000 crédits.' },
-      { q: 'Faut-il savoir monter des vidéos ?', a: 'Non. Les images, l’animation, les voix, la musique, les sous-titres et le montage sont faits automatiquement. Tu télécharges une vidéo prête à publier.' },
-      { q: 'Les vidéos m’appartiennent-elles ?', a: 'Oui. Tu gardes tous les droits sur tes histoires et tes vidéos, et tu peux les publier où tu veux.' },
-    ],
-  },
-  {
     path: '/fr/generateur-video-ia-fruits', lang: 'fr', alt: '/en/ai-fruit-video-generator',
     title: 'Générateur de vidéos IA de fruits (Fruit Drama) pour TikTok — Storyit',
     description: 'Crée des vidéos de fruits IA qui se disputent, les fameux Fruit Drama de TikTok : histoire, personnages, images, animation et montage automatiques. Essai gratuit.',

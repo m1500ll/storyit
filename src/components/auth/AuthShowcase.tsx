@@ -2,7 +2,6 @@ import { Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { posterSrc, previewSrc, SHOWCASE, SHOWCASE_FRUIT, type ShowcaseVideo } from '@/data/showcase';
 
-const FR = typeof navigator !== 'undefined' && /^fr\b/i.test(navigator.language || '');
 const reduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const useMedia = (q: string) => {
   const [on, setOn] = useState(() => typeof window !== 'undefined' && window.matchMedia(q).matches);
@@ -33,7 +32,8 @@ function Phone({ v, play }: { v: ShowcaseVideo; play: boolean }) {
 }
 
 /** Right side of the sign-in screen: columns of real Storyit videos scrolling slowly (decorative, desktop only). */
-export function AuthShowcase() {
+export function AuthShowcase({ lang = 'fr' }: { lang?: 'fr' | 'en' }) {
+  const FR = lang === 'fr';
   const desktop = useMedia('(min-width: 1024px)');
   const still = reduced();
   if (!desktop) return null;

@@ -23,6 +23,7 @@ function CheckoutBanner() {
 }
 
 export default function BillingPage() {
+  const [params] = useSearchParams();
   const { balance, transactions } = useCredits();
   const { data: profile } = useProfile();
   const plan = PLANS.find((p) => p.id === profile?.plan);
@@ -60,7 +61,7 @@ export default function BillingPage() {
           ? <CardHeader title="Recharger des crédits" subtitle="Vous avez Studio, notre offre la plus complète. Les packs de crédits n’expirent jamais." />
           : <CardHeader title="Changer d’offre ou recharger" subtitle="Les offres se renouvellent chaque mois. Les packs de crédits n’expirent jamais." />}
         <TrialUpgrade />
-        <PlanPicker currentPlan={profile?.plan} trialUsed={profile?.trial_used} />
+        <PlanPicker currentPlan={profile?.plan} trialUsed={profile?.trial_used} initialInterval={params.get('interval') === 'month' ? 'month' : 'year'} />
       </Card>
       <Card className="mt-6 overflow-x-auto" tabIndex={0} role="region" aria-label="Historique des crédits">
         <CardHeader title="Historique des crédits" />

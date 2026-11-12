@@ -1,5 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import { PROMPT_PROJECT_COST, formatCredits } from '@/services/credits';
+import { useLang } from '@/lib/lang';
 
 export const faqs = [
   { q: 'What is Storyit?', a: 'Storyit is an AI video generator for TikTok, Instagram Reels and YouTube Shorts. It turns a story idea into a finished vertical video: 3D animated true stories, Fruit Drama mini-series, and translations of your existing videos into other languages.' },
@@ -14,13 +15,27 @@ export const faqs = [
   { q: 'Can I cancel anytime?', a: 'Yes, from Plan & credits. You keep access until the end of the paid period.' },
 ];
 
+export const faqsFr = [
+  { q: 'C’est quoi Storyit ?', a: 'Storyit est un générateur de vidéos IA pour TikTok, Instagram Reels et YouTube Shorts. Il transforme une idée d’histoire en vidéo verticale terminée : histoires vraies animées en 3D, mini-séries Fruit Drama, et traduction de tes vidéos dans d’autres langues.' },
+  { q: 'Comment faire une vidéo de fruits IA (Fruit Drama) ?', a: `Ouvre le Prompt Studio, choisis un style (fruits, ongles, objets ou pierres précieuses) et écris ton histoire en quelques lignes, ou laisse le studio proposer 3 histoires. Il écrit le hook, un script minuté de plus d’une minute, tous les prompts d’images et d’animation. Clique ensuite sur « Générer la vidéo » : les images sont dessinées, chaque plan est animé et la vidéo est montée pour toi. Un projet coûte ${formatCredits(PROMPT_PROJECT_COST)} crédits ; la vidéo se paie selon la qualité et la durée.` },
+  { q: 'Comment faire une vidéo animée en 3D avec l’IA ?', a: 'Dans l’Animated Studio, choisis un thème, puis clique sur les propositions du studio : une histoire vraie, un décor et une voix. Storyit écrit le script, anime le monde 3D et les personnages, enregistre le narrateur et ajoute le titre, les sous-titres et la musique. 3 500 crédits pour 30 s, 6 000 pour 1 min, 12 000 pour 2 min, remboursés si le rendu échoue.' },
+  { q: 'Les vidéos IA peuvent-elles être monétisées sur TikTok ?', a: 'Le programme de rémunération des créateurs de TikTok paie les vidéos originales de plus d’une minute sur des comptes éligibles, et le contenu IA doit être signalé à la publication. Storyit fait des vidéos de plus d’une minute pensées pour la rétention, mais les revenus dépendent de ton compte, de ton audience et des règles de TikTok : personne ne peut les garantir.' },
+  { q: 'Quelles IA utilise Storyit ?', a: 'Les studios utilisent les meilleurs modèles pour chaque étape : ChatGPT pour les images, Grok Imagine pour l’animation, Claude pour les scripts et ElevenLabs pour les voix. Tu n’as besoin d’aucun compte ni d’aucune clé chez eux : tout est inclus dans tes crédits.' },
+  { q: 'Storyit peut-il traduire mes vidéos ?', a: 'Oui. Envoie une vidéo verticale : Storyit sépare la voix de la musique, traduit chaque phrase au même tempo, enregistre une nouvelle voix en français, anglais ou espagnol et remplace les sous-titres incrustés. 3 500 crédits par minute, remboursés si la traduction échoue.' },
+  { q: 'Y a-t-il une offre gratuite ?', a: 'Oui. Tu reçois 3 000 crédits à l’inscription, sans carte bancaire : de quoi faire deux projets complets du Prompt Studio. Les offres payantes commencent à 29 $/mois (ou −20 % à l’année) avec 43 000 crédits par mois.' },
+  { q: 'Les vidéos m’appartiennent-elles ?', a: 'Oui. Tu gardes tous les droits sur tes histoires et tes vidéos, et tu peux les télécharger et les publier où tu veux.' },
+  { q: 'Storyit publie-t-il sur TikTok et Instagram pour moi ?', a: 'La publication directe sur TikTok et Instagram est en pause le temps que les plateformes la valident. Tu télécharges tes vidéos terminées et tu les publies toi-même en quelques secondes.' },
+  { q: 'Puis-je résilier à tout moment ?', a: 'Oui, depuis « Offre et crédits ». Tu gardes l’accès jusqu’à la fin de la période payée.' },
+];
+
 export function FAQ() {
+  const fr = useLang() === 'fr';
   return (
     <section id="faq" className="mx-auto max-w-3xl px-4 py-20 md:px-6">
-      <p className="label text-center">FAQ</p>
-      <h2 className="mt-3 text-center font-display text-4xl text-zinc-50">Questions, answered</h2>
+      <p className="label text-center">{fr ? 'Questions fréquentes' : 'FAQ'}</p>
+      <h2 className="mt-3 text-center font-display text-4xl text-zinc-50">{fr ? 'Vos questions, nos réponses' : 'Questions, answered'}</h2>
       <div className="mt-10 divide-y divide-line/[0.06] rounded-2xl border border-line/[0.06] bg-ink-900">
-        {faqs.map(({ q, a }) => (
+        {(fr ? faqsFr : faqs).map(({ q, a }) => (
           <details key={q} className="group px-6 py-4">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-zinc-100">
               {q}<ChevronDown className="h-4 w-4 shrink-0 text-zinc-500 transition group-open:rotate-180" />

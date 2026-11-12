@@ -11,3 +11,4 @@ export * from './LoadState';
 export * from './FruitArt';
 export * from './Toast';
 export * from './ThemeToggle';
+export * from './LangSwitch';
