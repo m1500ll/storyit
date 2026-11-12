@@ -25,8 +25,8 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['"Instrument Serif"', 'Georgia', 'serif'],
-        // landing hero title only (loaded by Hero.tsx)
+        // headings and big numbers: a bold modern grotesque (src/main.tsx loads it)
+        display: ['"Bricolage Grotesque"', 'Inter', 'system-ui', 'sans-serif'],
         hero: ['"Bricolage Grotesque"', 'Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: { glow: '0 0 40px -10px rgba(139,92,246,0.45)' },

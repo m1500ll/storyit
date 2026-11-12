@@ -1,4 +1,3 @@
-import '@fontsource/bricolage-grotesque/800.css';
 import { ArrowRight, Play } from 'lucide-react';
 import { useState } from 'react';
 import { RESULT_HIGHLIGHTS } from '@/data/results';

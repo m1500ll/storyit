@@ -12,7 +12,7 @@ Full rule set: `references/web-interface-guidelines.md` (Vercel, MUST/SHOULD/NEV
 
 ## Brand & visual system
 - Dark studio: `bg-ink-950` page, `surface` cards, borders `white/[0.06]`. Accents: violet (primary action), coral (secondary highlight). Never add new colours ad hoc — extend `tailwind.config.js`.
-- Display serif (`font-display`) for headings and big numbers only; Inter for everything else.
+- Display font (`font-display`, Bricolage Grotesque, bold) for headings and big numbers only; Inter for everything else.
 - One primary (violet) button per view. Secondary = `variant="secondary"`.
 - Headings: `text-balance`. Numbers: `tabular-nums`.
 
