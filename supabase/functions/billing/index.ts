@@ -65,9 +65,22 @@ Deno.serve(async (req) => {
   const appUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173';
 
   try {
-    const { action, product, trial } = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts'; product?: ProductKey; trial?: boolean };
+    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions'; product?: ProductKey; trial?: boolean; user_id?: string };
+    const { action, product, trial } = body;
 
     // Admin: the latest checkout pages (what was picked, at what price, did it end in a payment) to study drop-off.
+    if (action === 'customer_subscriptions') { // admin: a customer's Stripe subscriptions (status, plan, cancellation)
+      const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
+      if (!me?.is_admin) return json({ error: 'Forbidden' }, 403);
+      const { data: who } = await admin.from('profiles').select('stripe_customer_id, plan').eq('id', String(body.user_id ?? '')).single();
+      if (!who?.stripe_customer_id) return json({ plan: who?.plan ?? null, subscriptions: [] });
+      const subs = await stripe(`subscriptions?customer=${who.stripe_customer_id}&status=all&limit=10`);
+      return json({ plan: who.plan, subscriptions: (subs?.data ?? []).map((s: any) => ({
+        status: s.status, product: planOfPrice(s.items?.data?.[0]?.price?.id) ?? yearlyPlanOfPrice(s.items?.data?.[0]?.price?.id),
+        created: s.created, canceled_at: s.canceled_at, cancel_at_period_end: s.cancel_at_period_end, ended_at: s.ended_at,
+        reason: s.cancellation_details?.reason ?? null, current_period_end: s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? null,
+      })) });
+    }
     if (action === 'recent_checkouts') {
       const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
       if (!me?.is_admin) return json({ error: 'Forbidden' }, 403);

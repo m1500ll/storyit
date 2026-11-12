@@ -54,6 +54,14 @@ Deno.serve(async (req) => {
     if (!project) return json({ error: 'Projet introuvable.' }, 404);
     const blocker = videoBlocker(project.data);
     if (blocker) return json({ error: blocker }, 409);
+    // Free pre-flight: when Storyit's Grok account is out of credits, every API call answers 403. Refuse before charging
+    // instead of letting the customer wait for a failure and a refund. A network hiccup here does not block the video.
+    const grok = await fetch('https://api.x.ai/v1/models', { headers: { Authorization: `Bearer ${Deno.env.get('XAI_API_KEY')}` }, signal: AbortSignal.timeout(6_000) })
+      .then(async (r) => ({ status: r.status, text: r.ok ? '' : await r.text() })).catch(() => ({ status: 0, text: '' }));
+    if (grok.status === 403 || grok.status === 401 || grok.status === 429) {
+      console.error('grok unavailable', grok.status, grok.text.slice(0, 200));
+      return json({ error: 'La vidéo automatique est momentanément indisponible (maintenance de notre fournisseur d’animation). Réessayez un peu plus tard : aucun crédit n’a été utilisé.', code: 'provider_unavailable' }, 503);
+    }
     const { count } = await admin.from('prompt_videos').select('id', { count: 'exact', head: true }).eq('user_id', uid).in('status', ['queued', 'working']);
     if ((count ?? 0) >= 2) return json({ error: 'Deux vidéos sont déjà en cours. Attendez qu’une soit terminée.' }, 429);
     let data = project.data;
