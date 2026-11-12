@@ -113,7 +113,12 @@ export function SeoFooter({ lang = 'en' }: { lang?: 'fr' | 'en' }) {
   return (
     <footer className="border-t border-line/[0.05] pb-28 pt-10 md:pb-10">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 text-xs text-zinc-500 sm:grid-cols-[1fr_auto_auto] md:px-6">
-        <div><Logo /><p className="mt-3">© {new Date().getFullYear()} Storyit</p></div>
+        <div>
+          <Logo /><p className="mt-3">© {new Date().getFullYear()} Storyit</p>
+          <a href="https://semilaunch.com" target="_blank" rel="noopener" className="mt-4 inline-block opacity-90 transition hover:opacity-100">
+            <img src="https://semilaunch.com/assets/badge.png" alt="Featured on SemiLaunch" width={165} height={58} loading="lazy" />
+          </a>
+        </div>
         {(['en', 'fr'] as const).map((l) => (
           <nav key={l} aria-label={l === 'fr' ? 'Guides en français' : 'Guides in English'} className="flex flex-col gap-2">
             <span className="font-semibold text-zinc-400">{l === 'fr' ? 'En français' : 'Guides'}</span>
