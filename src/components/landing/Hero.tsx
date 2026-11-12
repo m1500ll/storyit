@@ -1,3 +1,4 @@
+import '@fontsource/bricolage-grotesque/800.css';
 import { ArrowRight, Play } from 'lucide-react';
 import { useState } from 'react';
 import { RESULT_HIGHLIGHTS } from '@/data/results';
@@ -25,15 +26,15 @@ export function Hero() {
       <HeroBackdrop />
       <div aria-hidden="true" className="bg-grid mask-fade-radial pointer-events-none absolute inset-0" />
       <div className="pointer-events-none absolute left-1/2 top-0 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px]" />
-      <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-20 text-center md:px-6 md:pt-28">
+      <div className="relative mx-auto max-w-6xl px-4 pb-12 pt-36 text-center md:px-6 md:pt-44">
         <StartLink to="/app/billing" className="group mx-auto mb-4 flex max-w-fit items-center gap-2 rounded-full border border-coral-400/40 bg-coral-500/10 px-3 py-1.5 text-xs font-medium text-coral-300 transition hover:border-coral-400/70">
           <span aria-hidden>🎉</span> Launch offer: Creator at $29/mo instead of $45 <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden />
         </StartLink>
         <p className="label mx-auto inline-flex items-center gap-2 rounded-full border border-line/10 px-3 py-1">
           <span className="h-1.5 w-1.5 rounded-full bg-coral-400" /> AI 3D animated videos · TikTok, Reels, Shorts
         </p>
-        <h1 className="mx-auto mt-6 max-w-4xl font-display text-5xl leading-[1.05] text-zinc-50 md:text-7xl">
-          Turn any true story into a <span className="text-violet-300">3D animated video</span>.
+        <h1 className="mx-auto mt-6 max-w-4xl text-balance font-hero text-5xl font-extrabold leading-[1.02] tracking-[-0.035em] text-zinc-50 md:text-7xl">
+          Create viral <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-coral-400 bg-clip-text text-transparent">AI videos</span> that earn money.
         </h1>
         <PromoVideo className="relative mx-auto mt-8 max-w-4xl text-left" />
         <p className="mx-auto mt-6 max-w-2xl text-base text-zinc-400 md:text-lg">

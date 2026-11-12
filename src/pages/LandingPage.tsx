@@ -26,7 +26,7 @@ export default function LandingPage() {
   useSeo({ path: '/', jsonLd: FAQ_LD });
   return (
     <div className="min-h-screen bg-ink-950">
-      <MarketingNavbar />
+      <MarketingNavbar overlay />
       <main id="main">
       <Hero />
       <Showcase />
