@@ -13,11 +13,11 @@ const DAY = 86_400_000;
  * Low (≤ LOW_CREDITS) can be dismissed for 24 h; empty stays until they top up.
  */
 export function LowCreditsBanner() {
-  const { balance, loading } = useCredits();
+  const { balance, loading, known } = useCredits();
   const openPaywall = usePaywall();
   const [hidden, setHidden] = useState(() => { try { return Date.now() - Number(localStorage.getItem(KEY) ?? 0) < DAY; } catch { return false; } });
   const level = creditLevel(balance);
-  if (loading || level === 'ok' || (level === 'low' && hidden)) return null;
+  if (loading || !known || level === 'ok' || (level === 'low' && hidden)) return null;
   const empty = level === 'empty';
   return (
     <div role="status" className={cn('mb-6 flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center',

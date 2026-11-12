@@ -31,8 +31,8 @@ function NavItem({ to, label, icon: Icon, end, badge, locked }: Item) {
 }
 
 export function Sidebar() {
-  const { balance } = useCredits();
-  const level = creditLevel(balance);
+  const { balance, known } = useCredits();
+  const level = known ? creditLevel(balance) : 'ok'; // unknown yet: neutral look, never "empty"
   const openPaywall = usePaywall();
   const { data: profile } = useProfile();
   const isAdmin = !!(profile as { is_admin?: boolean } | null)?.is_admin;
@@ -89,7 +89,7 @@ export function Sidebar() {
       <div className="mt-auto pt-6">
         <div className={cn('surface p-4', level === 'low' && 'border-amber-500/40', level === 'empty' && 'border-coral-500/40')}>
           <p className="label flex items-center gap-1.5 text-[11px]"><Coins className="h-3 w-3" /> Crédits</p>
-          <p className={cn('mt-1 font-display text-3xl tabular-nums', level === 'ok' ? 'text-zinc-50' : level === 'low' ? 'text-amber-300' : 'text-coral-300')}>{formatCredits(balance)}</p>
+          <p className={cn('mt-1 font-display text-3xl tabular-nums', level === 'ok' ? 'text-zinc-50' : level === 'low' ? 'text-amber-300' : 'text-coral-300')}>{known ? formatCredits(balance) : '…'}</p>
           <p className="text-[11px] text-zinc-500">
             {level === 'empty' ? 'Plus de crédits : rechargez pour continuer à créer.' : level === 'low' ? 'Bientôt à court.' : `≈ ${projectsFor(balance)} projets Prompt Studio`}
           </p>

@@ -11,11 +11,18 @@ export function useLiveQuery<T>(fn: () => Promise<T>, key: string): QueryState<T
 
   useEffect(() => {
     let cancelled = false;
-    fn().then(
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // a failed load (network hiccup, session still restoring after sign-in) is retried a few times before showing an error
+    const run = (attempt: number) => fn().then(
       (data) => !cancelled && setState({ data, loading: false, error: null }),
-      (e: unknown) => !cancelled && setState((s) => ({ ...s, loading: false, error: e instanceof Error ? e.message : String(e) })),
+      (e: unknown) => {
+        if (cancelled) return;
+        if (attempt < 3) { timer = setTimeout(() => run(attempt + 1), [1000, 3000, 8000][attempt]); return; }
+        setState((s) => ({ ...s, loading: false, error: e instanceof Error ? e.message : String(e) }));
+      },
     );
-    return () => { cancelled = true; };
+    void run(0);
+    return () => { cancelled = true; if (timer) clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [version, key]);
 
@@ -29,7 +36,8 @@ export function useProfile() {
 export function useCredits() {
   const profile = useProfile();
   const tx = useLiveQuery(() => repository.listTransactions(), 'transactions');
-  return { balance: profile.data?.credit_balance ?? 0, transactions: tx.data ?? [], loading: profile.loading };
+  // `known` is false until the profile has really loaded: show a placeholder, never a misleading 0
+  return { balance: profile.data?.credit_balance ?? 0, known: profile.data != null, transactions: tx.data ?? [], loading: profile.loading };
 }
 
 export function useStories() {

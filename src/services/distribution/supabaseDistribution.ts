@@ -24,9 +24,11 @@ const friendly = (m: string) =>
 export function createSupabaseDistribution(db: SupabaseClient): DistributionRepository {
   const any = db as SupabaseClient<any>;
   const uid = async () => {
-    const { data } = await db.auth.getUser();
-    if (!data.user) throw new Error('Veuillez vous reconnecter.');
-    return data.user.id;
+    const { data } = await db.auth.getSession();
+    if (data.session?.user) return data.session.user.id;
+    const { data: u } = await db.auth.getUser();
+    if (!u.user) throw new Error('Veuillez vous reconnecter.');
+    return u.user.id;
   };
   const invoke = async <T>(fn: string, body: Record<string, unknown>): Promise<T> => {
     const { data, error } = await db.functions.invoke<T>(fn, { body });

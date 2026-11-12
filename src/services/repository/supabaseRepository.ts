@@ -50,10 +50,14 @@ async function invokeRender(db: SupabaseClient<Database>, body: Record<string, u
 }
 
 export function createSupabaseRepository(db: SupabaseClient<Database>): Repository {
+  // the local session (refreshed by supabase-js when needed): no network round trip, so a slow auth server or a
+  // session still being restored right after sign-in no longer makes the profile load fail
   const uid = async () => {
-    const { data } = await db.auth.getUser();
-    if (!data.user) throw new Error('Veuillez vous reconnecter.');
-    return data.user.id;
+    const { data } = await db.auth.getSession();
+    if (data.session?.user) return data.session.user.id;
+    const { data: u } = await db.auth.getUser();
+    if (!u.user) throw new Error('Veuillez vous reconnecter.');
+    return u.user.id;
   };
 
   return {

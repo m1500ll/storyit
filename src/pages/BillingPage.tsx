@@ -24,7 +24,7 @@ function CheckoutBanner() {
 
 export default function BillingPage() {
   const [params] = useSearchParams();
-  const { balance, transactions } = useCredits();
+  const { balance, known, transactions } = useCredits();
   const { data: profile } = useProfile();
   const plan = PLANS.find((p) => p.id === profile?.plan);
   const [portalError, setPortalError] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export default function BillingPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <p className="label">Solde</p>
-          <p className="mt-2 font-display text-4xl tabular-nums text-zinc-50">{formatCredits(balance)}</p>
+          <p className="mt-2 font-display text-4xl tabular-nums text-zinc-50">{known ? formatCredits(balance) : '…'}</p>
           <p className="text-xs text-zinc-500">Utilisés par les studios IA</p>
         </Card>
         <Card>

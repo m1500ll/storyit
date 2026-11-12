@@ -84,7 +84,8 @@ export default function PartnersAdminPage() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
 
-  if (profile && !isAdmin) return <LoadState loading={false} error="Cette page est réservée à l’administrateur." />;
+  if (!profile) return <LoadState loading error={null} />; // wait for the profile: before it loads, nobody is admin
+  if (!isAdmin) return <LoadState loading={false} error="Cette page est réservée à l’administrateur." />;
 
   const create = async () => {
     setBusy(true);
