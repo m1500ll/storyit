@@ -105,19 +105,23 @@ def draw(okey, plan, prompt, ref=None):
     def call():
         if ref is None:
             out = http("POST", f"{OPENAI}/images/generations", {"model": plan["image_model"], "prompt": prompt, "size": f"{IMG_W}x{IMG_H}",
-                                                               "quality": plan["image_quality"], "n": 1},
+                                                               "quality": plan["image_quality"], "n": 1, "moderation": "low"},
                        {"Authorization": f"Bearer {okey}"}, timeout=360)
         else:
-            body, ctype = multipart({"model": plan["image_model"], "prompt": prompt, "size": f"{IMG_W}x{IMG_H}", "quality": plan["image_quality"], "n": "1"},
+            body, ctype = multipart({"model": plan["image_model"], "prompt": prompt, "size": f"{IMG_W}x{IMG_H}", "quality": plan["image_quality"], "n": "1", "moderation": "low"},
                                     [("image[]", ("sheet.png", ref, "image/png"))])
             out = http("POST", f"{OPENAI}/images/edits", body, {"Authorization": f"Bearer {okey}", "Content-Type": ctype}, timeout=360)
         return base64.b64decode(out["data"][0]["b64_json"])
-    try:
-        return retry(call)
-    except RuntimeError as e:
-        if "moderation" in str(e).lower() or "safety" in str(e).lower():
-            raise UserError("Une image a été refusée par le filtre de sécurité. Modifiez la scène concernée puis relancez.")
-        raise
+    # the output-stage safety check is partly random (the same prompt can pass on a second try): 3 attempts
+    for attempt in range(3):
+        try:
+            return retry(call)
+        except RuntimeError as e:
+            if "moderation" not in str(e).lower() and "safety" not in str(e).lower():
+                raise
+            if attempt == 2:
+                raise UserError("Une image a été refusée par le filtre de sécurité. Modifiez la scène concernée puis relancez.")
+            time.sleep(3)
 
 
 def to_916(png, dst):
