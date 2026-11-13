@@ -6,7 +6,7 @@ export interface PartnerStats {
   clicks: number; clicks7: number; visitors30: number; clicksByDay: Record<string, number>;
   signups: number; customers: number; byPlan: Record<string, number>;
   salesCents: number; earnedCents: number; paidOutCents: number; dueCents: number;
-  conversions: { date: string; status: 'signed_up' | 'paid'; product: string | null; amountCents: number | null; commissionCents: number | null; paidAt: string | null }[];
+  conversions: { date: string; status: 'signed_up' | 'trial' | 'paid'; product: string | null; amountCents: number | null; commissionCents: number | null; paidAt: string | null }[];
   payouts: { amount_cents: number; paid_at: string; note: string | null }[];
 }
 export interface AdminPartner extends PartnerStats { id: string; secret: string; dashboard: string; created_at: string }

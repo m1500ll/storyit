@@ -44,8 +44,10 @@ async function statsFor(a: { id: string; name: string; code: string; commission_
   const paid = (conv ?? []).filter((c) => c.status === 'paid');
   const byPlan: Record<string, number> = {};
   for (const c of paid) byPlan[c.product ?? 'autre'] = (byPlan[c.product ?? 'autre'] ?? 0) + 1;
-  const earned = paid.reduce((s, c) => s + (c.commission_cents ?? 0), 0);
-  const sales = paid.reduce((s, c) => s + (c.amount_cents ?? 0), 0);
+  // a $1 trial already earns its (small) commission; the full payment adds the rest when it happens
+  const counted = (conv ?? []).filter((c) => c.status === 'paid' || c.status === 'trial');
+  const earned = counted.reduce((s, c) => s + (c.commission_cents ?? 0), 0);
+  const sales = counted.reduce((s, c) => s + (c.amount_cents ?? 0), 0);
   const paidOut = (pays ?? []).reduce((s, p) => s + p.amount_cents, 0);
   return {
     name: a.name, code: a.code, active: a.active, rate: Number(a.commission_rate), link: `${APP}/?via=${a.code}`,

@@ -133,6 +133,9 @@ Deno.serve(async (req) => {
             if (error) throw new Error(error.message);
             // trial_ends_at arms the early switch to the plan once the trial credits are used (migration 0034)
             await admin.from('profiles').update({ trial_used: true, trial_ends_at: new Date(Date.now() + TRIAL.days * 86_400_000).toISOString() }).eq('id', userId);
+            // partner: commission on the $1 only; the full subscription payment adds its own commission later
+            const { error: affErr } = await admin.rpc('record_affiliate_payment', { p_user: userId, p_invoice: obj.id, p_amount: obj.amount_paid, p_currency: obj.currency, p_product: product, p_trial: true });
+            if (affErr) console.error('affiliate trial', affErr.message);
           }
           break;
         }

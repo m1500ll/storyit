@@ -94,7 +94,9 @@ export function PartnerDashboard({ s }: { s: PartnerStats }) {
                   <td className="px-4 py-2.5 text-zinc-300">{day(c.date)}</td>
                   <td className="px-4 py-2.5">{c.status === 'paid'
                     ? <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300">Abonné</span>
-                    : <span className="rounded-full bg-line/[0.08] px-2 py-0.5 text-[11px] text-zinc-400">Inscrit</span>}</td>
+                    : c.status === 'trial'
+                      ? <span title="Commission sur 1 $ ; celle de l’abonnement complet s’ajoute quand il est payé" className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-medium text-amber-300">Essai 1 $</span>
+                      : <span className="rounded-full bg-line/[0.08] px-2 py-0.5 text-[11px] text-zinc-400">Inscrit</span>}</td>
                   <td className="px-4 py-2.5 text-zinc-300">{c.product ? PLAN_NAMES[c.product] ?? c.product : '—'}</td>
                   <td className="px-4 py-2.5 text-right tabular-nums text-zinc-300">{c.amountCents ? money(c.amountCents) : '—'}</td>
                   <td className="px-4 py-2.5 text-right font-medium tabular-nums text-emerald-300">{c.commissionCents ? money(c.commissionCents) : '—'}</td>
