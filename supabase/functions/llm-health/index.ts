@@ -14,6 +14,21 @@ Deno.serve(async (req) => {
   const token = Deno.env.get('PUBLISHER_CRON_TOKEN');
   if (!token || token.length < 32 || !timingSafeEqual(req.headers.get('Authorization') ?? '', `Bearer ${token}`)) return json({ error: 'Forbidden' }, 403);
   const url = new URL(req.url);
+  const methodOff = url.searchParams.get('stripe_method_off'); // turns one payment method off in every Stripe Checkout configuration
+  if (methodOff && /^[a-z_]{3,30}$/.test(methodOff)) {
+    const key = Deno.env.get('STRIPE_SECRET_KEY');
+    const list = await (await fetch('https://api.stripe.com/v1/payment_method_configurations?limit=20', { headers: { Authorization: `Bearer ${key}` } })).json();
+    const out: unknown[] = [];
+    for (const c of list.data ?? []) {
+      if (c[methodOff]?.display_preference?.value !== 'on') continue;
+      const r = await fetch(`https://api.stripe.com/v1/payment_method_configurations/${c.id}`, { method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ [`${methodOff}[display_preference][preference]`]: 'off' }) });
+      const d = await r.json();
+      out.push({ config: c.name, ok: r.ok, now: d?.[methodOff]?.display_preference?.value ?? d?.error?.message });
+    }
+    return json({ method: methodOff, changed: out });
+  }
   if (url.searchParams.get('stripe_methods') === '1') { // which payment methods Stripe Checkout offers (Apple Pay, Google Pay…)
     const r = await fetch('https://api.stripe.com/v1/payment_method_configurations?limit=10', { headers: { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` }, signal: AbortSignal.timeout(15_000) });
     const d = await r.json();
