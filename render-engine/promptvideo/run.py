@@ -6,7 +6,7 @@
 #  5. the video goes to the customer's library (and the cover, when the project has one, next to it); any failure refunds
 # Keys: the image and video keys are read from the `prompt-videos` Edge Function (worker_keys, RENDER_WORKER_TOKEN),
 # so they live only in the Edge Function secrets. Other secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
-import base64, json, os, re, shutil, subprocess, tempfile, time, traceback, urllib.error, urllib.parse, urllib.request, uuid
+import base64, hashlib, json, os, re, shutil, subprocess, tempfile, time, traceback, urllib.error, urllib.parse, urllib.request, uuid
 from concurrent.futures import ThreadPoolExecutor
 
 SB = os.environ["SUPABASE_URL"].rstrip("/")
@@ -71,6 +71,26 @@ def now():
 
 def upload(bucket, path, data, mime):
     sb("POST", f"/storage/v1/object/{bucket}/{path}", data, headers={"Content-Type": mime, "x-upsert": "true"}, timeout=600)
+
+
+def key_of(*parts):
+    """stable key for a generated asset: same inputs -> same image or clip (lets a relaunch reuse what was already paid for)"""
+    return hashlib.sha256("\x1f".join(str(p) for p in parts).encode()).hexdigest()[:32]
+
+
+def cached(uid, key, ext):
+    """bytes of an image/clip generated earlier for this customer with exactly the same inputs, or None"""
+    try:
+        return sb("GET", f"/storage/v1/object/renders/{uid}/pvcache/{key}.{ext}", raw=True, timeout=120)
+    except Exception:
+        return None
+
+
+def keep(uid, key, ext, data, mime):
+    try:
+        upload("renders", f"{uid}/pvcache/{key}.{ext}", data, mime)
+    except Exception as e:  # the cache is a saving, never a reason to fail
+        print("cache write skipped", e, flush=True)
 
 
 def signed(bucket, path, seconds=3 * 3600):
@@ -138,7 +158,15 @@ def animate(xkey, plan, clip, image_url, dst, label):
     body = {"model": plan["video_model"], "prompt": clip["grok_prompt"], "image": {"url": image_url},
             "duration": int(clip["seconds"]), "resolution": plan["resolution"], "aspect_ratio": "9:16"}
     hdr = {"Authorization": f"Bearer {xkey}"}
-    sub = retry(lambda: http("POST", f"{XAI}/videos/generations", body, hdr, timeout=120))
+    # retried only when Grok clearly refused the order (429/5xx): after a timeout the first order may already be running
+    # and billed, so sending it again would pay for the same clip twice
+    sub = None
+    for k in range(3):
+        try:
+            sub = http("POST", f"{XAI}/videos/generations", body, hdr, timeout=180); break
+        except RuntimeError as e:
+            if k == 2 or not re.search(r"-> (429|5\d\d)\b", str(e)): raise
+            time.sleep(10 * (k + 1))
     rid = sub.get("request_id") or sub.get("id")
     if not rid: raise RuntimeError(f"no request id from the video API: {json.dumps(sub)[:300]}")
     t0 = time.time()
@@ -228,14 +256,24 @@ def produce(job):
         n = len(plan["clips"])
 
         step("sheet", 5)
-        sheet = draw(okey, plan, plan["sheet_prompt"])
+        img_q = (plan.get("image_model"), plan.get("image_quality"))
+        sheet_key = key_of("sheet", *img_q, plan["sheet_prompt"])
+        sheet = cached(uid, sheet_key, "png")
+        if sheet is None:
+            sheet = draw(okey, plan, plan["sheet_prompt"]); keep(uid, sheet_key, "png", sheet, "image/png")
+        else:
+            log(jid, "sheet reused")
         upload("renders", f"{base}/sheet.png", sheet, "image/png")
+        frame_keys = [key_of("frame", *img_q, sheet_key, c["image_prompt"]) for c in plan["clips"]]
 
         step("images", 10)
         done = [0]
 
         def frame(i):
-            png = to_916(draw(okey, plan, plan["clips"][i]["image_prompt"], ref=sheet), os.path.join(tmp, f"img{i}.png"))
+            png = cached(uid, frame_keys[i], "png")
+            if png is None:
+                png = to_916(draw(okey, plan, plan["clips"][i]["image_prompt"], ref=sheet), os.path.join(tmp, f"img{i}.png"))
+                keep(uid, frame_keys[i], "png", png, "image/png")
             upload("renders", f"{base}/img{i}.png", png, "image/png")
             done[0] += 1
             setjob(jid, progress=10 + round(25 * done[0] / n))
@@ -256,7 +294,14 @@ def produce(job):
         files = [os.path.join(tmp, f"clip{i}.mp4") for i in range(n)]
 
         def clip(i):
-            animate(xkey, plan, plan["clips"][i], urls[i], files[i], i + 1)
+            c = plan["clips"][i]
+            ck = key_of("clip", plan["video_model"], plan["resolution"], int(c["seconds"]), c["grok_prompt"], frame_keys[i])
+            old = cached(uid, ck, "mp4")
+            if old is not None:  # already paid for in an earlier attempt: no new Grok order
+                open(files[i], "wb").write(old); log(jid, f"clip {i + 1} reused")
+            else:
+                animate(xkey, plan, c, urls[i], files[i], i + 1)
+                keep(uid, ck, "mp4", open(files[i], "rb").read(), "video/mp4")
             upload("renders", f"{base}/clip{i}.mp4", open(files[i], "rb").read(), "video/mp4")
             done[0] += 1
             setjob(jid, progress=36 + round(50 * done[0] / n))
