@@ -220,6 +220,32 @@ Deno.serve(async (req) => {
     return page('Vous êtes désinscrit', 'Vous ne recevrez plus nos e-mails d’annonce. Les e-mails liés à votre compte (sécurité, factures) continuent.');
   }
   if (req.method !== 'POST') return new Response('Not found', { status: 404 });
+  // "low credits" e-mail to a subscriber (account notice): sent by the database trigger of migration 0038, with the cron token
+  const cron = Deno.env.get('PUBLISHER_CRON_TOKEN');
+  if (cron && cron.length >= 32 && req.headers.get('Authorization') === `Bearer ${cron}`) {
+    const { low_credits } = await req.clone().json().catch(() => ({})) as { low_credits?: string };
+    if (!low_credits) return Response.json({ error: 'low_credits required' }, { status: 400 });
+    const [{ data: u }, { data: p }] = await Promise.all([admin.auth.admin.getUserById(low_credits), admin.from('profiles').select('credit_balance, plan').eq('id', low_credits).single()]);
+    const to = u?.user?.email;
+    if (!to || !p || p.plan === 'free') return Response.json({ skipped: true });
+    const left = Number(p.credit_balance).toLocaleString('fr-FR').replace(/ /g, ' ');
+    const html = shell(`<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Plus que <span style="color:#7c3aed">${left} crédits</span></td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Vous approchez de la fin de vos crédits Storyit. Rechargez maintenant pour ne pas être bloqué au milieu de votre prochaine vidéo.</td></tr>
+<tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.9">
+<tr><td>⚡ <strong>10 000 crédits</strong> pour 12 $ · <strong>50 000 crédits</strong> pour 49 $</td></tr>
+<tr><td>♾️ Les crédits rechargés <strong>n’expirent jamais</strong></td></tr>
+<tr><td>🔁 Ou activez la <strong>recharge automatique</strong> : plus jamais à court, au montant que vous choisissez</td></tr></table></td></tr>
+<tr><td align="center" style="padding:20px 0 8px"><a href="${APP}/app/billing" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Recharger mes crédits</a></td></tr>`, `${APP}/app/billing`)
+      .replace('Vous recevez cet e-mail car vous avez un compte Storyit. <a href="' + `${APP}/app/billing` + '" style="color:#7a7390">Se désinscrire</a>', 'Message lié à votre abonnement Storyit (solde de crédits).');
+    const text = `Plus que ${left} crédits\n\nBonjour,\n\nVous approchez de la fin de vos crédits Storyit. Rechargez maintenant pour ne pas être bloqué au milieu de votre prochaine vidéo.\n\n- 10 000 crédits pour 12 $, 50 000 crédits pour 49 $\n- Les crédits rechargés n'expirent jamais\n- Ou activez la recharge automatique : plus jamais à court, au montant que vous choisissez\n\nRecharger mes crédits : ${APP}/app/billing\n\nÀ très vite,\nL'équipe Storyit`;
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: FROM, to: [to], subject: `⚠️ Plus que ${left} crédits sur Storyit`, html, text }),
+    });
+    const data = await res.json().catch(() => ({}));
+    console.log(JSON.stringify({ audit: 'low_credits_email', user: low_credits, ok: res.ok }));
+    return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
+  }
   if (req.headers.get('Authorization') !== `Bearer ${Deno.env.get('MAILING_TOKEN')}` || !Deno.env.get('MAILING_TOKEN')) return new Response('Unauthorized', { status: 401 });
   const { campaign, test_to, scheduled_at, cancel, direct } = await req.json().catch(() => ({})) as { campaign?: string; test_to?: string; scheduled_at?: string; cancel?: boolean;
     direct?: { to: string; subject: string; html: string; text: string; reply_to?: string } };
