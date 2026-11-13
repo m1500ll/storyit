@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePaywall } from '@/components/billing/Paywall';
 import { Button, Card } from '@/components/ui';
-import { cn } from '@/lib/cn';
 import { InsufficientCreditsError } from '@/services/errors';
 import { promptVideos, type PromptVideo, type VideoQuality } from '@/services/promptVideos';
 import { lengthLabel, lengthOf, projectSeconds, VIDEO_PRICES, videoBlocker, videoCost, type VideoLength } from '@shared/promptVideo.ts';
@@ -11,11 +10,6 @@ import { promptStudio } from '@/services/promptStudio';
 import { LengthPicker } from './LengthPicker';
 import { formatCredits } from '@/services/credits';
 
-const QUALITIES: { key: VideoQuality; label: string; detail: string }[] = [
-  { key: 'eco', label: 'Éco', detail: '480p · idéal pour tester une histoire' },
-  { key: 'standard', label: 'Standard', detail: '720p · le bon choix pour publier' },
-  { key: 'premium', label: 'Premium', detail: '720p · animation et images plus fines' },
-];
 const STEPS: Record<string, string> = {
   start: 'Démarrage…', sheet: 'Dessin de la planche des personnages…', images: 'Dessin des images de chaque clip…',
   animation: 'Animation des clips avec Grok…', montage: 'Montage de la vidéo…', library: 'Ajout à votre bibliothèque…',
@@ -25,7 +19,7 @@ const active = (v: PromptVideo) => v.status === 'queued' || v.status === 'workin
 /** "Générer la vidéo": the whole project becomes a finished video (images, animation, montage), added to the library */
 export function AutoVideo({ projectId, data }: { projectId: string; data: unknown }) {
   const openPaywall = usePaywall();
-  const [quality, setQuality] = useState<VideoQuality>('standard');
+  const quality: VideoQuality = 'eco'; // the only quality on offer (see AVAILABLE_QUALITIES)
   const [videos, setVideos] = useState<PromptVideo[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -127,7 +121,7 @@ export function AutoVideo({ projectId, data }: { projectId: string; data: unknow
               {target !== current && (
                 <div className="mt-3 rounded-xl border border-violet-500/30 bg-violet-500/[0.06] p-3">
                   <p className="text-sm text-zinc-200">Pour une vidéo de <strong>{lengthLabel(target)}</strong>, l’histoire est réécrite à cette durée (script, prompts d’images et d’animation). C’est gratuit et prend environ 3 minutes.</p>
-                  <p className="mt-1 text-xs text-zinc-400">Prix de la vidéo de {lengthLabel(target)} : Éco {formatCredits(VIDEO_PRICES.eco[target])} · Standard {formatCredits(VIDEO_PRICES.standard[target])} · Premium {formatCredits(VIDEO_PRICES.premium[target])} crédits</p>
+                  <p className="mt-1 text-xs text-zinc-400">Prix de la vidéo de {lengthLabel(target)} : {formatCredits(VIDEO_PRICES.eco[target])} crédits</p>
                   <div className="mt-2 flex flex-wrap items-center gap-3">
                     <Button size="sm" onClick={() => void rewrite()} disabled={!!rewriting} loading={!!rewriting}>Réécrire pour {lengthLabel(target)}</Button>
                     <button type="button" onClick={() => setTarget(current)} disabled={!!rewriting} className="touch-hit text-xs text-zinc-400 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">Garder {lengthLabel(current)}</button>
@@ -140,26 +134,28 @@ export function AutoVideo({ projectId, data }: { projectId: string; data: unknow
           {blocker ? (
             <p className="mt-4 text-sm text-zinc-400">{blocker}</p>
           ) : target !== current ? null : (
-            <fieldset className="mt-4">
-              <legend className="text-xs text-zinc-400">{last?.status === 'done' ? 'Refaire la vidéo ? Choisissez la qualité' : 'Choisissez la qualité'} · vidéo de {lengthLabel(current)}</legend>
-              <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                {QUALITIES.map((q) => (
-                  <label key={q.key} className={cn('flex cursor-pointer flex-col rounded-xl border px-3 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-violet-500/50',
-                    quality === q.key ? 'border-violet-500/60 bg-violet-500/10' : 'border-line/10 hover:bg-line/[0.04]')}>
-                    <input type="radio" name="pv-quality" value={q.key} checked={quality === q.key} onChange={() => setQuality(q.key)} className="sr-only" />
-                    <span className="flex items-center justify-between gap-2 text-sm font-medium text-zinc-100">{q.label}<span className="tabular-nums text-violet-300">{formatCredits(videoCost(q.key, seconds))} crédits</span></span>
-                    <span className="mt-0.5 text-xs text-zinc-400">{q.detail}</span>
-                  </label>
-                ))}
+            <div className="mt-4">
+              <div className="relative overflow-hidden rounded-2xl border border-violet-500/50 bg-violet-600/[0.12] p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-2.5 py-0.5 text-[11px] font-bold text-white"><Sparkles className="h-3 w-3" aria-hidden /> Vidéo automatique · {lengthLabel(current)}</p>
+                    <ul className="mt-3 space-y-1 text-sm text-zinc-300">
+                      <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden />Personnages et décors dessinés par ChatGPT</li>
+                      <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden />Chaque scène animée par Grok, avec les voix</li>
+                      <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden />Montage automatique, vidéo verticale prête à publier</li>
+                    </ul>
+                  </div>
+                  <p className="shrink-0 text-right"><span className="block font-display text-3xl tabular-nums text-zinc-50">{formatCredits(videoCost('eco', seconds))}</span><span className="text-xs text-zinc-400">crédits</span></p>
+                </div>
               </div>
               {error && <p role="alert" className="mt-3 text-sm text-coral-300">{error}</p>}
               <div className="mt-3 flex flex-wrap items-center gap-3">
-                <Button onClick={() => void start()} disabled={busy || running}>
-                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Générer la vidéo · {formatCredits(videoCost(quality, seconds))} crédits
+                <Button size="lg" onClick={() => void start()} disabled={busy || running}>
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {last?.status === 'done' ? 'Refaire la vidéo' : 'Générer la vidéo'} · {formatCredits(videoCost('eco', seconds))} crédits
                 </Button>
                 <span className="text-xs text-zinc-500">Si la génération échoue, vos crédits sont rendus automatiquement.</span>
               </div>
-            </fieldset>
+            </div>
           )}
         </>
       )}

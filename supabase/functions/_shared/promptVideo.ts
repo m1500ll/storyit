@@ -13,6 +13,8 @@ export const VIDEO_TIERS: Record<VideoQuality, { image_model: string; image_qual
   premium: { image_model: 'gpt-image-1.5', image_quality: 'high', video_model: 'grok-imagine-video-1.5', resolution: '720p' },
 };
 export const isQuality = (q: unknown): q is VideoQuality => typeof q === 'string' && q in VIDEO_TIERS;
+/** qualities customers can order right now (Standard and Premium are paused: too costly for the price people pay) */
+export const AVAILABLE_QUALITIES: VideoQuality[] = ['eco'];
 /** fixed price per length and quality: 45 s costs what a minute used to, a minute a bit more */
 export const VIDEO_PRICES: Record<VideoQuality, Record<VideoLength, number>> = {
   eco: { 30: 4500, 45: 7000, 60: 9000 },

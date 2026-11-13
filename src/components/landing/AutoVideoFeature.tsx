@@ -43,7 +43,7 @@ export function AutoVideoFeature() {
               </li>
             ))}
           </ol>
-          <p className="mt-4 text-xs text-zinc-500">{fr ? 'Trois qualités (Éco, Standard, Premium). Le prix s’affiche avant de lancer, et tes crédits sont rendus si la génération échoue.' : 'Three qualities (Eco, Standard, Premium). The price shows before you start, and your credits come back if the generation fails.'}</p>
+          <p className="mt-4 text-xs text-zinc-500">{fr ? 'À partir de 4 500 crédits la vidéo de 30 s. Le prix s’affiche avant de lancer, et tes crédits sont rendus si la génération échoue.' : 'From 4,500 credits for a 30-second video. The price shows before you start, and your credits come back if the generation fails.'}</p>
           <StartLink to="/app/prompts" className="mt-6 inline-block">
             <span className="inline-flex h-11 items-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
               {fr ? 'Créer ma vidéo' : 'Create my video'} <ArrowRight className="h-4 w-4" aria-hidden />

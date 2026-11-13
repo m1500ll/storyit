@@ -45,7 +45,7 @@ const CAMPAIGNS: Record<string, Campaign> = {
 <tr><td>🎞️ <strong>Grok</strong> anime chaque plan avec les voix et les bruitages,</td></tr>
 <tr><td>✂️ le <strong>montage est fait automatiquement</strong> (blancs coupés, rythme rapide),</td></tr>
 <tr><td>📥 la vidéo arrive dans votre <strong>bibliothèque</strong>, prête à publier.</td></tr></table></td></tr>
-<tr><td style="font-size:14px;line-height:1.6;color:#4b4560">Fruits, ongles, objets ou pierres précieuses : choisissez votre style, écrivez votre histoire, puis cliquez sur « Générer la vidéo ». Trois qualités au choix (Éco, Standard, Premium), le prix est affiché avant de lancer et vos crédits sont rendus si la génération échoue.</td></tr>
+<tr><td style="font-size:14px;line-height:1.6;color:#4b4560">Fruits, ongles, objets ou pierres précieuses : choisissez votre style, écrivez votre histoire, puis cliquez sur « Générer la vidéo ». Dès 4 500 crédits la vidéo, le prix est affiché avant de lancer et vos crédits sont rendus si la génération échoue.</td></tr>
 <tr><td align="center" style="padding:26px 0 8px"><a href="${APP}/app/prompts" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:14px 26px;border-radius:12px">Créer ma vidéo</a></td></tr>`, unsub),
     text: (unsub) => `Bonjour,
 
@@ -56,7 +56,7 @@ Grosse nouveauté dans le Prompt Studio : il ne s'arrête plus aux prompts. Il c
 - le montage est fait automatiquement (blancs coupés, rythme rapide),
 - la vidéo arrive dans votre bibliothèque, prête à publier.
 
-Fruits, ongles, objets ou pierres précieuses : choisissez votre style, écrivez votre histoire, puis cliquez sur « Générer la vidéo ». Trois qualités au choix (Éco, Standard, Premium), le prix est affiché avant de lancer et vos crédits sont rendus si la génération échoue.
+Fruits, ongles, objets ou pierres précieuses : choisissez votre style, écrivez votre histoire, puis cliquez sur « Générer la vidéo ». Dès 4 500 crédits la vidéo, le prix est affiché avant de lancer et vos crédits sont rendus si la génération échoue.
 
 Créer ma vidéo : ${APP}/app/prompts
 

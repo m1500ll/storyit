@@ -39,7 +39,7 @@ export default function DashboardPage() {
             <p className="mt-2 text-sm text-zinc-400">ChatGPT dessine les personnages et les scènes, Grok anime chaque plan avec les voix, et le montage est fait pour vous. La vidéo arrive dans votre bibliothèque.</p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <Button onClick={() => navigate('/app/prompts')}><Clapperboard className="h-4 w-4" /> Créer ma vidéo</Button>
-              <span className="text-xs text-zinc-500">Éco, Standard ou Premium · prix affiché avant de lancer · crédits rendus en cas d’échec</span>
+              <span className="text-xs text-zinc-500">Dès 4 500 crédits · prix affiché avant de lancer · crédits rendus en cas d’échec</span>
             </div>
           </div>
         </div>

@@ -7,7 +7,7 @@
 //   these keys live in one place (Edge Function secrets)
 // Secrets: OPENAI_API_KEY, XAI_API_KEY, RENDER_WORKER_URL (…/wake; the worker is woken on …/wake-prompt), RENDER_WORKER_TOKEN.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { buildVideoPlan, firstClips, isQuality, projectSeconds, videoBlocker, videoCost } from '../_shared/promptVideo.ts';
+import { buildVideoPlan, firstClips, isQuality, projectSeconds, videoBlocker, videoCost, AVAILABLE_QUALITIES } from '../_shared/promptVideo.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -48,7 +48,9 @@ Deno.serve(async (req) => {
   }
 
   if (body.action === 'create') {
+    if (!body.quality) body.quality = 'eco';
     if (!isQuality(body.quality)) return json({ error: 'Qualité inconnue.' }, 400);
+    if (!AVAILABLE_QUALITIES.includes(body.quality)) return json({ error: 'Cette qualité n’est plus proposée : la vidéo se fait en qualité Éco.' }, 400);
     if (!Deno.env.get('OPENAI_API_KEY') || !Deno.env.get('XAI_API_KEY')) return json({ error: 'La génération vidéo n’est pas encore disponible.' }, 503);
     const { data: project } = await admin.from('prompt_projects').select('id, data').eq('id', body.project_id ?? '').eq('user_id', uid).maybeSingle();
     if (!project) return json({ error: 'Projet introuvable.' }, 404);
