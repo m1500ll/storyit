@@ -221,7 +221,17 @@ Deno.serve(async (req) => {
   }
   if (req.method !== 'POST') return new Response('Not found', { status: 404 });
   if (req.headers.get('Authorization') !== `Bearer ${Deno.env.get('MAILING_TOKEN')}` || !Deno.env.get('MAILING_TOKEN')) return new Response('Unauthorized', { status: 401 });
-  const { campaign, test_to, scheduled_at, cancel } = await req.json().catch(() => ({})) as { campaign?: string; test_to?: string; scheduled_at?: string; cancel?: boolean };
+  const { campaign, test_to, scheduled_at, cancel, direct } = await req.json().catch(() => ({})) as { campaign?: string; test_to?: string; scheduled_at?: string; cancel?: boolean;
+    direct?: { to: string; subject: string; html: string; text: string; reply_to?: string } };
+  if (direct) { // one business e-mail (partnership request…), replies go to reply_to
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(direct.to ?? '') || !direct.subject || !direct.html || !direct.text) return Response.json({ error: 'to, subject, html and text are required' }, { status: 400 });
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: FROM, to: [direct.to], subject: direct.subject, html: direct.html, text: direct.text, ...(direct.reply_to ? { reply_to: direct.reply_to } : {}) }),
+    });
+    const data = await res.json().catch(() => ({}));
+    return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
+  }
   if (cancel && campaign) { // cancels the still-scheduled e-mails of a campaign and forgets them
     const { data: rows } = await admin.from('email_sends').select('user_id, resend_id').eq('campaign', campaign);
     let cancelled = 0;
