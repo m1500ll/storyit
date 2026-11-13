@@ -31,7 +31,7 @@ type Campaign = { subject: string; html: (unsub: string) => string; text: (unsub
 const shell = (inner: string, unsub: string) => `<!doctype html><html lang="fr"><body style="margin:0;background:#f4f2fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1f1b2e">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:32px 28px">
-<tr><td style="padding-bottom:22px"><a href="https://www.storyit.fun" style="text-decoration:none"><img src="https://www.storyit.fun/brand/email-banner.png" width="464" alt="Storyit" style="display:block;width:100%;max-width:464px;height:auto;border:0;border-radius:12px"></a></td></tr>${inner}
+<tr><td style="padding-bottom:22px"><a href="https://www.storyit.fun" style="text-decoration:none"><img src="https://www.storyit.fun/brand/email-banner-noir.png" width="464" alt="Storyit" style="display:block;width:100%;max-width:464px;height:auto;border:0;border-radius:12px"></a></td></tr>${inner}
 <tr><td style="font-size:15px;line-height:1.6;padding-top:18px">À très vite,<br>L’équipe Storyit</td></tr></table>
 <p style="max-width:520px;font-size:12px;line-height:1.5;color:#7a7390;margin:16px auto 0">Vous recevez cet e-mail car vous avez un compte Storyit. <a href="${unsub}" style="color:#7a7390">Se désinscrire</a></p>
 </td></tr></table></body></html>`;
@@ -162,7 +162,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
     html: (unsub) => `<!doctype html><html lang="fr"><body style="margin:0;background:#f4f2fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1f1b2e">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:32px 28px">
-<tr><td style="padding-bottom:22px"><a href="https://www.storyit.fun" style="text-decoration:none"><img src="https://www.storyit.fun/brand/email-banner.png" width="464" alt="Storyit" style="display:block;width:100%;max-width:464px;height:auto;border:0;border-radius:12px"></a></td></tr>
+<tr><td style="padding-bottom:22px"><a href="https://www.storyit.fun" style="text-decoration:none"><img src="https://www.storyit.fun/brand/email-banner-noir.png" width="464" alt="Storyit" style="display:block;width:100%;max-width:464px;height:auto;border:0;border-radius:12px"></a></td></tr>
 <tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Nouveauté sur Storyit : le <strong>parrainage</strong>.<br><br>
 Partagez votre lien personnel (dans votre bio TikTok, sous vos vidéos ou par message). Pour chaque ami qui s’abonne :</td></tr>
 <tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.9">
