@@ -195,6 +195,56 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
   },
 };
 
+const PLAN_INFO: Record<string, { name: string; price: number; credits: number }> = {
+  creator: { name: 'Creator', price: 29, credits: 43000 }, pro: { name: 'Pro', price: 59, credits: 105000 }, studio: { name: 'Studio', price: 99, credits: 160000 },
+};
+const fr = (n: number) => Number(n).toLocaleString('fr-FR').replace(/\u202f/g, ' ');
+const frDate = (iso: string) => new Date(iso).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
+
+/** $1 trial: welcome (sent by stripe-webhook when the trial starts) and the reminder the day before it ends (hourly cron) */
+async function trialEmail(kind: 'welcome' | 'reminder', uid: string) {
+  const [{ data: u }, { data: p }] = await Promise.all([admin.auth.admin.getUserById(uid), admin.from('profiles').select('credit_balance, plan, trial_ends_at').eq('id', uid).single()]);
+  const to = u?.user?.email;
+  if (!to || !p?.trial_ends_at) return Response.json({ skipped: true, reason: 'no trial' });
+  const plan = PLAN_INFO[p.plan] ?? PLAN_INFO.creator;
+  const end = frDate(p.trial_ends_at), left = fr(p.credit_balance);
+  const foot = 'Message lié à votre essai Storyit.';
+  const li = (t: string) => `<tr><td style="padding:3px 0">${t}</td></tr>`;
+  let subject: string, inner: string, text: string;
+  if (kind === 'welcome') {
+    subject = '🎉 Votre essai Storyit est activé : créez votre première vidéo';
+    inner = `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Bienvenue sur Storyit !</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Votre essai de 3 jours est activé, avec <strong>${left} crédits</strong>. Voici comment créer votre première vidéo :</td></tr>
+<tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.6">
+${li('<strong>1. Une vidéo 3D en 5 minutes</strong> : ouvrez l’<strong>Animated Studio</strong>, choisissez une histoire, et Storyit fait le reste (30 s = 3 500 crédits).')}
+${li('<strong>2. Ou un Fruit Drama</strong> : dans le <strong>Prompt Studio</strong>, écrivez votre idée, puis cliquez sur « Générer la vidéo » (30 s = 6 000 crédits au total).')}
+${li('<strong>3. Publiez</strong> : téléchargez la vidéo depuis votre bibliothèque et postez-la sur TikTok, Reels ou Shorts.')}
+</table></td></tr>
+<tr><td align="center" style="padding:14px 0 8px"><a href="${APP}/app" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma première vidéo</a></td></tr>
+<tr><td style="font-size:13px;line-height:1.6;color:#4b4560;padding-top:10px">Votre essai dure jusqu’au <strong>${end}</strong>. Ensuite, l’offre ${plan.name} (${plan.price} $/mois, ${fr(plan.credits)} crédits par mois) démarre automatiquement, ou plus tôt si vous utilisez presque tous vos crédits d’essai. Résiliable à tout moment avant, depuis « Offre et crédits ».</td></tr>`;
+    text = `Bienvenue sur Storyit !\n\nVotre essai de 3 jours est activé, avec ${left} crédits. Pour créer votre première vidéo :\n1. Une vidéo 3D en 5 minutes : ouvrez l'Animated Studio, choisissez une histoire (30 s = 3 500 crédits).\n2. Ou un Fruit Drama : dans le Prompt Studio, écrivez votre idée puis « Générer la vidéo » (30 s = 6 000 crédits au total).\n3. Publiez : téléchargez la vidéo depuis votre bibliothèque et postez-la.\n\nCréer ma première vidéo : ${APP}/app\n\nVotre essai dure jusqu'au ${end}. Ensuite, l'offre ${plan.name} (${plan.price} $/mois, ${fr(plan.credits)} crédits par mois) démarre automatiquement, ou plus tôt si vous utilisez presque tous vos crédits d'essai. Résiliable à tout moment avant, depuis « Offre et crédits ».\n\nÀ très vite,\nL'équipe Storyit`;
+  } else {
+    subject = `⏰ Votre essai Storyit se termine demain`;
+    inner = `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Votre essai se termine demain</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Votre essai Storyit se termine le <strong>${end}</strong>. Il vous reste <strong>${left} crédits</strong> : profitez-en pour créer une vidéo !</td></tr>
+<tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.7">
+${li(`✅ Ensuite, votre offre <strong>${plan.name}</strong> démarre : <strong>${plan.price} $/mois</strong> avec <strong>${fr(plan.credits)} crédits par mois</strong>.`)}
+${li('🔁 Sans engagement : vous pouvez résilier quand vous voulez.')}
+</table></td></tr>
+<tr><td align="center" style="padding:14px 0 8px"><a href="${APP}/app" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Utiliser mes crédits</a></td></tr>
+<tr><td style="font-size:13px;line-height:1.6;color:#4b4560;padding-top:10px">Vous ne souhaitez pas continuer ? Résiliez avant la fin de l’essai : <a href="${APP}/app/billing" style="color:#6d28d9">Offre et crédits</a> → « Gérer la facturation » → Annuler l’abonnement. Rien ne sera débité.</td></tr>`;
+    text = `Votre essai se termine demain\n\nBonjour,\n\nVotre essai Storyit se termine le ${end}. Il vous reste ${left} crédits : profitez-en pour créer une vidéo !\n\n- Ensuite, votre offre ${plan.name} démarre : ${plan.price} $/mois avec ${fr(plan.credits)} crédits par mois.\n- Sans engagement : vous pouvez résilier quand vous voulez.\n\nUtiliser mes crédits : ${APP}/app\n\nVous ne souhaitez pas continuer ? Résiliez avant la fin de l'essai : ${APP}/app/billing → « Gérer la facturation » → Annuler l'abonnement. Rien ne sera débité.\n\nÀ très vite,\nL'équipe Storyit`;
+  }
+  const html = shell(inner, '#').replace(/Vous recevez cet e-mail car vous avez un compte Storyit\. <a href="#" style="color:#7a7390">Se désinscrire<\/a>/, foot);
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: FROM, to: [to], subject, html, text }),
+  });
+  const data = await res.json().catch(() => ({}));
+  console.log(JSON.stringify({ audit: `trial_${kind}_email`, user: uid, ok: res.ok }));
+  return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
+}
+
 async function sendOne(to: string, uid: string, c: Campaign, scheduledAt?: string) {
   const unsub = await unsubUrl(uid);
   const res = await fetch('https://api.resend.com/emails', {
@@ -223,7 +273,9 @@ Deno.serve(async (req) => {
   // "low credits" e-mail to a subscriber (account notice): sent by the database trigger of migration 0038, with the cron token
   const cron = Deno.env.get('PUBLISHER_CRON_TOKEN');
   if (cron && cron.length >= 32 && req.headers.get('Authorization') === `Bearer ${cron}`) {
-    const { low_credits } = await req.clone().json().catch(() => ({})) as { low_credits?: string };
+    const sys = await req.clone().json().catch(() => ({})) as { low_credits?: string; trial_welcome?: string; trial_reminder?: string };
+    if (sys.trial_welcome || sys.trial_reminder) return trialEmail(sys.trial_welcome ? 'welcome' : 'reminder', (sys.trial_welcome ?? sys.trial_reminder)!);
+    const { low_credits } = sys;
     if (!low_credits) return Response.json({ error: 'low_credits required' }, { status: 400 });
     const [{ data: u }, { data: p }] = await Promise.all([admin.auth.admin.getUserById(low_credits), admin.from('profiles').select('credit_balance, plan').eq('id', low_credits).single()]);
     const to = u?.user?.email;

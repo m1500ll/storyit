@@ -136,6 +136,9 @@ Deno.serve(async (req) => {
             // partner: commission on the $1 only; the full subscription payment adds its own commission later
             const { error: affErr } = await admin.rpc('record_affiliate_payment', { p_user: userId, p_invoice: obj.id, p_amount: obj.amount_paid, p_currency: obj.currency, p_product: product, p_trial: true });
             if (affErr) console.error('affiliate trial', affErr.message);
+            // welcome e-mail with the first steps (mailing function); never blocks the payment
+            await fetch(`${env('SUPABASE_URL')}/functions/v1/mailing`, { method: 'POST', headers: { Authorization: `Bearer ${env('PUBLISHER_CRON_TOKEN')}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ trial_welcome: userId }) }).catch((e) => console.error('trial welcome', e));
           }
           break;
         }
