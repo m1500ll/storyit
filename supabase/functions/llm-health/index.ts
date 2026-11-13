@@ -14,6 +14,35 @@ Deno.serve(async (req) => {
   const token = Deno.env.get('PUBLISHER_CRON_TOKEN');
   if (!token || token.length < 32 || !timingSafeEqual(req.headers.get('Authorization') ?? '', `Bearer ${token}`)) return json({ error: 'Forbidden' }, 403);
   const url = new URL(req.url);
+  if (url.searchParams.get('balances') === '1') {
+    // Is every paid provider still able to work? One tiny call each (well under a cent in total): an empty balance or a
+    // monthly limit shows up as an error. ElevenLabs and Resend expose their quota for free.
+    const T = (ms: number) => AbortSignal.timeout(ms);
+    const probe = async (name: string, f: () => Promise<Response>, read: (r: Response, body: any) => Record<string, unknown> = () => ({})) => {
+      try {
+        const r = await f(); const text = await r.text(); let body: any = {}; try { body = JSON.parse(text); } catch { /* not json */ }
+        return { name, ok: r.ok, status: r.status, ...(r.ok ? read(r, body) : { error: String(body?.error?.message ?? body?.error ?? body?.detail?.message ?? body?.message ?? text).slice(0, 220) }) };
+      } catch (e) { return { name, ok: false, status: 0, error: e instanceof Error ? e.message : String(e) }; }
+    };
+    const k = (n: string) => Deno.env.get(n) ?? '';
+    const results = await Promise.all([
+      probe('OpenAI (scripts + images)', () => fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', signal: T(20_000), headers: { Authorization: `Bearer ${k('OPENAI_API_KEY')}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'gpt-5-mini', max_completion_tokens: 16, reasoning_effort: 'minimal', messages: [{ role: 'user', content: 'OK' }] }) })),
+      probe('xAI Grok (animation)', () => fetch('https://api.x.ai/v1/models', { signal: T(15_000), headers: { Authorization: `Bearer ${k('XAI_API_KEY')}` } })),
+      probe('Anthropic Claude (Animated Studio)', () => fetch('https://api.anthropic.com/v1/messages', { method: 'POST', signal: T(20_000),
+        headers: { 'x-api-key': k('ANTHROPIC_API_KEY'), 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+        body: JSON.stringify({ model: 'claude-sonnet-5-5', max_tokens: 1, messages: [{ role: 'user', content: 'OK' }] }) })),
+      probe('Google Gemini (voix, secours)', () => fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent`, { method: 'POST', signal: T(20_000),
+        headers: { 'x-goog-api-key': k('GEMINI_API_KEY'), 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: 'OK' }] }], generationConfig: { maxOutputTokens: 1 } }) })),
+      probe('ElevenLabs (voix)', () => fetch('https://api.elevenlabs.io/v1/user/subscription', { signal: T(15_000), headers: { 'xi-api-key': k('ELEVENLABS_API_KEY') } }),
+        (_r, b) => ({ plan: b.tier, used: b.character_count, limit: b.character_limit, resets: b.next_character_count_reset_unix ? new Date(b.next_character_count_reset_unix * 1000).toISOString().slice(0, 10) : null })),
+      probe('Resend (emails)', () => fetch('https://api.resend.com/domains', { signal: T(15_000), headers: { Authorization: `Bearer ${k('RESEND_API_KEY')}` } }),
+        (_r, b) => ({ domains: (b.data ?? []).map((d: any) => `${d.name}:${d.status}`) })),
+      probe('Stripe (paiements)', () => fetch('https://api.stripe.com/v1/balance', { signal: T(15_000), headers: { Authorization: `Bearer ${k('STRIPE_SECRET_KEY')}` } }),
+        (_r, b) => ({ available: (b.available ?? []).map((x: any) => `${(x.amount / 100).toFixed(2)} ${x.currency}`), pending: (b.pending ?? []).map((x: any) => `${(x.amount / 100).toFixed(2)} ${x.currency}`) })),
+    ]);
+    return json({ checked_at: new Date().toISOString(), results });
+  }
   if (url.searchParams.get('providers') === '1') {
     // Video generation keys: do they work, and which image / video models does each account see? (free calls)
     const check = async (base: string, key: string | undefined, keep: RegExp) => {
