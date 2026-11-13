@@ -3,10 +3,9 @@
 // grants the credits at once. Any failure (declined card, bank check needed) switches the option off and tells the
 // customer on their billing page. At most 3 top-ups a day. Called only by the database, with the cron token.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { GRANTS, PRICE_ENV } from '../_shared/stripe.ts';
+import { isTopupAmount, topupPriceCents } from '../_shared/stripe.ts';
 
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
-const PACKS = ['pack_100', 'pack_500'] as const;
 const DAILY_MAX = 3;
 
 function timingSafeEqual(a: string, b: string) {
@@ -37,8 +36,8 @@ Deno.serve(async (req) => {
   const finish = (status: 'succeeded' | 'failed' | 'skipped', extra: Record<string, unknown> = {}) =>
     admin.from('auto_topups').update({ status, ...extra }).eq('id', topup_id);
   const { data: p } = await admin.from('profiles').select('plan, stripe_customer_id, auto_topup_enabled, auto_topup_pack').eq('id', row.user_id).single();
-  const pack = row.pack as (typeof PACKS)[number];
-  if (!p?.auto_topup_enabled || !p.stripe_customer_id || p.plan === 'free' || !PACKS.includes(pack)) { await finish('skipped', { error: 'option off or no plan' }); return json({ ok: false, reason: 'skipped' }); }
+  const credits = Number(row.credits);
+  if (!p?.auto_topup_enabled || !p.stripe_customer_id || p.plan === 'free' || !isTopupAmount(credits)) { await finish('skipped', { error: 'option off or no plan' }); return json({ ok: false, reason: 'skipped' }); }
 
   const { count } = await admin.from('auto_topups').select('id', { count: 'exact', head: true }).eq('user_id', row.user_id).eq('status', 'succeeded').gte('created_at', new Date(Date.now() - 86_400_000).toISOString());
   if ((count ?? 0) >= DAILY_MAX) { await finish('skipped', { error: 'daily limit' }); return json({ ok: false, reason: 'daily limit' }); }
@@ -54,20 +53,19 @@ Deno.serve(async (req) => {
     const pm = sub?.default_payment_method ?? customer?.invoice_settings?.default_payment_method
       ?? (await stripe(`payment_methods?customer=${p.stripe_customer_id}&type=card&limit=1`))?.data?.[0]?.id;
     if (!sub || !pm) { await finish('skipped', { error: 'no active plan or card' }); await disable('Aucun abonnement actif ou aucune carte enregistrée.'); return json({ ok: false, reason: 'no card' }); }
-    const price = await stripe(`prices/${Deno.env.get(PRICE_ENV[pack])}`);
-    const credits = GRANTS[pack].credits;
+    const amount = topupPriceCents(credits);
     const pi = await stripe('payment_intents', {
-      amount: String(price.unit_amount), currency: String(price.currency), customer: p.stripe_customer_id, payment_method: String(pm),
+      amount: String(amount), currency: 'usd', customer: p.stripe_customer_id, payment_method: String(pm),
       off_session: 'true', confirm: 'true', description: `Storyit — recharge automatique (${credits.toLocaleString('fr-FR')} crédits)`,
-      'metadata[kind]': 'auto_topup', 'metadata[user_id]': row.user_id, 'metadata[topup_id]': topup_id, 'metadata[product]': pack,
+      'metadata[kind]': 'auto_topup', 'metadata[user_id]': row.user_id, 'metadata[topup_id]': topup_id, 'metadata[credits]': String(credits),
     }, `auto-topup-${topup_id}`);
     if (pi.status !== 'succeeded') throw Object.assign(new Error(`payment ${pi.status}`), { code: pi.status });
     const { error } = await admin.rpc('grant_credits', { p_user_id: row.user_id, p_amount: credits, p_type: 'purchase',
       p_description: `Recharge automatique — ${credits.toLocaleString('fr-FR')} crédits`, p_plan: null, p_reset: false });
     if (error) throw new Error(`grant: ${error.message}`); // paid but not granted: visible in the admin dashboard, fixed by hand
-    await finish('succeeded', { credits, amount_cents: price.unit_amount, currency: price.currency, payment_intent: pi.id });
+    await finish('succeeded', { credits, amount_cents: amount, currency: 'usd', payment_intent: pi.id });
     await admin.from('profiles').update({ auto_topup_failed_at: null, auto_topup_error: null }).eq('id', row.user_id);
-    console.log(JSON.stringify({ audit: 'auto_topup', user: row.user_id, pack, amount: price.unit_amount, pi: pi.id }));
+    console.log(JSON.stringify({ audit: 'auto_topup', user: row.user_id, credits, amount, pi: pi.id }));
     return json({ ok: true, credits });
   } catch (e) {
     const err = e as Error & { code?: string };

@@ -80,3 +80,9 @@ export async function verifySignature(payload: string, header: string | null, se
     return diff === 0;
   });
 }
+
+/** automatic top-up: any amount from 5 000 to 200 000 credits (steps of 1 000), at the packs' rate:
+ *  $1.20 per 1 000 credits, $0.98 per 1 000 from 50 000 credits. Mirrored in src/services/credits.ts. */
+export const TOPUP = { min: 5000, max: 200000, step: 1000, thresholds: [1000, 3000, 5000, 10000] } as const;
+export const topupPriceCents = (credits: number) => Math.round(credits / 1000 * (credits >= 50000 ? 98 : 120));
+export const isTopupAmount = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= TOPUP.min && (n as number) <= TOPUP.max && (n as number) % TOPUP.step === 0;

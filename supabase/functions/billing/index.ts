@@ -9,7 +9,7 @@
 // Secrets: STRIPE_SECRET_KEY, STRIPE_PRICE_CREATOR, STRIPE_PRICE_PRO, STRIPE_PRICE_STUDIO, STRIPE_PRICE_{CREATOR,PRO,STUDIO}_YEAR, STRIPE_PRICE_PACK_100, STRIPE_PRICE_PACK_500
 // Optional: APP_URL (default http://localhost:5173)
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { GRANTS, TRIAL } from '../_shared/stripe.ts';
+import { GRANTS, isTopupAmount, TOPUP, TRIAL } from '../_shared/stripe.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
   const appUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173';
 
   try {
-    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices' | 'auto_topup'; product?: ProductKey; trial?: boolean; user_id?: string; enabled?: boolean; threshold?: number; pack?: string };
+    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices' | 'auto_topup'; product?: ProductKey; trial?: boolean; user_id?: string; enabled?: boolean; threshold?: number; credits?: number };
     const { action, product, trial } = body;
 
     // Admin: the latest checkout pages (what was picked, at what price, did it end in a payment) to study drop-off.
@@ -148,8 +148,8 @@ Deno.serve(async (req) => {
     if (action === 'auto_topup') { // the customer's opt-in for automatic top-ups (settings only; auto-topup charges)
       const enabled = !!body.enabled;
       const threshold = Number(body.threshold);
-      const pack = String(body.pack ?? '');
-      if (![1000, 3000, 5000].includes(threshold) || !['pack_100', 'pack_500'].includes(pack)) return json({ error: 'Réglage inconnu.' }, 400);
+      const credits = Number(body.credits);
+      if (!(TOPUP.thresholds as readonly number[]).includes(threshold) || !isTopupAmount(credits)) return json({ error: `Choisissez entre ${TOPUP.min} et ${TOPUP.max} crédits (par 1 000).` }, 400);
       if (enabled) {
         if (!profile?.plan || profile.plan === 'free') return json({ error: 'La recharge automatique est réservée aux abonnés.' }, 409);
         const subs = await stripe(`subscriptions?customer=${customerId}&status=active&limit=1`);
@@ -160,10 +160,10 @@ Deno.serve(async (req) => {
         if (!sub) return json({ error: 'La recharge automatique démarre une fois votre abonnement payé (pas pendant l’essai).' }, 409);
         if (!pm) return json({ error: 'Aucune carte enregistrée : ajoutez-en une dans « Gérer la facturation ».' }, 409);
       }
-      const { error } = await admin.from('profiles').update({ auto_topup_enabled: enabled, auto_topup_threshold: threshold, auto_topup_pack: pack,
+      const { error } = await admin.from('profiles').update({ auto_topup_enabled: enabled, auto_topup_threshold: threshold, auto_topup_credits: credits,
         ...(enabled ? { auto_topup_failed_at: null, auto_topup_error: null } : {}) }).eq('id', user.id);
       if (error) return json({ error: 'Enregistrement impossible.' }, 500);
-      return json({ ok: true, enabled, threshold, pack });
+      return json({ ok: true, enabled, threshold, credits });
     }
 
     if (action === 'portal') {

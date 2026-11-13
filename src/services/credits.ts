@@ -73,3 +73,9 @@ export const REFERRAL_FRIEND_BONUS = 10000;
 /** qualified friends needed for the big reward, and the months it gives (1 month for each other friend) */
 export const REFERRAL_GOAL = 5;
 export const REFERRAL_BIG_MONTHS = 6;
+
+/** automatic top-up: any amount from 5 000 to 200 000 credits (steps of 1 000), at the packs' rate:
+ *  $1.20 per 1 000 credits, $0.98 per 1 000 from 50 000 credits. Mirror of supabase/functions/_shared/stripe.ts. */
+export const TOPUP = { min: 5000, max: 200000, step: 1000, thresholds: [1000, 3000, 5000, 10000] } as const;
+export const topupPriceCents = (credits: number) => Math.round(credits / 1000 * (credits >= 50000 ? 98 : 120));
+export const isTopupAmount = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= TOPUP.min && (n as number) <= TOPUP.max && (n as number) % TOPUP.step === 0;
