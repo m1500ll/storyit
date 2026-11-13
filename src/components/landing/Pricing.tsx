@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { ArrowRight, Check, Gift } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { num, useLang } from '@/lib/lang';
@@ -83,9 +83,21 @@ export function Pricing() {
                 ))}
                 {yearly && <li className="flex items-start gap-2 text-sm font-medium text-emerald-300"><Check className="mt-0.5 h-4 w-4 shrink-0" />{fr ? `${num(p.credits * 12, lang)} crédits d’un coup` : `${num(p.credits * 12, lang)} credits upfront`}</li>}
               </ul>
-              <StartLink to={p.price === 0 ? '/app' : `/app/billing?plan=${p.id}&interval=${interval}`} className="mt-8">
-                <Button variant={featured ? 'primary' : 'secondary'} className="w-full">{p.price === 0 ? (fr ? 'Commencer gratuitement' : 'Start Free') : (fr ? `Choisir ${p.name}` : `Choose ${p.name}`)}</Button>
-              </StartLink>
+              {p.price > 0 && interval === 'month' ? (
+                <>
+                  {/* monthly plans: the $1 trial is the main action (the yearly plans have no trial) */}
+                  <StartLink to={`/app/billing?plan=${p.id}&interval=month`} className="mt-8">
+                    <Button className="h-12 w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-[15px] shadow-[0_10px_30px_-10px_rgba(139,92,246,0.9)] hover:brightness-110">
+                      <Gift className="h-4 w-4" aria-hidden /> {fr ? 'Essayer 3 jours pour 1 $' : 'Try 3 days for $1'} <ArrowRight className="h-4 w-4" aria-hidden />
+                    </Button>
+                  </StartLink>
+                  <p className="mt-2 text-center text-[11px] text-zinc-500">{fr ? `Puis ${usd(p.price)}/mois · résiliable en 1 clic` : `Then ${usd(p.price)}/mo · cancel in one click`}</p>
+                </>
+              ) : (
+                <StartLink to={p.price === 0 ? '/app' : `/app/billing?plan=${p.id}&interval=${interval}`} className="mt-8">
+                  <Button variant={featured ? 'primary' : 'secondary'} className="w-full">{p.price === 0 ? (fr ? 'Commencer gratuitement' : 'Start Free') : (fr ? `Choisir ${p.name}` : `Choose ${p.name}`)}</Button>
+                </StartLink>
+              )}
             </div>
           );
         })}

@@ -1,4 +1,4 @@
-import { Check, Coins, Lock } from 'lucide-react';
+import { ArrowRight, Check, Coins, Gift, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { billingService } from '@/services/billing';
@@ -102,9 +102,9 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
               )}
               {p.id !== 'free' && trialHere && !current && !included && (
                 <>
-                  <Button size="sm" className="mt-4 w-full" variant="secondary" loading={pending === `${p.id}:trial`}
+                  <Button className="mt-4 h-12 w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-[15px] shadow-[0_10px_30px_-10px_rgba(139,92,246,0.9)] hover:brightness-110" loading={pending === `${p.id}:trial`}
                     disabled={pending !== null} onClick={() => buy(p.id as ProductKey, true)}>
-                    Essayer {TRIAL.days} jours pour {TRIAL.price} $
+                    <Gift className="h-4 w-4" aria-hidden /> Essayer {TRIAL.days} jours pour {TRIAL.price} $ <ArrowRight className="h-4 w-4" aria-hidden />
                   </Button>
                   <p className="mt-1.5 text-[11px] leading-snug text-zinc-500">
                     {TRIAL.price} $ aujourd’hui et {formatCredits(TRIAL.credits)} crédits pour tester. Passage automatique à {p.name} ({p.price} $/mois) au bout de {TRIAL.days} jours, ou plus tôt dès qu’il vous reste moins de {formatCredits(TRIAL.switchAt)} crédits d’essai. Résiliable à tout moment avant.
