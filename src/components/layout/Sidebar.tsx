@@ -1,5 +1,5 @@
 import {
-  BookOpen, CalendarDays, Clapperboard, Handshake, Languages, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, Wand2 } from 'lucide-react';
+  BarChart3, BookOpen, CalendarDays, Clapperboard, Handshake, Languages, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, Wand2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useCredits, useProfile } from '@/hooks/useStore';
 import { creditLevel, projectsFor, formatCredits } from '@/services/credits';
@@ -70,7 +70,7 @@ export function Sidebar() {
         { to: '/app/billing', label: 'Offre et crédits', icon: CreditCard },
         { to: '/app/settings', label: 'Réglages', icon: Settings },
         { to: '/app/help', label: 'Aide', icon: LifeBuoy },
-        ...(isAdmin ? [{ to: '/app/partners', label: 'Partenaires', icon: Handshake }, { to: '/app/trends', label: 'Tendances', icon: TrendingUp }] : []),
+        ...(isAdmin ? [{ to: '/app/admin', label: 'Tableau de bord', icon: BarChart3 }, { to: '/app/partners', label: 'Partenaires', icon: Handshake }, { to: '/app/trends', label: 'Tendances', icon: TrendingUp }] : []),
       ],
     },
   ];

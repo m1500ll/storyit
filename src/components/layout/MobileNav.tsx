@@ -1,6 +1,6 @@
 import {
   BookOpen, CalendarDays, Clapperboard, Handshake, Languages, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Menu, Send,
-  Settings, TrendingUp, Wand2, X } from 'lucide-react';
+  Settings, TrendingUp, Wand2, X, BarChart3 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/cn';
@@ -41,7 +41,7 @@ export function MobileNav() {
   const beta = useBetaAccess();
   const { data: profile } = useProfile();
   const menu = (profile as { is_admin?: boolean } | null)?.is_admin
-    ? [...sections, { title: 'Admin', items: [{ to: '/app/partners', label: 'Partenaires', icon: Handshake }, { to: '/app/trends', label: 'Tendances', icon: TrendingUp }] }]
+    ? [...sections, { title: 'Admin', items: [{ to: '/app/admin', label: 'Tableau de bord', icon: BarChart3 }, { to: '/app/partners', label: 'Partenaires', icon: Handshake }, { to: '/app/trends', label: 'Tendances', icon: TrendingUp }] }]
     : sections;
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
