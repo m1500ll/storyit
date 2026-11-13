@@ -115,6 +115,12 @@ export const promptStudio = {
       return saved;
     }
   },
+  /** Relecture: a second AI pass checks that every line of the script makes sense (free; run after the script when needed). */
+  async review(project_id: string): Promise<PromptProject> {
+    const { project } = await call<{ project: PromptProject }>({ action: 'review', project_id });
+    store.notify();
+    return project;
+  },
   /** Dépannage: the corrected prompts of ONE clip (included in the project). */
   async fix(input: { project_id: string; scene: number; problem: string; note?: string }): Promise<PromptProject> {
     const { project } = await call<{ project: PromptProject }>({ action: 'fix', ...input });

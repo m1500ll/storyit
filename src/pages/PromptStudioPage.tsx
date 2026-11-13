@@ -71,7 +71,14 @@ function useGenerate() {
   const [error, setError] = useState<string | null>(null);
   const run = async (input: Parameters<typeof promptStudio.generate>[0]) => {
     setBusy(input.phase); setError(null);
-    try { const p = await promptStudio.generate(input); toast('Étape générée.'); return p; } catch (e) {
+    try {
+      let p = await promptStudio.generate(input);
+      // the script is always proofread (sense, real sentences, natural pace); when the first pass ran out of time, do it now
+      if (input.phase === 'script' && (p.data as { script_reviewed?: boolean }).script_reviewed === false) {
+        try { p = await promptStudio.review(p.id); } catch { /* the script stays usable; the checklist shows what to fix */ }
+      }
+      toast(input.phase === 'script' ? 'Script écrit et relu.' : 'Étape générée.'); return p;
+    } catch (e) {
       if (e instanceof InsufficientCreditsError) openPaywall();
       setError(e instanceof Error ? e.message : String(e));
       return null;

@@ -6,7 +6,7 @@
 // - Scene images: generated with the user's key only (Google bills the user), stored privately in `renders`.
 // - Keys: AES-GCM encrypted (TOKEN_ENCRYPTION_KEY), never returned to the browser.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { DEFAULT_VIDEO_LENGTH, FIX_PROBLEMS, FIX_SCHEMA, isVideoLength, MASTER_PROMPT, PHASES, STYLES, buildFixPrompt, buildPhasePrompt, buildRepairPrompt, normalizePhase, paceProblems, styleOf, type PhaseKey } from '../_shared/promptStudio.ts';
+import { DEFAULT_VIDEO_LENGTH, FIX_PROBLEMS, FIX_SCHEMA, isVideoLength, MASTER_PROMPT, PHASES, STYLES, buildFixPrompt, buildPhasePrompt, buildReviewPrompt, normalizePhase, paceProblems, senseProblems, styleOf, type PhaseKey } from '../_shared/promptStudio.ts';
 import { classifyGeminiError, GeminiError, KEY_MESSAGES, keyHint, looksLikeGeminiKey } from '../_shared/geminiKey.ts';
 import { decrypt, encrypt } from '../_shared/social.ts';
 import { backups, backupText, openaiModels } from '../_shared/backupLlm.ts';
@@ -156,6 +156,25 @@ Deno.serve(async (req) => {
   if (project && !project.data?.v4 && (action === 'phase' || action === 'fix')) return json({ error: 'Ce projet a été créé avec l’ancienne version du studio : créez un nouveau projet pour utiliser la nouvelle.' }, 409);
 
   // ---------- Dépannage: the corrected prompt of ONE clip (included in the project) ----------
+  if (action === 'review') {
+    if (!project?.data?.script) return json({ error: 'Écrivez d’abord le découpage.' }, 400);
+    const d = { ...project.data } as Record<string, any>;
+    try {
+      const fixed: any = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', buildReviewPrompt(d.script), PHASES.script.schema, true, (r) => normalizePhase('script', r));
+      const before = paceProblems(d.script).length + senseProblems(d.script).length;
+      if (paceProblems(fixed).length + senseProblems(fixed).length <= before) {
+        d.script = fixed;
+        delete d.videos; // the Grok prompts follow the dialogue timings: they are written again
+      }
+      d.script_reviewed = true;
+      const saved = await admin.from('prompt_projects').update({ data: d, updated_at: new Date().toISOString() }).eq('id', project.id).eq('user_id', uid).select('*').single();
+      if (saved.error) throw new Error('Impossible d’enregistrer le projet');
+      return json({ project: saved.data });
+    } catch (e) {
+      const msg = e instanceof GeminiError ? 'Le service de génération est très demandé en ce moment. Réessayez dans quelques minutes.' : (e instanceof Error ? e.message : 'Échec');
+      return json({ error: `${msg} Aucun crédit n’a été utilisé.` }, 502);
+    }
+  }
   if (action === 'fix') {
     if (!project) return json({ error: 'Projet introuvable' }, 404);
     const d = { ...project.data } as Record<string, any>;
@@ -243,15 +262,18 @@ Deno.serve(async (req) => {
     } else {
       raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true, valid, deadline);
     }
-    if (phase === 'script') { // one automatic repair round when some clips are out of the word budget (pace = rule n°1)
-      const probs = paceProblems(raw);
-      console.log('pace check', probs.length, 'problems', `${Math.round((deadline - Date.now()) / 1000)}s left`);
-      if (probs.length && deadline - Date.now() > 45_000) { // only when there is time left: a good script now beats a perfect one too late
+    if (phase === 'script') { // relecture: a second AI pass checks that every line makes sense and fixes it
+      const before = paceProblems(raw).length + senseProblems(raw).length;
+      let reviewed = false;
+      console.log('script check', before, 'problems', `${Math.round((deadline - Date.now()) / 1000)}s left`);
+      if (deadline - Date.now() > 40_000) {
         try {
-          const fixed: any = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', buildRepairPrompt(raw, probs), PHASES.script.schema, true, valid, deadline);
-          if (paceProblems(fixed).length < probs.length) raw = fixed;
-        } catch (e) { console.error('pace repair', e instanceof Error ? e.message : e); } // keep the first version
+          const fixed: any = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', buildReviewPrompt(raw), PHASES.script.schema, true, valid, deadline);
+          if (paceProblems(fixed).length + senseProblems(fixed).length <= before) raw = fixed;
+          reviewed = true;
+        } catch (e) { console.error('script review', e instanceof Error ? e.message : e); } // the browser asks for the review next
       }
+      data.script_reviewed = reviewed;
     }
     data[PHASES[phase].key] = raw; // already normalized and checked by `valid`
     for (const later of PHASES[phase].invalidates) delete data[later];

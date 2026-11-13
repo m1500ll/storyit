@@ -9,7 +9,7 @@ import { checklist, clipStats, coverPrompt, FIX_PROBLEMS, grokPrompt, imagePromp
 
 export const V4_STEPS: { key: PhaseKey; label: string; waiting: string }[] = [
   { key: 'concepts', label: 'Histoires', waiting: 'Écriture de 3 histoires…' },
-  { key: 'script', label: 'Pitch & découpage', waiting: 'Écriture du pitch, des 5 hooks et du découpage minuté…' },
+  { key: 'script', label: 'Pitch & découpage', waiting: 'Écriture du découpage, puis relecture : on vérifie que chaque réplique a du sens… (1 à 3 min)' },
   { key: 'images', label: 'Prompts image', waiting: 'Écriture de la planche et des images de départ…' },
   { key: 'videos', label: 'Prompts Grok', waiting: 'Écriture des prompts Grok, plan par plan…' },
   { key: 'pack', label: 'Couverture & légende', waiting: 'Écriture de la couverture, de la légende et du commentaire épinglé…' },
