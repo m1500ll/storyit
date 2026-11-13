@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
   const appUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173';
 
   try {
-    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices'; product?: ProductKey; trial?: boolean; user_id?: string };
+    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices' | 'auto_topup'; product?: ProductKey; trial?: boolean; user_id?: string; enabled?: boolean; threshold?: number; pack?: string };
     const { action, product, trial } = body;
 
     // Admin: the latest checkout pages (what was picked, at what price, did it end in a payment) to study drop-off.
@@ -112,6 +112,7 @@ Deno.serve(async (req) => {
     let customerId = profile?.stripe_customer_id as string | null;
     // just looking at the plans must not create a Stripe customer (it showed up as a "new customer" who never paid)
     if (!customerId && action === 'status') return json({ trialing: false, trial_end: null, product: null });
+    if (action === 'auto_topup' && body.enabled && (!profile?.plan || profile.plan === 'free')) return json({ error: 'La recharge automatique est réservée aux abonnés.' }, 409);
     if (!customerId) {
       const customer = await stripe('customers', { email: user.email ?? '', 'metadata[user_id]': user.id });
       customerId = customer.id as string;
@@ -142,6 +143,27 @@ Deno.serve(async (req) => {
       if (action === 'status') return json({ trialing: !!sub, trial_end: sub?.trial_end ?? null, product: current });
       if (!sub) return json({ error: 'Aucun essai en cours.' }, 409);
       return endTrial(sub, PLAN_KEYS.find((p) => p === product) ?? current ?? 'creator');
+    }
+
+    if (action === 'auto_topup') { // the customer's opt-in for automatic top-ups (settings only; auto-topup charges)
+      const enabled = !!body.enabled;
+      const threshold = Number(body.threshold);
+      const pack = String(body.pack ?? '');
+      if (![1000, 3000, 5000].includes(threshold) || !['pack_100', 'pack_500'].includes(pack)) return json({ error: 'Réglage inconnu.' }, 400);
+      if (enabled) {
+        if (!profile?.plan || profile.plan === 'free') return json({ error: 'La recharge automatique est réservée aux abonnés.' }, 409);
+        const subs = await stripe(`subscriptions?customer=${customerId}&status=active&limit=1`);
+        const sub = subs?.data?.[0];
+        const customer = await stripe(`customers/${customerId}`);
+        const pm = sub?.default_payment_method ?? customer?.invoice_settings?.default_payment_method
+          ?? (await stripe(`payment_methods?customer=${customerId}&type=card&limit=1`))?.data?.[0]?.id;
+        if (!sub) return json({ error: 'La recharge automatique démarre une fois votre abonnement payé (pas pendant l’essai).' }, 409);
+        if (!pm) return json({ error: 'Aucune carte enregistrée : ajoutez-en une dans « Gérer la facturation ».' }, 409);
+      }
+      const { error } = await admin.from('profiles').update({ auto_topup_enabled: enabled, auto_topup_threshold: threshold, auto_topup_pack: pack,
+        ...(enabled ? { auto_topup_failed_at: null, auto_topup_error: null } : {}) }).eq('id', user.id);
+      if (error) return json({ error: 'Enregistrement impossible.' }, 500);
+      return json({ ok: true, enabled, threshold, pack });
     }
 
     if (action === 'portal') {

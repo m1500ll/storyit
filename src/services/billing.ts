@@ -49,6 +49,10 @@ export const billingService = {
   async endTrial(product: 'creator' | 'pro' | 'studio') {
     return callJson<{ ok: boolean; paid: boolean; status: string; invoice_url: string | null }>({ action: 'end_trial', product });
   },
+  /** automatic top-up (subscribers): buy `pack` with the saved card whenever the balance drops below `threshold` */
+  async setAutoTopup(settings: { enabled: boolean; threshold: 1000 | 3000 | 5000; pack: 'pack_100' | 'pack_500' }) {
+    return callJson<{ ok: boolean }>({ action: 'auto_topup', ...settings });
+  },
   async openPortal() {
     window.location.assign(await call({ action: 'portal' }));
   },

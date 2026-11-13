@@ -7,6 +7,7 @@ import { useCredits, useProfile } from '@/hooks/useStore';
 import { billingService } from '@/services/billing';
 import { PLANS, formatCredits } from '@/services/credits';
 import { TrialUpgrade } from '@/components/billing/TrialUpgrade';
+import { AutoTopup } from '@/components/billing/AutoTopup';
 import { cn } from '@/lib/cn';
 
 function CheckoutBanner() {
@@ -67,6 +68,7 @@ export default function BillingPage() {
         <PlanPicker currentPlan={profile?.plan} trialUsed={profile?.trial_used} initialInterval={params.get('interval') === 'month' ? 'month' : 'year'} />
       </Card>
       </div>
+      <AutoTopup />
       <Card className="mt-6 overflow-x-auto" tabIndex={0} role="region" aria-label="Historique des crédits">
         <CardHeader title="Historique des crédits" />
         <table className="w-full min-w-[480px] text-left text-sm">
