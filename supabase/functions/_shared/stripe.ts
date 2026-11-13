@@ -53,7 +53,7 @@ export function planLine(invoice: any, env: (k: string) => string | undefined): 
 
 /** $1 three-day trial: price of the one-time fee (cents), length, credits given during the trial. Keep in sync with
  *  src/services/credits.ts (TRIAL). */
-export const TRIAL = { feeCents: 100, days: 3, credits: 5000, switchAt: 1500 };
+export const TRIAL = { feeCents: 100, days: 3, credits: 5000, switchAt: 1000 };
 
 /** Plan a subscription should give right now. Unpaid/cancelled subscriptions fall back to free. */
 export function planForSubscription(sub: any, env: (k: string) => string | undefined): 'free' | 'creator' | 'pro' | 'studio' | null {

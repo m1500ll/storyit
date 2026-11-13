@@ -11,7 +11,8 @@ as $$
 declare
   ends timestamptz;
 begin
-  if new.type <> 'consumption' or new.balance_after > 1500 then return new; end if;
+  -- switch once fewer than 1 000 trial credits remain
+  if new.type <> 'consumption' or new.balance_after >= 1000 then return new; end if;
   select trial_ends_at into ends from profiles where id = new.user_id;
   if ends is null or ends < now() then return new; end if;
   -- once only: the next real invoice clears it anyway
