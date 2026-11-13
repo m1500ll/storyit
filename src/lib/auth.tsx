@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabase || !session) return;
     void claimPendingReferral(); // a visitor who arrived through a referral link and now has an account
-    void claimPendingAffiliate(); // and through an influencer link
+    void claimPendingAffiliate((session.user.user_metadata as { via?: string } | undefined)?.via); // and through an influencer link (code kept in the account at sign-up)
     return subscribeToRealtime(supabase);
   }, [session]);
 

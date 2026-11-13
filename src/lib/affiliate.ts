@@ -44,10 +44,22 @@ export function keepAffiliateInUrl() {
   window.history.replaceState(window.history.state, '', url.toString());
 }
 
-/** attaches the signed-in account to the partner whose link was clicked in the last 7 days */
-export async function claimPendingAffiliate() {
+/** a return address (sign-up confirmation, Google) that carries the partner code: the e-mail link often opens in
+ *  another browser (mail app), which would otherwise not know the partner */
+export function withAffiliate(url: string): string {
+  const code = pendingAffiliate();
+  if (!code) return url;
+  const u = new URL(url, window.location.origin);
+  u.searchParams.set('via', code);
+  return u.toString();
+}
+
+/** attaches the signed-in account to the partner whose link was clicked in the last 7 days
+ *  (code from this browser, or saved in the account at sign-up when the confirmation opened elsewhere) */
+export async function claimPendingAffiliate(accountCode?: string | null) {
   try {
-    const raw = localStorage.getItem(KEY);
+    let raw = localStorage.getItem(KEY);
+    if (!raw && accountCode && CODE.test(accountCode)) { raw = JSON.stringify({ code: accountCode, at: Date.now() }); localStorage.setItem(KEY, raw); }
     if (!raw) return;
     const { code, at } = JSON.parse(raw) as { code: string; at: number };
     if (Date.now() - at > WINDOW) { localStorage.removeItem(KEY); return; }

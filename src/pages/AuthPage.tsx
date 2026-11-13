@@ -9,7 +9,7 @@ import { GoogleIcon } from '@/components/ui/GoogleIcon';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import { pendingReferral } from '@/lib/referral';
-import { keepAffiliateInUrl } from '@/lib/affiliate';
+import { keepAffiliateInUrl, pendingAffiliate, withAffiliate } from '@/lib/affiliate';
 import { REFERRAL_FRIEND_BONUS, formatCredits } from '@/services/credits';
 
 type Mode = 'signin' | 'signup' | 'forgot';
@@ -92,7 +92,7 @@ export default function AuthPage() {
     setMessage(null);
     const { error } = await supabase!.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}${from}`, queryParams: { prompt: 'select_account' } },
+      options: { redirectTo: withAffiliate(`${window.location.origin}${from}`), queryParams: { prompt: 'select_account' } },
     });
     // On success the browser leaves for Google; we only get here on error.
     if (error) { setLoading(null); setMessage({ kind: 'error', text: friendly(error.message, L) }); }
@@ -109,7 +109,7 @@ export default function AuthPage() {
     }
     const { data, error } = mode === 'signin'
       ? await supabase!.auth.signInWithPassword({ email, password })
-      : await supabase!.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}${from}` } });
+      : await supabase!.auth.signUp({ email, password, options: { emailRedirectTo: withAffiliate(`${window.location.origin}${from}`), data: pendingAffiliate() ? { via: pendingAffiliate() } : undefined } });
     setLoading(null);
     if (error) return setMessage({ kind: 'error', text: friendly(error.message, L) });
     if (data.session) return navigate(from, { replace: true });
