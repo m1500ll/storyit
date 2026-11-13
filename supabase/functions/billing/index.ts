@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
   const appUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173';
 
   try {
-    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions'; product?: ProductKey; trial?: boolean; user_id?: string };
+    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices'; product?: ProductKey; trial?: boolean; user_id?: string };
     const { action, product, trial } = body;
 
     // Admin: the latest checkout pages (what was picked, at what price, did it end in a payment) to study drop-off.
@@ -79,6 +79,21 @@ Deno.serve(async (req) => {
         status: s.status, product: planOfPrice(s.items?.data?.[0]?.price?.id) ?? yearlyPlanOfPrice(s.items?.data?.[0]?.price?.id),
         created: s.created, canceled_at: s.canceled_at, cancel_at_period_end: s.cancel_at_period_end, ended_at: s.ended_at,
         reason: s.cancellation_details?.reason ?? null, current_period_end: s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? null,
+      })) });
+    }
+    if (action === 'recent_invoices') { // admin: every paid invoice (plans, upgrades, trials) with the Storyit account it belongs to
+      const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
+      if (!me?.is_admin) return json({ error: 'Forbidden' }, 403);
+      const list = await stripe('invoices?status=paid&limit=100');
+      const custs = [...new Set((list?.data ?? []).map((i: any) => i.customer))];
+      const { data: owners } = await admin.from('profiles').select('id, stripe_customer_id').in('stripe_customer_id', custs as string[]);
+      const who = new Map((owners ?? []).map((o: any) => [o.stripe_customer_id, o.id]));
+      return json({ invoices: (list?.data ?? []).map((i: any) => ({
+        id: i.id, created: i.created, paid_at: i.status_transitions?.paid_at ?? null, amount_paid: i.amount_paid, currency: i.currency,
+        reason: i.billing_reason, user: who.get(i.customer) ?? null, kind: i.metadata?.kind ?? null,
+        subtotal: i.subtotal, total: i.total, starting_balance: i.starting_balance, ending_balance: i.ending_balance,
+        discounts: (i.total_discount_amounts ?? []).map((x: any) => x.amount), coupon: i.discount?.coupon?.id ?? i.discounts?.[0] ?? null,
+        lines: (i.lines?.data ?? []).map((l: any) => ({ amount: l.amount, price: l.pricing?.price_details?.price ?? l.price?.id ?? null, desc: (l.description ?? '').slice(0, 60) })),
       })) });
     }
     if (action === 'recent_checkouts') {
