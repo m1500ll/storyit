@@ -14,6 +14,12 @@ Deno.serve(async (req) => {
   const token = Deno.env.get('PUBLISHER_CRON_TOKEN');
   if (!token || token.length < 32 || !timingSafeEqual(req.headers.get('Authorization') ?? '', `Bearer ${token}`)) return json({ error: 'Forbidden' }, 403);
   const url = new URL(req.url);
+  if (url.searchParams.get('stripe_methods') === '1') { // which payment methods Stripe Checkout offers (Apple Pay, Google Pay…)
+    const r = await fetch('https://api.stripe.com/v1/payment_method_configurations?limit=10', { headers: { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` }, signal: AbortSignal.timeout(15_000) });
+    const d = await r.json();
+    return json({ configs: (d.data ?? []).map((c: any) => ({ name: c.name, active: c.active, is_default: c.is_default,
+      methods: Object.fromEntries(['card', 'apple_pay', 'google_pay', 'link', 'paypal', 'klarna', 'bancontact', 'amazon_pay', 'revolut_pay'].map((m) => [m, c[m] ? `${c[m].available ? 'disponible' : 'indisponible'} / ${c[m].display_preference?.value ?? '?'}` : 'absent'])) })), error: d.error?.message });
+  }
   if (url.searchParams.get('balances') === '1') {
     // Is every paid provider still able to work? One tiny call each (well under a cent in total): an empty balance or a
     // monthly limit shows up as an error. ElevenLabs and Resend expose their quota for free.
