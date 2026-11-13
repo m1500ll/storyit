@@ -127,7 +127,7 @@ export function SeoFooter({ lang = 'fr' }: { lang?: 'fr' | 'en' }) {
             <span className="font-semibold text-zinc-400">{l === 'fr' ? 'En français' : 'In English'}</span>
             <Link to={l === 'fr' ? '/' : '/en'} className="hover:text-zinc-200">{l === 'fr' ? 'Storyit (accueil)' : 'Storyit (home)'}</Link>
             {SEO_PAGES.filter((p) => p.lang === l).map((p) => <Link key={p.path} to={p.path} className="hover:text-zinc-200">{`${p.h1} ${p.highlight}`.replace(/\.$/, '')}</Link>)}
-            {l === 'en' && <><Link to="/privacy" className="hover:text-zinc-200">{lang === 'fr' ? 'Confidentialité' : 'Privacy'}</Link><Link to="/terms" className="hover:text-zinc-200">{lang === 'fr' ? 'Conditions' : 'Terms'}</Link><a href="mailto:support@storyit.fun" className="hover:text-zinc-200">Contact</a></>}
+            {l === 'en' && <><Link to="/privacy" className="hover:text-zinc-200">{lang === 'fr' ? 'Confidentialité' : 'Privacy'}</Link><Link to="/terms" className="hover:text-zinc-200">{lang === 'fr' ? 'Conditions' : 'Terms'}</Link><a href="mailto:etook0.pro@gmail.com" className="hover:text-zinc-200">Contact</a></>}
           </nav>
         ))}
       </div>

@@ -56,7 +56,7 @@ export default function SettingsPage() {
         </Card>
         {isSupabaseConfigured && (
           <Card>
-            <CardHeader title="Session" subtitle={`Pour supprimer votre compte, écrivez à support@storyit.fun.`} />
+            <CardHeader title="Session" subtitle={`Pour supprimer votre compte, écrivez à etook0.pro@gmail.com.`} />
             <Button variant="danger" onClick={() => signOut().then(() => navigate('/'))}><LogOut className="h-4 w-4" /> Se déconnecter</Button>
           </Card>
         )}

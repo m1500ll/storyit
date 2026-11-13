@@ -20,7 +20,7 @@ export default function HelpPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card><p className="text-sm font-semibold text-zinc-100">Bien démarrer</p><p className="mt-1 text-sm text-zinc-400">Écrivez une histoire dans le Prompt Studio et cliquez sur « Générer la vidéo », ou créez une histoire vraie en 3D dans l’Animated Studio.</p><Link to="/app/prompts" className="touch-hit mt-3 inline-block text-xs text-violet-300">Ouvrir le Prompt Studio →</Link></Card>
         <Card><p className="text-sm font-semibold text-zinc-100">Grandir et monétiser</p><p className="mt-1 text-sm text-zinc-400">Les règles des plateformes et ce qui marche pour les séries d’histoires.</p><Link to="/app/guide" className="touch-hit mt-3 inline-block text-xs text-violet-300">Guide du créateur →</Link></Card>
-        <Card><p className="flex items-center gap-1.5 text-sm font-semibold text-zinc-100"><Mail className="h-4 w-4" /> Contact</p><p className="mt-1 text-sm text-zinc-400">Une question, un bug, un remboursement ? Écrivez-nous.</p><a href="mailto:support@storyit.fun" className="touch-hit mt-3 inline-block text-xs text-violet-300">support@storyit.fun →</a></Card>
+        <Card><p className="flex items-center gap-1.5 text-sm font-semibold text-zinc-100"><Mail className="h-4 w-4" /> Contact</p><p className="mt-1 text-sm text-zinc-400">Une question, un bug, un remboursement ? Écrivez-nous.</p><a href="mailto:etook0.pro@gmail.com" className="touch-hit mt-3 inline-block text-xs text-violet-300">etook0.pro@gmail.com →</a></Card>
       </div>
       <h2 className="mb-3 mt-10 text-sm font-semibold text-zinc-100">Questions fréquentes</h2>
       <div className="divide-y divide-line/[0.06] rounded-2xl border border-line/[0.06] bg-ink-900">

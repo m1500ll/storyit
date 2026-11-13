@@ -6,7 +6,7 @@ export const LEGAL = {
   product: 'Storyit',
   controller: 'Hamza Boudouaia',
   address: 'Four Tower, Business Bay, Dubai, United Arab Emirates',
-  contactEmail: 'support@storyit.fun',
+  contactEmail: 'etook0.pro@gmail.com',
   supervisoryAuthority: { name: 'CNIL', url: 'https://www.cnil.fr' },
   lastUpdated: '2026-11-13',
   website: 'https://storyit.fun',
