@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
   const appUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173';
 
   try {
-    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices' | 'auto_topup' | 'customer_payments'; product?: ProductKey; trial?: boolean; user_id?: string; enabled?: boolean; threshold?: number; credits?: number };
+    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices' | 'auto_topup' | 'customer_payments' | 'recent_payments'; product?: ProductKey; trial?: boolean; user_id?: string; enabled?: boolean; threshold?: number; credits?: number };
     const { action, product, trial } = body;
 
     // Admin: the latest checkout pages (what was picked, at what price, did it end in a payment) to study drop-off.
@@ -80,6 +80,20 @@ Deno.serve(async (req) => {
         created: s.created, canceled_at: s.canceled_at, cancel_at_period_end: s.cancel_at_period_end, ended_at: s.ended_at,
         reason: s.cancellation_details?.reason ?? null, current_period_end: s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? null,
       })) });
+    }
+    if (action === 'recent_payments') { // admin: the latest payment attempts of all customers, failed ones included
+      const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
+      if (!me?.is_admin) return json({ error: 'Forbidden' }, 403);
+      const list = await stripe('payment_intents?limit=25');
+      const custs = [...new Set((list?.data ?? []).map((x: any) => x.customer).filter(Boolean))];
+      const { data: owners } = await admin.from('profiles').select('id, stripe_customer_id, plan').in('stripe_customer_id', custs as string[]);
+      const who = new Map((owners ?? []).map((o: any) => [o.stripe_customer_id, o]));
+      const emails = new Map<string, string>();
+      for (const o of owners ?? []) { const { data } = await admin.auth.admin.getUserById(o.id); if (data?.user?.email) emails.set(o.id, data.user.email); }
+      return json({ payments: (list?.data ?? []).map((x: any) => { const o: any = who.get(x.customer); return {
+        created: x.created, amount: x.amount, currency: x.currency, status: x.status, description: x.description ?? null,
+        error: x.last_payment_error?.message ?? null, code: x.last_payment_error?.decline_code ?? x.last_payment_error?.code ?? null,
+        email: o ? emails.get(o.id) ?? null : null, user: o?.id ?? null, plan: o?.plan ?? null }; }) });
     }
     if (action === 'customer_payments') { // admin: a customer's payment attempts and why they failed (declined card, 3-D Secure…)
       const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
