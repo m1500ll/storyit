@@ -123,7 +123,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
   trial_1dollar: {
     subject: '🎁 Votre première vidéo IA virale pour 1 $',
     audience: 'free_no_trial',
-    html: (unsub) => shell(`<tr><td style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#ffffff">3 jours pour tout tester, 5 000 crédits offerts. Ensuite, c’est vous qui décidez.</td></tr>
+    html: (unsub) => shell(`<tr><td style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#ffffff">3 jours pour tout tester, 7 000 crédits offerts. Ensuite, c’est vous qui décidez.</td></tr>
 <tr><td style="font-size:26px;line-height:1.25;font-weight:800;color:#1f1b2e;padding-bottom:12px">Tout Storyit pendant 3 jours,<br>pour <span style="color:#7c3aed">1 $</span>.</td></tr>
 <tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Vous avez créé votre compte, il ne manque plus que votre première vraie vidéo. Pour vous lancer, on vous ouvre <strong>tous les studios pendant 3 jours pour seulement 1 $</strong>.</td></tr>
 <tr><td style="padding:18px 0 6px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
@@ -133,7 +133,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 </tr></table></td></tr>
 <tr><td style="font-size:12px;color:#7a7390;text-align:center;padding-bottom:10px">Des vidéos créées avec Storyit</td></tr>
 <tr><td style="padding:8px 0 4px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.9">
-<tr><td>🎬 <strong>5 000 crédits</strong> : une vidéo 3D complète (script, voix, musique, sous-titres)</td></tr>
+<tr><td>🎬 <strong>7 000 crédits</strong> : une vidéo de fruits complète ou 2 vidéos 3D (script, voix, musique, sous-titres)</td></tr>
 <tr><td>🍓 Fruit Dramas, histoires 3D, vidéo automatique, traduction : <strong>tout est débloqué</strong></td></tr>
 <tr><td>📲 Une vidéo verticale <strong>prête à publier</strong> sur TikTok, Reels et Shorts</td></tr></table></td></tr>
 <tr><td align="center" style="padding:26px 0 10px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:17px;padding:16px 30px;border-radius:12px">Créer ma vidéo pour 1 $ →</a></td></tr>
@@ -144,7 +144,7 @@ Bonjour,
 
 Vous avez créé votre compte, il ne manque plus que votre première vraie vidéo. Pour vous lancer, on vous ouvre tous les studios pendant 3 jours pour seulement 1 $.
 
-- 5 000 crédits : une vidéo 3D complète (script, voix, musique, sous-titres)
+- 7 000 crédits : une vidéo de fruits complète ou 2 vidéos 3D (script, voix, musique, sous-titres)
 - Fruit Dramas, histoires 3D, vidéo automatique, traduction : tout est débloqué
 - Une vidéo verticale prête à publier sur TikTok, Reels et Shorts
 

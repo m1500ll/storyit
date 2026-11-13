@@ -35,7 +35,7 @@ export function Hero() {
         </h1>
         <div>
         <StartLink to="/app/billing?interval=month" className="mt-6 inline-flex items-center gap-2 rounded-full border border-violet-500/40 bg-violet-600/15 px-4 py-2 text-sm font-semibold text-zinc-100 transition hover:bg-violet-600/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
-          <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-bold text-white">{fr ? 'ESSAI' : 'TRIAL'}</span>{fr ? '3 jours pour 1 $ · 5 000 crédits' : '3 days for $1 · 5,000 credits'} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+          <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-bold text-white">{fr ? 'ESSAI' : 'TRIAL'}</span>{fr ? '3 jours pour 1 $ · 7 000 crédits' : '3 days for $1 · 7,000 credits'} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
         </StartLink>
         </div>
         <PromoVideo className="relative mx-auto mt-6 max-w-4xl text-left" />

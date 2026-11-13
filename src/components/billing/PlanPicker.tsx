@@ -45,7 +45,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
           <p className="relative inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Offre d’essai</p>
           <p className="relative mt-3 text-balance font-display text-3xl leading-tight text-zinc-50">Essayez tout Storyit 3 jours pour {TRIAL.price} $</p>
           <ul className="relative mt-3 space-y-1.5 text-sm text-zinc-300">
-            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span><strong className="text-zinc-100">{formatCredits(TRIAL.credits)} crédits</strong> : de quoi créer une vraie vidéo 3D</span></li>
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span><strong className="text-zinc-100">{formatCredits(TRIAL.credits)} crédits</strong> : une vidéo de fruits complète ou 2 vidéos 3D</span></li>
             <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>Tous les studios : Animated Studio, Prompt Studio, vidéo automatique, traduction</span></li>
             <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>Résiliable en 1 clic avant la fin de l’essai</span></li>
           </ul>
