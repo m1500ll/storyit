@@ -15,6 +15,8 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
   const [pending, setPending] = useState<string | null>(null);
   const currentPrice = PLANS.find((p) => p.id === currentPlan)?.price ?? 0;
   const canTrial = TRIAL_ENABLED && !trialUsed && (currentPlan ?? 'free') === 'free';
+  // the $1 trial is for the monthly plans only (a trial that turned into a yearly charge would surprise the customer)
+  const trialHere = canTrial && interval === 'month';
   const [error, setError] = useState<string | null>(null);
 
   const buy = async (product: ProductKey, trial = false) => {
@@ -35,9 +37,6 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
 
   return (
     <div>
-      {canTrial ? (
-        <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300">🎁 Essai {TRIAL.days} jours pour {TRIAL.price} $ · {formatCredits(TRIAL.credits)} crédits pour tester</p>
-      ) : (
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div role="radiogroup" aria-label="Facturation" className="inline-flex rounded-full border border-line/10 bg-ink-950 p-1">
           {(['year', 'month'] as const).map((iv) => (
@@ -46,12 +45,12 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
                 interval === iv ? 'bg-violet-600 text-white' : 'text-zinc-400 hover:text-zinc-100')}>
               {iv === 'year' ? 'Annuel' : 'Mensuel'}
               {iv === 'year' && <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-bold', interval === iv ? 'bg-white text-violet-700' : 'bg-emerald-500/15 text-emerald-300')}>−{YEARLY_DISCOUNT} %</span>}
+              {iv === 'month' && canTrial && <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-bold', interval === iv ? 'bg-white text-violet-700' : 'bg-emerald-500/15 text-emerald-300')}>essai {TRIAL.price} $</span>}
             </button>
           ))}
         </div>
-        <p className="text-xs font-medium text-emerald-300">{interval === 'year' ? `🎁 −${YEARLY_DISCOUNT} % et tous les crédits de l’année d’un coup` : `Passez à l’annuel pour économiser ${YEARLY_DISCOUNT} %`}</p>
+        <p className="text-xs font-medium text-emerald-300">{interval === 'year' ? `🎁 −${YEARLY_DISCOUNT} % et tous les crédits de l’année d’un coup` : trialHere ? `🎁 Essai ${TRIAL.days} jours pour ${TRIAL.price} $ · ${formatCredits(TRIAL.credits)} crédits pour tester` : `Passez à l’annuel pour économiser ${YEARLY_DISCOUNT} %`}</p>
       </div>
-      )}
       <div className={cn('grid gap-3', compact ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 xl:grid-cols-4')}>
         {/* In the compact paywall, only show plans above the current one (Studio customers just see the top-up packs). */}
         {PLANS.filter((p) => !compact || (p.id !== 'free' && rank(p.id) > rank(currentPlan))).map((p) => {
@@ -66,7 +65,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
                 {current ? <span className="rounded-full bg-line/10 px-2 py-0.5 text-[11px] text-zinc-300">Actuelle</span>
                   : 'badge' in p && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300">Meilleur rapport qualité-prix</span>}
               </div>
-              {(() => { const yearly = !canTrial && interval === 'year' && 'yearly' in p ? p.yearly : null; /* the trial turns into the monthly plan */ return (<>
+              {(() => { const yearly = interval === 'year' && 'yearly' in p ? p.yearly : null; return (<>
               <p className="mt-2 flex flex-wrap items-baseline gap-x-2 font-display text-3xl text-zinc-50">
                 {p.price > 0 && (yearly || 'compareAt' in p) && <s className="font-sans text-base text-zinc-500" aria-label={`au lieu de ${yearly ? p.price : 'compareAt' in p ? p.compareAt : p.price} $`}>{yearly ? p.price : 'compareAt' in p ? p.compareAt : p.price} $</s>}
                 <span>{yearly ? Math.round(yearly / 12) : p.price} $<span className="font-sans text-xs text-zinc-500">{p.period === 'month' ? '/mois' : ''}</span></span>
@@ -81,7 +80,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
                   {p.perksFr.map((k) => <li key={k} className="flex gap-1.5 text-xs text-zinc-400"><Check className="h-3.5 w-3.5 shrink-0 text-violet-400" />{k}</li>)}
                 </ul>
               )}
-              {p.id !== 'free' && canTrial && !current && !included && (
+              {p.id !== 'free' && trialHere && !current && !included && (
                 <>
                   <Button size="sm" className="mt-4 w-full" variant={featured ? 'primary' : 'secondary'} loading={pending === `${p.id}:trial`}
                     disabled={pending !== null} onClick={() => buy(p.id as ProductKey, true)}>
@@ -96,7 +95,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
                   </button>
                 </>
               )}
-              {p.id !== 'free' && !(canTrial && !current && !included) && (
+              {p.id !== 'free' && !(trialHere && !current && !included) && (
                 interval === 'year' && 'yearly' in p ? (
                   <Button size="sm" className="mt-4 w-full" variant={featured && !included ? 'primary' : 'secondary'} disabled={included}
                     loading={pending === `${p.id}_year`} onClick={() => buy(`${p.id}_year` as ProductKey)}>
