@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizePhase } from '@shared/promptStudio.ts';
-import { buildVideoPlan, firstClips, projectSeconds, VIDEO_TIERS, videoBlocker, videoCost } from '@shared/promptVideo.ts';
+import { buildVideoPlan, firstClips, lengthOf, LENGTH_RANGE, projectSeconds, VIDEO_TIERS, videoBlocker, videoCost } from '@shared/promptVideo.ts';
 
 const line = (character: string, start: number, end: number, text: string) => ({ character, start, end, text });
 const clip = (seconds: number) => ({ seconds, location: 'kitchen', characters: ['Kévin', 'Lila'], summary: 's', open_question: 'q', new_thing: 'n', mini_hook: 'm',
@@ -22,13 +22,15 @@ const project = () => {
 };
 
 describe('Prompt Studio → video', () => {
-  it('prices follow the length: about 7,000 / 15,000 / 30,000 credits a minute, rounded up to 500', () => {
-    expect(videoCost('eco', 60)).toBe(7000);
-    expect(videoCost('standard', 60)).toBe(15000);
-    expect(videoCost('premium', 60)).toBe(30000);
-    expect(videoCost('eco', 70)).toBe(8500);
-    expect(videoCost('premium', 72)).toBe(36000);
-    expect(videoCost('eco', 1) % 500).toBe(0);
+  it('prices are fixed per length: 45 s costs what a minute used to, a minute a bit more', () => {
+    expect(videoCost('eco', 46)).toBe(7000);
+    expect(videoCost('standard', 45)).toBe(15000);
+    expect(videoCost('premium', 48)).toBe(30000);
+    expect(videoCost('eco', 31)).toBe(4500);
+    expect(videoCost('eco', 61)).toBe(9000);
+    expect(videoCost('premium', 72)).toBe(39000); // older 66-75 s scripts are a minute
+    expect([30, 45, 60].map((n) => lengthOf(LENGTH_RANGE[n as 30 | 45 | 60][0]))).toEqual([30, 45, 60]);
+    expect([30, 45, 60].map((n) => lengthOf(LENGTH_RANGE[n as 30 | 45 | 60][1]))).toEqual([30, 45, 60]);
   });
   it('an admin test keeps the first clips that fit', () => {
     expect(firstClips([6, 10, 10, 15, 15, 10].map((seconds) => ({ seconds })), 30)).toBe(3);

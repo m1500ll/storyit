@@ -17,7 +17,7 @@ const script = () => normalizePhase('script', {
 
 describe('Prompt Studio V4', () => {
   it('master prompt keeps the key rules of the meta-prompt', () => {
-    for (const rule of ['66 à 75 s', '4,2 à 4,6 mots/s', '6 mots minimum', '5 hooks', 'cliffhanger', 'Grille /10', 'HISTOIRE ET RYTHME']) expect(MASTER_PROMPT).toContain(rule);
+    for (const rule of ['durée totale imposée', '4,2 à 4,6 mots/s', '6 mots minimum', '5 hooks', 'cliffhanger', 'Grille /10', 'HISTOIRE ET RYTHME']) expect(MASTER_PROMPT).toContain(rule);
   });
   it('the story is enough to start: the script step needs no concepts', () => {
     expect(PHASES.script.requires).toEqual([]);

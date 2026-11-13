@@ -2,7 +2,7 @@ import { Card, PageHeader } from '@/components/ui';
 
 const TIPS = [
   { title: 'Accrocher dans les 2 premières secondes', body: 'Ouvrez sur le conflit ou une réplique choc, jamais sur le contexte. Le hook du studio est pensé pour ça : gardez-le en première scène.' },
-  { title: 'Dépasser une minute', body: 'TikTok ne rémunère que les vidéos de plus d’une minute. Les épisodes du Prompt Studio font 66 à 75 s : gardez tous les plans.' },
+  { title: 'Dépasser une minute', body: 'TikTok ne rémunère que les vidéos de plus d’une minute. Dans le Prompt Studio, choisissez la durée « 1 min » (61 à 68 s) et gardez tous les plans.' },
   { title: 'Finir chaque épisode sur un cliffhanger', body: 'Le suspense fait revenir les spectateurs pour la partie 2 et les pousse à s’abonner. Titrez « Partie 1, 2, 3… ».' },
   { title: 'Garder les mêmes personnages', body: 'Des personnages récurrents créent une communauté de fans. Utilisez « C’est une suite » : leur apparence reste la même dans chaque épisode.' },
   { title: 'Publier chaque jour, à la même heure', body: 'La régularité compte plus que la perfection. Préparez 3 à 5 épisodes le même jour, puis publiez-les un par jour.' },

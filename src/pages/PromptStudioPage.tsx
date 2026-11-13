@@ -12,6 +12,8 @@ import { V4Project, V4_STEPS } from '@/components/prompts/V4Project';
 import { TrendIdeas } from '@/components/prompts/TrendIdeas';
 import { conceptToStory } from '@shared/trends.ts';
 import { STYLES } from '@shared/promptStudio.ts';
+import { LengthPicker } from '@/components/prompts/LengthPicker';
+import { DEFAULT_VIDEO_LENGTH, type VideoLength } from '@shared/promptVideo.ts';
 
 const STEPS: { key: PhaseKey; label: string; waiting: string }[] = [
   { key: 'concepts', label: 'Concepts', waiting: 'Écriture de 3 concepts…' },
@@ -106,10 +108,11 @@ function Start() {
   const [part, setPart] = useState(2);
   const [previousEnd, setPreviousEnd] = useState('');
   const [veille, setVeille] = useState(false);
+  const [length, setLength] = useState<VideoLength>(DEFAULT_VIDEO_LENGTH);
   const { run, busy, error } = useGenerate();
   const navigate = useNavigate();
   const { data: projects = [], loading } = useLiveQuery(() => promptStudio.list(), 'prompt-projects');
-  const common = { style, ...(part2 ? { part, previous_end: previousEnd } : {}) };
+  const common = { style, length, ...(part2 ? { part, previous_end: previousEnd } : {}) };
   const start = async (phase: 'script' | 'concepts') => { const p = await run({ phase, story, ...common }); if (p) navigate(`/app/prompts/${p.id}`); };
   return (
     <>
@@ -136,7 +139,10 @@ function Start() {
             ))}
           </div>
 
-          <label htmlFor="story" className="mt-6 block text-sm font-semibold text-zinc-100">2. Votre histoire <span className="font-normal text-zinc-500">(quelques lignes, même en vrac)</span></label>
+          <h2 className="mt-6 text-sm font-semibold text-zinc-100">2. La durée de la vidéo <span className="font-normal text-zinc-500">(l’histoire est écrite pour cette durée)</span></h2>
+          <div className="mt-2 max-w-md"><LengthPicker value={length} onChange={setLength} /></div>
+
+          <label htmlFor="story" className="mt-6 block text-sm font-semibold text-zinc-100">3. Votre histoire <span className="font-normal text-zinc-500">(quelques lignes, même en vrac)</span></label>
           <textarea id="story" rows={4} maxLength={3000} value={story} onChange={(e) => setStory(e.target.value)}
             placeholder="Un livreur fraise trouve un sac de billets dans son scooter. Son patron citron l’accuse de l’avoir volé devant toute la pizzeria…"
             className="mt-2 w-full rounded-xl border border-line/10 bg-transparent p-3 text-base text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 sm:text-sm" />

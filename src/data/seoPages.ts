@@ -30,7 +30,7 @@ export const SEO_PAGES: SeoPageData[] = [
     steps: [
       { title: 'Choisis le style', body: 'Fruits, ongles, objets du quotidien ou pierres précieuses : le style reste le même pour toute la série.' },
       { title: 'Raconte en vrac', body: 'Quelques lignes suffisent, ou demande 3 histoires au studio. Les concepts tendance du jour sont proposés aussi.' },
-      { title: 'Script et prompts', body: 'Hook, découpage minuté de 66 à 75 secondes, dialogues, prompts d’images et d’animation, couverture et légende.' },
+      { title: 'Script et prompts', body: 'Hook, découpage minuté (30 s, 45 s ou plus d’une minute), dialogues, prompts d’images et d’animation, couverture et légende.' },
       { title: 'Vidéo automatique', body: 'Clique sur « Générer la vidéo » : images, animation et montage sont faits, la vidéo arrive dans ta bibliothèque.' },
     ],
     sections: [
@@ -152,7 +152,7 @@ export const SEO_PAGES: SeoPageData[] = [
     steps: [
       { title: 'Pick the style', body: 'Fruits, nails, everyday objects or gemstones: the style stays locked for the whole series.' },
       { title: 'Tell the story', body: 'A few lines are enough, or ask the studio for 3 stories. Today’s trending concepts are suggested too.' },
-      { title: 'Script and prompts', body: 'Hook, a timed 66-75 second breakdown, dialogue, image and animation prompts, cover and caption.' },
+      { title: 'Script and prompts', body: 'Hook, a timed breakdown (30 s, 45 s or over a minute), dialogue, image and animation prompts, cover and caption.' },
       { title: 'Automatic video', body: 'Click “Generate the video”: images, animation and editing are done and the video lands in your library.' },
     ],
     sections: [

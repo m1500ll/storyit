@@ -6,7 +6,9 @@ import { Button, Card } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { InsufficientCreditsError } from '@/services/errors';
 import { promptVideos, type PromptVideo, type VideoQuality } from '@/services/promptVideos';
-import { projectSeconds, videoBlocker, videoCost } from '@shared/promptVideo.ts';
+import { lengthLabel, lengthOf, projectSeconds, VIDEO_PRICES, videoBlocker, videoCost, type VideoLength } from '@shared/promptVideo.ts';
+import { promptStudio } from '@/services/promptStudio';
+import { LengthPicker } from './LengthPicker';
 import { formatCredits } from '@/services/credits';
 
 const QUALITIES: { key: VideoQuality; label: string; detail: string }[] = [
@@ -29,6 +31,23 @@ export function AutoVideo({ projectId, data }: { projectId: string; data: unknow
   const [error, setError] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const seconds = projectSeconds(data);
+  const current: VideoLength = lengthOf(seconds || 45);
+  const [target, setTarget] = useState<VideoLength>(current);
+  const [rewriting, setRewriting] = useState<string | null>(null);
+  useEffect(() => { setTarget(current); }, [current]);
+  /** another length: the script, the image prompts and the Grok prompts are written again for it (no credits) */
+  const rewrite = async () => {
+    setError(null);
+    try {
+      setRewriting('Réécriture de l’histoire pour ' + lengthLabel(target) + '…');
+      await promptStudio.generate({ phase: 'script', project_id: projectId, length: target });
+      setRewriting('Prompts des images…');
+      await promptStudio.generate({ phase: 'images', project_id: projectId });
+      setRewriting('Prompts d’animation…');
+      await promptStudio.generate({ phase: 'videos', project_id: projectId });
+    } catch (e) { setError(e instanceof Error ? e.message : 'La réécriture a échoué. Réessayez.'); }
+    finally { setRewriting(null); }
+  };
   const blocker = videoBlocker(data);
   const last = videos[0];
   const running = videos.some(active);
@@ -101,11 +120,28 @@ export function AutoVideo({ projectId, data }: { projectId: string; data: unknow
             </p>
           )}
 
+          {!blocker && (
+            <div className="mt-4">
+              <p className="text-xs text-zinc-400">Durée de la vidéo · votre histoire fait {Math.round(seconds)} s</p>
+              <div className="mt-2 max-w-md"><LengthPicker value={target} onChange={setTarget} disabled={!!rewriting || running} name="pv-length" /></div>
+              {target !== current && (
+                <div className="mt-3 rounded-xl border border-violet-500/30 bg-violet-500/[0.06] p-3">
+                  <p className="text-sm text-zinc-200">Pour une vidéo de <strong>{lengthLabel(target)}</strong>, l’histoire est réécrite à cette durée (script, prompts d’images et d’animation). C’est gratuit et prend environ 3 minutes.</p>
+                  <p className="mt-1 text-xs text-zinc-400">Prix de la vidéo de {lengthLabel(target)} : Éco {formatCredits(VIDEO_PRICES.eco[target])} · Standard {formatCredits(VIDEO_PRICES.standard[target])} · Premium {formatCredits(VIDEO_PRICES.premium[target])} crédits</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <Button size="sm" onClick={() => void rewrite()} disabled={!!rewriting} loading={!!rewriting}>Réécrire pour {lengthLabel(target)}</Button>
+                    <button type="button" onClick={() => setTarget(current)} disabled={!!rewriting} className="touch-hit text-xs text-zinc-400 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">Garder {lengthLabel(current)}</button>
+                  </div>
+                  {rewriting && <p role="status" aria-live="polite" className="mt-2 inline-flex items-center gap-2 text-xs text-violet-200"><Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden />{rewriting}</p>}
+                </div>
+              )}
+            </div>
+          )}
           {blocker ? (
             <p className="mt-4 text-sm text-zinc-400">{blocker}</p>
-          ) : (
+          ) : target !== current ? null : (
             <fieldset className="mt-4">
-              <legend className="text-xs text-zinc-400">{last?.status === 'done' ? 'Refaire la vidéo ? Choisissez la qualité' : 'Choisissez la qualité'} · vidéo de {Math.round(seconds)} s</legend>
+              <legend className="text-xs text-zinc-400">{last?.status === 'done' ? 'Refaire la vidéo ? Choisissez la qualité' : 'Choisissez la qualité'} · vidéo de {lengthLabel(current)}</legend>
               <div className="mt-2 grid gap-2 sm:grid-cols-3">
                 {QUALITIES.map((q) => (
                   <label key={q.key} className={cn('flex cursor-pointer flex-col rounded-xl border px-3 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-violet-500/50',

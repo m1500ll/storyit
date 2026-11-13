@@ -6,7 +6,7 @@
 // - Scene images: generated with the user's key only (Google bills the user), stored privately in `renders`.
 // - Keys: AES-GCM encrypted (TOKEN_ENCRYPTION_KEY), never returned to the browser.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { FIX_PROBLEMS, FIX_SCHEMA, MASTER_PROMPT, PHASES, STYLES, buildFixPrompt, buildPhasePrompt, buildRepairPrompt, normalizePhase, paceProblems, styleOf, type PhaseKey } from '../_shared/promptStudio.ts';
+import { DEFAULT_VIDEO_LENGTH, FIX_PROBLEMS, FIX_SCHEMA, isVideoLength, MASTER_PROMPT, PHASES, STYLES, buildFixPrompt, buildPhasePrompt, buildRepairPrompt, normalizePhase, paceProblems, styleOf, type PhaseKey } from '../_shared/promptStudio.ts';
 import { classifyGeminiError, GeminiError, KEY_MESSAGES, keyHint, looksLikeGeminiKey } from '../_shared/geminiKey.ts';
 import { decrypt, encrypt } from '../_shared/social.ts';
 import { backups, backupText, openaiModels } from '../_shared/backupLlm.ts';
@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
   const uid = auth.user.id;
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-  let body: { action?: string; project_id?: string; phase?: PhaseKey; idea?: string; choice?: number; feedback?: string; key?: string; scene?: number; style?: string; story?: string; part?: number; previous_end?: string; problem?: string; note?: string };
+  let body: { action?: string; project_id?: string; phase?: PhaseKey; idea?: string; choice?: number; feedback?: string; key?: string; scene?: number; style?: string; story?: string; part?: number; previous_end?: string; problem?: string; note?: string; length?: number };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
   const action = body.action ?? 'phase';
 
@@ -206,7 +206,10 @@ Deno.serve(async (req) => {
     data.story = String(body.story ?? '').trim().slice(0, 3000);
     data.part = Math.max(1, Math.min(20, Number(body.part) || 1));
     data.previous_end = String(body.previous_end ?? '').trim().slice(0, 1500);
+    data.length = isVideoLength(body.length) ? body.length : DEFAULT_VIDEO_LENGTH; // 30, 45 (default) or 60 s
   }
+  // a new length on an existing project: the story and the script are written again for it
+  if (project && isVideoLength(body.length) && (phase === 'concepts' || phase === 'script')) data.length = body.length;
   if (phase === 'script' && typeof body.choice === 'number') {
     if (!data.concepts?.[body.choice]) return json({ error: 'Choisissez une histoire' }, 400);
     data.chosen = body.choice;

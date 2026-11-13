@@ -43,7 +43,7 @@ export const MASTER_PROMPT = `Tu es scénariste, directeur artistique et réalis
 Tu travailles étape par étape et tu réponds UNIQUEMENT avec l'objet JSON demandé. Les dialogues, titres et textes pour le public sont en FRANÇAIS ; les descriptions visuelles destinées à ChatGPT et à Grok (décors, têtes, tenues, actions, plans, sons) sont en ANGLAIS. Le code ajoute lui-même le bloc de style et les blocs fixes de Grok : ne les écris jamais.
 
 HISTOIRE ET RYTHME
-1. DURÉE : 66 à 75 s de clips au total. Un clip = une scène dans UN lieu : 6 s (choc, réaction), 10 s (dialogue, le meilleur choix), 15 s (longue scène). Additionne et vérifie. Trop d'histoire = une partie de plus.
+1. DURÉE : la durée totale imposée dans la demande (par défaut 42 à 50 s). Un clip = une scène dans UN lieu : 6 s (choc, réaction), 10 s (dialogue, le meilleur choix), 15 s (longue scène). Additionne et vérifie. Trop d'histoire = une partie de plus.
 2. STRUCTURE : clip 1 = hook ; contexte compris par le conflit, jamais expliqué à froid ; mini-révélation + réplique culte vers 30-40 s ; retournement ; dernier clip = cliffhanger coupé au pic, rien de résolu.
 3. CASTING : 3 à 5 personnages, 3 maximum par image ; 2 à 4 lieux par partie.
 4. RÉTENTION : la question du hook reste ouverte jusqu'au bout ; du neuf toutes les 5-10 s (info, vanne, émotion, retournement) ; chaque scène est pire que la précédente ; chaque clip finit sur un mini-hook (menace, délai, révélation coupée, arrivée, choix). Aucun plan de décor, d'ambiance ni de quelqu'un qui marche. À bannir : explication à froid, répétition, transition, bonne nouvelle sans prix à payer. Le héros répond, il ne subit pas : chaque scène change le rapport de force.
@@ -97,7 +97,7 @@ const scriptSchema = obj({
     summary: S('Ce qui se passe, en une phrase'), open_question: S('La question ouverte pour le spectateur'),
     new_thing: S('Ce qui est nouveau dans ce clip'), mini_hook: S('Le mini-hook de fin de clip'),
     lines: arr(line, 'Répliques minutées qui remplissent tout le clip, 4,2 à 4,6 mots/s'),
-  }), 'Entre 6 et 9 clips, 66 à 75 s au total'),
+  }), 'Entre 2 et 9 clips, à la durée totale imposée'),
   engagement: obj({
     levers: arr(S(), '2-3 leviers'), references: arr(S(), '2 à 4 références et le clip où elles sont placées'),
     cult_line: S('Réplique culte, 8 mots max'), target_comment: S('Le commentaire visé en haut'),
@@ -160,6 +160,23 @@ export const FIX_PROBLEMS: Record<string, { label: string; rule: string }> = {
   hook: { label: 'Hook mou (clip 1)', rule: 'Dis ce qu’il rate, garde la meilleure de 3 nouvelles mécaniques, et refais l’image (action déjà en cours) et les répliques du clip 1 (1er mot = le choc, enjeu avant 3 s).' },
 };
 
+/** the three video lengths a customer can pick (the script is written for it); 45 s is the default */
+export type VideoLength = 30 | 45 | 60;
+export const VIDEO_LENGTHS: VideoLength[] = [30, 45, 60];
+export const DEFAULT_VIDEO_LENGTH: VideoLength = 45;
+export const isVideoLength = (n: unknown): n is VideoLength => n === 30 || n === 45 || n === 60;
+/** total clip seconds the script aims for, per length */
+/** "1 min" stays above 60 s: TikTok's Creator Rewards only pay videos longer than one minute */
+export const LENGTH_RANGE: Record<VideoLength, [number, number]> = { 30: [28, 34], 45: [42, 50], 60: [61, 68] };
+/** the length a project's script is written for (projects made before the choice existed were a minute) */
+export const projectLength = (ctx: Record<string, any>): VideoLength => (isVideoLength(ctx?.length) ? ctx.length : ctx?.script ? 60 : DEFAULT_VIDEO_LENGTH);
+export const lengthLabel = (n: VideoLength) => (n === 60 ? '1 min' : `${n} s`);
+const lengthRule = (n: VideoLength) => {
+  const [lo, hi] = LENGTH_RANGE[n];
+  const plan = n === 30 ? '2 ou 3 clips (ex. 6 + 10 + 15)' : n === 45 ? '4 ou 5 clips (ex. 6 + 10 + 15 + 15)' : '5 ou 6 clips (ex. 6 + 10 + 15 + 15 + 15), toujours plus de 60 s';
+  return `DURÉE IMPOSÉE : ${lo} à ${hi} s au total, soit ${plan}. Additionne et vérifie.`;
+};
+
 // ---------------------------------------------------------------- user turns
 export function buildPhasePrompt(phase: PhaseKey, ctx: Record<string, any>): string {
   const st = STYLES[styleOf(ctx.style)];
@@ -173,10 +190,10 @@ export function buildPhasePrompt(phase: PhaseKey, ctx: Record<string, any>): str
       const veille = t?.concepts?.length
         ? `\nVEILLE DU JOUR (ce qui cartonne en ce moment, chiffres réels) :\n${String(t.insights ?? '').slice(0, 3500)}\nExemples de concepts du jour (🟢 = aucune version française encore) :\n${t.concepts.map((c) => `- ${c.fr_status === 'green' ? '🟢 ' : ''}${c.title} — hook : ${c.hook.replace(/\n/g, ' / ').slice(0, 260)} — fin : ${c.ending.slice(0, 200)} — 🔁 ${c.repeat_line} — 💬 ${c.screen_line}`).join('\n')}\nAppuie-toi sur ces formats qui marchent (mécanique, type de hook, type de fin, réplique à répéter, jeu en commentaire), en priorité ceux sans version française, mais n'en recopie aucun : change les têtes, les prénoms, les décors et 2-3 détails, et donne à chaque histoire son propre hook. Dans "hook", donne la 1re réplique choc ; termine le synopsis par la réplique à répéter et le jeu pour les commentaires.`
         : '';
-      return `${style}\nPropose 3 histoires de mini-drama très différentes, pensées pour 66-75 s, avec un enjeu qui accroche les jeunes, un méchant, 2 à 4 lieux et un cliffhanger possible.${veille}${ctx.story ? `\nPiste de l'utilisateur : ${ctx.story}` : ''}${tweak}`;
+      return `${style}\nPropose 3 histoires de mini-drama très différentes, pensées pour une vidéo de ${lengthLabel(projectLength(ctx))} (${LENGTH_RANGE[projectLength(ctx)].join(' à ')} s), avec un enjeu qui accroche les jeunes, un méchant, 2 à 4 lieux et un cliffhanger possible.${veille}${ctx.story ? `\nPiste de l'utilisateur : ${ctx.story}` : ''}${tweak}`;
     }
     case 'script':
-      return `${style}${part}\n${story}\nLivre : le PITCH (titre, phrase paradoxe, synopsis, 3 à 5 personnages avec prénom phonétique, tête, visage, mains et cou, tenue signature, accessoire, voix), les lieux, les 5 hooks avec 5 mécaniques, le hook retenu (image + pourquoi), 2 hooks de rechange, le DÉCOUPAGE en clips de 6, 10 ou 15 s (66 à 75 s au total ; clip 1 = le hook retenu) avec pour chaque clip : lieu, personnages visibles, résumé, question ouverte, ce qui est nouveau, mini-hook et répliques qui remplissent tout le clip. BUDGET DE MOTS STRICT (compte-les, tous les mots de toutes les répliques du clip) : clip de 6 s = 25 à 27 mots en 2 répliques, 10 s = 42 à 46 mots en 3-4 répliques, 15 s = 63 à 69 mots en 5-6 répliques ; 6 mots minimum par réplique ; pas de mots de remplissage (« immédiatement », « tout », « vraiment » ajoutés pour faire des mots) : des vannes, des menaces, des détails concrets. Les minutages sont recalculés par le code, l'ENGAGEMENT (leviers, références placées, réplique culte, commentaire visé, notes) et le cliffhanger. Vérifie tes calculs avant de répondre.${tweak}`;
+      return `${style}${part}\n${story}\nLivre : le PITCH (titre, phrase paradoxe, synopsis, 3 à 5 personnages avec prénom phonétique, tête, visage, mains et cou, tenue signature, accessoire, voix), les lieux, les 5 hooks avec 5 mécaniques, le hook retenu (image + pourquoi), 2 hooks de rechange, le DÉCOUPAGE en clips de 6, 10 ou 15 s (${lengthRule(projectLength(ctx))} Clip 1 = le hook retenu) avec pour chaque clip : lieu, personnages visibles, résumé, question ouverte, ce qui est nouveau, mini-hook et répliques qui remplissent tout le clip. BUDGET DE MOTS STRICT (compte-les, tous les mots de toutes les répliques du clip) : clip de 6 s = 25 à 27 mots en 2 répliques, 10 s = 42 à 46 mots en 3-4 répliques, 15 s = 63 à 69 mots en 5-6 répliques ; 6 mots minimum par réplique ; pas de mots de remplissage (« immédiatement », « tout », « vraiment » ajoutés pour faire des mots) : des vannes, des menaces, des détails concrets. Les minutages sont recalculés par le code, l'ENGAGEMENT (leviers, références placées, réplique culte, commentaire visé, notes) et le cliffhanger. Vérifie tes calculs avant de répondre.${tweak}`;
     case 'images':
       return `${style}\nPitch et découpage validés : ${JSON.stringify(ctx.script)}\nLivre la PLANCHE (pour chaque personnage, une description complète en anglais : tête + visage + couleur des mains et du cou + tenue complète + accessoire ; elle sera recopiée mot pour mot) puis, pour CHAQUE clip dans l'ordre, l'image de départ : décor en une phrase riche, pour chaque personnage visible son action en cours (jamais une pose), son émotion et sa position, et les raccords du clip d'avant. Tous les personnages qui parlent dans le clip doivent être sur l'image.${tweak}`;
     case 'videos':
@@ -243,7 +260,7 @@ export function normalizePhase(phase: PhaseKey, raw: any): any {
         seconds: clipSeconds(c.seconds), location: str(c.location, 160), characters: (Array.isArray(c.characters) ? c.characters : []).slice(0, 3).map((x: unknown) => str(x, 40)),
         summary: str(c.summary, 400), open_question: str(c.open_question, 300), new_thing: str(c.new_thing, 300), mini_hook: str(c.mini_hook, 300), lines: lines(c.lines),
       })).filter((c) => c.lines.length).map((c) => ({ ...c, lines: retime(c.seconds, c.lines) }));
-      if (clips.length < 4) throw new Error('Découpage trop court reçu. Réessayez.');
+      if (clips.length < 2) throw new Error('Découpage trop court reçu. Réessayez.');
       const sc = raw?.engagement?.scores ?? {};
       const cap = (v: unknown, m: number) => Math.max(0, Math.min(m, Math.round(Number(v) || 0)));
       return {
@@ -272,7 +289,7 @@ export function normalizePhase(phase: PhaseKey, raw: any): any {
         setting: str(c.setting, 600), continuity: str(c.continuity, 400),
         characters: (Array.isArray(c.characters) ? c.characters : []).slice(0, 3).map((p: any) => ({ name: str(p.name, 40), action: str(p.action, 400) })),
       }));
-      if (!sheet.length || clips.length < 4) throw new Error('Prompts image incomplets reçus. Réessayez.');
+      if (!sheet.length || clips.length < 2) throw new Error('Prompts image incomplets reçus. Réessayez.');
       return { sheet, clips };
     }
     case 'videos': {
@@ -283,7 +300,7 @@ export function normalizePhase(phase: PhaseKey, raw: any): any {
         sound: str(c.sound, 400),
       }));
       // a clip without shots is rebuilt from its lines by retimeShots (close-ups of each speaker): only an empty answer is rejected
-      if (clips.length < 4 || clips.every((c: any) => !c.shots.length)) throw new Error('Prompts Grok incomplets reçus. Réessayez.');
+      if (clips.length < 2 || clips.every((c: any) => !c.shots.length)) throw new Error('Prompts Grok incomplets reçus. Réessayez.');
       return { clips };
     }
     case 'pack':
@@ -418,6 +435,8 @@ export function checklist(d: any): Check[] {
   if (!s) return [];
   const clips: { seconds: number; lines: Line[]; mini_hook: string }[] = s.clips ?? [];
   const total = clips.reduce((a, c) => a + c.seconds, 0);
+  // projects written before the length choice were 66-75 s
+  const range: [number, number] = isVideoLength(d.length) ? LENGTH_RANGE[d.length as VideoLength] : [61, 75];
   const stats = clips.map(clipStats);
   const hookLine = clips[0]?.lines?.[0];
   const hookWords = hookLine ? words(hookLine.text) : 0;
@@ -427,7 +446,7 @@ export function checklist(d: any): Check[] {
   const sc = s.engagement?.scores ?? {};
   const score = Math.min(10, (sc.villain ?? 0) + (sc.debate ?? 0) + (sc.cult_line ?? 0) + (sc.share ?? 0) + (sc.part2 ?? 0) + (sc.detail ?? 0));
   const out: Check[] = [
-    { ok: total >= 66 && total <= 75, label: 'Durée totale 66-75 s', detail: `${clips.map((c) => c.seconds).join(' + ')} = ${total} s` },
+    { ok: total >= range[0] && total <= range[1], label: `Durée totale ${range.join('-')} s (vidéo de ${lengthLabel(projectLength(d))})`, detail: `${clips.map((c) => c.seconds).join(' + ')} = ${total} s` },
     { ok: hookWords >= 6 && hookWords <= 10 && (hookLine?.start ?? 1) <= 0.2, label: 'Hook : 1re réplique de 6 à 10 mots à 0,1 s', detail: hookLine ? `${hookWords} mots, à ${hookLine.start} s` : 'pas de réplique' },
     { ok: (s.hook_candidates?.length ?? 0) >= 5 && (s.backup_hooks?.length ?? 0) >= 2, label: '5 hooks écrits, 2 de rechange', detail: `${s.hook_candidates?.length ?? 0} hooks, ${s.backup_hooks?.length ?? 0} de rechange` },
     { ok: clips.every((c) => c.mini_hook), label: 'Un mini-hook à la fin de chaque clip', detail: `${clips.filter((c) => c.mini_hook).length}/${clips.length}` },

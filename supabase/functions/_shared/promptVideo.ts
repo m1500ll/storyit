@@ -2,17 +2,26 @@
  * Prompt Studio → finished video: quality tiers, prices and the frozen generation plan. Pure: used by the
  * `prompt-videos` Edge Function and the tests (the browser mirrors the prices in src/services/credits.ts).
  */
-import { coverPrompt, grokPrompt, imagePrompt, sheetPrompt } from './promptStudio.ts';
+import { coverPrompt, grokPrompt, imagePrompt, sheetPrompt, type VideoLength } from './promptStudio.ts';
+export { DEFAULT_VIDEO_LENGTH, isVideoLength, LENGTH_RANGE, lengthLabel, VIDEO_LENGTHS, type VideoLength } from './promptStudio.ts';
 
 export type VideoQuality = 'eco' | 'standard' | 'premium';
-/** credits per minute of video; the price of a project is rounded up to the next 500 credits */
-export const VIDEO_TIERS: Record<VideoQuality, { perMin: number; image_model: string; image_quality: 'low' | 'medium' | 'high'; video_model: string; resolution: '480p' | '720p' }> = {
-  eco: { perMin: 7000, image_model: 'gpt-image-1.5', image_quality: 'medium', video_model: 'grok-imagine-video-1.5-lite', resolution: '480p' },
-  standard: { perMin: 15000, image_model: 'gpt-image-1.5', image_quality: 'medium', video_model: 'grok-imagine-video', resolution: '720p' },
-  premium: { perMin: 30000, image_model: 'gpt-image-1.5', image_quality: 'high', video_model: 'grok-imagine-video-1.5', resolution: '720p' },
+/** generation settings of each quality (the price comes from VIDEO_PRICES) */
+export const VIDEO_TIERS: Record<VideoQuality, { image_model: string; image_quality: 'low' | 'medium' | 'high'; video_model: string; resolution: '480p' | '720p' }> = {
+  eco: { image_model: 'gpt-image-1.5', image_quality: 'medium', video_model: 'grok-imagine-video-1.5-lite', resolution: '480p' },
+  standard: { image_model: 'gpt-image-1.5', image_quality: 'medium', video_model: 'grok-imagine-video', resolution: '720p' },
+  premium: { image_model: 'gpt-image-1.5', image_quality: 'high', video_model: 'grok-imagine-video-1.5', resolution: '720p' },
 };
 export const isQuality = (q: unknown): q is VideoQuality => typeof q === 'string' && q in VIDEO_TIERS;
-export const videoCost = (q: VideoQuality, seconds: number) => Math.max(500, Math.ceil((VIDEO_TIERS[q].perMin * seconds) / 60 / 500) * 500);
+/** fixed price per length and quality: 45 s costs what a minute used to, a minute a bit more */
+export const VIDEO_PRICES: Record<VideoQuality, Record<VideoLength, number>> = {
+  eco: { 30: 4500, 45: 7000, 60: 9000 },
+  standard: { 30: 10000, 45: 15000, 60: 19500 },
+  premium: { 30: 20000, 45: 30000, 60: 39000 },
+};
+/** which length a script of `seconds` belongs to (older 66-75 s scripts count as a minute) */
+export const lengthOf = (seconds: number): VideoLength => (seconds <= 38 ? 30 : seconds <= 53 ? 45 : 60);
+export const videoCost = (q: VideoQuality, seconds: number) => VIDEO_PRICES[q][lengthOf(seconds)];
 
 /** total length of the project's clips, or 0 */
 export const projectSeconds = (d: any): number => (d?.script?.clips ?? []).reduce((s: number, c: any) => s + (Number(c?.seconds) || 0), 0);
