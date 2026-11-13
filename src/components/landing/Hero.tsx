@@ -33,7 +33,12 @@ export function Hero() {
           {fr ? <>Crée des <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-coral-400 bg-clip-text text-transparent">vidéos IA</span> virales qui rapportent.</>
             : <>Create viral <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-coral-400 bg-clip-text text-transparent">AI videos</span> that earn money.</>}
         </h1>
-        <PromoVideo className="relative mx-auto mt-8 max-w-4xl text-left" />
+        <div>
+        <StartLink to="/app/billing?interval=month" className="mt-6 inline-flex items-center gap-2 rounded-full border border-violet-500/40 bg-violet-600/15 px-4 py-2 text-sm font-semibold text-zinc-100 transition hover:bg-violet-600/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
+          <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-bold text-white">{fr ? 'ESSAI' : 'TRIAL'}</span>{fr ? '3 jours pour 1 $ · 5 000 crédits' : '3 days for $1 · 5,000 credits'} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+        </StartLink>
+        </div>
+        <PromoVideo className="relative mx-auto mt-6 max-w-4xl text-left" />
         <p className="mx-auto mt-6 max-w-2xl text-base text-zinc-400 md:text-lg">
           {fr ? 'Choisis une histoire : Storyit écrit le script, crée les personnages, anime chaque scène, ajoute la voix, la musique, le titre accrocheur et les sous-titres. Une vidéo verticale terminée, prête à publier.'
             : 'Pick a story, a decor and a voice. Storyit writes the script, animates the 3D world and its characters, records the narrator and adds the hook title, captions and music. A finished vertical video, ready to post.'}

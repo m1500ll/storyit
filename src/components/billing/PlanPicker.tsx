@@ -11,10 +11,12 @@ const rank = (plan?: string) => RANKS[plan ?? 'free'] ?? 0;
 
 export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 'year' }: { currentPlan?: string; compact?: boolean; trialUsed?: boolean; initialInterval?: 'year' | 'month' }) {
   const toast = useToast();
-  const [interval, setInterval] = useState<'year' | 'month'>(initialInterval);
+  const trialOpen = TRIAL_ENABLED && !trialUsed && (currentPlan ?? 'free') === 'free';
+  // trial-eligible accounts open on the monthly tab, where every plan offers the $1 trial
+  const [interval, setInterval] = useState<'year' | 'month'>(trialOpen ? 'month' : initialInterval);
   const [pending, setPending] = useState<string | null>(null);
   const currentPrice = PLANS.find((p) => p.id === currentPlan)?.price ?? 0;
-  const canTrial = TRIAL_ENABLED && !trialUsed && (currentPlan ?? 'free') === 'free';
+  const canTrial = trialOpen;
   // the $1 trial is for the monthly plans only (a trial that turned into a yearly charge would surprise the customer)
   const trialHere = canTrial && interval === 'month';
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +39,24 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
 
   return (
     <div>
+      {canTrial && (
+        <div className="relative mb-5 overflow-hidden rounded-2xl border border-violet-500/40 bg-violet-600/[0.12] p-5">
+          <div aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full bg-violet-500/25 blur-3xl" />
+          <p className="relative inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Offre d’essai</p>
+          <p className="relative mt-3 text-balance font-display text-3xl leading-tight text-zinc-50">Essayez tout Storyit 3 jours pour {TRIAL.price} $</p>
+          <ul className="relative mt-3 space-y-1.5 text-sm text-zinc-300">
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span><strong className="text-zinc-100">{formatCredits(TRIAL.credits)} crédits</strong> : de quoi créer une vraie vidéo 3D</span></li>
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>Tous les studios : Animated Studio, Prompt Studio, vidéo automatique, traduction</span></li>
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>Résiliable en 1 clic avant la fin de l’essai</span></li>
+          </ul>
+          <Button size="lg" className="relative mt-4 w-full sm:w-auto" loading={pending === 'creator:trial'} disabled={pending !== null} onClick={() => buy('creator', true)}>
+            Commencer l’essai à {TRIAL.price} $
+          </Button>
+          <p className="relative mt-2 text-[11px] leading-snug text-zinc-400">
+            Puis Creator à {PLANS.find((x) => x.id === 'creator')?.price} $/mois, au bout de {TRIAL.days} jours ou dès qu’il vous reste moins de {formatCredits(TRIAL.switchAt)} crédits d’essai. Vous préférez Pro ou Studio ? Choisissez l’essai sous l’offre voulue ci-dessous.
+          </p>
+        </div>
+      )}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div role="radiogroup" aria-label="Facturation" className="inline-flex rounded-full border border-line/10 bg-ink-950 p-1">
           {(['year', 'month'] as const).map((iv) => (
@@ -82,7 +102,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
               )}
               {p.id !== 'free' && trialHere && !current && !included && (
                 <>
-                  <Button size="sm" className="mt-4 w-full" variant={featured ? 'primary' : 'secondary'} loading={pending === `${p.id}:trial`}
+                  <Button size="sm" className="mt-4 w-full" variant="secondary" loading={pending === `${p.id}:trial`}
                     disabled={pending !== null} onClick={() => buy(p.id as ProductKey, true)}>
                     Essayer {TRIAL.days} jours pour {TRIAL.price} $
                   </Button>

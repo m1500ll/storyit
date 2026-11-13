@@ -21,6 +21,14 @@ export function Pricing() {
         {fr ? 'Chaque offre donne des crédits pour créer vos vidéos IA. Sans engagement : résiliable à tout moment.' : 'Every plan comes with credits to create your AI videos. Cancel anytime.'}
       </p>
 
+      <div className="relative mx-auto mt-8 flex max-w-3xl flex-col items-center gap-4 overflow-hidden rounded-2xl border border-violet-500/40 bg-violet-600/[0.12] px-5 py-5 text-center sm:flex-row sm:text-left">
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-2xl text-zinc-50">{fr ? 'Essayez tout Storyit 3 jours pour 1 $' : 'Try all of Storyit for 3 days for $1'}</p>
+          <p className="mt-1 text-sm text-zinc-300">{fr ? '5 000 crédits pour créer une vraie vidéo 3D. Puis l’offre mensuelle choisie, résiliable en 1 clic avant la fin de l’essai.' : '5,000 credits to make a real 3D video. Then the monthly plan you picked, cancel in one click before the trial ends.'}</p>
+        </div>
+        <StartLink to="/app/billing?interval=month" className="shrink-0"><Button size="lg">{fr ? 'Commencer l’essai à 1 $' : 'Start the $1 trial'}</Button></StartLink>
+      </div>
+
       <div className="mt-8 flex justify-center">
         <div role="radiogroup" aria-label={fr ? 'Facturation' : 'Billing'} className="relative inline-flex rounded-full border border-line/10 bg-ink-900 p-1">
           {(['year', 'month'] as const).map((iv) => (

@@ -1,8 +1,8 @@
 import { Coins, X } from 'lucide-react';
 import { useState } from 'react';
-import { useCredits } from '@/hooks/useStore';
+import { useCredits, useProfile } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
-import { creditLevel, formatCredits, LOW_CREDITS } from '@/services/credits';
+import { creditLevel, formatCredits, LOW_CREDITS, TRIAL, TRIAL_ENABLED } from '@/services/credits';
 import { usePaywall } from './Paywall';
 
 const KEY = 'storyit:low-credits-dismissed-at';
@@ -15,6 +15,8 @@ const DAY = 86_400_000;
 export function LowCreditsBanner() {
   const { balance, loading, known } = useCredits();
   const openPaywall = usePaywall();
+  const { data: profile } = useProfile();
+  const trial = TRIAL_ENABLED && !!profile && profile.plan === 'free' && !profile.trial_used;
   const [hidden, setHidden] = useState(() => { try { return Date.now() - Number(localStorage.getItem(KEY) ?? 0) < DAY; } catch { return false; } });
   const level = creditLevel(balance);
   if (loading || !known || level === 'ok' || (level === 'low' && hidden)) return null;
@@ -24,14 +26,16 @@ export function LowCreditsBanner() {
       empty ? 'border-coral-500/30 bg-coral-500/10' : 'border-amber-500/30 bg-amber-500/[0.08]')}>
       <Coins className={cn('hidden h-4 w-4 shrink-0 sm:block', empty ? 'text-coral-300' : 'text-amber-300')} aria-hidden />
       <p className="flex-1 text-sm text-zinc-200">
-        {empty
+        {trial
+          ? <><strong>{empty ? 'Plus de crédits ?' : `Plus que ${formatCredits(balance)} crédits.`}</strong> Essayez tout Storyit 3 jours pour {TRIAL.price} $ : {formatCredits(TRIAL.credits)} crédits pour créer votre prochaine vidéo.</>
+          : empty
           ? <>Vous n’avez plus de crédits. Rechargez pour continuer à utiliser les studios IA.</>
           : <>Plus que <strong className="tabular-nums">{formatCredits(balance)}</strong> crédits (alerte sous {formatCredits(LOW_CREDITS)}). Rechargez maintenant pour ne pas être bloqué en plein projet.</>}
       </p>
       <div className="flex shrink-0 items-center gap-1">
         <button onClick={() => openPaywall()}
           className="touch-hit rounded-lg bg-gradient-to-r from-[#c2410c] to-[#b45309] px-3.5 py-2 text-xs font-semibold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-400/60">
-          Acheter des crédits
+          {trial ? `Essai à ${TRIAL.price} $` : 'Acheter des crédits'}
         </button>
         {!empty && (
           <button aria-label="Masquer pendant 24 heures" onClick={() => { setHidden(true); try { localStorage.setItem(KEY, String(Date.now())); } catch { /* private mode */ } }}
