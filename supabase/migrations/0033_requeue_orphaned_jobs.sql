@@ -18,5 +18,11 @@ $$;
 
 revoke all on function public.requeue_orphaned_jobs() from public, anon, authenticated;
 
-select cron.unschedule('storyit-requeue-orphans') where exists (select 1 from cron.job where jobname = 'storyit-requeue-orphans');
-select cron.schedule('storyit-requeue-orphans', '*/10 * * * *', 'select public.requeue_orphaned_jobs()');
+-- pg_cron exists on Supabase only (the local test database has no cron schema)
+do $$
+begin
+  if exists (select 1 from pg_namespace where nspname = 'cron') then
+    perform cron.unschedule('storyit-requeue-orphans') from cron.job where jobname = 'storyit-requeue-orphans';
+    perform cron.schedule('storyit-requeue-orphans', '*/10 * * * *', 'select public.requeue_orphaned_jobs()');
+  end if;
+end $$;

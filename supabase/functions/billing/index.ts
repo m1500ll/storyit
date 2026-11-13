@@ -223,7 +223,6 @@ Deno.serve(async (req) => {
       params['subscription_data[metadata][product]'] = product;
     }
     if (trial) {
-      return json({ error: 'L’essai à 1 $ n’est plus proposé.', code: 'trial_closed' }, 410);
       // one trial per account: never used, no paid plan now, no subscription ever on this Stripe customer
       if (mode !== 'subscription') return json({ error: 'The trial is only for plans.' }, 400);
       if (profile?.trial_used || (profile?.plan && profile.plan !== 'free')) return json({ error: 'Votre essai a déjà été utilisé.', code: 'trial_used' }, 409);
@@ -238,6 +237,8 @@ Deno.serve(async (req) => {
       params['line_items[1][price_data][product_data][name]'] = `Storyit — essai ${TRIAL.days} jours`;
       params['line_items[1][quantity]'] = '1';
       params['payment_method_collection'] = 'always';
+      // the early switch must be stated before paying (migration 0034 ends the trial once the trial credits are used)
+      params['custom_text[submit][message]'] = `1 $ aujourd’hui pour ${TRIAL.credits.toLocaleString('fr-FR')} crédits d’essai. Passage automatique à l’offre ${PLAN_NAMES[product as PlanKey] ?? product} (${Math.round(Number(plan.unit_amount) / 100)} $/mois) au bout de ${TRIAL.days} jours, ou plus tôt dès qu’il vous reste ${TRIAL.switchAt.toLocaleString('fr-FR')} crédits d’essai ou moins. Résiliable à tout moment avant depuis Storyit.`;
       params['subscription_data[trial_settings][end_behavior][missing_payment_method]'] = 'cancel';
     }
     const session = await stripe('checkout/sessions', params);

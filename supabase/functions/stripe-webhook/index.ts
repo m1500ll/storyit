@@ -131,11 +131,13 @@ Deno.serve(async (req) => {
             const { error } = await admin.rpc('grant_credits', { p_user_id: userId, p_amount: TRIAL.credits, p_type: 'subscription_grant',
               p_description: `Essai ${TRIAL.days} jours — crédits`, p_plan: GRANTS[product].plan, p_reset: true });
             if (error) throw new Error(error.message);
-            await admin.from('profiles').update({ trial_used: true }).eq('id', userId);
+            // trial_ends_at arms the early switch to the plan once the trial credits are used (migration 0034)
+            await admin.from('profiles').update({ trial_used: true, trial_ends_at: new Date(Date.now() + TRIAL.days * 86_400_000).toISOString() }).eq('id', userId);
           }
           break;
         }
         if (obj.amount_paid >= 0) await grant(userId, product, true);
+        if (obj.amount_paid > 0) await admin.from('profiles').update({ trial_ends_at: null }).eq('id', userId); // the trial (if any) is over
         // referral: the friend's first real payment of a plan (never the $1 trial)
         // the programme is paused unless REFERRAL_ENABLED=true is set in the function secrets
         if (env('REFERRAL_ENABLED') === 'true' && obj.amount_paid > 0 && (!line || line.amount > 0)) await rewardReferral(userId);
@@ -151,7 +153,7 @@ Deno.serve(async (req) => {
       case 'customer.subscription.deleted': {
         const userId = (await userIdForCustomer(obj.customer)) ?? obj.metadata?.user_id;
         const plan = event.type === 'customer.subscription.deleted' ? 'free' : planForSubscription(obj, env);
-        if (userId && plan) await admin.from('profiles').update({ plan }).eq('id', userId);
+        if (userId && plan) await admin.from('profiles').update({ plan, ...(plan === 'free' ? { trial_ends_at: null } : {}) }).eq('id', userId);
         break;
       }
     }

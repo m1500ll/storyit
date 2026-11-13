@@ -50,7 +50,7 @@ describe('planLine (trial vs paid invoices)', () => {
   it('returns null for a credit pack invoice', () => {
     expect(planLine({ lines: { data: [{ price: { id: 'price_pack' }, amount: 1200 }] } }, env)).toBeNull();
   });
-  it('trial settings: $1 for 3 days, 6000 credits', () => {
-    expect(TRIAL).toEqual({ feeCents: 100, days: 3, credits: 6000 });
+  it('trial settings: $1 for 3 days, 5000 credits, switch to the plan at 1500 left', () => {
+    expect(TRIAL).toEqual({ feeCents: 100, days: 3, credits: 5000, switchAt: 1500 });
   });
 });
