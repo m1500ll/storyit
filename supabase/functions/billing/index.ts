@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
   const appUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173';
 
   try {
-    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices' | 'auto_topup'; product?: ProductKey; trial?: boolean; user_id?: string; enabled?: boolean; threshold?: number; credits?: number };
+    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices' | 'auto_topup' | 'customer_payments'; product?: ProductKey; trial?: boolean; user_id?: string; enabled?: boolean; threshold?: number; credits?: number };
     const { action, product, trial } = body;
 
     // Admin: the latest checkout pages (what was picked, at what price, did it end in a payment) to study drop-off.
@@ -80,6 +80,17 @@ Deno.serve(async (req) => {
         created: s.created, canceled_at: s.canceled_at, cancel_at_period_end: s.cancel_at_period_end, ended_at: s.ended_at,
         reason: s.cancellation_details?.reason ?? null, current_period_end: s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? null,
       })) });
+    }
+    if (action === 'customer_payments') { // admin: a customer's payment attempts and why they failed (declined card, 3-D Secure…)
+      const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
+      if (!me?.is_admin) return json({ error: 'Forbidden' }, 403);
+      const { data: who } = await admin.from('profiles').select('stripe_customer_id, plan').eq('id', String(body.user_id ?? '')).single();
+      if (!who?.stripe_customer_id) return json({ plan: who?.plan ?? null, attempts: [] });
+      const [pis, subs] = await Promise.all([stripe(`payment_intents?customer=${who.stripe_customer_id}&limit=10`), stripe(`subscriptions?customer=${who.stripe_customer_id}&status=all&limit=5`)]);
+      return json({ plan: who.plan,
+        attempts: (pis?.data ?? []).map((x: any) => ({ created: x.created, amount: x.amount, status: x.status, error: x.last_payment_error?.message ?? null,
+          decline: x.last_payment_error?.decline_code ?? x.last_payment_error?.code ?? null, card: x.last_payment_error?.payment_method?.card?.brand ?? null })),
+        subscriptions: (subs?.data ?? []).map((x: any) => ({ status: x.status, created: x.created, canceled_at: x.canceled_at, product: planOfPrice(x.items?.data?.[0]?.price?.id) ?? yearlyPlanOfPrice(x.items?.data?.[0]?.price?.id) })) });
     }
     if (action === 'recent_invoices') { // admin: every paid invoice (plans, upgrades, trials) with the Storyit account it belongs to
       const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
