@@ -8,7 +8,7 @@ export const LEGAL = {
   address: 'Four Tower, Business Bay, Dubai, United Arab Emirates',
   contactEmail: 'support@storyit.fun',
   supervisoryAuthority: { name: 'CNIL', url: 'https://www.cnil.fr' },
-  lastUpdated: '2026-11-04',
+  lastUpdated: '2026-11-13',
   website: 'https://storyit.fun',
   /** Set to true once the Gemini API key is on a paid (billing-enabled) Google project. */
   geminiPaidTier: false,

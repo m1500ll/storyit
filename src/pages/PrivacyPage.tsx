@@ -20,7 +20,14 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 const PROCESSORS = [
   ['Supabase', 'Database, authentication and file storage', 'supabase.com/privacy'],
-  ['Google (Gemini API)', 'Generates story concepts and scenes from the text you submit', 'policies.google.com/privacy'],
+  ['OpenAI', 'Writes scripts and prompts from the text you submit, and draws the images of automatic videos', 'openai.com/policies/privacy-policy'],
+  ['xAI (Grok)', 'Animates the images of automatic videos', 'x.ai/legal/privacy-policy'],
+  ['Anthropic (Claude)', 'Runs the Animated Studio conversation that shapes your video', 'www.anthropic.com/legal/privacy'],
+  ['Google (Gemini API)', 'Backup writer and voices for some videos', 'policies.google.com/privacy'],
+  ['ElevenLabs', 'Voice-overs and translated voices', 'elevenlabs.io/privacy-policy'],
+  ['Groq, OpenRouter', 'Backup writers, only when the main AI providers are unavailable', 'groq.com/privacy-policy'],
+  ['Modal', 'Video rendering, editing and translation servers', 'modal.com/legal/privacy-policy'],
+  ['Resend', 'Account and product emails', 'resend.com/legal/privacy-policy'],
   ['Google (Sign-In)', 'Only if you choose “Continue with Google”', 'policies.google.com/privacy'],
   ['Stripe', 'Payments, invoices and subscriptions', 'stripe.com/privacy'],
   ['TikTok', 'Only if you connect a TikTok account: login and publishing of the videos you approve', 'www.tiktok.com/legal/privacy-policy'],
@@ -92,7 +99,8 @@ export default function PrivacyPage() {
         </Section>
 
         <Section id="ai" title="5. AI generation">
-          <p>When you generate concepts or scenes, the text you submit (your idea, the chosen concept and characters) is sent to Google’s Gemini API to produce the result. Do not include personal or sensitive information about real people in your ideas.</p>
+          <p>When you generate stories, scripts, images, voices or videos, the text and images you submit (your idea, the chosen story and characters) are sent to the AI providers listed above to produce the result. Do not include personal or sensitive information about real people in your ideas.</p>
+          <p><strong>OpenAI:</strong> Storyit takes part in OpenAI’s data-sharing programme. The text sent to OpenAI’s writing models (your ideas, stories and scripts) may be used by OpenAI to improve and train its models. Images, payment details and account data are not part of it.</p>
           <p>Generated content belongs to you. <strong>We</strong> do not use your content to train AI models. Google processes it under the <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noreferrer">Gemini API Terms</a>{LEGAL.geminiPaidTier ? ', on a paid tier where Google does not use your prompts or results to improve its products.' : ', which may allow Google to use submitted text to improve its products.'}</p>
         </Section>
 
