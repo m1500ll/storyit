@@ -125,7 +125,7 @@ function ProjectList() {
         <ul className="grid gap-2 sm:grid-cols-2">
           {projects.map((p) => (
             <li key={p.id} className="surface flex items-center gap-3 py-2 pl-2 pr-3">
-              <img src={promptStudio.styleImage(p.style)} alt="" width={48} height={64} loading="lazy" className="h-16 w-12 shrink-0 rounded-xl object-cover" />
+              <img src={p.universe && p.universe !== 'perso' ? `/studio/universes/${p.universe}.webp` : promptStudio.styleImage(p.style)} alt="" width={48} height={64} loading="lazy" className="h-16 w-12 shrink-0 rounded-xl object-cover" />
               <Link to={`/app/prompts/${p.id}`} className="min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
                 <span className="block truncate text-sm text-zinc-100">{p.title}</span>
                 <span className="block text-[11px] text-zinc-500">{new Date(p.updated_at).toLocaleDateString()}</span>

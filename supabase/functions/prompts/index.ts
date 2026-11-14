@@ -377,7 +377,7 @@ Deno.serve(async (req) => {
 
     const concept = data.concepts?.[Number(data.chosen ?? 0)];
     const title = data.script?.title ?? concept?.title ?? 'Nouveau mini-drama';
-    const row = { user_id: uid, data, idea: idea || null, phase: PHASES[phase].number, title: `${castOf(data).length ? '🎭' : STYLES[styleOf(data.style)].emoji} ${title}${Number(data.part) > 1 ? ` · Partie ${data.part}` : ''}`, updated_at: new Date().toISOString() };
+    const row = { user_id: uid, data, idea: idea || null, phase: PHASES[phase].number, title: `${castOf(data).length ? '🎭' : isUniverse(data.universe) ? '🎬' : STYLES[styleOf(data.style)].emoji} ${title}${Number(data.part) > 1 ? ` · Partie ${data.part}` : ''}`, updated_at: new Date().toISOString() };
     const saved = project
       ? await admin.from('prompt_projects').update(row).eq('id', project.id).eq('user_id', uid).select('*').single()
       : await admin.from('prompt_projects').insert(row).select('*').single();
