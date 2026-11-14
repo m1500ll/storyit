@@ -51,8 +51,14 @@ export const SUBTITLE_STYLES: { id: SubtitleStyle; label: string }[] = [
   { id: 'karaoke', label: 'Karaoké' }, { id: 'simple', label: 'Simple' }, { id: 'italique', label: 'Italique' }, { id: 'none', label: 'Aucun' },
 ];
 export const isSubtitleStyle = (s: unknown): s is SubtitleStyle => SUBTITLE_STYLES.some((x) => x.id === s);
-/** original tracks made for Storyit (public/music/{id}.mp3): royalty-free, so videos are never muted for copyright */
+/** library tracks (public/music/{id}.mp3): the owner's licensed tracks, then Storyit's own royalty-free tracks */
 export const MUSIC_TRACKS: { id: string; title: string; mood: string }[] = [
+  // tracks supplied by the owner, who declared holding the rights to use them in customers' videos (Nov 2026)
+  { id: 'yara-yara', title: 'Yara Yara Phonk (slowed)', mood: 'Phonk' },
+  { id: 'batida-funk', title: 'Batida Funk Medley', mood: 'Funk' },
+  { id: 'meow-meow', title: 'Meow Meow (triste)', mood: 'Mème triste' },
+  { id: 'deep-slowed', title: 'Deep Slowed (Emin & Jony)', mood: 'Slowed + reverb' },
+  { id: 'la-polizia', title: 'Nooo La Polizia', mood: 'Effet comique' },
   { id: 'phonk-nuit', title: 'Phonk de nuit', mood: 'Énergique' },
   { id: 'suspense', title: 'Suspense', mood: 'Tendu' },
   { id: 'drame', title: 'Drame', mood: 'Émouvant' },

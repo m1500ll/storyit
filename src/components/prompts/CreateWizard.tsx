@@ -49,7 +49,7 @@ export function CreateWizard() {
   const [cast, setCast] = useState<string[]>([]);
   const [length, setLength] = useState<VideoLength>(DEFAULT_VIDEO_LENGTH);
   const [subtitles, setSubtitles] = useState<SubtitleStyle>('karaoke');
-  const [music, setMusic] = useState<string | null>(MUSIC_TRACKS[1]!.id);
+  const [music, setMusic] = useState<string | null>('yara-yara');
   const [story, setStory] = useState('');
   const [busy, setBusy] = useState(false);
   const [ideaBusy, setIdeaBusy] = useState(false);
