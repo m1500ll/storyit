@@ -357,7 +357,7 @@ Deno.serve(async (req) => {
     const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });
     const u = list.users.find((x) => x.email?.toLowerCase() === test_to.toLowerCase());
     if (!u) return Response.json({ error: 'no account with this address' }, { status: 404 });
-    return Response.json({ test: true, id: await sendOne(test_to, u.id, c) });
+    return Response.json({ test: true, id: await sendOne(test_to, u.id, { ...c, subject: `[APERÇU] ${c.subject}` }) }); // a preview is always labelled
   }
 
   const { data: list, error } = await admin.auth.admin.listUsers({ perPage: 1000 });
