@@ -302,11 +302,12 @@ def finish(src, out, tmp, plan, kept):
     amap = ["-map", "0:a:0", "-c:a", "copy"]
     if music:
         track = os.path.join(tmp, "music.mp3")
-        open(track, "wb").write(retry(lambda: http("GET", f"{SITE}/music/{music}.mp3", timeout=60, raw=True)))
+        url = plan.get("music_url") or f"{SITE}/music/{music}.mp3"   # the customer's own track, or one of the library
+        open(track, "wb").write(retry(lambda: http("GET", url, timeout=90, raw=True)))
         dur = duration(src)
         inputs += ["-stream_loop", "-1", "-i", track]
         filters = ["-filter_complex",
-                   f"[0:a]asplit=2[v][key];[1:a]atrim=0:{dur:.2f},volume=0.22,afade=t=out:st={max(0, dur - 1.5):.2f}:d=1.5[m0];"
+                   f"[0:a]asplit=2[v][key];[1:a]atrim=0:{dur:.2f},loudnorm=I=-27:TP=-4:LRA=11,afade=t=out:st={max(0, dur - 1.5):.2f}:d=1.5[m0];"
                    "[m0][key]sidechaincompress=threshold=0.03:ratio=10:attack=15:release=350[m];"
                    "[v][m]amix=inputs=2:duration=first:normalize=0[a]"]
         amap = ["-map", "[a]", "-c:a", "aac", "-b:a", "160k"]

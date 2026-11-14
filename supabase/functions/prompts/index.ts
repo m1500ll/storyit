@@ -319,7 +319,7 @@ Deno.serve(async (req) => {
     if (isUniverse(body.universe)) data.universe = body.universe; // the visual universe of the wizard (replaces the head styles)
     data.cast_chars = await castSnapshot(body.cast); // the characters picked (theirs or the library's, 0 to 5), frozen for the series
     if (autoVideo) { // the wizard: everything runs by itself up to the finished video
-      data.options = { subtitles: isSubtitleStyle(body.auto?.subtitles) ? body.auto!.subtitles : 'karaoke', music: musicById(body.auto?.music)?.id ?? null };
+      data.options = { subtitles: isSubtitleStyle(body.auto?.subtitles) ? body.auto!.subtitles : 'karaoke', music: typeof body.auto?.music === 'string' && body.auto.music.startsWith(`upload:${uid}/`) && !body.auto.music.includes('..') ? body.auto.music.slice(0, 200) : musicById(body.auto?.music)?.id ?? null };
       data.auto = { status: 'running', step: 'script', started_at: new Date().toISOString() };
     }
   }

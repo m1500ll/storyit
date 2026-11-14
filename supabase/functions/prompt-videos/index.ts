@@ -87,6 +87,11 @@ Deno.serve(async (req) => {
     const refs = plan.sheet_refs ?? [];
     const own = refs.filter((r) => r.startsWith('storage:')).map((r) => r.slice(8));
     const { data: signed } = own.length ? await admin.storage.from('characters').createSignedUrls(own, 3 * 86_400) : { data: [] };
+    if (typeof plan.music === 'string' && plan.music.startsWith('upload:')) { // the customer's own music: a link the worker can download
+      const { data: m } = await admin.storage.from('music').createSignedUrl(plan.music.slice(7), 3 * 86_400);
+      (plan as Record<string, unknown>).music_url = m?.signedUrl ?? null;
+      if (!m?.signedUrl) plan.music = null;
+    }
     (plan as Record<string, unknown>).sheet_ref_urls = refs.map((r) => r.startsWith('storage:') ? signed?.find((x) => x.path === r.slice(8))?.signedUrl : `https://www.storyit.fun${r}`).filter(Boolean);
     const prepaid = internal ? Math.max(0, Math.round(Number(body.prepaid) || 0)) : 0;
     if (!internal) {

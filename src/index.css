@@ -57,6 +57,17 @@
 @keyframes float-soft { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes pagein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes fadein { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
+/* video wizard: the preview scene drifts slowly, steps slide in, the music bars bounce, karaoke words light up */
+@keyframes kenburns { from { transform: scale(1.04) translate(0, 0); } to { transform: scale(1.16) translate(-2%, -3%); } }
+@keyframes stepin { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+@keyframes eq { 0%, 100% { transform: scaleY(0.25); } 50% { transform: scaleY(1); } }
+@keyframes karaoke { 0%, 8% { color: #fff; } 12%, 100% { color: #fde047; } }
+@keyframes popin { 0% { opacity: 0; transform: scale(0.6); } 70% { transform: scale(1.08); } 100% { opacity: 1; transform: scale(1); } }
+.anim-kenburns { animation: kenburns 14s ease-in-out infinite alternate; }
+.anim-stepin { animation: stepin 0.35s cubic-bezier(.2,.8,.2,1) both; }
+.anim-eq { animation: eq 0.9s ease-in-out infinite; transform-origin: bottom; }
+.anim-popin { animation: popin 0.4s cubic-bezier(.2,.8,.2,1) both; }
+.anim-fadein { animation: fadein 0.6s ease-out both; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 
 @layer utilities {

@@ -84,6 +84,6 @@ export function buildVideoPlan(d: any, quality: VideoQuality): VideoPlan {
     clips: (d.script.clips as any[]).map((c, i) => ({ seconds: Math.min(15, Math.max(1, Number(c.seconds) || 6)), image_prompt: imagePrompt(d, i), grok_prompt: grokPrompt(d, i),
       lines: (c.lines ?? []).map((l: any) => ({ start: Number(l.start) || 0, end: Number(l.end) || 0, text: String(l.text ?? '').replace(/^[«"\s]+|[»"\s]+$/g, '') })) })),
     subtitles: isSubtitleStyle(d?.options?.subtitles) ? d.options.subtitles : 'none',
-    music: musicById(d?.options?.music)?.id ?? null,
+    music: typeof d?.options?.music === 'string' && d.options.music.startsWith('upload:') ? d.options.music : musicById(d?.options?.music)?.id ?? null,
   };
 }
