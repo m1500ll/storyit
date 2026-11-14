@@ -3,6 +3,7 @@ import { DUB_CREDITS_PER_MIN, formatCredits } from '@/services/credits';
 import { useNavigate } from 'react-router-dom';
 import { DistributionOverview } from '@/components/dashboard/DistributionOverview';
 import { PromptStudioHero } from '@/components/dashboard/PromptStudioHero';
+import { CommunityCard } from '@/components/community/Community';
 import { Button, Card, CreditCard, PageHeader } from '@/components/ui';
 import { useProfile } from '@/hooks/useStore';
 import { posterSrc } from '@/data/showcase';
@@ -29,6 +30,7 @@ export default function DashboardPage() {
         </button>
       )}
       <PromptStudioHero />
+      <CommunityCard />
       <Card className="mb-8 overflow-hidden border-coral-400/30 bg-gradient-to-r from-coral-500/[0.08] via-violet-500/[0.06] to-transparent">
         <div className="grid items-center gap-5 sm:grid-cols-[auto_1fr]">
           <video src="/showcase/treize-gemmes-preview.mp4" poster="/showcase/treize-gemmes.webp" muted loop playsInline autoPlay preload="metadata" aria-hidden

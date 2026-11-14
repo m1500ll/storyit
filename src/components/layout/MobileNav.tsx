@@ -6,6 +6,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/cn';
 import { useBetaAccess } from '@/hooks/useBeta';
 import { useProfile } from '@/hooks/useStore';
+import { CommunityLink } from '@/components/community/Community';
 
 const tabs = [
   { to: '/app', label: 'Accueil', icon: LayoutDashboard, end: true },
@@ -65,6 +66,7 @@ export function MobileNav() {
               <p className="text-sm font-semibold text-zinc-100">Menu</p>
               <button onClick={() => setOpen(false)} aria-label="Fermer le menu" className="grid h-10 w-10 place-items-center rounded-full text-zinc-400 hover:bg-line/5"><X className="h-5 w-5" /></button>
             </div>
+            <CommunityLink className="mt-3" onClick={() => setOpen(false)} />
             {menu.filter((s) => ('beta' in s ? beta : 'soon' in s ? !beta : true)).map((s) => (
               <div key={s.title} className="mt-3">
                 <p className="label mb-1 px-2">{s.title}</p>

@@ -93,6 +93,35 @@ L'équipe Storyit
 
 Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${unsub}`,
   },
+  discord_launch: {
+    subject: '💬 La communauté Storyit est ouverte sur Discord (offres exclusives bientôt)',
+    html: (unsub) => shell(`<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Rejoignez la communauté Storyit</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>On vient d’ouvrir le <strong>Discord officiel de Storyit</strong> : un endroit pour échanger entre créateurs, montrer vos vidéos et grandir ensemble sur TikTok.</td></tr>
+<tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.9">
+<tr><td>🎁 <strong>Des offres exclusives</strong>, réservées aux membres du Discord, arrivent très bientôt,</td></tr>
+<tr><td>🔥 les <strong>idées et formats qui cartonnent</strong> en ce moment,</td></tr>
+<tr><td>🤝 de l’<strong>entraide</strong> entre créateurs et l’équipe Storyit pour répondre à vos questions,</td></tr>
+<tr><td>🚀 les <strong>nouveautés en avant-première</strong> (personnages, nouveaux univers, musiques…).</td></tr></table></td></tr>
+<tr><td align="center" style="padding:22px 0 8px"><a href="https://discord.gg/S3A9Jg5xe" style="display:inline-block;background:#5865F2;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Rejoindre le Discord</a></td></tr>
+<tr><td style="font-size:13px;line-height:1.6;color:#4b4560;text-align:center">C’est gratuit et ça prend 10 secondes.</td></tr>`, unsub),
+    text: (unsub) => `Bonjour,
+
+On vient d'ouvrir le Discord officiel de Storyit : un endroit pour échanger entre créateurs, montrer vos vidéos et grandir ensemble sur TikTok.
+
+- Des offres exclusives, réservées aux membres du Discord, arrivent très bientôt,
+- les idées et formats qui cartonnent en ce moment,
+- de l'entraide entre créateurs et l'équipe Storyit pour répondre à vos questions,
+- les nouveautés en avant-première (personnages, nouveaux univers, musiques…).
+
+Rejoindre le Discord : https://discord.gg/S3A9Jg5xe
+
+C'est gratuit et ça prend 10 secondes.
+
+À très vite,
+L'équipe Storyit
+
+Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${unsub}`,
+  },
   trial_launch: {
     subject: '🎉 Testez Storyit Creator pendant 3 jours pour 1 $',
     audience: 'free_no_trial',

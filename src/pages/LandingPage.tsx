@@ -1,4 +1,5 @@
 import { AutoVideoFeature } from '@/components/landing/AutoVideoFeature';
+import { CommunityBand } from '@/components/community/Community';
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
 import { VideosPerMonth } from '@/components/landing/VideosPerMonth';
 import { TranslateFeature } from '@/components/landing/TranslateFeature';
@@ -47,6 +48,7 @@ export default function LandingPage({ lang = 'fr' }: { lang?: Lang }) {
       <FeatureGrid />
       <Testimonials />
       <Pricing />
+      <CommunityBand fr={fr} />
       <FAQ />
       <FinalCTA />
       </main>

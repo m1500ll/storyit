@@ -2,6 +2,7 @@ import {
   BarChart3, BookOpen, CalendarDays, Clapperboard, Handshake, Languages, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, UsersRound, Wand2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useCredits, useProfile } from '@/hooks/useStore';
+import { CommunityLink } from '@/components/community/Community';
 import { creditLevel, projectsFor, formatCredits } from '@/services/credits';
 import { cn } from '@/lib/cn';
 
@@ -86,6 +87,7 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+      <CommunityLink className="mt-6" />
       <div className="mt-auto pt-6">
         <div className={cn('surface p-4', level === 'low' && 'border-amber-500/40', level === 'empty' && 'border-coral-500/40')}>
           <p className="label flex items-center gap-1.5 text-[11px]"><Coins className="h-3 w-3" /> Crédits</p>

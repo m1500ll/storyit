@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { DISCORD_URL, DiscordIcon } from '@/components/community/Community';
 import { useAuth } from '@/lib/auth';
 import { LangSwitch, LogoMark, ThemeToggle } from '../ui';
 import { useLang } from '@/lib/lang';
@@ -27,6 +28,11 @@ export function MarketingNavbar({ overlay = false, langTo }: { overlay?: boolean
         </nav>
         <div className="flex items-center gap-2">
           {langTo && <LangSwitch lang={lang} to={langTo} className="border-white/15 text-white/80 hover:bg-white/10 hover:text-white" />}
+          <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" aria-label={fr ? 'Communauté Discord' : 'Discord community'} title={fr ? 'Rejoindre la communauté' : 'Join the community'}
+            className="group relative hidden h-10 w-10 place-items-center rounded-full border border-white/15 text-white/80 transition hover:border-[#5865F2] sm:grid hover:bg-[#5865F2] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
+            <DiscordIcon className="h-5 w-5 transition group-hover:scale-110 motion-reduce:transition-none" />
+            <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-emerald-400" aria-hidden />
+          </a>
           <ThemeToggle className="border-white/15 text-white/70 hover:bg-white/10 hover:text-white" />
           {session ? (
             <Link to="/app" className={`${pill} bg-violet-600 text-white hover:bg-violet-500`}>{fr ? 'Mon studio' : 'My studio'}</Link>
