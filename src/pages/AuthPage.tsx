@@ -28,7 +28,7 @@ const COPY_EN: Record<Mode, { title: string; sub: string; cta: string }> = {
 const L_FR = {
   wrong: 'E-mail ou mot de passe incorrect. Réessayez, ou réinitialisez votre mot de passe.', exists: 'Cet e-mail a déjà un compte : connectez-vous plutôt.',
   noGoogle: 'La connexion Google n’est pas encore activée.', confirm: 'Confirmez d’abord votre e-mail : regardez votre boîte de réception.',
-  resetSent: 'Si un compte existe pour cet e-mail, un lien de réinitialisation est en route.', checkInbox: 'Regardez votre boîte de réception pour confirmer votre e-mail, puis connectez-vous.',
+  resetSent: 'Si un compte existe pour cet e-mail, un lien de réinitialisation est en route.', checkInbox: 'Regardez votre boîte de réception pour confirmer votre e-mail : vos 3 000 crédits offerts arrivent dès la confirmation. Connectez-vous ensuite.',
   perks: ['3 000 crédits offerts pour essayer les studios', 'Des vidéos IA prêtes pour TikTok, Reels et Shorts', 'Offre gratuite, sans carte, sans engagement'],
   redirect: 'Redirection vers Google…', google: 'Continuer avec Google', orEmail: 'ou avec un e-mail', password: 'Mot de passe', passNew: 'Mot de passe (6 caractères minimum)…', pass: 'Mot de passe…',
   forgotQ: 'Mot de passe oublié ?', back: 'Retour à la connexion', noAccount: 'Pas de compte ? Créez-en un', haveAccount: 'Déjà un compte ? Connectez-vous',
@@ -37,7 +37,7 @@ const L_FR = {
 const L_EN = {
   wrong: 'Wrong email or password. Try again, or reset your password.', exists: 'This email already has an account — sign in instead.',
   noGoogle: 'Google sign-in isn’t enabled yet on this project.', confirm: 'Confirm your email first — check your inbox.',
-  resetSent: 'If an account exists for this email, a reset link is on its way.', checkInbox: 'Check your inbox to confirm your email, then sign in.',
+  resetSent: 'If an account exists for this email, a reset link is on its way.', checkInbox: 'Check your inbox to confirm your email: your 3,000 free credits arrive as soon as it is confirmed. Then sign in.',
   perks: ['3,000 free credits to try the studios', 'AI videos ready for TikTok, Reels and Shorts', 'Free plan, no card, cancel anytime'],
   redirect: 'Redirecting to Google…', google: 'Continue with Google', orEmail: 'or with email', password: 'Password', passNew: 'Password (6+ characters)…', pass: 'Password…',
   forgotQ: 'Forgot password?', back: 'Back to sign in', noAccount: 'No account? Create one', haveAccount: 'Already have an account? Sign in',
