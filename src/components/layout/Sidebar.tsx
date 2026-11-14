@@ -1,5 +1,5 @@
 import {
-  BarChart3, BookOpen, CalendarDays, Clapperboard, Handshake, Languages, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, Wand2 } from 'lucide-react';
+  BarChart3, BookOpen, CalendarDays, Clapperboard, Handshake, Languages, Coins, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Send, Settings, TrendingUp, UsersRound, Wand2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useCredits, useProfile } from '@/hooks/useStore';
 import { creditLevel, projectsFor, formatCredits } from '@/services/credits';
@@ -42,6 +42,7 @@ export function Sidebar() {
       title: 'Créer',
       items: [
         { to: '/app/prompts', label: 'Creative Studio', icon: Wand2, badge: <span className="rounded-full bg-coral-500/15 px-1.5 text-[11px] text-coral-300">Vidéo IA</span> },
+        { to: '/app/characters', label: 'Personnages', icon: UsersRound },
         { to: '/app/translate', label: 'Traduire une vidéo', icon: Languages, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[11px] text-violet-300">Nouveau</span> },
       ],
     },

@@ -101,7 +101,7 @@ export const promptStudio = {
     return (data as unknown as PromptProject) ?? null;
   },
   /** Generates one phase server-side (the master prompt never reaches the browser). 1 credit, charged on success only. */
-  async generate(input: { phase: PhaseKey; project_id?: string; idea?: string; choice?: number; feedback?: string; style?: StyleKey; story?: string; part?: number; previous_end?: string; length?: 30 | 45 | 60 }): Promise<PromptProject> {
+  async generate(input: { phase: PhaseKey; project_id?: string; idea?: string; choice?: number; feedback?: string; style?: StyleKey; story?: string; part?: number; previous_end?: string; length?: 30 | 45 | 60; cast?: string[] }): Promise<PromptProject> {
     const since = Date.now();
     try {
       const { project } = await call<{ project: PromptProject }>({ action: 'phase', ...input });

@@ -7,6 +7,7 @@
  * ① to ④, character descriptions) is assembled here by code, so it is never abbreviated or drifts between clips.
  */
 
+import type { CastChar } from './characters.ts';
 export type PhaseKey = 'concepts' | 'script' | 'images' | 'videos' | 'pack';
 export type StyleKey = 'fruits' | 'ongles' | 'objets' | 'pierres';
 
@@ -37,6 +38,23 @@ export const STYLES: Record<StyleKey, { label: string; emoji: string; text: stri
     ruleFr: 'Pierres : gemme taillée, jamais un fruit.',
   },
 };
+/** the characters picked for the project (theirs or the library's, max 5): they replace the style's heads, word for word */
+export const castOf = (ctx: any): CastChar[] => (Array.isArray(ctx?.cast_chars) ? ctx.cast_chars : []).filter((c: any) => c?.name && c?.look).slice(0, 5);
+const CAST_BLOCK = LOOK.replace('HUMAN clothed bodies with real hands, ', '') + 'Every character exactly as described and exactly as in the attached character reference sheets: same face, same skin or head material, same hair, same outfit, same tall adult proportions. No text, no logo, no watermark.';
+/** the image style of a project: the library cast when there is one, otherwise the locked head style */
+export function lookOf(ctx: any): { label: string; block: string; heads: string } {
+  return castOf(ctx).length ? { label: 'Personnages choisis', block: CAST_BLOCK, heads: 'faces, heads and skin materials' } : STYLES[styleOf(ctx?.style)];
+}
+const castLine = (cast: CastChar[]) => `Casting imposé (personnages choisis par l'utilisateur) : utilise EXACTEMENT ces ${cast.length} personnages, avec ces prénoms, ce caractère et cette voix ; n'invente aucun autre personnage qui parle (des figurants muets en arrière-plan sont permis). Leur apparence est fixée (recopie-la telle quelle dans les descriptions en anglais) :\n${cast.map((c) => `- ${c.name} (${c.role} ; caractère : ${c.personality} ; voix : ${c.voice}) : ${c.look}`).join('\n')}`;
+/** after a phase: the library characters keep their own voice and their exact appearance (never the model's paraphrase) */
+export function applyCast(phase: PhaseKey, raw: any, ctx: any): any {
+  const cast = castOf(ctx);
+  if (!cast.length || !raw) return raw;
+  const find = (name: unknown) => cast.find((c) => c.name.toLowerCase() === String(name ?? '').trim().toLowerCase());
+  if (phase === 'script') for (const ch of raw.characters ?? []) { const c = find(ch.name); if (c) { ch.voice = c.voice; ch.head = c.look.split('; outfit')[0]; } }
+  if (phase === 'images') for (const sh of raw.sheet ?? []) { const c = find(sh.name); if (c) sh.description = c.look; }
+  return raw;
+}
 export const styleOf = (s: unknown): StyleKey => (typeof s === 'string' && s in STYLES ? (s as StyleKey) : 'fruits');
 
 export const MASTER_PROMPT = `Tu es scénariste, directeur artistique et réalisateur d'un studio de mini-dramas IA verticaux (9:16), rendu film d'animation 3D. Trois obsessions : qu'on ne swipe pas dans les 3 premières secondes, qu'on reste jusqu'à la fin, qu'on commente ou partage.
@@ -180,7 +198,8 @@ const lengthRule = (n: VideoLength) => {
 // ---------------------------------------------------------------- user turns
 export function buildPhasePrompt(phase: PhaseKey, ctx: Record<string, any>): string {
   const st = STYLES[styleOf(ctx.style)];
-  const style = `Style verrouillé : ${st.emoji} ${st.label} (${st.text} ${st.ruleFr})`;
+  const cast = castOf(ctx);
+  const style = cast.length ? castLine(cast) : `Style verrouillé : ${st.emoji} ${st.label} (${st.text} ${st.ruleFr})`;
   const part = Number(ctx.part ?? 1) > 1 ? `\nC'est la PARTIE ${ctx.part}. Fin de la partie précédente : ${ctx.previous_end ?? ''}` : '';
   const tweak = ctx.feedback ? `\nAjustements demandés par l'utilisateur : ${ctx.feedback}` : '';
   const story = ctx.concepts?.[ctx.chosen ?? -1] ? `Histoire choisie : ${JSON.stringify(ctx.concepts[ctx.chosen])}` : `Histoire de l'utilisateur (même en vrac ; comble les vides) : ${ctx.story ?? ''}`;
@@ -205,7 +224,7 @@ export function buildPhasePrompt(phase: PhaseKey, ctx: Record<string, any>): str
 
 export function buildFixPrompt(ctx: Record<string, any>, index: number, problem: string, note: string): string {
   const p = FIX_PROBLEMS[problem] ?? FIX_PROBLEMS.flat!;
-  return `${`Style verrouillé : ${STYLES[styleOf(ctx.style)].label}`}\nDÉPANNAGE du clip ${index + 1} uniquement. Problème : ${p.label}. Règle : ${p.rule}${note ? `\nPrécision de l'utilisateur : ${note}` : ''}
+  return `${`Style verrouillé : ${lookOf(ctx).label}`}\nDÉPANNAGE du clip ${index + 1} uniquement. Problème : ${p.label}. Règle : ${p.rule}${note ? `\nPrécision de l'utilisateur : ${note}` : ''}
 Personnages : ${JSON.stringify(ctx.script?.characters)}
 Clip (découpage) : ${JSON.stringify(ctx.script?.clips?.[index])}
 Image de départ actuelle : ${JSON.stringify(ctx.images?.clips?.[index] ?? null)}
@@ -390,13 +409,13 @@ const sheetDesc = (images: any, name: string, script: any) =>
   ?? (() => { const c: Char | undefined = script?.characters?.find((x: Char) => x.name.toLowerCase() === name.toLowerCase()); return c ? [c.head, c.face, c.hands_neck && `${c.hands_neck} hands and neck`, c.outfit, c.accessory].filter(Boolean).join(', ') : ''; })();
 
 export function sheetPrompt(d: any): string {
-  const st = STYLES[styleOf(d.style)];
+  const st = lookOf(d);
   const sheet: { name: string; description: string }[] = d.images?.sheet ?? [];
-  return `Crée une image. Generate this image in 9:16 vertical format. Character reference sheet, ${sheet.length} characters standing side by side, full body, front view, neutral light grey background, each clearly separated: ${sheet.map((c) => `${upper(c.name)}: ${cl(c.description)}.`).join(' ')} ${st.block}`;
+  return `Crée une image. Generate this image in 9:16 vertical format. Character reference sheet, ${sheet.length} characters standing side by side, full body, front view, neutral light grey background, each clearly separated${castOf(d).length ? ', each one copied exactly from its own attached reference sheet' : ''}: ${sheet.map((c) => `${upper(c.name)}: ${cl(c.description)}.`).join(' ')} ${st.block}`;
 }
 
 export function imagePrompt(d: any, i: number): string {
-  const st = STYLES[styleOf(d.style)];
+  const st = lookOf(d);
   const c = d.images?.clips?.[i];
   if (!c) return '';
   const people = c.characters.map((p: any) => `${upper(p.name)}, ${cl(sheetDesc(d.images, p.name, d.script))}, ${cl(p.action)}`).join('; ');
@@ -405,7 +424,7 @@ export function imagePrompt(d: any, i: number): string {
 }
 
 export function grokPrompt(d: any, i: number): string {
-  const st = STYLES[styleOf(d.style)];
+  const st = lookOf(d);
   const clip = d.script?.clips?.[i];
   const v = d.videos?.clips?.[i];
   if (!clip || !v) return '';

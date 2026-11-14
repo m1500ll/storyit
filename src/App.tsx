@@ -20,6 +20,7 @@ const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const PromptStudioPage = lazy(() => import('@/pages/PromptStudioPage'));
 const AnimatedStudioPage = lazy(() => import('@/pages/AnimatedStudioPage'));
+const CharactersPage = lazy(() => import('@/pages/CharactersPage'));
 const TranslatePage = lazy(() => import('@/pages/TranslatePage'));
 const PartnerPage = lazy(() => import('@/pages/PartnerPage'));
 const PartnersAdminPage = lazy(() => import('@/pages/PartnersAdminPage'));
@@ -62,7 +63,8 @@ export default function App() {
               <Route path="trends" element={<TrendsAdminPage />} />
               <Route path="studio/:projectId" element={<AnimatedPause><AnimatedStudioPage /></AnimatedPause>} />
               {/* old studio paths: the Animated Studio is paused (admins only), so they open the Creative Studio */}
-              {['new', 'review', 'episodes', 'characters', 'stories/*'].map((p) => <Route key={p} path={p} element={<Navigate to="/app/prompts" replace />} />)}
+              {['new', 'review', 'episodes', 'stories/*'].map((p) => <Route key={p} path={p} element={<Navigate to="/app/prompts" replace />} />)}
+              <Route path="characters" element={<CharactersPage />} />
               <Route path="prompts" element={<PromptStudioPage />} />
               <Route path="prompts/:projectId" element={<PromptStudioPage />} />
               <Route path="library" element={<SubscriberGate><LibraryPage /></SubscriberGate>} />

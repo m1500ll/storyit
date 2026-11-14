@@ -6,7 +6,8 @@
 // - Scene images: generated with the user's key only (Google bills the user), stored privately in `renders`.
 // - Keys: AES-GCM encrypted (TOKEN_ENCRYPTION_KEY), never returned to the browser.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { DEFAULT_VIDEO_LENGTH, FIX_PROBLEMS, FIX_SCHEMA, isVideoLength, MASTER_PROMPT, PHASES, STYLES, buildFixPrompt, buildPhasePrompt, buildReviewPrompt, normalizePhase, paceProblems, senseProblems, styleOf, type PhaseKey } from '../_shared/promptStudio.ts';
+import { LIBRARY, libraryCast, MAX_CAST, type CastChar } from '../_shared/characters.ts';
+import { applyCast, castOf, DEFAULT_VIDEO_LENGTH, FIX_PROBLEMS, FIX_SCHEMA, isVideoLength, MASTER_PROMPT, PHASES, STYLES, buildFixPrompt, buildPhasePrompt, buildReviewPrompt, normalizePhase, paceProblems, senseProblems, styleOf, type PhaseKey } from '../_shared/promptStudio.ts';
 import { classifyGeminiError, GeminiError, KEY_MESSAGES, keyHint, looksLikeGeminiKey } from '../_shared/geminiKey.ts';
 import { decrypt, encrypt } from '../_shared/social.ts';
 import { backups, backupText, openaiModels } from '../_shared/backupLlm.ts';
@@ -103,7 +104,7 @@ Deno.serve(async (req) => {
   const uid = auth.user.id;
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-  let body: { action?: string; project_id?: string; phase?: PhaseKey; idea?: string; choice?: number; feedback?: string; key?: string; scene?: number; style?: string; story?: string; part?: number; previous_end?: string; problem?: string; note?: string; length?: number };
+  let body: { action?: string; project_id?: string; phase?: PhaseKey; idea?: string; choice?: number; feedback?: string; key?: string; scene?: number; style?: string; story?: string; part?: number; previous_end?: string; problem?: string; note?: string; length?: number; cast?: unknown };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
   const action = body.action ?? 'phase';
 
@@ -163,7 +164,7 @@ Deno.serve(async (req) => {
       const fixed: any = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', buildReviewPrompt(d.script), PHASES.script.schema, true, (r) => normalizePhase('script', r));
       const before = paceProblems(d.script).length + senseProblems(d.script).length;
       if (paceProblems(fixed).length + senseProblems(fixed).length <= before) {
-        d.script = fixed;
+        d.script = applyCast('script', fixed, d);
         delete d.videos; // the Grok prompts follow the dialogue timings: they are written again
       }
       d.script_reviewed = true;
@@ -211,6 +212,17 @@ Deno.serve(async (req) => {
   if (!project && phase !== 'concepts' && phase !== 'script') return json({ error: 'Commencez par votre histoire' }, 400);
   if (!project && phase === 'script' && !String(body.story ?? '').trim()) return json({ error: 'Écrivez votre histoire (même en vrac) ou demandez 3 histoires.' }, 400);
 
+  /** the picked characters: 'lib:<slug>' for the library, otherwise the id of one of the user's ready characters */
+  async function castSnapshot(ids: unknown): Promise<CastChar[]> {
+    const list = (Array.isArray(ids) ? ids : []).filter((x): x is string => typeof x === 'string').slice(0, MAX_CAST);
+    const own = list.filter((x) => !x.startsWith('lib:'));
+    const { data: rows } = own.length ? await admin.from('user_characters').select('id, name, role, personality, voice, look, sheet_path').eq('user_id', uid).eq('status', 'ready').in('id', own) : { data: [] };
+    return list.map((x) => {
+      if (x.startsWith('lib:')) { const c = LIBRARY.find((l) => l.ready && `lib:${l.slug}` === x); return c ? libraryCast(c) : null; }
+      const r = (rows ?? []).find((y: any) => y.id === x);
+      return r ? { id: r.id, name: r.name, role: r.role, personality: r.personality, voice: r.voice, look: r.look, sheet: `storage:${r.sheet_path}` } : null;
+    }).filter(Boolean) as CastChar[];
+  }
   const ownKey = await userKey();
   const billable = !ownKey && !project; // only a brand-new project is charged
   if (billable) {
@@ -226,6 +238,7 @@ Deno.serve(async (req) => {
     data.part = Math.max(1, Math.min(20, Number(body.part) || 1));
     data.previous_end = String(body.previous_end ?? '').trim().slice(0, 1500);
     data.length = isVideoLength(body.length) ? body.length : DEFAULT_VIDEO_LENGTH; // 30, 45 (default) or 60 s
+    data.cast_chars = await castSnapshot(body.cast); // the characters picked (theirs or the library's, 0 to 5), frozen for the series
   }
   // a new length on an existing project: the story and the script are written again for it
   if (project && isVideoLength(body.length) && (phase === 'concepts' || phase === 'script')) data.length = body.length;
@@ -275,13 +288,13 @@ Deno.serve(async (req) => {
       }
       data.script_reviewed = reviewed;
     }
-    data[PHASES[phase].key] = raw; // already normalized and checked by `valid`
+    data[PHASES[phase].key] = applyCast(phase, raw, data); // already normalized and checked by `valid`; library characters keep their exact look
     for (const later of PHASES[phase].invalidates) delete data[later];
     if (phase === 'concepts' || phase === 'script' || phase === 'images') delete data.image_files; // images no longer match
 
     const concept = data.concepts?.[Number(data.chosen ?? 0)];
     const title = data.script?.title ?? concept?.title ?? 'Nouveau mini-drama';
-    const row = { user_id: uid, data, idea: idea || null, phase: PHASES[phase].number, title: `${STYLES[styleOf(data.style)].emoji} ${title}${Number(data.part) > 1 ? ` · Partie ${data.part}` : ''}`, updated_at: new Date().toISOString() };
+    const row = { user_id: uid, data, idea: idea || null, phase: PHASES[phase].number, title: `${castOf(data).length ? '🎭' : STYLES[styleOf(data.style)].emoji} ${title}${Number(data.part) > 1 ? ` · Partie ${data.part}` : ''}`, updated_at: new Date().toISOString() };
     const saved = project
       ? await admin.from('prompt_projects').update(row).eq('id', project.id).eq('user_id', uid).select('*').single()
       : await admin.from('prompt_projects').insert(row).select('*').single();

@@ -121,8 +121,12 @@ def multipart(fields, files):
     return b"".join(parts), f"multipart/form-data; boundary={boundary}"
 
 
+def mime_of(b):
+    return "image/png" if b[:4] == b"\x89PNG" else "image/webp" if b[8:12] == b"WEBP" else "image/jpeg"
+
+
 def draw(okey, plan, prompt, ref=None):
-    """one portrait PNG; with `ref` (the sheet PNG) the characters are drawn from that reference"""
+    """one portrait PNG; with `ref` (the sheet PNG, or a list of reference images) the characters are drawn from it"""
     def call():
         if ref is None:
             out = http("POST", f"{OPENAI}/images/generations", {"model": plan["image_model"], "prompt": prompt, "size": f"{IMG_W}x{IMG_H}",
@@ -130,7 +134,7 @@ def draw(okey, plan, prompt, ref=None):
                        {"Authorization": f"Bearer {okey}"}, timeout=360)
         else:
             body, ctype = multipart({"model": plan["image_model"], "prompt": prompt, "size": f"{IMG_W}x{IMG_H}", "quality": plan["image_quality"], "n": "1", "moderation": "low"},
-                                    [("image[]", ("sheet.png", ref, "image/png"))])
+                                    [("image[]", (f"ref{k}.{mime_of(r).split('/')[1]}", r, mime_of(r))) for k, r in enumerate(ref if isinstance(ref, list) else [ref])])
             out = http("POST", f"{OPENAI}/images/edits", body, {"Authorization": f"Bearer {okey}", "Content-Type": ctype}, timeout=360)
         return base64.b64decode(out["data"][0]["b64_json"])
     # the output-stage safety check is partly random (the same prompt can pass on a second try): 3 attempts
@@ -257,10 +261,12 @@ def produce(job):
 
         step("sheet", 5)
         img_q = (plan.get("image_model"), plan.get("image_quality"))
-        sheet_key = key_of("sheet", *img_q, plan["sheet_prompt"])
+        sheet_key = key_of("sheet", *img_q, plan["sheet_prompt"], *(plan.get("sheet_refs") or []))
         sheet = cached(uid, sheet_key, "png")
         if sheet is None:
-            sheet = draw(okey, plan, plan["sheet_prompt"]); keep(uid, sheet_key, "png", sheet, "image/png")
+            # characters picked by the customer: their own sheets are attached, so the group sheet copies them exactly
+            refs = [retry(lambda u=u: http("GET", u, timeout=60, raw=True)) for u in (plan.get("sheet_ref_urls") or [])]
+            sheet = draw(okey, plan, plan["sheet_prompt"], ref=refs or None); keep(uid, sheet_key, "png", sheet, "image/png")
         else:
             log(jid, "sheet reused")
         upload("renders", f"{base}/sheet.png", sheet, "image/png")

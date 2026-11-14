@@ -13,6 +13,7 @@ import { TrendIdeas } from '@/components/prompts/TrendIdeas';
 import { conceptToStory } from '@shared/trends.ts';
 import { STYLES } from '@shared/promptStudio.ts';
 import { LengthPicker } from '@/components/prompts/LengthPicker';
+import { CastPicker } from '@/components/characters/CastPicker';
 import { DEFAULT_VIDEO_LENGTH, type VideoLength } from '@shared/promptVideo.ts';
 
 const STEPS: { key: PhaseKey; label: string; waiting: string }[] = [
@@ -116,10 +117,11 @@ function Start() {
   const [previousEnd, setPreviousEnd] = useState('');
   const [veille, setVeille] = useState(false);
   const [length, setLength] = useState<VideoLength>(DEFAULT_VIDEO_LENGTH);
+  const [cast, setCast] = useState<string[]>([]);
   const { run, busy, error } = useGenerate();
   const navigate = useNavigate();
   const { data: projects = [], loading } = useLiveQuery(() => promptStudio.list(), 'prompt-projects');
-  const common = { style, length, ...(part2 ? { part, previous_end: previousEnd } : {}) };
+  const common = { style, length, ...(cast.length ? { cast } : {}), ...(part2 ? { part, previous_end: previousEnd } : {}) };
   const start = async (phase: 'script' | 'concepts') => { const p = await run({ phase, story, ...common }); if (p) navigate(`/app/prompts/${p.id}`); };
   return (
     <>
@@ -128,8 +130,11 @@ function Start() {
       {!promptStudio.available && <div className="mb-4"><LoadState loading={false} error="Le Creative Studio a besoin du serveur Storyit (mode démo)." /></div>}
       {busy ? <Waiting text={V4_STEPS.find((x) => x.key === busy)?.waiting ?? 'Écriture…'} /> : (
         <Card>
-          <h2 className="text-sm font-semibold text-zinc-100">1. Le style des personnages <span className="font-normal text-zinc-500">(verrouillé pour toute la série)</span></h2>
-          <div role="radiogroup" aria-label="Style des personnages" className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <h2 className="text-sm font-semibold text-zinc-100">1. Vos personnages <span className="font-normal text-zinc-500">(les mêmes dans toute la série)</span></h2>
+          <div className="mt-3"><CastPicker value={cast} onChange={setCast} /></div>
+
+          <h2 className={cn('mt-6 text-sm font-semibold text-zinc-100', cast.length > 0 && 'opacity-50')}>{cast.length ? 'Style des personnages : remplacé par vos personnages' : 'Ou laissez le studio inventer les personnages, dans ce style'}</h2>
+          <div role="radiogroup" aria-label="Style des personnages" aria-disabled={cast.length > 0} className={cn('mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4', cast.length > 0 && 'pointer-events-none opacity-40')}>
             {(Object.keys(STYLES) as StyleKey[]).map((k) => (
               <button key={k} type="button" role="radio" aria-checked={style === k} onClick={() => setStyle(k)}
                 className={cn('group relative overflow-hidden rounded-2xl border text-left transition [touch-action:manipulation] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60',

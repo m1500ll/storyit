@@ -76,6 +76,11 @@ Deno.serve(async (req) => {
     const seconds = projectSeconds(data);
     const cost = videoCost(body.quality, seconds);
     const plan = buildVideoPlan(data, body.quality);
+    // the picked characters' sheets: links the worker can download (library sheets are public files of the site)
+    const refs = plan.sheet_refs ?? [];
+    const own = refs.filter((r) => r.startsWith('storage:')).map((r) => r.slice(8));
+    const { data: signed } = own.length ? await admin.storage.from('characters').createSignedUrls(own, 3 * 86_400) : { data: [] };
+    (plan as Record<string, unknown>).sheet_ref_urls = refs.map((r) => r.startsWith('storage:') ? signed?.find((x) => x.path === r.slice(8))?.signedUrl : `https://www.storyit.fun${r}`).filter(Boolean);
     const { error: credErr } = await user.rpc('consume_credits', { p_amount: cost, p_story_id: null, p_description: `Vidéo Creative Studio (${body.quality}, ${Math.round(seconds)} s)` });
     if (credErr) return json({ error: `Il vous faut ${cost} crédits pour cette vidéo.`, code: 'insufficient_credits', needed: cost }, 402);
     const { data: job, error } = await admin.from('prompt_videos').insert({

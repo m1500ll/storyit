@@ -2,7 +2,7 @@
  * Creative Studio → finished video: quality tiers, prices and the frozen generation plan. Pure: used by the
  * `prompt-videos` Edge Function and the tests (the browser mirrors the prices in src/services/credits.ts).
  */
-import { coverPrompt, grokPrompt, imagePrompt, sheetPrompt, type VideoLength } from './promptStudio.ts';
+import { castOf, coverPrompt, grokPrompt, imagePrompt, sheetPrompt, type VideoLength } from './promptStudio.ts';
 export { DEFAULT_VIDEO_LENGTH, isVideoLength, LENGTH_RANGE, lengthLabel, VIDEO_LENGTHS, type VideoLength } from './promptStudio.ts';
 
 export type VideoQuality = 'eco' | 'standard' | 'premium';
@@ -48,6 +48,8 @@ export function videoBlocker(d: any): string | null {
 export type VideoPlan = {
   quality: VideoQuality; image_model: string; image_quality: string; video_model: string; resolution: string;
   title: string; sheet_prompt: string; cover_prompt: string;
+  /** reference sheets of the picked characters ('storage:<path>' or '/characters/<slug>.webp'), turned into links at order time */
+  sheet_refs?: string[];
   clips: { seconds: number; image_prompt: string; grok_prompt: string }[];
 };
 
@@ -58,6 +60,7 @@ export function buildVideoPlan(d: any, quality: VideoQuality): VideoPlan {
     quality, image_model: t.image_model, image_quality: t.image_quality, video_model: t.video_model, resolution: t.resolution,
     title: String(d?.script?.title ?? 'Vidéo Creative Studio').slice(0, 160),
     sheet_prompt: sheetPrompt(d),
+    sheet_refs: castOf(d).map((c) => c.sheet).filter((x): x is string => !!x),
     cover_prompt: d?.pack?.cover ? coverPrompt(d) : '',
     clips: (d.script.clips as any[]).map((c, i) => ({ seconds: Math.min(15, Math.max(1, Number(c.seconds) || 6)), image_prompt: imagePrompt(d, i), grok_prompt: grokPrompt(d, i) })),
   };
