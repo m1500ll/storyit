@@ -7,3 +7,5 @@ React + Vite + TS + Tailwind front end, Supabase backend (`supabase/migrations`,
 - Secrets (Gemini, Stripe, service role) live only in Edge Function secrets — never in `VITE_` vars.
 - The owner is a beginner and speaks French: explain steps simply, one action per step.
 - Verify with `npx tsc -b && npm run build` and a Playwright run before pushing.
+
+- Read `docs/SESSION_HANDOFF.md` at the start of a session: current state of the product, rules agreed with the owner, pending tasks.
