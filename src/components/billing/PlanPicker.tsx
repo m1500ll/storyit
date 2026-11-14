@@ -53,7 +53,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
             Commencer l’essai à {TRIAL.price} $
           </Button>
           <p className="relative mt-2 text-[11px] leading-snug text-zinc-400">
-            Puis Creator à {PLANS.find((x) => x.id === 'creator')?.price} $/mois, au bout de {TRIAL.days} jours ou dès qu’il vous reste moins de {formatCredits(TRIAL.switchAt)} crédits d’essai. Vous préférez Pro ou Studio ? Choisissez l’essai sous l’offre voulue ci-dessous.
+            Puis Creator à {PLANS.find((x) => x.id === 'creator')?.price} $/mois, au bout de {TRIAL.days} jours ou dès qu’il vous reste {formatCredits(TRIAL.switchAt)} crédits d’essai ou moins. Vous préférez Pro ou Studio ? Choisissez l’essai sous l’offre voulue ci-dessous.
           </p>
         </div>
       )}
@@ -107,7 +107,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
                     <Gift className="h-4 w-4" aria-hidden /> Essayer {TRIAL.days} jours pour {TRIAL.price} $ <ArrowRight className="h-4 w-4" aria-hidden />
                   </Button>
                   <p className="mt-1.5 text-[11px] leading-snug text-zinc-500">
-                    {TRIAL.price} $ aujourd’hui et {formatCredits(TRIAL.credits)} crédits pour tester. Passage automatique à {p.name} ({p.price} $/mois) au bout de {TRIAL.days} jours, ou plus tôt dès qu’il vous reste moins de {formatCredits(TRIAL.switchAt)} crédits d’essai. Résiliable à tout moment avant.
+                    {TRIAL.price} $ aujourd’hui et {formatCredits(TRIAL.credits)} crédits pour tester. Passage automatique à {p.name} ({p.price} $/mois) au bout de {TRIAL.days} jours, ou plus tôt dès qu’il vous reste {formatCredits(TRIAL.switchAt)} crédits d’essai ou moins. Résiliable à tout moment avant.
                   </p>
                   <button type="button" onClick={() => buy(p.id as ProductKey)} disabled={pending !== null}
                     className="touch-hit mt-1 text-[11px] text-violet-300 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50">

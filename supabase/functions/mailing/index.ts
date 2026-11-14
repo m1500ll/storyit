@@ -166,7 +166,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 <tr><td>🍓 Creative Studio, vidéo automatique, traduction : <strong>tout est débloqué</strong></td></tr>
 <tr><td>📲 Une vidéo verticale <strong>prête à publier</strong> sur TikTok, Reels et Shorts</td></tr></table></td></tr>
 <tr><td align="center" style="padding:26px 0 10px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:17px;padding:16px 30px;border-radius:12px">Créer ma vidéo pour 1 $ →</a></td></tr>
-<tr><td style="font-size:12px;line-height:1.6;color:#7a7390;text-align:center">Ensuite, l’offre mensuelle choisie (Creator à 29 $/mois), au bout de 3 jours ou dès qu’il vous reste moins de 1 000 crédits d’essai. Résiliable en 1 clic avant. Une seule fois par compte.</td></tr>`, unsub),
+<tr><td style="font-size:12px;line-height:1.6;color:#7a7390;text-align:center">Ensuite, l’offre mensuelle choisie (Creator à 29 $/mois), au bout de 3 jours ou dès qu’il vous reste 1 500 crédits d’essai ou moins. Résiliable en 1 clic avant. Une seule fois par compte.</td></tr>`, unsub),
     text: (unsub) => `Tout Storyit pendant 3 jours, pour 1 $.
 
 Bonjour,
@@ -179,7 +179,7 @@ Vous avez créé votre compte, il ne manque plus que votre première vraie vidé
 
 Créer ma vidéo pour 1 $ : ${APP}/app/billing?interval=month
 
-Ensuite, l'offre mensuelle choisie (Creator à 29 $/mois), au bout de 3 jours ou dès qu'il vous reste moins de 1 000 crédits d'essai. Résiliable en 1 clic avant. Une seule fois par compte.
+Ensuite, l'offre mensuelle choisie (Creator à 29 $/mois), au bout de 3 jours ou dès qu'il vous reste 1 500 crédits d'essai ou moins. Résiliable en 1 clic avant. Une seule fois par compte.
 
 À très vite,
 L'équipe Storyit

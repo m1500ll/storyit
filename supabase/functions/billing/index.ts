@@ -301,7 +301,7 @@ Deno.serve(async (req) => {
       params['line_items[1][quantity]'] = '1';
       params['payment_method_collection'] = 'always';
       // the early switch must be stated before paying (migration 0034 ends the trial once the trial credits are used)
-      params['custom_text[submit][message]'] = `1 $ aujourd’hui pour ${TRIAL.credits.toLocaleString('fr-FR')} crédits d’essai. Passage automatique à l’offre ${PLAN_NAMES[product as PlanKey] ?? product} (${Math.round(Number(plan.unit_amount) / 100)} $/mois) au bout de ${TRIAL.days} jours, ou plus tôt dès qu’il vous reste moins de ${TRIAL.switchAt.toLocaleString('fr-FR')} crédits d’essai. Résiliable à tout moment avant depuis Storyit.`;
+      params['custom_text[submit][message]'] = `1 $ aujourd’hui pour ${TRIAL.credits.toLocaleString('fr-FR')} crédits d’essai. Passage automatique à l’offre ${PLAN_NAMES[product as PlanKey] ?? product} (${Math.round(Number(plan.unit_amount) / 100)} $/mois) au bout de ${TRIAL.days} jours, ou plus tôt dès qu’il vous reste ${TRIAL.switchAt.toLocaleString('fr-FR')} crédits d’essai ou moins. Résiliable à tout moment avant depuis Storyit.`;
       params['subscription_data[trial_settings][end_behavior][missing_payment_method]'] = 'cancel';
     }
     const session = await stripe('checkout/sessions', params);
