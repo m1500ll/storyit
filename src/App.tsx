@@ -1,4 +1,5 @@
 import { SocialPause } from '@/components/layout/SocialPause';
+import { AnimatedPause } from '@/components/layout/AnimatedPause';
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { SubscriberGate } from '@/components/layout/SubscriberGate';
@@ -54,14 +55,14 @@ export default function App() {
             <Route path="/app" element={<RequireAuth><AppShell /></RequireAuth>}>
               <Route index element={<DashboardPage />} />
               <Route path="accounts" element={<SocialPause><SubscriberGate><AccountsPage /></SubscriberGate></SocialPause>} />
-              <Route path="studio" element={<AnimatedStudioPage />} />
+              <Route path="studio" element={<AnimatedPause><AnimatedStudioPage /></AnimatedPause>} />
               <Route path="translate" element={<TranslatePage />} />
               <Route path="partners" element={<PartnersAdminPage />} />
               <Route path="admin" element={<AdminDashboardPage />} />
               <Route path="trends" element={<TrendsAdminPage />} />
-              <Route path="studio/:projectId" element={<AnimatedStudioPage />} />
-              {/* the old Gemini/Veo episode studio was replaced by the Animated Studio */}
-              {['new', 'review', 'episodes', 'characters', 'stories/*'].map((p) => <Route key={p} path={p} element={<Navigate to="/app/studio" replace />} />)}
+              <Route path="studio/:projectId" element={<AnimatedPause><AnimatedStudioPage /></AnimatedPause>} />
+              {/* old studio paths: the Animated Studio is paused (admins only), so they open the Creative Studio */}
+              {['new', 'review', 'episodes', 'characters', 'stories/*'].map((p) => <Route key={p} path={p} element={<Navigate to="/app/prompts" replace />} />)}
               <Route path="prompts" element={<PromptStudioPage />} />
               <Route path="prompts/:projectId" element={<PromptStudioPage />} />
               <Route path="library" element={<SubscriberGate><LibraryPage /></SubscriberGate>} />

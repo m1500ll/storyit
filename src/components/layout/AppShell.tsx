@@ -9,7 +9,7 @@ import { Topbar } from './Topbar';
 
 const TITLES: Record<string, string> = {
   '/app': 'Accueil', '/app/library': 'Bibliothèque vidéo', '/app/distribute': 'Diffuser', '/app/calendar': 'Calendrier', '/app/history': 'Historique',
-  '/app/accounts': 'Comptes sociaux', '/app/billing': 'Offre et crédits', '/app/settings': 'Réglages', '/app/help': 'Aide', '/app/studio': 'Animated Studio', '/app/translate': 'Traduire une vidéo', '/app/partners': 'Partenaires', '/app/trends': 'Tendances', '/app/prompts': 'Prompt Studio',
+  '/app/accounts': 'Comptes sociaux', '/app/billing': 'Offre et crédits', '/app/settings': 'Réglages', '/app/help': 'Aide', '/app/studio': 'Animated Studio', '/app/translate': 'Traduire une vidéo', '/app/partners': 'Partenaires', '/app/trends': 'Tendances', '/app/prompts': 'Creative Studio',
   '/app/monetisation': 'Monétisation', '/app/guide': 'Guide du créateur',
 };
 

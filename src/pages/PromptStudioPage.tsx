@@ -123,9 +123,9 @@ function Start() {
   const start = async (phase: 'script' | 'concepts') => { const p = await run({ phase, story, ...common }); if (p) navigate(`/app/prompts/${p.id}`); };
   return (
     <>
-      <PageHeader eyebrow="Studio IA · V4" title="Prompt Studio"
+      <PageHeader eyebrow="Studio IA · V4" title="Creative Studio"
         description="Votre histoire devient un mini-drama 3D vertical de plus d’une minute : hook, découpage minuté, prompts d’images pour ChatGPT et prompts d’animation pour Grok Imagine, pensés pour la rétention et l’engagement." />
-      {!promptStudio.available && <div className="mb-4"><LoadState loading={false} error="Le Prompt Studio a besoin du serveur Storyit (mode démo)." /></div>}
+      {!promptStudio.available && <div className="mb-4"><LoadState loading={false} error="Le Creative Studio a besoin du serveur Storyit (mode démo)." /></div>}
       {busy ? <Waiting text={V4_STEPS.find((x) => x.key === busy)?.waiting ?? 'Écriture…'} /> : (
         <Card>
           <h2 className="text-sm font-semibold text-zinc-100">1. Le style des personnages <span className="font-normal text-zinc-500">(verrouillé pour toute la série)</span></h2>
@@ -224,7 +224,7 @@ function Project({ id }: { id: string }) {
   if (project.data.v4) return (
     <>
       <Link to="/app/prompts" className="mb-4 inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300"><ChevronLeft className="h-3 w-3" /> Tous les projets</Link>
-      <PageHeader eyebrow="Prompt Studio" title={project.title} description={project.data.story || undefined} />
+      <PageHeader eyebrow="Creative Studio" title={project.title} description={project.data.story || undefined} />
       {busy && <Waiting text={V4_STEPS.find((x) => x.key === busy)?.waiting ?? 'Écriture…'} />}
       <V4Project project={project} run={run} busy={busy} error={error} />
     </>
@@ -243,7 +243,7 @@ function Project({ id }: { id: string }) {
   return (
     <>
       <Link to="/app/prompts" className="mb-4 inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300"><ChevronLeft className="h-3 w-3" /> Tous les projets</Link>
-      <PageHeader eyebrow="Prompt Studio" title={project.title} description={project.idea ?? undefined} />
+      <PageHeader eyebrow="Creative Studio" title={project.title} description={project.idea ?? undefined} />
       <ol className="mb-6 flex gap-1.5 overflow-x-auto pb-1" aria-label="Étapes">
         {STEPS.map((s, i) => (
           <li key={s.key}>

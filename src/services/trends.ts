@@ -1,4 +1,4 @@
-// Daily trend reports ("veille") for the Prompt Studio: read directly (RLS: signed-in read); imported by the admin
+// Daily trend reports ("veille") for the Creative Studio: read directly (RLS: signed-in read); imported by the admin
 // through the `trends` Edge Function, which parses the pasted report.
 import { supabase } from '@/lib/supabase';
 import { store } from './store';

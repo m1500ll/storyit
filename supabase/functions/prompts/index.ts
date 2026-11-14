@@ -1,4 +1,4 @@
-// Supabase Edge Function: `prompts` — Prompt Studio + bring-your-own Gemini key.
+// Supabase Edge Function: `prompts` — Creative Studio + bring-your-own Gemini key.
 // - Phases (concepts → script → image JSON → video JSON → pack): the master prompt never leaves the server.
 //   With the user's own Gemini key they run on the user's Google account and cost no Storyit credits;
 //   otherwise a whole project costs PROJECT_COST credits, charged once when it is created (first concepts, on success);
@@ -288,7 +288,7 @@ Deno.serve(async (req) => {
     if (saved.error) throw new Error('Impossible d’enregistrer le projet');
 
     // Text works on Google's free tier too, so a text success says nothing about image billing: status unchanged.
-    if (billable) await user.rpc('consume_credits', { p_amount: PROJECT_COST, p_story_id: null, p_description: 'Prompt Studio — new project' });
+    if (billable) await user.rpc('consume_credits', { p_amount: PROJECT_COST, p_story_id: null, p_description: 'Creative Studio — new project' });
     return json({ project: saved.data, billed_to: ownKey ? 'your_gemini_key' : billable ? 'storyit_credits' : 'included' });
   } catch (e) {
     const g = e instanceof GeminiError ? e : null;

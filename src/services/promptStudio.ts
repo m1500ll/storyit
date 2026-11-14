@@ -39,7 +39,7 @@ export interface PromptProject {
   data: { v4?: boolean; concepts?: Concept[]; chosen?: number; script?: Script; images?: ImagePrompt[]; videos?: VideoPrompt[]; pack?: Pack; image_files?: Record<string, string> } & Partial<Omit<V4Data, 'concepts' | 'script' | 'images' | 'videos' | 'pack'>>;
 }
 
-const DEMO = 'Le Prompt Studio a besoin du serveur Storyit (mode démo).';
+const DEMO = 'Le Creative Studio a besoin du serveur Storyit (mode démo).';
 
 export interface KeyStatus { connected: boolean; hint: string | null; status: 'valid' | 'invalid' | 'no_billing' | null; last_error: string | null; checked_at: string | null }
 

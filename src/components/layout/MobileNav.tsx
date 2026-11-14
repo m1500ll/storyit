@@ -9,21 +9,21 @@ import { useProfile } from '@/hooks/useStore';
 
 const tabs = [
   { to: '/app', label: 'Accueil', icon: LayoutDashboard, end: true },
+  { to: '/app/prompts', label: 'Créer', icon: Wand2 },
   { to: '/app/library', label: 'Vidéos', icon: FolderOpen },
   { to: '/app/distribute', label: 'Diffuser', icon: Send },
-  { to: '/app/calendar', label: 'Calendrier', icon: CalendarDays },
 ];
 
 /** Everything the desktop sidebar offers, so no page is unreachable on a phone. */
 const sections = [
+  { title: 'Créer', items: [
+    { to: '/app/prompts', label: 'Creative Studio', icon: Wand2, badge: 'Vidéo IA' },
+    { to: '/app/translate', label: 'Traduire une vidéo', icon: Languages, badge: 'Nouveau' },
+  ] },
   { title: 'Diffuser', items: [
+    { to: '/app/calendar', label: 'Calendrier', icon: CalendarDays },
     { to: '/app/history', label: 'Historique', icon: History },
     { to: '/app/accounts', label: 'Comptes sociaux', icon: Link2 },
-  ] },
-  { title: 'Créer', items: [
-    { to: '/app/studio', label: 'Animated Studio', icon: Clapperboard, badge: 'Nouveau' },
-    { to: '/app/translate', label: 'Traduire une vidéo', icon: Languages, badge: 'Nouveau' },
-    { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2 },
   ] },
   { title: 'Grandir', items: [
     { to: '/app/monetisation', label: 'Monétisation', icon: TrendingUp },
@@ -41,7 +41,7 @@ export function MobileNav() {
   const beta = useBetaAccess();
   const { data: profile } = useProfile();
   const menu = (profile as { is_admin?: boolean } | null)?.is_admin
-    ? [...sections, { title: 'Admin', items: [{ to: '/app/admin', label: 'Tableau de bord', icon: BarChart3 }, { to: '/app/partners', label: 'Partenaires', icon: Handshake }, { to: '/app/trends', label: 'Tendances', icon: TrendingUp }] }]
+    ? [...sections, { title: 'Admin', items: [{ to: '/app/admin', label: 'Tableau de bord', icon: BarChart3 }, { to: '/app/studio', label: 'Animated Studio (caché)', icon: Clapperboard }, { to: '/app/partners', label: 'Partenaires', icon: Handshake }, { to: '/app/trends', label: 'Tendances', icon: TrendingUp }] }]
     : sections;
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();

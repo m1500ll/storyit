@@ -59,7 +59,7 @@ export function parseTrendReport(raw: string): { insights: string; concepts: Tre
   return { insights, concepts };
 }
 
-/** the story text a concept prefills in the Prompt Studio (French, ready to adapt) */
+/** the story text a concept prefills in the Creative Studio (French, ready to adapt) */
 export function conceptToStory(c: Pick<TrendConcept, 'title' | 'cast_text' | 'hook' | 'outline' | 'ending' | 'repeat_line' | 'screen_line'>): string {
   return [
     `Concept : ${c.title}`,

@@ -63,7 +63,7 @@ export default function AuthPage() {
   const nextParam = new URLSearchParams(location.search).get('next');
   // Only same-site paths, never external URLs.
   const [mode, setMode] = useState<Mode>(() => (new URLSearchParams(window.location.search).get('mode') === 'signin' ? 'signin' : 'signup'));
-  // Everyone lands on Home (the overview, Prompt Studio first) unless a specific page was asked for.
+  // Everyone lands on Home (the overview, Creative Studio first) unless a specific page was asked for.
   const from = (location.state as { from?: string } | null)?.from ?? (nextParam?.startsWith('/app') ? nextParam : '/app');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

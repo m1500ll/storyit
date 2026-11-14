@@ -15,7 +15,7 @@ const script = () => normalizePhase('script', {
   engagement: { levers: ['a'], references: ['Jul', 'Squid Game'], cult_line: 'c', target_comment: 't', scores: { villain: 2, debate: 2, cult_line: 2, share: 1, part2: 2, detail: 1 } },
 });
 
-describe('Prompt Studio V4', () => {
+describe('Creative Studio V4', () => {
   it('master prompt keeps the key rules of the meta-prompt', () => {
     for (const rule of ['durée totale imposée', '2,6-3,2 mots/s', '5 mots minimum', 'PHRASE FRANÇAISE COMPLÈTE', '5 hooks', 'cliffhanger', 'Grille /10', 'HISTOIRE ET RYTHME']) expect(MASTER_PROMPT).toContain(rule);
   });

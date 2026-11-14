@@ -26,7 +26,7 @@ export const SHOWCASE: ShowcaseVideo[] = [
   { slug: 'pont-rompez-le-pas', title: 'Le pont qui a inventé le « rompez le pas »', hook: 'Soldiers marched in step. The bridge gave way.', hookFr: 'Des soldats marchaient au pas. Le pont s’est effondré.', format: '3D animation', seconds: 64 },
 ];
 
-/** Fruit dramas and short stories made with the Prompt Studio by the Storyit team. */
+/** Fruit dramas and short stories made with the Creative Studio by the Storyit team. */
 export const SHOWCASE_FRUIT: ShowcaseVideo[] = [
   { slug: 'banane-honnete', title: 'L’honnêteté de la banane', hook: 'A poor banana finds an envelope full of cash…', hookFr: 'Une banane pauvre trouve une enveloppe pleine de billets…', format: 'Fruit Drama', seconds: 60 },
   { slug: 'chevelure-sans-fin', title: 'La chevelure sans fin', hook: 'A golden barber, a cursed haircut.', hookFr: 'Un barbier doré, une coupe maudite.', format: 'Fruit Drama', seconds: 77 },

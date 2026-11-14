@@ -1,5 +1,6 @@
 import { storedLang } from '@/lib/lang';
 export { InsufficientCreditsError } from './errors';
+import { VIDEO_PRICES } from '@shared/promptVideo.ts';
 
 /** Story Credit pricing — single source of truth for UI and billing. */
 export const CREDIT_COSTS = {
@@ -13,8 +14,8 @@ export const CREDIT_COSTS = {
 
 /** Perks must stay true to what the product does. Account/video limits mirror the `plan_limits` table (server-enforced). */
 export const PLANS = [
-  { id: 'free', name: 'Starter', price: 0, credits: 3000, period: 'once', perks: ['Prompt Studio: script, image and video prompts', '3,000 free credits (2 full projects)', 'Posting to TikTok and Instagram: Creator plan'], perksFr: ['Prompt Studio : script, prompts d’images et de vidéos', '3 000 crédits offerts (2 projets complets)', 'Publication TikTok et Instagram : offre Creator'] },
-  { id: 'creator', name: 'Creator', price: 29, compareAt: 45, credits: 43000, yearly: 279, period: 'month', perks: ['10 social accounts, grouped as you like', '500 videos in your library', 'Daily rotation campaigns', '43,000 credits / month (28 Prompt Studio projects)'], perksFr: ['10 comptes sociaux, regroupés comme vous voulez', '500 vidéos dans votre bibliothèque', 'Campagnes de rotation quotidienne', '43 000 crédits / mois (28 projets Prompt Studio)'], featured: true },
+  { id: 'free', name: 'Starter', price: 0, credits: 3000, period: 'once', perks: ['Creative Studio: script, image and video prompts', '3,000 free credits (2 full projects)', 'Posting to TikTok and Instagram: Creator plan'], perksFr: ['Creative Studio : script, prompts d’images et de vidéos', '3 000 crédits offerts (2 projets complets)', 'Publication TikTok et Instagram : offre Creator'] },
+  { id: 'creator', name: 'Creator', price: 29, compareAt: 45, credits: 43000, yearly: 279, period: 'month', perks: ['10 social accounts, grouped as you like', '500 videos in your library', 'Daily rotation campaigns', '43,000 credits / month (28 Creative Studio projects)'], perksFr: ['10 comptes sociaux, regroupés comme vous voulez', '500 vidéos dans votre bibliothèque', 'Campagnes de rotation quotidienne', '43 000 crédits / mois (28 projets Creative Studio)'], featured: true },
   { id: 'pro', name: 'Pro', price: 59, credits: 105000, yearly: 569, period: 'month', badge: 'Best value', perks: ['Everything in Creator', '30 social accounts', '2,000 videos in your library', '105,000 credits / month (17 animated shorts)'], perksFr: ['Tout ce qu’offre Creator', '30 comptes sociaux', '2 000 vidéos dans votre bibliothèque', '105 000 crédits / mois (17 vidéos animées)'] },
   { id: 'studio', name: 'Studio', price: 99, compareAt: 180, credits: 160000, yearly: 949, period: 'month', perks: ['Unlimited accounts and videos', 'Everything in Pro', 'Built for agencies and account networks', '160,000 credits / month'], perksFr: ['Comptes et vidéos illimités', 'Tout ce qu’offre Pro', 'Pensé pour les agences et les réseaux de comptes', '160 000 crédits / mois'] },
 ] as const;
@@ -44,7 +45,7 @@ export const episodesFor = (credits: number) => Math.floor(credits / FULL_EPISOD
 
 /** Below this balance the app nudges the user to top up (banner, amber counter). */
 export const LOW_CREDITS = 1500;
-/** A full Prompt Studio project, charged once at the start; every step after that is included. Must match PROJECT_COST in supabase/functions/prompts. */
+/** A full Creative Studio project, charged once at the start; every step after that is included. Must match PROJECT_COST in supabase/functions/prompts. */
 export const PROMPT_PROJECT_COST = 1500;
 /** One finished animated short (Animated Studio), charged once at "Generate" and refunded if the render fails.
  *  Must match ANIMATED_CREDITS (default 6000) in supabase/functions/_shared/animatedStudio.ts. */
@@ -60,8 +61,12 @@ export type AnimatedLength = (typeof ANIMATED_LENGTHS)[number]['seconds'];
 /** video translation: credits per started minute of video. Must match DUB_CREDITS_PER_MIN in supabase/functions/dubbing. */
 export const DUB_CREDITS_PER_MIN = 3500;
 export const dubCost = (seconds: number) => DUB_CREDITS_PER_MIN * Math.max(1, Math.ceil(seconds / 60));
-/** how many 30-second animated videos a credit balance pays for (the figure the landing page shows) */
-export const videosFor = (credits: number) => Math.floor(credits / ANIMATED_LENGTHS[0].credits);
+/** Creative Studio finished videos (Eco): what one costs in total, the project included, per length */
+export const CREATIVE_VIDEO_LENGTHS = ([30, 45, 60] as const).map((seconds) => ({
+  seconds, label: seconds === 60 ? '1 min' : `${seconds} s`, credits: PROMPT_PROJECT_COST + VIDEO_PRICES.eco[seconds],
+}));
+/** how many 30-second Creative Studio videos (project + video) a credit balance pays for (the figure the landing page shows) */
+export const videosFor = (credits: number) => Math.floor(credits / (PROMPT_PROJECT_COST + VIDEO_PRICES.eco[30]));
 export const projectsFor = (credits: number) => Math.floor(credits / PROMPT_PROJECT_COST);
 /** credits shown with thousands separators (43,000) */
 export const formatCredits = (n: number) => Math.round(n).toLocaleString(storedLang() === 'en' ? 'en-US' : 'fr-FR');

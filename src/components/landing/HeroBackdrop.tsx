@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { posterSrc, previewSrc, SHOWCASE, SHOWCASE_FRUIT, type ShowcaseVideo } from '@/data/showcase';
+import { posterSrc, previewSrc, SHOWCASE_FRUIT, type ShowcaseVideo } from '@/data/showcase';
 
-// 4 columns (2 on each side of the headline), 3D shorts and Fruit Dramas mixed
-const POOL = [...SHOWCASE.slice(3), ...SHOWCASE_FRUIT.slice(1)];
+// 4 columns (2 on each side of the headline) of Creative Studio videos (the Animated Studio is paused): the 6 videos
+// twice, shifted so a column never shows the same video twice in a row
+const POOL = [...SHOWCASE_FRUIT, ...SHOWCASE_FRUIT.slice(3), ...SHOWCASE_FRUIT.slice(0, 3)];
 const COLS: { list: ShowcaseVideo[]; side: string; speed: number; offset: string }[] = [
   { list: POOL.slice(0, 3), side: 'left-[2%]', speed: 60, offset: '-mt-24' },
   { list: POOL.slice(3, 6), side: 'left-[13%]', speed: 75, offset: '-mt-64' },

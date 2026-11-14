@@ -58,7 +58,7 @@ describe('trend report parser', () => {
     expect(r.concepts[2]!.kind).toBe('variant');
     expect(r.concepts[2]!.outline).toBe(''); // the separator and the "LES VARIANTES" title are not glued to #7
   });
-  it('builds the story the Prompt Studio prefills', () => {
+  it('builds the story the Creative Studio prefills', () => {
     const s = conceptToStory(r.concepts[0]!);
     expect(s).toContain('Réplique à répéter (partages)');
     expect(s).toContain('Jeu pour les commentaires');

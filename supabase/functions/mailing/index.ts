@@ -39,7 +39,7 @@ const shell = (inner: string, unsub: string) => `<!doctype html><html lang="fr">
 const CAMPAIGNS: Record<string, Campaign> = {
   auto_video_launch: {
     subject: '🎬 Nouveau : Storyit crée maintenant vos vidéos IA de A à Z',
-    html: (unsub) => shell(`<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Grosse nouveauté dans le <strong>Prompt Studio</strong> : il ne s’arrête plus aux prompts. Il <strong>crée la vidéo finale pour vous</strong>.</td></tr>
+    html: (unsub) => shell(`<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Grosse nouveauté dans le <strong>Creative Studio</strong> : il ne s’arrête plus aux prompts. Il <strong>crée la vidéo finale pour vous</strong>.</td></tr>
 <tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.9">
 <tr><td>🎨 <strong>ChatGPT</strong> dessine vos personnages et chaque scène, toujours les mêmes d’un plan à l’autre,</td></tr>
 <tr><td>🎞️ <strong>Grok</strong> anime chaque plan avec les voix et les bruitages,</td></tr>
@@ -49,7 +49,7 @@ const CAMPAIGNS: Record<string, Campaign> = {
 <tr><td align="center" style="padding:26px 0 8px"><a href="${APP}/app/prompts" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:14px 26px;border-radius:12px">Créer ma vidéo</a></td></tr>`, unsub),
     text: (unsub) => `Bonjour,
 
-Grosse nouveauté dans le Prompt Studio : il ne s'arrête plus aux prompts. Il crée la vidéo finale pour vous.
+Grosse nouveauté dans le Creative Studio : il ne s'arrête plus aux prompts. Il crée la vidéo finale pour vous.
 
 - ChatGPT dessine vos personnages et chaque scène, toujours les mêmes d'un plan à l'autre,
 - Grok anime chaque plan avec les voix et les bruitages,
@@ -128,13 +128,13 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 <tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Vous avez créé votre compte, il ne manque plus que votre première vraie vidéo. Pour vous lancer, on vous ouvre <strong>tous les studios pendant 3 jours pour seulement 1 $</strong>.</td></tr>
 <tr><td style="padding:18px 0 6px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
 <td width="33%" style="padding-right:6px"><img src="https://www.storyit.fun/showcase/banane-honnete.jpg" width="148" alt="Fruit Drama réalisé avec Storyit" style="display:block;width:100%;height:auto;border-radius:12px"></td>
-<td width="33%" style="padding:0 3px"><img src="https://www.storyit.fun/showcase/grecs-150-contre-1.jpg" width="148" alt="Histoire 3D réalisée avec Storyit" style="display:block;width:100%;height:auto;border-radius:12px"></td>
-<td width="33%" style="padding-left:6px"><img src="https://www.storyit.fun/showcase/geant-coule-au-port.jpg" width="148" alt="Vidéo animée réalisée avec Storyit" style="display:block;width:100%;height:auto;border-radius:12px"></td>
+<td width="33%" style="padding:0 3px"><img src="https://www.storyit.fun/showcase/chevelure-sans-fin.jpg" width="148" alt="Fruit Drama réalisé avec Storyit" style="display:block;width:100%;height:auto;border-radius:12px"></td>
+<td width="33%" style="padding-left:6px"><img src="https://www.storyit.fun/showcase/plaque-de-cuisson.jpg" width="148" alt="Mini-série réalisée avec Storyit" style="display:block;width:100%;height:auto;border-radius:12px"></td>
 </tr></table></td></tr>
 <tr><td style="font-size:12px;color:#7a7390;text-align:center;padding-bottom:10px">Des vidéos créées avec Storyit</td></tr>
 <tr><td style="padding:8px 0 4px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.9">
-<tr><td>🎬 <strong>7 000 crédits</strong> : une vidéo de fruits complète ou 2 vidéos 3D (script, voix, musique, sous-titres)</td></tr>
-<tr><td>🍓 Fruit Dramas, histoires 3D, vidéo automatique, traduction : <strong>tout est débloqué</strong></td></tr>
+<tr><td>🎬 <strong>7 000 crédits</strong> : une vidéo complète de 30 s avec le Creative Studio (histoire, personnages, voix, montage)</td></tr>
+<tr><td>🍓 Creative Studio, vidéo automatique, traduction : <strong>tout est débloqué</strong></td></tr>
 <tr><td>📲 Une vidéo verticale <strong>prête à publier</strong> sur TikTok, Reels et Shorts</td></tr></table></td></tr>
 <tr><td align="center" style="padding:26px 0 10px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:17px;padding:16px 30px;border-radius:12px">Créer ma vidéo pour 1 $ →</a></td></tr>
 <tr><td style="font-size:12px;line-height:1.6;color:#7a7390;text-align:center">Ensuite, l’offre mensuelle choisie (Creator à 29 $/mois), au bout de 3 jours ou dès qu’il vous reste moins de 1 000 crédits d’essai. Résiliable en 1 clic avant. Une seule fois par compte.</td></tr>`, unsub),
@@ -144,8 +144,8 @@ Bonjour,
 
 Vous avez créé votre compte, il ne manque plus que votre première vraie vidéo. Pour vous lancer, on vous ouvre tous les studios pendant 3 jours pour seulement 1 $.
 
-- 7 000 crédits : une vidéo de fruits complète ou 2 vidéos 3D (script, voix, musique, sous-titres)
-- Fruit Dramas, histoires 3D, vidéo automatique, traduction : tout est débloqué
+- 7 000 crédits : une vidéo complète de 30 s avec le Creative Studio (histoire, personnages, voix, montage)
+- Creative Studio, vidéo automatique, traduction : tout est débloqué
 - Une vidéo verticale prête à publier sur TikTok, Reels et Shorts
 
 Créer ma vidéo pour 1 $ : ${APP}/app/billing?interval=month
@@ -216,13 +216,13 @@ async function trialEmail(kind: 'welcome' | 'reminder', uid: string) {
     inner = `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Bienvenue sur Storyit !</td></tr>
 <tr><td style="font-size:16px;line-height:1.6">Votre essai de 3 jours est activé, avec <strong>${left} crédits</strong>. Voici comment créer votre première vidéo :</td></tr>
 <tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.6">
-${li('<strong>1. Une vidéo 3D en 5 minutes</strong> : ouvrez l’<strong>Animated Studio</strong>, choisissez une histoire, et Storyit fait le reste (30 s = 3 500 crédits).')}
-${li('<strong>2. Ou un Fruit Drama</strong> : dans le <strong>Prompt Studio</strong>, écrivez votre idée, puis cliquez sur « Générer la vidéo » (30 s = 6 000 crédits au total).')}
+${li('<strong>1. Ouvrez le Creative Studio</strong> : écrivez votre idée en une ligne (ou prenez une idée du moment) et choisissez un style de personnages.')}
+${li('<strong>2. Générez la vidéo</strong> : choisissez 30 s, puis cliquez sur « Générer la vidéo ». Storyit écrit l’histoire, dessine les personnages, anime chaque plan avec les voix et fait le montage (30 s = 6 000 crédits au total).')}
 ${li('<strong>3. Publiez</strong> : téléchargez la vidéo depuis votre bibliothèque et postez-la sur TikTok, Reels ou Shorts.')}
 </table></td></tr>
-<tr><td align="center" style="padding:14px 0 8px"><a href="${APP}/app" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma première vidéo</a></td></tr>
+<tr><td align="center" style="padding:14px 0 8px"><a href="${APP}/app/prompts" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Ouvrir le Creative Studio</a></td></tr>
 <tr><td style="font-size:13px;line-height:1.6;color:#4b4560;padding-top:10px">Votre essai dure jusqu’au <strong>${end}</strong>. Ensuite, l’offre ${plan.name} (${plan.price} $/mois, ${fr(plan.credits)} crédits par mois) démarre automatiquement, ou plus tôt si vous utilisez presque tous vos crédits d’essai. Résiliable à tout moment avant, depuis « Offre et crédits ».</td></tr>`;
-    text = `Bienvenue sur Storyit !\n\nVotre essai de 3 jours est activé, avec ${left} crédits. Pour créer votre première vidéo :\n1. Une vidéo 3D en 5 minutes : ouvrez l'Animated Studio, choisissez une histoire (30 s = 3 500 crédits).\n2. Ou un Fruit Drama : dans le Prompt Studio, écrivez votre idée puis « Générer la vidéo » (30 s = 6 000 crédits au total).\n3. Publiez : téléchargez la vidéo depuis votre bibliothèque et postez-la.\n\nCréer ma première vidéo : ${APP}/app\n\nVotre essai dure jusqu'au ${end}. Ensuite, l'offre ${plan.name} (${plan.price} $/mois, ${fr(plan.credits)} crédits par mois) démarre automatiquement, ou plus tôt si vous utilisez presque tous vos crédits d'essai. Résiliable à tout moment avant, depuis « Offre et crédits ».\n\nÀ très vite,\nL'équipe Storyit`;
+    text = `Bienvenue sur Storyit !\n\nVotre essai de 3 jours est activé, avec ${left} crédits. Pour créer votre première vidéo :\n1. Ouvrez le Creative Studio : écrivez votre idée en une ligne et choisissez un style de personnages.\n2. Générez la vidéo : choisissez 30 s puis « Générer la vidéo » (30 s = 6 000 crédits au total).\n3. Publiez : téléchargez la vidéo depuis votre bibliothèque et postez-la.\n\nOuvrir le Creative Studio : ${APP}/app/prompts\n\nVotre essai dure jusqu'au ${end}. Ensuite, l'offre ${plan.name} (${plan.price} $/mois, ${fr(plan.credits)} crédits par mois) démarre automatiquement, ou plus tôt si vous utilisez presque tous vos crédits d'essai. Résiliable à tout moment avant, depuis « Offre et crédits ».\n\nÀ très vite,\nL'équipe Storyit`;
   } else {
     subject = `⏰ Votre essai Storyit se termine demain`;
     inner = `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Votre essai se termine demain</td></tr>

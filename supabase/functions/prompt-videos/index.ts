@@ -1,4 +1,4 @@
-// Supabase Edge Function: `prompt-videos` — turns a Prompt Studio project into a finished video.
+// Supabase Edge Function: `prompt-videos` — turns a Creative Studio project into a finished video.
 // - list { project_id? }: the caller's videos (newest first)
 // - create { project_id, quality }: charges the tier's price (credits per minute of clips), freezes the prompts and
 //   queues the job for the render worker (render-engine/promptvideo/run.py), which refunds the credits if it fails
@@ -76,13 +76,13 @@ Deno.serve(async (req) => {
     const seconds = projectSeconds(data);
     const cost = videoCost(body.quality, seconds);
     const plan = buildVideoPlan(data, body.quality);
-    const { error: credErr } = await user.rpc('consume_credits', { p_amount: cost, p_story_id: null, p_description: `Vidéo Prompt Studio (${body.quality}, ${Math.round(seconds)} s)` });
+    const { error: credErr } = await user.rpc('consume_credits', { p_amount: cost, p_story_id: null, p_description: `Vidéo Creative Studio (${body.quality}, ${Math.round(seconds)} s)` });
     if (credErr) return json({ error: `Il vous faut ${cost} crédits pour cette vidéo.`, code: 'insufficient_credits', needed: cost }, 402);
     const { data: job, error } = await admin.from('prompt_videos').insert({
       user_id: uid, project_id: project.id, title: plan.title, quality: body.quality, seconds, plan, credits_charged: cost,
     }).select(COLS).single();
     if (error || !job) {
-      await admin.rpc('grant_credits', { p_user_id: uid, p_amount: cost, p_type: 'refund', p_description: 'Vidéo Prompt Studio — remboursement (file indisponible)' });
+      await admin.rpc('grant_credits', { p_user_id: uid, p_amount: cost, p_type: 'refund', p_description: 'Vidéo Creative Studio — remboursement (file indisponible)' });
       return json({ error: 'Impossible de lancer la vidéo. Vos crédits ont été rendus.' }, 500);
     }
     const hook = Deno.env.get('RENDER_WORKER_URL')?.replace(/\/wake$/, '/wake-prompt');

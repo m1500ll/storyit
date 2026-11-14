@@ -1,5 +1,5 @@
 /**
- * Prompt Studio V4 — "Studio mini-drama IA": story → 3D image prompts (ChatGPT) + animation prompts (Grok Imagine),
+ * Creative Studio V4 — "Studio mini-drama IA": story → 3D image prompts (ChatGPT) + animation prompts (Grok Imagine),
  * built for retention, pace and engagement. SERVER ONLY for the master prompt; the web app imports the types,
  * STYLES and the pure builders/checks (the same code assembles the prompts on the server and shows the checklist).
  *

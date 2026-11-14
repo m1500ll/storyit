@@ -39,6 +39,13 @@ export function Sidebar() {
 
   const sections: { title: string; items: Item[] }[] = [
     {
+      title: 'Créer',
+      items: [
+        { to: '/app/prompts', label: 'Creative Studio', icon: Wand2, badge: <span className="rounded-full bg-coral-500/15 px-1.5 text-[11px] text-coral-300">Vidéo IA</span> },
+        { to: '/app/translate', label: 'Traduire une vidéo', icon: Languages, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[11px] text-violet-300">Nouveau</span> },
+      ],
+    },
+    {
       title: 'Diffuser',
       items: [
         { to: '/app', label: 'Accueil', icon: LayoutDashboard, end: true },
@@ -47,14 +54,6 @@ export function Sidebar() {
         { to: '/app/calendar', label: 'Calendrier', icon: CalendarDays },
         { to: '/app/history', label: 'Historique', icon: History },
         { to: '/app/accounts', label: 'Comptes sociaux', icon: Link2 },
-      ],
-    },
-    {
-      title: 'Créer',
-      items: [
-        { to: '/app/studio', label: 'Animated Studio', icon: Clapperboard, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[11px] text-violet-300">Nouveau</span> },
-        { to: '/app/translate', label: 'Traduire une vidéo', icon: Languages, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[11px] text-violet-300">Nouveau</span> },
-        { to: '/app/prompts', label: 'Prompt Studio', icon: Wand2 },
       ],
     },
     {
@@ -70,7 +69,7 @@ export function Sidebar() {
         { to: '/app/billing', label: 'Offre et crédits', icon: CreditCard },
         { to: '/app/settings', label: 'Réglages', icon: Settings },
         { to: '/app/help', label: 'Aide', icon: LifeBuoy },
-        ...(isAdmin ? [{ to: '/app/admin', label: 'Tableau de bord', icon: BarChart3 }, { to: '/app/partners', label: 'Partenaires', icon: Handshake }, { to: '/app/trends', label: 'Tendances', icon: TrendingUp }] : []),
+        ...(isAdmin ? [{ to: '/app/admin', label: 'Tableau de bord', icon: BarChart3 }, { to: '/app/studio', label: 'Animated Studio (caché)', icon: Clapperboard }, { to: '/app/partners', label: 'Partenaires', icon: Handshake }, { to: '/app/trends', label: 'Tendances', icon: TrendingUp }] : []),
       ],
     },
   ];
@@ -91,7 +90,7 @@ export function Sidebar() {
           <p className="label flex items-center gap-1.5 text-[11px]"><Coins className="h-3 w-3" /> Crédits</p>
           <p className={cn('mt-1 font-display text-3xl tabular-nums', level === 'ok' ? 'text-zinc-50' : level === 'low' ? 'text-amber-300' : 'text-coral-300')}>{known ? formatCredits(balance) : '…'}</p>
           <p className="text-[11px] text-zinc-500">
-            {level === 'empty' ? 'Plus de crédits : rechargez pour continuer à créer.' : level === 'low' ? 'Bientôt à court.' : `≈ ${projectsFor(balance)} projets Prompt Studio`}
+            {level === 'empty' ? 'Plus de crédits : rechargez pour continuer à créer.' : level === 'low' ? 'Bientôt à court.' : `≈ ${projectsFor(balance)} projets Creative Studio`}
           </p>
           <button onClick={() => openPaywall()}
             className="touch-hit mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#c2410c] to-[#b45309] py-2 text-xs font-semibold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-400/60">

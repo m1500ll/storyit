@@ -20,7 +20,7 @@ const STEPS_FR = [
   { icon: Download, title: 'Prête dans ta bibliothèque', body: 'Une vidéo verticale terminée, à télécharger et publier sur TikTok, Reels et Shorts.' },
 ];
 
-/** New: the Prompt Studio makes the finished video (images, animation, editing). */
+/** New: the Creative Studio makes the finished video (images, animation, editing). */
 export function AutoVideoFeature() {
   const [open, setOpen] = useState<ShowcaseVideo | null>(null);
   const fr = useLang() === 'fr';
@@ -34,7 +34,7 @@ export function AutoVideoFeature() {
         <div className="order-1 md:order-2">
           <p className="label inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-coral-400" /> {fr ? 'Nouveau · Vidéos IA automatiques' : 'New · Automatic AI videos'}</p>
           <h2 id="auto-title" className="mt-3 font-display text-4xl text-zinc-50 md:text-5xl">{fr ? 'Ton histoire en entrée, une vidéo finie en sortie' : 'Your story in, a finished video out'}</h2>
-          <p className="mt-3 max-w-xl text-sm text-zinc-400">{fr ? 'Écris quelques lignes ou prends une idée tendance. Le Prompt Studio écrit le script, puis crée toute la vidéo pour toi : aucun prompt à copier, aucun logiciel de montage.' : 'Write a few lines or pick a trending idea. The Prompt Studio writes the script, then makes the whole video for you: no prompts to copy, no editing software.'}</p>
+          <p className="mt-3 max-w-xl text-sm text-zinc-400">{fr ? 'Écris quelques lignes ou prends une idée tendance. Le Creative Studio écrit le script, puis crée toute la vidéo pour toi : aucun prompt à copier, aucun logiciel de montage.' : 'Write a few lines or pick a trending idea. The Creative Studio writes the script, then makes the whole video for you: no prompts to copy, no editing software.'}</p>
           <ol className="mt-6 grid gap-3 sm:grid-cols-2">
             {(fr ? STEPS_FR : STEPS).map(({ icon: Icon, title, body }) => (
               <li key={title} className="surface flex gap-3 p-4">

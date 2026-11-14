@@ -1,5 +1,5 @@
 /**
- * Prompt Studio → finished video: quality tiers, prices and the frozen generation plan. Pure: used by the
+ * Creative Studio → finished video: quality tiers, prices and the frozen generation plan. Pure: used by the
  * `prompt-videos` Edge Function and the tests (the browser mirrors the prices in src/services/credits.ts).
  */
 import { coverPrompt, grokPrompt, imagePrompt, sheetPrompt, type VideoLength } from './promptStudio.ts';
@@ -56,7 +56,7 @@ export function buildVideoPlan(d: any, quality: VideoQuality): VideoPlan {
   const t = VIDEO_TIERS[quality];
   return {
     quality, image_model: t.image_model, image_quality: t.image_quality, video_model: t.video_model, resolution: t.resolution,
-    title: String(d?.script?.title ?? 'Vidéo Prompt Studio').slice(0, 160),
+    title: String(d?.script?.title ?? 'Vidéo Creative Studio').slice(0, 160),
     sheet_prompt: sheetPrompt(d),
     cover_prompt: d?.pack?.cover ? coverPrompt(d) : '',
     clips: (d.script.clips as any[]).map((c, i) => ({ seconds: Math.min(15, Math.max(1, Number(c.seconds) || 6)), image_prompt: imagePrompt(d, i), grok_prompt: grokPrompt(d, i) })),

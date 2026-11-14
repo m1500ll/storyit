@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, LoadState, PageHeader } from '@/components/ui';
 import { useProfile } from '@/hooks/useStore';
 
-/** Distribution (library, scheduling, accounts) is for Creator and Studio subscribers; the free plan keeps the Prompt Studio. */
+/** Distribution (library, scheduling, accounts) is for Creator and Studio subscribers; the free plan keeps the Creative Studio. */
 export function SubscriberGate({ children }: { children: ReactNode }) {
   const { data: profile, loading } = useProfile();
   if (loading && !profile) return <LoadState loading error={null} />;
@@ -26,7 +26,7 @@ export function SubscriberGate({ children }: { children: ReactNode }) {
         </ul>
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link to="/app/billing" className="inline-flex h-10 items-center rounded-xl bg-violet-600 px-4 text-sm font-medium text-white hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">Voir les offres — dès 29 $/mois</Link>
-          <Link to="/app/prompts" className="text-sm text-zinc-400 hover:text-zinc-200">Ou continuez avec le Prompt Studio</Link>
+          <Link to="/app/prompts" className="text-sm text-zinc-400 hover:text-zinc-200">Ou continuez avec le Creative Studio</Link>
         </div>
       </Card>
     </>

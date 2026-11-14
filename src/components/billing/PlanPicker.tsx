@@ -45,8 +45,8 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
           <p className="relative inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Offre d’essai</p>
           <p className="relative mt-3 text-balance font-display text-3xl leading-tight text-zinc-50">Essayez tout Storyit 3 jours pour {TRIAL.price} $</p>
           <ul className="relative mt-3 space-y-1.5 text-sm text-zinc-300">
-            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span><strong className="text-zinc-100">{formatCredits(TRIAL.credits)} crédits</strong> : une vidéo de fruits complète ou 2 vidéos 3D</span></li>
-            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>Tous les studios : Animated Studio, Prompt Studio, vidéo automatique, traduction</span></li>
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span><strong className="text-zinc-100">{formatCredits(TRIAL.credits)} crédits</strong> : une vidéo complète de 30 s avec le Creative Studio</span></li>
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>Tout Storyit : Creative Studio, vidéo automatique, traduction</span></li>
             <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>Résiliable en 1 clic avant la fin de l’essai</span></li>
           </ul>
           <Button size="lg" className="relative mt-4 w-full sm:w-auto" loading={pending === 'creator:trial'} disabled={pending !== null} onClick={() => buy('creator', true)}>
@@ -93,7 +93,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
               </p>
               {yearly ? <p className="text-[11px] text-zinc-400">{yearly} $ réglés une fois pour l’année · <span className="font-semibold text-emerald-300">vous économisez {p.price * 12 - yearly} $</span></p>
                 : p.price > 0 && <p className="text-[11px] text-zinc-500">Facturé chaque mois</p>}
-              <p className="text-xs text-violet-300">{yearly ? `${formatCredits(p.credits * 12)} crédits d’un coup (12 mois)` : `${formatCredits(p.credits)} crédits ${p.period === 'month' ? '/ mois' : 'pour commencer'}`} · ≈ {projectsFor(p.credits)} projets Prompt Studio / mois</p>
+              <p className="text-xs text-violet-300">{yearly ? `${formatCredits(p.credits * 12)} crédits d’un coup (12 mois)` : `${formatCredits(p.credits)} crédits ${p.period === 'month' ? '/ mois' : 'pour commencer'}`} · ≈ {projectsFor(p.credits)} projets Creative Studio / mois</p>
               </>); })()}
               {!compact && (
                 <ul className="mt-3 space-y-1.5">

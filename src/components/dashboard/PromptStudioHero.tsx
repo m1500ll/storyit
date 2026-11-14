@@ -12,7 +12,7 @@ const IDEAS = [
   'Deux pommes rivales héritent du même verger',
 ];
 
-/** First thing on the dashboard: start a Prompt Studio project from an idea, or reopen a recent one. */
+/** First thing on the dashboard: start a Creative Studio project from an idea, or reopen a recent one. */
 export function PromptStudioHero() {
   const navigate = useNavigate();
   const [idea, setIdea] = useState('');
@@ -21,7 +21,7 @@ export function PromptStudioHero() {
 
   return (
     <section aria-labelledby="ps-hero" className="relative mb-8 overflow-hidden rounded-3xl border border-violet-500/25 bg-gradient-to-br from-violet-600/20 via-ink-950 to-coral-500/10 p-5 sm:p-7">
-      <div className="flex items-center gap-2 text-xs font-medium text-violet-300"><Wand2 className="h-4 w-4" aria-hidden /> Prompt Studio</div>
+      <div className="flex items-center gap-2 text-xs font-medium text-violet-300"><Wand2 className="h-4 w-4" aria-hidden /> Creative Studio</div>
       <h2 id="ps-hero" className="mt-2 font-display text-3xl leading-tight text-zinc-50 sm:text-4xl">Votre prochain Fruit Drama viral, écrit et créé pour vous</h2>
       <p className="mt-2 max-w-2xl text-sm text-zinc-300">3 histoires au choix, un script de plus d’une minute avec dialogues, tous les prompts, puis la vidéo finale en un clic. {formatCredits(PROMPT_PROJECT_COST)} crédits pour le projet complet.</p>
 

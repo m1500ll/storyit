@@ -25,7 +25,7 @@ import { SeoFooter } from '@/pages/SeoPage';
 export default function LandingPage({ lang = 'fr' }: { lang?: Lang }) {
   const fr = lang === 'fr';
   useSeo(fr
-    ? { path: '/', title: 'Générateur de vidéos IA virales pour TikTok (3D et Fruit Drama)', description: 'Crée des vidéos IA virales qui rapportent : histoires animées en 3D et mini-séries Fruit Drama, avec voix, musique et sous-titres, prêtes pour TikTok, Reels et Shorts. Traduction vidéo en un clic. Essai gratuit.' }
+    ? { path: '/', title: 'Générateur de vidéos IA virales pour TikTok (Fruit Drama et mini-séries)', description: 'Crée des vidéos IA virales qui rapportent avec le Creative Studio : Fruit Dramas et mini-séries avec personnages 3D, dialogues et voix, prêtes pour TikTok, Reels et Shorts. Traduction vidéo en un clic. Essai gratuit.' }
     : { path: '/en' }); // the FAQ and video structured data are written into the pre-rendered HTML (scripts/prerender.mjs)
   const cta = fr ? 'Offre de lancement : 29 $/mois au lieu de 45 $, ou −20 % à l’année. Sans engagement.' : 'Launch offer: $29/mo instead of $45, or −20% yearly. Cancel anytime.';
   return (

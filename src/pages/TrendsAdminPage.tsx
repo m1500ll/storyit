@@ -4,7 +4,7 @@ import { Button, Card, LoadState, PageHeader, useToast } from '@/components/ui';
 import { useLiveQuery, useProfile } from '@/hooks/useStore';
 import { trends } from '@/services/trends';
 
-/** Admin: paste the daily trend report; the Prompt Studio uses it for "Idées du moment" and "Propose-moi 3 histoires". */
+/** Admin: paste the daily trend report; the Creative Studio uses it for "Idées du moment" and "Propose-moi 3 histoires". */
 export default function TrendsAdminPage() {
   const toast = useToast();
   const { data: profile } = useProfile();
@@ -26,7 +26,7 @@ export default function TrendsAdminPage() {
   return (
     <>
       <PageHeader eyebrow="Administration" title="Tendances (veille)"
-        description="Collez le rapport de veille du jour en entier. Le Prompt Studio s’en sert pour les « Idées du moment » et pour proposer 3 histoires inspirées de ce qui marche." />
+        description="Collez le rapport de veille du jour en entier. Le Creative Studio s’en sert pour les « Idées du moment » et pour proposer 3 histoires inspirées de ce qui marche." />
       <Card>
         <div className="flex flex-wrap items-end gap-3">
           <label className="text-xs text-zinc-400">Date du rapport

@@ -1,4 +1,4 @@
-// Supabase Edge Function: `trends` — daily trend reports ("veille") for the Prompt Studio.
+// Supabase Edge Function: `trends` — daily trend reports ("veille") for the Creative Studio.
 // - import { report, day? }  admin only (profiles.is_admin): parses the pasted report and replaces that day's concepts
 // - delete { day }           admin only
 // Customers read the concepts directly (RLS: signed-in read).

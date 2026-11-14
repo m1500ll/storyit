@@ -1,4 +1,4 @@
-// Prompt Studio → finished video: the `prompt-videos` Edge Function charges the credits and queues the job, the render
+// Creative Studio → finished video: the `prompt-videos` Edge Function charges the credits and queues the job, the render
 // worker draws the images (ChatGPT), animates them (Grok) and assembles the video (render-engine/promptvideo/run.py).
 import { InsufficientCreditsError } from './errors';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';

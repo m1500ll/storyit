@@ -57,7 +57,7 @@ export default function AccountsPage() {
           ))}
         </div>} />
       <div className="mb-4 space-y-2" aria-live="polite">
-        {soon && <Notice>Coming soon: connecting TikTok and Instagram opens as soon as both platforms approve Storyit. Meanwhile you can import videos into your library and use the Prompt Studio.</Notice>}
+        {soon && <Notice>Coming soon: connecting TikTok and Instagram opens as soon as both platforms approve Storyit. Meanwhile you can import videos into your library and use the Creative Studio.</Notice>}
         {integ && <ModeBanner {...integ} />}
         {!soon && integ?.live && (integ.tiktok !== integ.instagram) && <Notice>{integ.tiktok ? 'Instagram' : 'TikTok'} connection is not configured on this server yet.</Notice>}
         {atLimit && <UpgradeHint reason="accounts" message={`Your plan allows ${limits!.max_social_accounts} connected accounts. Upgrade to connect more.`} />}

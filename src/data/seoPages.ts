@@ -18,7 +18,10 @@ export interface SeoPageData {
 const FR_CTA = { label: 'Créer ma vidéo gratuitement', to: '/app' };
 const EN_CTA = { label: 'Create my video for free', to: '/app' };
 
-export const SEO_PAGES: SeoPageData[] = [
+/** pages about the Animated Studio: hidden while that studio is paused (their URLs then redirect to the home page) */
+const PAUSED = new Set(['/fr/video-animee-3d-ia', '/en/ai-3d-animated-video-generator']);
+
+const ALL_SEO_PAGES: SeoPageData[] = [
   {
     path: '/fr/generateur-video-ia-fruits', lang: 'fr', alt: '/en/ai-fruit-video-generator',
     title: 'Générateur de vidéos IA de fruits (Fruit Drama) pour TikTok — Storyit',
@@ -36,13 +39,13 @@ export const SEO_PAGES: SeoPageData[] = [
     sections: [
       { h2: 'Pourquoi les vidéos de fruits IA marchent autant', body: [
         'Des personnages reconnaissables en une seconde, des émotions exagérées et des histoires de trahison, de famille ou d’argent : le Fruit Drama coche toutes les cases de la rétention. Chaque épisode se termine sur un cliffhanger qui pousse à suivre le compte pour voir la suite.',
-        'Le Prompt Studio applique ces règles à chaque projet : première réplique choc dès 0,1 seconde, 4 à 5 mots par seconde, un mini-hook à la fin de chaque plan et une réplique culte qui donne envie de commenter.',
+        'Le Creative Studio applique ces règles à chaque projet : première réplique choc dès 0,1 seconde, 4 à 5 mots par seconde, un mini-hook à la fin de chaque plan et une réplique culte qui donne envie de commenter.',
       ] },
       { h2: 'Des personnages qui restent les mêmes d’une scène à l’autre', body: [
         'Le plus dur avec l’IA, c’est la cohérence. Storyit dessine d’abord une planche de personnages, puis chaque image de scène à partir de cette planche, et verrouille la tête et la tenue de chaque personnage dans les prompts d’animation.',
       ] },
       { h2: 'Combien ça coûte', body: [
-        'Un projet complet du Prompt Studio (histoire, script et tous les prompts) coûte 1 500 crédits. La vidéo automatique se paie selon la qualité choisie et la durée, avec le prix affiché avant de lancer, et tes crédits sont rendus si la génération échoue.',
+        'Un projet complet du Creative Studio (histoire, script et tous les prompts) coûte 1 500 crédits. La vidéo automatique se paie selon la qualité choisie et la durée, avec le prix affiché avant de lancer, et tes crédits sont rendus si la génération échoue.',
       ] },
     ],
     faqs: [
@@ -92,7 +95,7 @@ export const SEO_PAGES: SeoPageData[] = [
     videos: ['banane-honnete', 'fenetres-murees', 'prix-de-la-trahison', 'grecs-150-contre-1', 'mensonge-mere', 'cache-oreilles'],
     steps: [
       { title: 'Vérifie l’éligibilité', body: 'Le programme de TikTok demande 18 ans, un pays éligible (la France l’est), 10 000 abonnés et 100 000 vues sur 30 jours.' },
-      { title: 'Publie plus d’une minute', body: 'Seules les vidéos originales de plus d’une minute sont rémunérées : c’est la durée des vidéos du Prompt Studio.' },
+      { title: 'Publie plus d’une minute', body: 'Seules les vidéos originales de plus d’une minute sont rémunérées : c’est la durée des vidéos du Creative Studio.' },
       { title: 'Labellise l’IA', body: 'Active le label « contenu généré par IA » à la publication : c’est obligatoire et ça protège ton compte.' },
       { title: 'Publie régulièrement', body: 'Une série avec des cliffhangers donne une raison de revenir. Storyit te permet d’en produire une par jour.' },
     ],
@@ -158,13 +161,13 @@ export const SEO_PAGES: SeoPageData[] = [
     sections: [
       { h2: 'Why AI fruit videos work so well', body: [
         'Characters you recognise in a second, exaggerated emotions and stories about betrayal, family or money: Fruit Drama ticks every retention box. Each episode ends on a cliffhanger that makes viewers follow for the next part.',
-        'The Prompt Studio applies these rules to every project: a shock first line at 0.1 s, 4-5 words per second, a mini-hook at the end of each shot and a quotable line that drives comments.',
+        'The Creative Studio applies these rules to every project: a shock first line at 0.1 s, 4-5 words per second, a mini-hook at the end of each shot and a quotable line that drives comments.',
       ] },
       { h2: 'Characters that stay the same from scene to scene', body: [
         'Consistency is the hard part with AI. Storyit draws a character sheet first, then every scene image from that sheet, and locks each character’s head and outfit in the animation prompts.',
       ] },
       { h2: 'Pricing', body: [
-        'A full Prompt Studio project (story, script and every prompt) costs 1,500 credits. The automatic video is priced by quality and length, shown before you start, and refunded if the generation fails.',
+        'A full Creative Studio project (story, script and every prompt) costs 1,500 credits. The automatic video is priced by quality and length, shown before you start, and refunded if the generation fails.',
       ] },
     ],
     faqs: [
@@ -214,7 +217,7 @@ export const SEO_PAGES: SeoPageData[] = [
     videos: ['banane-honnete', 'fenetres-murees', 'prix-de-la-trahison', 'grecs-150-contre-1', 'mensonge-mere', 'cache-oreilles'],
     steps: [
       { title: 'Check eligibility', body: 'TikTok’s program asks for 18+, an eligible country, 10,000 followers and 100,000 views in the last 30 days.' },
-      { title: 'Post over one minute', body: 'Only original videos longer than one minute are paid: that is the length of Prompt Studio videos.' },
+      { title: 'Post over one minute', body: 'Only original videos longer than one minute are paid: that is the length of Creative Studio videos.' },
       { title: 'Label the AI', body: 'Turn on the “AI-generated content” label when you post: it is required and it protects your account.' },
       { title: 'Post consistently', body: 'A series with cliffhangers gives viewers a reason to come back. Storyit lets you make one every day.' },
     ],
@@ -264,4 +267,5 @@ export const SEO_PAGES: SeoPageData[] = [
   },
 ];
 
+export const SEO_PAGES = ALL_SEO_PAGES.filter((p) => !PAUSED.has(p.path));
 export const seoPage = (path: string) => SEO_PAGES.find((p) => p.path === path);

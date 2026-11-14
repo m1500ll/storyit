@@ -21,7 +21,7 @@ const project = () => {
     videos: { clips: [vid, vid, vid, vid, vid] } };
 };
 
-describe('Prompt Studio → video', () => {
+describe('Creative Studio → video', () => {
   it('prices are fixed per length: 45 s costs what a minute used to, a minute a bit more', () => {
     expect(videoCost('eco', 46)).toBe(7000);
     expect(videoCost('standard', 45)).toBe(15000);

@@ -1,10 +1,10 @@
 import { ArrowRight, Play } from 'lucide-react';
 import { useState } from 'react';
 import { RESULT_HIGHLIGHTS } from '@/data/results';
-import { SHOWCASE, SHOWCASE_FRUIT, type ShowcaseVideo } from '@/data/showcase';
+import { SHOWCASE_FRUIT, type ShowcaseVideo } from '@/data/showcase';
 
-// the fan mixes 3D shorts and Fruit Dramas, a 3D short in the middle
-const FAN_VIDEOS = [SHOWCASE[1], SHOWCASE_FRUIT[0], SHOWCASE[0], SHOWCASE_FRUIT[2], SHOWCASE[2]].filter(Boolean) as ShowcaseVideo[];
+// the fan shows Creative Studio videos (Fruit Dramas and stories); the Animated Studio is paused
+const FAN_VIDEOS = [SHOWCASE_FRUIT[3], SHOWCASE_FRUIT[1], SHOWCASE_FRUIT[0], SHOWCASE_FRUIT[2], SHOWCASE_FRUIT[4]].filter(Boolean) as ShowcaseVideo[];
 import { PLANS, videosFor } from '@/services/credits';
 import { num, useLang } from '@/lib/lang';
 import { Button } from '../ui';
@@ -17,8 +17,8 @@ import { PromoVideo } from './PromoVideo';
 const FAN = [
   { tilt: -6, y: 18 }, { tilt: -3, y: 4 }, { tilt: 0, y: -6 }, { tilt: 3, y: 4 }, { tilt: 6, y: 18 },
 ];
-const OUTPUTS = { en: ['3D worlds & cartoon characters', 'A narrator voice', 'Music & sound effects', 'Hook title & captions', '30 s, 1 min or 2 min', 'Ready for TikTok, Reels & Shorts'],
-  fr: ['Mondes 3D et personnages cartoon', 'Une voix de narrateur', 'Musique et bruitages', 'Titre accrocheur et sous-titres', '30 s, 1 min ou 2 min', 'Prêtes pour TikTok, Reels et Shorts'] };
+const OUTPUTS = { en: ['Pixar-style 3D characters', 'Dialogue with real voices', 'Fruits, nails, objects or gemstones', 'Sound effects & editing', '30 s, 45 s or 1 min', 'Ready for TikTok, Reels & Shorts'],
+  fr: ['Personnages 3D style Pixar', 'Dialogues avec de vraies voix', 'Fruits, ongles, objets ou pierres', 'Bruitages et montage', '30 s, 45 s ou 1 min', 'Prêtes pour TikTok, Reels et Shorts'] };
 
 export function Hero() {
   const [open, setOpen] = useState<ShowcaseVideo | null>(null);
@@ -40,11 +40,11 @@ export function Hero() {
         </div>
         <PromoVideo className="relative mx-auto mt-6 max-w-4xl text-left" />
         <p className="mx-auto mt-6 max-w-2xl text-base text-zinc-400 md:text-lg">
-          {fr ? 'Choisis une histoire : Storyit écrit le script, crée les personnages, anime chaque scène, ajoute la voix, la musique, le titre accrocheur et les sous-titres. Une vidéo verticale terminée, prête à publier.'
-            : 'Pick a story, a decor and a voice. Storyit writes the script, animates the 3D world and its characters, records the narrator and adds the hook title, captions and music. A finished vertical video, ready to post.'}
+          {fr ? 'Avec le Creative Studio, écris une idée en une ligne : Storyit écrit l’histoire et les dialogues, dessine les personnages, anime chaque plan avec les voix et fait le montage. Un Fruit Drama ou une mini-série terminée, prête à publier.'
+            : 'With the Creative Studio, write a one-line idea: Storyit writes the story and the dialogue, draws the characters, animates every shot with voices and edits the video. A finished Fruit Drama or mini-series, ready to post.'}
         </p>
         <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-          <StartLink to="/app/studio"><Button size="lg">{fr ? 'Créer ma vidéo' : 'Create my 3D video'} <ArrowRight className="h-4 w-4" /></Button></StartLink>
+          <StartLink to="/app/prompts"><Button size="lg">{fr ? 'Ouvrir le Creative Studio' : 'Open the Creative Studio'} <ArrowRight className="h-4 w-4" /></Button></StartLink>
           <a href="#examples"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> {fr ? 'Voir des exemples' : 'Watch examples'}</Button></a>
         </div>
         {fr ? <p className="mt-4 text-xs text-zinc-400"><strong className="text-zinc-200">Jusqu’à {videosFor(PLANS.find((p) => p.id === 'creator')!.credits)} vidéos par mois</strong> avec Creator, <s className="text-zinc-500">45 $</s> 29 $/mois. Sans engagement. Ou <StartLink to="/app" className="touch-hit text-violet-300 underline-offset-2 hover:underline">commence gratuitement avec {num(3000, lang)} crédits</StartLink>, sans carte.</p>

@@ -137,7 +137,7 @@ export default function LibraryPage() {
         <Card className="py-10 text-center">
           <Upload className="mx-auto h-6 w-6 text-violet-300" aria-hidden />
           <p className="mt-3 text-sm text-zinc-200">Votre bibliothèque est vide</p>
-          <p className="mx-auto mt-1 max-w-md text-xs text-zinc-500">Les vidéos créées par le Prompt Studio, l’Animated Studio et la traduction arrivent ici automatiquement. Vous pouvez aussi importer des fichiers MP4, MOV ou WebM (au-delà de {maxMb} Mo, ils sont compressés sur votre appareil).</p>
+          <p className="mx-auto mt-1 max-w-md text-xs text-zinc-500">Les vidéos créées par le Creative Studio et la traduction arrivent ici automatiquement. Vous pouvez aussi importer des fichiers MP4, MOV ou WebM (au-delà de {maxMb} Mo, ils sont compressés sur votre appareil).</p>
           <Button className="mt-4" onClick={() => fileRef.current?.click()}>Importer une vidéo</Button>
         </Card>
       ) : rows.length === 0 ? <Notice>Aucune vidéo ne correspond à ces filtres.</Notice> : (
