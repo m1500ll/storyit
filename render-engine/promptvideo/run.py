@@ -125,27 +125,48 @@ def mime_of(b):
     return "image/png" if b[:4] == b"\x89PNG" else "image/webp" if b[8:12] == b"WEBP" else "image/jpeg"
 
 
+SAFE = (" Family-friendly image for all audiences: no blood, no gore, no wounds, no corpses, no weapons, no children in danger;"
+        " tension shown only through expressions, light and atmosphere.")
+# words that make the image safety check refuse a scene; replaced by milder equivalents on the 2nd and 3rd attempts
+SOFTEN = [(r"\b(childlike|child|children|kid|kids|little girl|little boy|toddler|baby)\b", "young adult"),
+          (r"\b(blood|bloody|bleeding|gore|gory)\b", "red light"), (r"\b(corpse|dead body|cadaver|body bag)\b", "silhouette"),
+          (r"\b(dead|death|dying|killed|kill|murder|murdered)\b", "frozen"), (r"\b(knife|gun|pistol|weapon|axe|blade)\b", "flashlight"),
+          (r"\b(grave|buried|burial|coffin)\b", "old garden"), (r"\b(wound|wounds|scar|scars|injury|injured|bruise|bruises)\b", "shadow"),
+          (r"\b(dirt|soil|mud|muddy|smudges?)\b", "dust"), (r"\b(apparition|ghost|ghostly|demon|possessed)\b", "mysterious figure"),
+          (r"\b(naked|nude|underwear|lingerie)\b", "dressed")]
+
+
+def soften(prompt):
+    out = prompt
+    for pat, rep in SOFTEN:
+        out = re.sub(pat, rep, out, flags=re.I)
+    return out + SAFE
+
+
 def draw(okey, plan, prompt, ref=None):
-    """one portrait PNG; with `ref` (the sheet PNG, or a list of reference images) the characters are drawn from it"""
-    def call():
+    """one portrait PNG; with `ref` (the sheet PNG, or a list of reference images) the characters are drawn from it.
+    A scene refused by the safety check is softened automatically and drawn again: the customer never has to edit it."""
+    def call(p):
         if ref is None:
-            out = http("POST", f"{OPENAI}/images/generations", {"model": plan["image_model"], "prompt": prompt, "size": f"{IMG_W}x{IMG_H}",
+            out = http("POST", f"{OPENAI}/images/generations", {"model": plan["image_model"], "prompt": p, "size": f"{IMG_W}x{IMG_H}",
                                                                "quality": plan["image_quality"], "n": 1, "moderation": "low"},
                        {"Authorization": f"Bearer {okey}"}, timeout=360)
         else:
-            body, ctype = multipart({"model": plan["image_model"], "prompt": prompt, "size": f"{IMG_W}x{IMG_H}", "quality": plan["image_quality"], "n": "1", "moderation": "low"},
+            body, ctype = multipart({"model": plan["image_model"], "prompt": p, "size": f"{IMG_W}x{IMG_H}", "quality": plan["image_quality"], "n": "1", "moderation": "low"},
                                     [("image[]", (f"ref{k}.{mime_of(r).split('/')[1]}", r, mime_of(r))) for k, r in enumerate(ref if isinstance(ref, list) else [ref])])
             out = http("POST", f"{OPENAI}/images/edits", body, {"Authorization": f"Bearer {okey}", "Content-Type": ctype}, timeout=360)
         return base64.b64decode(out["data"][0]["b64_json"])
-    # the output-stage safety check is partly random (the same prompt can pass on a second try): 3 attempts
-    for attempt in range(3):
+    # 1st: as written; 2nd: same + "family-friendly"; 3rd and 4th: risky words replaced (the check is also partly random)
+    tries = [prompt, prompt + SAFE, soften(prompt), soften(prompt)]
+    for attempt, p in enumerate(tries):
         try:
-            return retry(call)
+            return retry(lambda: call(p))
         except RuntimeError as e:
             if "moderation" not in str(e).lower() and "safety" not in str(e).lower():
                 raise
-            if attempt == 2:
-                raise UserError("Une image a été refusée par le filtre de sécurité. Modifiez la scène concernée puis relancez.")
+            print(f"[draw] safety refusal, attempt {attempt + 1}/{len(tries)}", flush=True)
+            if attempt == len(tries) - 1:
+                raise UserError("Une scène n'a pas pu être dessinée. Vos crédits ont été rendus : relancez la vidéo.")
             time.sleep(3)
 
 

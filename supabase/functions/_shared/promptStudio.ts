@@ -207,7 +207,9 @@ export function buildPhasePrompt(phase: PhaseKey, ctx: Record<string, any>): str
   const cast = castOf(ctx);
   const uk = ctx.universe; const uni = isUniverse(uk) ? UNIVERSES[uk] : null;
   const uniLine = uni ? `Univers visuel verrouillé : ${uni.label} (${uni.hint}). Personnages adultes au visage humain réaliste et aux proportions adultes, jamais de visage de bébé.${ctx.universe === 'perso' ? ' Le style visuel est celui que décrit l’utilisateur dans son histoire.' : ''}` : '';
-  const style = cast.length ? `${castLine(cast)}${uniLine ? `\n${uniLine}` : ''}` : uniLine || `Style verrouillé : ${st.emoji} ${st.label} (${st.text} ${st.ruleFr})`;
+  const look = cast.length ? `${castLine(cast)}${uniLine ? `\n${uniLine}` : ''}` : uniLine || `Style verrouillé : ${st.emoji} ${st.label} (${st.text} ${st.ruleFr})`;
+  // the image generator refuses these scenes: the story never needs them (horror works through mood, looks and sound)
+  const style = `${look}\nIMAGES GRAND PUBLIC : jamais de sang, de blessure, de cadavre, d'arme ni d'enfant (même fantôme ou apparition : tous les personnages sont adultes) ; la peur et la tension passent par l'ambiance, les regards, la lumière et les sons.`;
   const part = Number(ctx.part ?? 1) > 1 ? `\nC'est la PARTIE ${ctx.part}. Fin de la partie précédente : ${ctx.previous_end ?? ''}` : '';
   const tweak = ctx.feedback ? `\nAjustements demandés par l'utilisateur : ${ctx.feedback}` : '';
   const story = ctx.concepts?.[ctx.chosen ?? -1] ? `Histoire choisie : ${JSON.stringify(ctx.concepts[ctx.chosen])}` : `Histoire de l'utilisateur (même en vrac ; comble les vides) : ${ctx.story ?? ''}`;
