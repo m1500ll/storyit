@@ -1,21 +1,17 @@
-import { Box, Cat, Check, Citrus, Clapperboard, Gem, ImagePlus, Lightbulb, Paintbrush, Skull, SlidersHorizontal, Sparkles, Trash2, User, X, type LucideIcon } from 'lucide-react';
+import { ImagePlus, Lightbulb, Sparkles, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card, LoadState, Modal, PageHeader, useToast } from '@/components/ui';
 import { usePaywall } from '@/components/billing/Paywall';
 import { CharacterCard } from '@/components/characters/CharacterCard';
+import { UniverseGrid } from '@/components/characters/UniverseGrid';
 import { useLiveQuery } from '@/hooks/useStore';
-import { cn } from '@/lib/cn';
 import { characters, photoToDataUrl, type UserCharacter } from '@/services/characters';
 import { InsufficientCreditsError } from '@/services/errors';
 import { formatCredits } from '@/services/credits';
 import { CHARACTER_COST, LIBRARY, librarySheet, UNIVERSES, type Universe } from '@shared/characters.ts';
 
-const universeImage = (u: Universe) => `/characters/universes/${u}.webp`;
 
-const ICONS: Record<Universe, LucideIcon> = {
-  realiste: User, matieres: Gem, fruits: Citrus, humains: Clapperboard, animaux: Cat, objets: Box, horreur: Skull, pate: Paintbrush, anime: Sparkles, perso: SlidersHorizontal,
-};
 
 /** "Personnages": create a reusable character (paid), see "Mes personnages" and the ready-made library. */
 export default function CharactersPage() {
@@ -70,27 +66,7 @@ export default function CharactersPage() {
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Card className="min-w-0">
           <h2 className="text-sm font-semibold text-zinc-100">1. L’univers</h2>
-          <div role="radiogroup" aria-label="Univers du personnage" className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {(Object.keys(UNIVERSES) as Universe[]).map((u) => {
-              const Icon = ICONS[u];
-              const on = universe === u;
-              return (
-                <button key={u} type="button" role="radio" aria-checked={on} onClick={() => setUniverse(u)} title={UNIVERSES[u].hint}
-                  className={cn('group relative aspect-[3/4] overflow-hidden rounded-xl border text-left transition [touch-action:manipulation] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60',
-                    on ? 'border-violet-500 ring-2 ring-violet-500/50' : 'border-line/10 hover:border-violet-400/50')}>
-                  {u === 'perso' ? (
-                    <span className="absolute inset-0 grid place-items-center bg-line/[0.03]"><Icon className={cn('h-6 w-6', on ? 'text-violet-300' : 'text-zinc-500')} aria-hidden /></span>
-                  ) : (
-                    <img src={universeImage(u)} alt="" width={240} height={320} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.04] motion-reduce:transition-none" />
-                  )}
-                  <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-2 pb-2 pt-6">
-                    <span className="block text-[11px] font-semibold leading-tight text-white sm:text-xs">{UNIVERSES[u].label}</span>
-                  </span>
-                  {on && <span className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-violet-600 text-white"><Check className="h-3 w-3" aria-hidden /></span>}
-                </button>
-              );
-            })}
-          </div>
+          <div className="mt-3"><UniverseGrid value={universe} onChange={setUniverse} label="Univers du personnage" /></div>
           <p className="mt-2 text-xs text-zinc-500">{UNIVERSES[universe].hint.replace(/…$/, '')}. Visages d’adultes réalistes.</p>
 
           <div className="mt-6 flex flex-wrap items-center justify-between gap-2">

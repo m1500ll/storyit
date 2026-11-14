@@ -30,6 +30,9 @@ export interface V4Data {
   videos?: { clips: { head_lock: { name: string; head: string }[]; look_lock: string; shots: { start: number; end: number; text: string }[]; sound: string }[] };
   pack?: { cover: { setting: string; glow: string; characters: { name: string; pose: string }[] }; caption: string; pinned_comment: string; hashtags: string[] };
   fixes?: Record<string, { problem: string; explanation: string; at: string }>;
+  /** the wizard's automatic pipeline: where it is, and the video it ordered */
+  auto?: { status: 'running' | 'video' | 'failed'; step: string; error?: string; video_id?: string; paid_video?: number };
+  universe?: string; options?: { subtitles: string; music: string | null };
 }
 
 export interface PromptProject {
@@ -101,7 +104,11 @@ export const promptStudio = {
     return (data as unknown as PromptProject) ?? null;
   },
   /** Generates one phase server-side (the master prompt never reaches the browser). 1 credit, charged on success only. */
-  async generate(input: { phase: PhaseKey; project_id?: string; idea?: string; choice?: number; feedback?: string; style?: StyleKey; story?: string; part?: number; previous_end?: string; length?: 30 | 45 | 60; cast?: string[] }): Promise<PromptProject> {
+  /** free one-sentence story idea for the wizard */
+  async storyIdea(universe: string, cast: string[]): Promise<string> {
+    return (await callOnce<{ idea: string }>({ action: 'story_idea', universe, cast })).idea;
+  },
+  async generate(input: { phase: PhaseKey; project_id?: string; idea?: string; choice?: number; feedback?: string; style?: StyleKey; story?: string; part?: number; previous_end?: string; length?: 30 | 45 | 60; cast?: string[]; universe?: string; auto?: { subtitles: string; music: string | null } }): Promise<PromptProject> {
     const since = Date.now();
     try {
       const { project } = await call<{ project: PromptProject }>({ action: 'phase', ...input });

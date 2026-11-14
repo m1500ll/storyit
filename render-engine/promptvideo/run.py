@@ -214,12 +214,14 @@ def speech_bounds(path, dur):
 
 
 def montage(clips, out, tmp):
-    parts = []
+    """joins the clips (silences trimmed); returns, per clip, (start kept in the clip, its length in the final video)"""
+    parts, kept = [], []
     for i, src in enumerate(clips):
         dur = duration(src)
         a, b = speech_bounds(src, dur)
         start = max(0.0, a - GAP_KEEP) if i > 0 else 0.0                   # the hook keeps its very first frame
         end = min(dur, b + (END_KEEP if i == len(clips) - 1 else GAP_KEEP))
+        kept.append((start, end - start))
         part = os.path.join(tmp, f"part{i}.mp4")
         audio = [] if has_audio(src) else ["-f", "lavfi", "-t", f"{dur}", "-i", "anullsrc=r=48000:cl=stereo"]
         amap = "0:a:0" if not audio else "1:a:0"   # Grok clips also carry a cover picture: take the first video stream only
@@ -240,6 +242,77 @@ def montage(clips, out, tmp):
         run("ffmpeg", "-v", "error", "-y", "-i", big, "-c:v", "libx264", "-b:v", f"{kbps}k", "-maxrate", f"{kbps}k",
             "-bufsize", f"{kbps * 2}k", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k",
             "-movflags", "+faststart", out)
+    return kept
+
+
+# ---------------------------------------------------------------- subtitles + music (wizard options)
+FONTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "public", "fonts")
+SITE = os.environ.get("STORYIT_SITE", "https://www.storyit.fun")
+
+
+def ass_time(t):
+    t = max(0.0, t); h = int(t // 3600); m = int(t % 3600 // 60); sec = t % 60
+    return f"{h}:{m:02d}:{sec:05.2f}"
+
+
+def ass_escape(t):
+    return t.replace("\\", "").replace("{", "(").replace("}", ")").replace("\n", " ")
+
+
+def subtitles_ass(plan, kept, style):
+    """ASS file from the script's line timings: chunks of max 4 words, shown one after the other (TikTok style)"""
+    looks = {  # PrimaryColour, SecondaryColour (karaoke: words switch from Secondary to Primary), italic, outline, shadow
+        "karaoke": ("&H0000E5FF", "&H00FFFFFF", 0, 7, 2),
+        "simple": ("&H00FFFFFF", "&H00FFFFFF", 0, 7, 2),
+        "italique": ("&H00FFFFFF", "&H00FFFFFF", -1, 4, 6),
+    }
+    pc, sc, it, ol, sh = looks.get(style, looks["simple"])
+    head = ("[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\nWrapStyle: 0\nScaledBorderAndShadow: yes\n\n"
+            "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
+            "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
+            f"Style: Sub,Inter Display ExtraBold,96,{pc},{sc},&H00000000,&H96000000,-1,{it},0,0,100,100,0,0,1,{ol},{sh},2,90,90,560,1\n\n"
+            "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n")
+    events, offset = [], 0.0
+    for c, (start, length) in zip(plan["clips"], kept):
+        for ln in c.get("lines") or []:
+            words = ass_escape(ln.get("text", "")).split()
+            a, b = max(0.0, float(ln["start"]) - start), min(length, float(ln["end"]) - start)
+            if not words or b <= a: continue
+            chunks = [words[k:k + 4] for k in range(0, len(words), 4)]
+            per = (b - a) / len(words)
+            t = a
+            for ch in chunks:
+                d = per * len(ch)
+                text = " ".join(f"{{\\k{max(1, round(per * 100))}}}{w}" for w in ch) if style == "karaoke" else " ".join(ch)
+                events.append(f"Dialogue: 0,{ass_time(offset + t)},{ass_time(offset + t + d)},Sub,,0,0,0,,{text.upper() if style != 'italique' else text}")
+                t += d
+        offset += length
+    return head + "\n".join(events) + "\n"
+
+
+def finish(src, out, tmp, plan, kept):
+    """burns the subtitles and mixes the music under the voices (ducked while someone speaks); no option: plain copy"""
+    style, music = plan.get("subtitles") or "none", plan.get("music")
+    if style == "none" and not music:
+        os.replace(src, out); return
+    vf, inputs, filters = [], ["-i", src], []
+    if style != "none":
+        ass = os.path.join(tmp, "subs.ass"); open(ass, "w", encoding="utf-8").write(subtitles_ass(plan, kept, style))
+        vf = ["-vf", f"ass={ass}:fontsdir={FONTS}"]
+    amap = ["-map", "0:a:0", "-c:a", "copy"]
+    if music:
+        track = os.path.join(tmp, "music.mp3")
+        open(track, "wb").write(retry(lambda: http("GET", f"{SITE}/music/{music}.mp3", timeout=60, raw=True)))
+        dur = duration(src)
+        inputs += ["-stream_loop", "-1", "-i", track]
+        filters = ["-filter_complex",
+                   f"[0:a]asplit=2[v][key];[1:a]atrim=0:{dur:.2f},volume=0.22,afade=t=out:st={max(0, dur - 1.5):.2f}:d=1.5[m0];"
+                   "[m0][key]sidechaincompress=threshold=0.03:ratio=10:attack=15:release=350[m];"
+                   "[v][m]amix=inputs=2:duration=first:normalize=0[a]"]
+        amap = ["-map", "[a]", "-c:a", "aac", "-b:a", "160k"]
+    run("ffmpeg", "-v", "error", "-y", *inputs, *vf, *filters, "-map", "0:v:0", *amap,
+        "-c:v", "libx264", "-crf", "21", "-maxrate", "3500k", "-bufsize", "7000k", "-preset", "medium", "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart", out)
 
 
 # ---------------------------------------------------------------- one job
@@ -316,14 +389,15 @@ def produce(job):
             list(ex.map(clip, range(n)))
 
         step("montage", 88)
-        out = os.path.join(tmp, "final.mp4")
-        montage(files, out, tmp)
+        joined, out = os.path.join(tmp, "joined.mp4"), os.path.join(tmp, "final.mp4")
+        kept = montage(files, joined, tmp)
+        finish(joined, out, tmp, plan, kept)
 
         step("library", 96)
         aid = str(uuid.uuid4()); path = f"{uid}/{aid}.mp4"; data = open(out, "rb").read()
         upload("library", path, data, "video/mp4")
-        sb("POST", "/rest/v1/media_assets", {"id": aid, "user_id": uid, "title": (plan.get("title") or "Vidéo Prompt Studio")[:200],
-                                             "notes": "Créée avec le Prompt Studio Storyit", "tags": ["prompt-studio", plan["quality"]],
+        sb("POST", "/rest/v1/media_assets", {"id": aid, "user_id": uid, "title": (plan.get("title") or "Vidéo Creative Studio")[:200],
+                                             "notes": "Créée avec le Creative Studio Storyit", "tags": ["prompt-studio", plan["quality"]],
                                              "storage_path": path, "mime": "video/mp4", "size_bytes": len(data),
                                              "duration_seconds": round(duration(out), 2), "width": W, "height": H, "status": "available"},
            prefer="return=minimal")
@@ -338,7 +412,7 @@ def produce(job):
         if job.get("credits_charged", 0) > 0:
             try:
                 sb("POST", "/rest/v1/rpc/grant_credits", {"p_user_id": uid, "p_amount": job["credits_charged"], "p_type": "refund",
-                                                         "p_description": "Vidéo Prompt Studio — remboursement (non produite)"})
+                                                         "p_description": "Vidéo Creative Studio — remboursement (non produite)"})
                 setjob(jid, credits_charged=0)
             except Exception as e2:
                 log(jid, "REFUND FAILED", e2)

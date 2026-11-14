@@ -45,12 +45,31 @@ export function videoBlocker(d: any): string | null {
   return null;
 }
 
+/** subtitle styles and background music of the wizard (free options) */
+export type SubtitleStyle = 'karaoke' | 'simple' | 'italique' | 'none';
+export const SUBTITLE_STYLES: { id: SubtitleStyle; label: string }[] = [
+  { id: 'karaoke', label: 'Karaoké' }, { id: 'simple', label: 'Simple' }, { id: 'italique', label: 'Italique' }, { id: 'none', label: 'Aucun' },
+];
+export const isSubtitleStyle = (s: unknown): s is SubtitleStyle => SUBTITLE_STYLES.some((x) => x.id === s);
+/** original tracks made for Storyit (public/music/{id}.mp3): royalty-free, so videos are never muted for copyright */
+export const MUSIC_TRACKS: { id: string; title: string; mood: string }[] = [
+  { id: 'phonk-nuit', title: 'Phonk de nuit', mood: 'Énergique' },
+  { id: 'suspense', title: 'Suspense', mood: 'Tendu' },
+  { id: 'drame', title: 'Drame', mood: 'Émouvant' },
+  { id: 'comique', title: 'Comique', mood: 'Léger' },
+  { id: 'epique', title: 'Épique', mood: 'Puissant' },
+  { id: 'lofi', title: 'Lo-fi', mood: 'Calme' },
+];
+export const musicById = (id: unknown) => MUSIC_TRACKS.find((m) => m.id === id);
+
 export type VideoPlan = {
   quality: VideoQuality; image_model: string; image_quality: string; video_model: string; resolution: string;
   title: string; sheet_prompt: string; cover_prompt: string;
   /** reference sheets of the picked characters ('storage:<path>' or '/characters/<slug>.webp'), turned into links at order time */
   sheet_refs?: string[];
-  clips: { seconds: number; image_prompt: string; grok_prompt: string }[];
+  clips: { seconds: number; image_prompt: string; grok_prompt: string; lines?: { start: number; end: number; text: string }[] }[];
+  /** wizard options, burned in by the worker: subtitle style and a music track of the library */
+  subtitles?: SubtitleStyle; music?: string | null;
 };
 
 /** every prompt the worker needs, frozen at order time (later edits of the project do not change a running video) */
@@ -62,6 +81,9 @@ export function buildVideoPlan(d: any, quality: VideoQuality): VideoPlan {
     sheet_prompt: sheetPrompt(d),
     sheet_refs: castOf(d).map((c) => c.sheet).filter((x): x is string => !!x),
     cover_prompt: d?.pack?.cover ? coverPrompt(d) : '',
-    clips: (d.script.clips as any[]).map((c, i) => ({ seconds: Math.min(15, Math.max(1, Number(c.seconds) || 6)), image_prompt: imagePrompt(d, i), grok_prompt: grokPrompt(d, i) })),
+    clips: (d.script.clips as any[]).map((c, i) => ({ seconds: Math.min(15, Math.max(1, Number(c.seconds) || 6)), image_prompt: imagePrompt(d, i), grok_prompt: grokPrompt(d, i),
+      lines: (c.lines ?? []).map((l: any) => ({ start: Number(l.start) || 0, end: Number(l.end) || 0, text: String(l.text ?? '').replace(/^[«"\s]+|[»"\s]+$/g, '') })) })),
+    subtitles: isSubtitleStyle(d?.options?.subtitles) ? d.options.subtitles : 'none',
+    music: musicById(d?.options?.music)?.id ?? null,
   };
 }

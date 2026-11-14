@@ -14,6 +14,8 @@ import { conceptToStory } from '@shared/trends.ts';
 import { STYLES } from '@shared/promptStudio.ts';
 import { LengthPicker } from '@/components/prompts/LengthPicker';
 import { CastPicker } from '@/components/characters/CastPicker';
+import { CreateWizard } from '@/components/prompts/CreateWizard';
+import { AutoProgress } from '@/components/prompts/AutoProgress';
 import { DEFAULT_VIDEO_LENGTH, type VideoLength } from '@shared/promptVideo.ts';
 
 const STEPS: { key: PhaseKey; label: string; waiting: string }[] = [
@@ -107,7 +109,51 @@ const VEILLE = [
   'On l’adapte : têtes, prénoms, décors et 2-3 détails changés, avec vos propres vannes. On ne recopie jamais le titre, le texte ni les visuels.',
 ];
 
+/** default: the 5-step wizard (everything automatic); `?mode=avance` keeps the step-by-step studio with prompts to copy */
 function Start() {
+  const [params] = useSearchParams();
+  if (params.get('mode') === 'avance' || params.get('style') || params.get('idea')) return <AdvancedStart />;
+  return <WizardStart />;
+}
+
+function ProjectList() {
+  const { data: projects = [], loading } = useLiveQuery(() => promptStudio.list(), 'prompt-projects');
+  return (
+    <>
+      <h2 className="mb-3 mt-10 text-sm font-semibold text-zinc-100">Vos projets</h2>
+      {loading ? <LoadState loading error={null} /> : projects.length === 0 ? <p className="text-xs text-zinc-500">Aucun projet pour l'instant.</p> : (
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {projects.map((p) => (
+            <li key={p.id} className="surface flex items-center gap-3 py-2 pl-2 pr-3">
+              <img src={promptStudio.styleImage(p.style)} alt="" width={48} height={64} loading="lazy" className="h-16 w-12 shrink-0 rounded-xl object-cover" />
+              <Link to={`/app/prompts/${p.id}`} className="min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
+                <span className="block truncate text-sm text-zinc-100">{p.title}</span>
+                <span className="block text-[11px] text-zinc-500">{new Date(p.updated_at).toLocaleDateString()}</span>
+              </Link>
+              <button aria-label={`Supprimer ${p.title}`} onClick={() => window.confirm('Supprimer ce projet ?') && promptStudio.remove(p.id)}
+                className="rounded-lg p-2 text-zinc-500 hover:bg-line/5 hover:text-coral-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><Trash2 className="h-4 w-4" /></button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+function WizardStart() {
+  return (
+    <>
+      <PageHeader eyebrow="Creative Studio" title="Crée ta vidéo"
+        description="5 étapes, un clic sur « Générer » : Storyit écrit l’histoire, dessine les personnages, anime chaque scène avec les voix et fait le montage." />
+      {!promptStudio.available && <div className="mb-4"><LoadState loading={false} error="Le Creative Studio a besoin du serveur Storyit (mode démo)." /></div>}
+      <CreateWizard />
+      <ProjectList />
+      <p className="mt-6 text-xs text-zinc-500">Vous préférez tout contrôler ? <Link to="/app/prompts?mode=avance" className="text-violet-300 hover:underline">Mode avancé : les prompts étape par étape</Link></p>
+    </>
+  );
+}
+
+function AdvancedStart() {
   const cost = useCost();
   const [params] = useSearchParams();
   const [style, setStyle] = useState<StyleKey>(() => { const q = params.get('style'); return q && q in STYLES ? (q as StyleKey) : 'fruits'; });
@@ -231,7 +277,15 @@ function Project({ id }: { id: string }) {
       <Link to="/app/prompts" className="mb-4 inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300"><ChevronLeft className="h-3 w-3" /> Tous les projets</Link>
       <PageHeader eyebrow="Creative Studio" title={project.title} description={project.data.story || undefined} />
       {busy && <Waiting text={V4_STEPS.find((x) => x.key === busy)?.waiting ?? 'Écriture…'} />}
-      <V4Project project={project} run={run} busy={busy} error={error} />
+      {project.data.auto ? (
+        <>
+          <AutoProgress projectId={project.id} data={project.data} />
+          <details className="mt-6">
+            <summary className="touch-hit cursor-pointer text-xs text-zinc-400 hover:text-zinc-200">Voir les coulisses : histoire, dialogues et prompts</summary>
+            <div className="mt-4"><V4Project project={project} run={run} busy={busy} error={error} /></div>
+          </details>
+        </>
+      ) : <V4Project project={project} run={run} busy={busy} error={error} />}
     </>
   );
   const shown = view ?? current;

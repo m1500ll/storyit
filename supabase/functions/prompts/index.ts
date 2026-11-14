@@ -6,7 +6,8 @@
 // - Scene images: generated with the user's key only (Google bills the user), stored privately in `renders`.
 // - Keys: AES-GCM encrypted (TOKEN_ENCRYPTION_KEY), never returned to the browser.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { LIBRARY, libraryCast, MAX_CAST, type CastChar } from '../_shared/characters.ts';
+import { isSubtitleStyle, musicById, VIDEO_PRICES } from '../_shared/promptVideo.ts';
+import { isUniverse, UNIVERSES, LIBRARY, libraryCast, MAX_CAST, type CastChar } from '../_shared/characters.ts';
 import { applyCast, castOf, DEFAULT_VIDEO_LENGTH, FIX_PROBLEMS, FIX_SCHEMA, isVideoLength, MASTER_PROMPT, PHASES, STYLES, buildFixPrompt, buildPhasePrompt, buildReviewPrompt, normalizePhase, paceProblems, senseProblems, styleOf, type PhaseKey } from '../_shared/promptStudio.ts';
 import { classifyGeminiError, GeminiError, KEY_MESSAGES, keyHint, looksLikeGeminiKey } from '../_shared/geminiKey.ts';
 import { decrypt, encrypt } from '../_shared/social.ts';
@@ -96,17 +97,60 @@ async function generateText(key: string, prompt: string, schema: unknown, allowB
 }
 
 
+function sameText(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const user = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } });
-  const { data: auth } = await user.auth.getUser();
-  if (!auth.user) return json({ error: 'Veuillez vous reconnecter.' }, 401);
-  const uid = auth.user.id;
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
-  let body: { action?: string; project_id?: string; phase?: PhaseKey; idea?: string; choice?: number; feedback?: string; key?: string; scene?: number; style?: string; story?: string; part?: number; previous_end?: string; problem?: string; note?: string; length?: number; cast?: unknown };
+  let body: { action?: string; project_id?: string; phase?: PhaseKey; idea?: string; choice?: number; feedback?: string; key?: string; scene?: number; style?: string; story?: string; part?: number; previous_end?: string; problem?: string; note?: string; length?: number; cast?: unknown; universe?: string;
+    auto?: { subtitles?: string; music?: string | null }; internal_uid?: string; attempt?: number };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
   const action = body.action ?? 'phase';
+  // the automatic pipeline calls itself (through the database, with the cron token) for each next step of a project
+  const cron = Deno.env.get('PUBLISHER_CRON_TOKEN') ?? '';
+  const internal = cron.length >= 32 && sameText(req.headers.get('Authorization') ?? '', `Bearer ${cron}`) && typeof body.internal_uid === 'string' && !!body.project_id;
+  let uid: string;
+  if (internal) uid = body.internal_uid!;
+  else {
+    const { data: auth } = await user.auth.getUser();
+    if (!auth.user) return json({ error: 'Veuillez vous reconnecter.' }, 401);
+    uid = auth.user.id;
+  }
+  const attempt = Math.max(0, Math.min(3, Number(body.attempt) || 0));
+
+  /** automatic pipeline: after `done`, queue the next step (or order the video), and record where the project is */
+  const STEPS = ['images', 'videos', 'pack', 'order'] as const;
+  async function saveAuto(id: string, d: Record<string, any>, patch: Record<string, unknown>) {
+    d.auto = { ...(d.auto ?? {}), ...patch, updated_at: new Date().toISOString() };
+    await admin.from('prompt_projects').update({ data: d, updated_at: new Date().toISOString() }).eq('id', id).eq('user_id', uid);
+  }
+  async function queue(id: string, step: string, tries = 0) {
+    const b = step === 'review' ? { action: 'review' } : step === 'order' ? { action: 'auto_order' } : { action: 'phase', phase: step };
+    const { error } = await admin.rpc('queue_prompt_step', { p_body: { ...b, project_id: id, internal_uid: uid, attempt: tries } });
+    if (error) throw new Error('queue: ' + error.message);
+  }
+  async function advance(id: string, d: Record<string, any>, done: string) {
+    if (d.auto?.status !== 'running') return;
+    const next = done === 'script' && d.script_reviewed === false ? 'review' : done === 'script' || done === 'review' ? 'images' : STEPS[STEPS.indexOf(done as never) + 1];
+    if (!next) return;
+    await saveAuto(id, d, { step: next });
+    await queue(id, next);
+  }
+  /** a step failed: try it again (twice), then stop and give the video credits back (the project stays usable by hand) */
+  async function autoFailed(id: string, d: Record<string, any>, step: string, msg: string) {
+    if (d.auto?.status !== 'running') return;
+    if (attempt < 2) { await queue(id, step, attempt + 1); return; }
+    const paid = Number(d.auto?.paid_video) || 0;
+    if (paid > 0) await admin.rpc('grant_credits', { p_user_id: uid, p_amount: paid, p_type: 'refund', p_description: 'Vidéo automatique — remboursement' });
+    await saveAuto(id, d, { status: 'failed', error: `${msg} Les crédits de la vidéo ont été rendus ; votre projet est enregistré, vous pouvez le terminer à la main.`, paid_video: 0 });
+  }
 
   const keyRow = async () => (await admin.from('user_ai_keys').select('*').eq('user_id', uid).maybeSingle()).data as
     { key_enc: string; key_hint: string; status: string; last_error: string | null; last_checked_at: string } | null;
@@ -142,10 +186,27 @@ Deno.serve(async (req) => {
     return json({ connected: true, hint: keyHint(key), status: 'valid' });
   }
 
+  // ---------- Free story idea for the wizard (one sentence, never charged) ----------
+  if (action === 'story_idea') {
+    const uk = body.universe; const u = isUniverse(uk) ? UNIVERSES[uk] : null;
+    const names = (await castSnapshot(body.cast)).map((c) => `${c.name} (${c.role})`).join(', ');
+    for (const m of openaiModels()) {
+      try {
+        const r: any = await backupText(m, 'Tu inventes des pitchs de mini-dramas TikTok viraux, en français.',
+          `Propose UNE idée d'histoire de mini-drama en une ou deux phrases (25 à 45 mots) : un secret, une trahison ou un retournement, un enjeu fort, une fin qui donne envie de voir la suite.${u ? ` Univers : ${u.label}.` : ''}${names ? ` Personnages imposés : ${names}.` : ''} Aucune célébrité, aucune marque.`,
+          { type: 'OBJECT', properties: { idea: { type: 'STRING' } }, required: ['idea'] }, 30_000);
+        if (r?.idea) return json({ idea: String(r.idea).trim().slice(0, 600) });
+      } catch (e) { console.error('story idea', m.model, e instanceof Error ? e.message : e); }
+    }
+    return json({ error: 'Le service est très demandé : réessayez dans un instant.' }, 502);
+  }
+
   // ---------- Project (RLS: only the caller's own) ----------
   let project: { id: string; data: Record<string, any>; idea: string | null; phase: number } | null = null;
   if (body.project_id) {
-    const { data } = await user.from('prompt_projects').select('id, data, idea, phase').eq('id', body.project_id).maybeSingle();
+    const { data } = internal
+      ? await admin.from('prompt_projects').select('id, data, idea, phase').eq('id', body.project_id).eq('user_id', uid).maybeSingle()
+      : await user.from('prompt_projects').select('id, data, idea, phase').eq('id', body.project_id).maybeSingle();
     if (!data) return json({ error: 'Projet introuvable' }, 404);
     project = data;
   }
@@ -170,8 +231,10 @@ Deno.serve(async (req) => {
       d.script_reviewed = true;
       const saved = await admin.from('prompt_projects').update({ data: d, updated_at: new Date().toISOString() }).eq('id', project.id).eq('user_id', uid).select('*').single();
       if (saved.error) throw new Error('Impossible d’enregistrer le projet');
+      if (internal) await advance(project.id, d, 'review');
       return json({ project: saved.data });
     } catch (e) {
+      if (internal) { await advance(project.id, d, 'review'); return json({ ok: false }); } // the proofreading is a bonus: go on
       const msg = e instanceof GeminiError ? 'Le service de génération est très demandé en ce moment. Réessayez dans quelques minutes.' : (e instanceof Error ? e.message : 'Échec');
       return json({ error: `${msg} Aucun crédit n’a été utilisé.` }, 502);
     }
@@ -206,6 +269,20 @@ Deno.serve(async (req) => {
   }
 
   // ---------- Text phases ----------
+  if (action === 'auto_order' && internal && project) {
+    const d = { ...project.data } as Record<string, any>;
+    if (d.auto?.status !== 'running') return json({ ok: false });
+    const r = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/prompt-videos`, { method: 'POST', signal: AbortSignal.timeout(60_000),
+      headers: { Authorization: `Bearer ${cron}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create', project_id: project.id, quality: 'eco', uid, prepaid: Number(d.auto.paid_video) || 0 }) }).catch((e) => e as Error);
+    const out = r instanceof Response ? await r.json().catch(() => ({})) : {};
+    if (r instanceof Response && r.ok && out?.video?.id) { await saveAuto(project.id, d, { status: 'video', step: 'video', video_id: out.video.id, paid_video: 0 }); return json({ ok: true }); }
+    const busy = r instanceof Response && r.status === 429;
+    if (busy && attempt < 3) { await new Promise((ok) => setTimeout(ok, 60_000)); await queue(project.id, 'order', attempt + 1); return json({ ok: false }); }
+    await autoFailed(project.id, d, 'order', String(out?.error ?? 'La vidéo n’a pas pu être lancée.'));
+    return json({ ok: false });
+  }
+
   if (action !== 'phase') return json({ error: 'Action inconnue' }, 400);
   const phase = body.phase;
   if (!phase || !(phase in PHASES)) return json({ error: 'Étape inconnue' }, 400);
@@ -225,9 +302,10 @@ Deno.serve(async (req) => {
   }
   const ownKey = await userKey();
   const billable = !ownKey && !project; // only a brand-new project is charged
+  const autoVideo = !project && phase === 'script' && body.auto ? VIDEO_PRICES.eco[isVideoLength(body.length) ? body.length : DEFAULT_VIDEO_LENGTH] : 0;
   if (billable) {
     const { data: profile } = await user.from('profiles').select('credit_balance').eq('id', uid).single();
-    if (!profile || profile.credit_balance < PROJECT_COST) return json({ error: 'Crédits insuffisants : rechargez votre solde pour continuer.' }, 402);
+    if (!profile || profile.credit_balance < PROJECT_COST + autoVideo) return json({ error: 'Crédits insuffisants : rechargez votre solde pour continuer.' }, 402);
   }
 
   const data: Record<string, any> = { ...(project?.data ?? {}) };
@@ -238,7 +316,12 @@ Deno.serve(async (req) => {
     data.part = Math.max(1, Math.min(20, Number(body.part) || 1));
     data.previous_end = String(body.previous_end ?? '').trim().slice(0, 1500);
     data.length = isVideoLength(body.length) ? body.length : DEFAULT_VIDEO_LENGTH; // 30, 45 (default) or 60 s
+    if (isUniverse(body.universe)) data.universe = body.universe; // the visual universe of the wizard (replaces the head styles)
     data.cast_chars = await castSnapshot(body.cast); // the characters picked (theirs or the library's, 0 to 5), frozen for the series
+    if (autoVideo) { // the wizard: everything runs by itself up to the finished video
+      data.options = { subtitles: isSubtitleStyle(body.auto?.subtitles) ? body.auto!.subtitles : 'karaoke', music: musicById(body.auto?.music)?.id ?? null };
+      data.auto = { status: 'running', step: 'script', started_at: new Date().toISOString() };
+    }
   }
   // a new length on an existing project: the story and the script are written again for it
   if (project && isVideoLength(body.length) && (phase === 'concepts' || phase === 'script')) data.length = body.length;
@@ -302,12 +385,20 @@ Deno.serve(async (req) => {
 
     // Text works on Google's free tier too, so a text success says nothing about image billing: status unchanged.
     if (billable) await user.rpc('consume_credits', { p_amount: PROJECT_COST, p_story_id: null, p_description: 'Creative Studio — new project' });
-    return json({ project: saved.data, billed_to: ownKey ? 'your_gemini_key' : billable ? 'storyit_credits' : 'included' });
+    let out = saved.data;
+    if (autoVideo && data.auto?.status === 'running') { // paid once, at the start: the video of the wizard
+      const { error: payErr } = await user.rpc('consume_credits', { p_amount: autoVideo, p_story_id: null, p_description: `Vidéo automatique Creative Studio (${data.length} s)` });
+      if (payErr) await saveAuto(saved.data.id, data, { status: 'failed', error: 'Crédits insuffisants pour la vidéo : votre histoire est enregistrée, rechargez puis lancez la vidéo.' });
+      else { await saveAuto(saved.data.id, data, { paid_video: autoVideo }); await advance(saved.data.id, data, 'script'); }
+      out = { ...saved.data, data };
+    } else if (internal && data.auto?.status === 'running') await advance(saved.data.id, data, phase);
+    return json({ project: out, billed_to: ownKey ? 'your_gemini_key' : billable ? 'storyit_credits' : 'included' });
   } catch (e) {
     const g = e instanceof GeminiError ? e : null;
     const msg = g ? (g.problem === 'no_billing' || g.problem === 'quota' ? 'Le service de génération est très demandé en ce moment. Réessayez dans quelques minutes.' : g.message)
       : (e instanceof Error ? e.message : 'Échec de la génération');
     console.error('prompts', phase, msg);
+    if (internal && project) { await autoFailed(project.id, data, phase, msg); return json({ ok: false }); }
     return json({ error: `${msg} Aucun crédit Storyit n’a été utilisé.` }, 502);
   }
 });

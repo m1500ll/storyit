@@ -31,7 +31,7 @@ export function CastPicker({ value, onChange }: { value: string[]; onChange: (id
         </li>
       </ul>
       <p className="mt-2 text-xs text-zinc-500" aria-live="polite">
-        {value.length ? `${value.length} personnage${value.length > 1 ? 's' : ''} choisi${value.length > 1 ? 's' : ''} sur ${MAX_CAST} maximum : l’histoire est écrite pour eux et ils gardent leur apparence exacte.` : items.length ? `Choisissez 1 à ${MAX_CAST} personnages, ou laissez vide pour que le studio les invente dans le style ci-dessous.` : 'Créez vos personnages une fois et réutilisez-les à chaque vidéo. Sinon, le studio les invente dans le style ci-dessous.'}
+        {value.length ? `${value.length} personnage${value.length > 1 ? 's' : ''} choisi${value.length > 1 ? 's' : ''} sur ${MAX_CAST} maximum : l’histoire est écrite pour eux et ils gardent leur apparence exacte.` : items.length ? `Choisissez 1 à ${MAX_CAST} personnages, ou laissez vide pour que le studio les invente pour vous.` : 'Créez vos personnages une fois et réutilisez-les à chaque vidéo. Sinon, le studio les invente pour vous.'}
       </p>
     </div>
   );

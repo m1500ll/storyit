@@ -25,7 +25,7 @@ const COLS = 'id,project_id,title,quality,seconds,status,step,progress,error,vid
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
-  let body: { action?: string; id?: string; project_id?: string; quality?: string; download?: string; max_seconds?: number };
+  let body: { action?: string; id?: string; project_id?: string; quality?: string; download?: string; max_seconds?: number; uid?: string; prepaid?: number };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
 
   if (body.action === 'worker_keys') {
@@ -35,9 +35,16 @@ Deno.serve(async (req) => {
   }
 
   const user = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } });
-  const { data: auth } = await user.auth.getUser();
-  if (!auth.user) return json({ error: 'Veuillez vous reconnecter.' }, 401);
-  const uid = auth.user.id;
+  // the automatic pipeline (prompts function, via the database) orders the video for the customer, already paid
+  const cron = Deno.env.get('PUBLISHER_CRON_TOKEN') ?? '';
+  const internal = cron.length >= 32 && same(req.headers.get('Authorization') ?? '', `Bearer ${cron}`) && typeof body.uid === 'string' && body.action === 'create';
+  let uid: string;
+  if (internal) uid = body.uid!;
+  else {
+    const { data: auth } = await user.auth.getUser();
+    if (!auth.user) return json({ error: 'Veuillez vous reconnecter.' }, 401);
+    uid = auth.user.id;
+  }
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
   if (body.action === 'list') {
@@ -81,18 +88,22 @@ Deno.serve(async (req) => {
     const own = refs.filter((r) => r.startsWith('storage:')).map((r) => r.slice(8));
     const { data: signed } = own.length ? await admin.storage.from('characters').createSignedUrls(own, 3 * 86_400) : { data: [] };
     (plan as Record<string, unknown>).sheet_ref_urls = refs.map((r) => r.startsWith('storage:') ? signed?.find((x) => x.path === r.slice(8))?.signedUrl : `https://www.storyit.fun${r}`).filter(Boolean);
-    const { error: credErr } = await user.rpc('consume_credits', { p_amount: cost, p_story_id: null, p_description: `Vidéo Creative Studio (${body.quality}, ${Math.round(seconds)} s)` });
-    if (credErr) return json({ error: `Il vous faut ${cost} crédits pour cette vidéo.`, code: 'insufficient_credits', needed: cost }, 402);
+    const prepaid = internal ? Math.max(0, Math.round(Number(body.prepaid) || 0)) : 0;
+    if (!internal) {
+      const { error: credErr } = await user.rpc('consume_credits', { p_amount: cost, p_story_id: null, p_description: `Vidéo Creative Studio (${body.quality}, ${Math.round(seconds)} s)` });
+      if (credErr) return json({ error: `Il vous faut ${cost} crédits pour cette vidéo.`, code: 'insufficient_credits', needed: cost }, 402);
+    }
+    const charged = internal ? prepaid : cost;
     const { data: job, error } = await admin.from('prompt_videos').insert({
-      user_id: uid, project_id: project.id, title: plan.title, quality: body.quality, seconds, plan, credits_charged: cost,
+      user_id: uid, project_id: project.id, title: plan.title, quality: body.quality, seconds, plan, credits_charged: charged,
     }).select(COLS).single();
     if (error || !job) {
-      await admin.rpc('grant_credits', { p_user_id: uid, p_amount: cost, p_type: 'refund', p_description: 'Vidéo Creative Studio — remboursement (file indisponible)' });
+      if (charged > 0) await admin.rpc('grant_credits', { p_user_id: uid, p_amount: charged, p_type: 'refund', p_description: 'Vidéo Creative Studio — remboursement (file indisponible)' });
       return json({ error: 'Impossible de lancer la vidéo. Vos crédits ont été rendus.' }, 500);
     }
     const hook = Deno.env.get('RENDER_WORKER_URL')?.replace(/\/wake$/, '/wake-prompt');
     if (hook) await fetch(hook, { method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RENDER_WORKER_TOKEN') ?? ''}` }, signal: AbortSignal.timeout(5000) }).catch(() => {});
-    return json({ video: job, credits: cost });
+    return json({ video: job, credits: charged });
   }
 
   if (body.action === 'url') {

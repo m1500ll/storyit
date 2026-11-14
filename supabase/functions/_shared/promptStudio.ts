@@ -7,7 +7,7 @@
  * ① to ④, character descriptions) is assembled here by code, so it is never abbreviated or drifts between clips.
  */
 
-import type { CastChar } from './characters.ts';
+import { isUniverse, UNIVERSES, type CastChar } from './characters.ts';
 export type PhaseKey = 'concepts' | 'script' | 'images' | 'videos' | 'pack';
 export type StyleKey = 'fruits' | 'ongles' | 'objets' | 'pierres';
 
@@ -42,8 +42,14 @@ export const STYLES: Record<StyleKey, { label: string; emoji: string; text: stri
 export const castOf = (ctx: any): CastChar[] => (Array.isArray(ctx?.cast_chars) ? ctx.cast_chars : []).filter((c: any) => c?.name && c?.look).slice(0, 5);
 const CAST_BLOCK = LOOK.replace('HUMAN clothed bodies with real hands, ', '') + 'Every character exactly as described and exactly as in the attached character reference sheets: same face, same skin or head material, same hair, same outfit, same tall adult proportions. No text, no logo, no watermark.';
 /** the image style of a project: the library cast when there is one, otherwise the locked head style */
+/** scene framing shared by every universe (the universe adds the rendering style and the character rule) */
+const FRAME = 'Vertical movie still, ultra detailed, strong key light, rim light, high contrast, rich colors, slightly low angle, blurred objects in the foreground at the bottom edge, enough space around the characters for camera moves. ';
 export function lookOf(ctx: any): { label: string; block: string; heads: string } {
-  return castOf(ctx).length ? { label: 'Personnages choisis', block: CAST_BLOCK, heads: 'faces, heads and skin materials' } : STYLES[styleOf(ctx?.style)];
+  const uk = ctx?.universe; const u = isUniverse(uk) ? UNIVERSES[uk] : null;
+  const style = u ? (u.style || 'Exactly the visual style described in the story.') : '';
+  if (castOf(ctx).length) return { label: 'Personnages choisis', block: u ? `${FRAME}${style} ${CAST_BLOCK.slice(CAST_BLOCK.indexOf('Every character'))}` : CAST_BLOCK, heads: 'faces, heads and skin materials' };
+  if (u) return { label: u.label, block: `${FRAME}${style} No text, no logo, no watermark.`, heads: 'faces, skin and hair' };
+  return STYLES[styleOf(ctx?.style)];
 }
 const castLine = (cast: CastChar[]) => `Casting imposé (personnages choisis par l'utilisateur) : utilise EXACTEMENT ces ${cast.length} personnages, avec ces prénoms, ce caractère et cette voix ; n'invente aucun autre personnage qui parle (des figurants muets en arrière-plan sont permis). Leur apparence est fixée (recopie-la telle quelle dans les descriptions en anglais) :\n${cast.map((c) => `- ${c.name} (${c.role} ; caractère : ${c.personality} ; voix : ${c.voice}) : ${c.look}`).join('\n')}`;
 /** after a phase: the library characters keep their own voice and their exact appearance (never the model's paraphrase) */
@@ -199,7 +205,9 @@ const lengthRule = (n: VideoLength) => {
 export function buildPhasePrompt(phase: PhaseKey, ctx: Record<string, any>): string {
   const st = STYLES[styleOf(ctx.style)];
   const cast = castOf(ctx);
-  const style = cast.length ? castLine(cast) : `Style verrouillé : ${st.emoji} ${st.label} (${st.text} ${st.ruleFr})`;
+  const uk = ctx.universe; const uni = isUniverse(uk) ? UNIVERSES[uk] : null;
+  const uniLine = uni ? `Univers visuel verrouillé : ${uni.label} (${uni.hint}). Personnages adultes au visage humain réaliste et aux proportions adultes, jamais de visage de bébé.${ctx.universe === 'perso' ? ' Le style visuel est celui que décrit l’utilisateur dans son histoire.' : ''}` : '';
+  const style = cast.length ? `${castLine(cast)}${uniLine ? `\n${uniLine}` : ''}` : uniLine || `Style verrouillé : ${st.emoji} ${st.label} (${st.text} ${st.ruleFr})`;
   const part = Number(ctx.part ?? 1) > 1 ? `\nC'est la PARTIE ${ctx.part}. Fin de la partie précédente : ${ctx.previous_end ?? ''}` : '';
   const tweak = ctx.feedback ? `\nAjustements demandés par l'utilisateur : ${ctx.feedback}` : '';
   const story = ctx.concepts?.[ctx.chosen ?? -1] ? `Histoire choisie : ${JSON.stringify(ctx.concepts[ctx.chosen])}` : `Histoire de l'utilisateur (même en vrac ; comble les vides) : ${ctx.story ?? ''}`;
