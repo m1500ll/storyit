@@ -2,7 +2,7 @@
 // Applies Stripe payments to Storyit accounts (plan + credits). Deploy with "Verify JWT" DISABLED
 // (Stripe cannot send a Supabase JWT; authenticity is checked with the Stripe signature instead).
 // Secrets: STRIPE_WEBHOOK_SECRET (whsec_...), plus the STRIPE_PRICE_* used by `billing`.
-// Events: checkout.session.completed, invoice.paid, customer.subscription.updated, customer.subscription.deleted
+// Events: checkout.session.completed, invoice.paid, invoice.payment_failed, customer.subscription.updated, customer.subscription.deleted
 // Referrals (migration 0021): a referred friend's first PAID subscription invoice qualifies the referral: the friend gets
 // REFERRAL_FRIEND_BONUS credits (default 100), the referrer free months as Stripe customer balance (months x the price of
 // their plan, Creator when they have none), which pays their next invoices. Secret: STRIPE_SECRET_KEY.
@@ -152,6 +152,15 @@ Deno.serve(async (req) => {
           const { data: c, error: affErr } = await admin.rpc('record_affiliate_payment', { p_user: userId, p_invoice: obj.id, p_amount: obj.amount_paid, p_currency: obj.currency, p_product: product });
           if (affErr) console.error('affiliate', affErr.message); // never blocks the payment itself
           else if (c) console.log(JSON.stringify({ audit: 'affiliate_commission', user: userId, invoice: obj.id, commission: c }));
+        }
+        break;
+      }
+      case 'invoice.payment_failed': {
+        // a subscription payment was refused: e-mail the customer the Stripe page to pay it (or use another card)
+        const userId = await userIdForCustomer(obj.customer);
+        if (userId && obj.hosted_invoice_url && obj.amount_due > 0) {
+          await fetch(`${env('SUPABASE_URL')}/functions/v1/mailing`, { method: 'POST', headers: { Authorization: `Bearer ${env('PUBLISHER_CRON_TOKEN')}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payment_failed: { user_id: userId, invoice_url: obj.hosted_invoice_url, amount: obj.amount_due, next_attempt: obj.next_payment_attempt ?? null } }) }).catch((e) => console.error('payment failed mail', e));
         }
         break;
       }

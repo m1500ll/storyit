@@ -274,6 +274,31 @@ ${li('🔁 Sans engagement : vous pouvez résilier quand vous voulez.')}
   return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
 }
 
+/** a subscription payment failed (stripe-webhook, invoice.payment_failed): the link to pay or change the card */
+async function paymentFailedEmail(uid: string, invoiceUrl: string, amountCents: number, nextAttempt: number | null, preview = false) {
+  const [{ data: u }, { data: p }] = await Promise.all([admin.auth.admin.getUserById(uid), admin.from('profiles').select('plan').eq('id', uid).single()]);
+  const to = u?.user?.email;
+  if (!to || !/^https:\/\/invoice\.stripe\.com\//.test(invoiceUrl)) return Response.json({ skipped: true });
+  const plan = PLAN_INFO[p?.plan ?? 'creator'] ?? PLAN_INFO.creator;
+  const amount = `${(amountCents / 100).toFixed(2).replace('.', ',').replace(',00', '')} $`;
+  const retry = nextAttempt ? frDate(new Date(nextAttempt * 1000).toISOString()) : null;
+  const subject = `${preview ? '[APERÇU] ' : ''}⚠️ Votre paiement Storyit n’est pas passé`;
+  const inner = `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Votre paiement n’est pas passé</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Le paiement de votre offre <strong>${plan.name}</strong> (${amount}) a été refusé par votre banque. Ça arrive souvent : plafond de la carte, carte expirée ou solde insuffisant.</td></tr>
+<tr><td style="font-size:16px;line-height:1.6;padding-top:12px">Pour garder votre offre et recevoir vos <strong>${fr(plan.credits)} crédits</strong> du mois, réglez-le en un clic (vous pouvez utiliser une autre carte) :</td></tr>
+<tr><td align="center" style="padding:22px 0 8px"><a href="${invoiceUrl}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Régler mon paiement</a></td></tr>
+${retry ? `<tr><td style="font-size:13px;line-height:1.6;color:#4b4560;text-align:center">Sinon, nous réessaierons automatiquement le ${retry}.</td></tr>` : ''}`;
+  const text = `Votre paiement n'est pas passé\n\nBonjour,\n\nLe paiement de votre offre ${plan.name} (${amount}) a été refusé par votre banque (plafond, carte expirée ou solde insuffisant).\n\nPour garder votre offre et recevoir vos ${fr(plan.credits)} crédits du mois, réglez-le en un clic (vous pouvez utiliser une autre carte) : ${invoiceUrl}\n${retry ? `\nSinon, nous réessaierons automatiquement le ${retry}.\n` : ''}\nÀ très vite,\nL'équipe Storyit`;
+  const html = shell(inner, '#').replace(/Vous recevez cet e-mail car vous avez un compte Storyit\. <a href="#" style="color:#7a7390">Se désinscrire<\/a>/, 'Message lié à votre abonnement Storyit.');
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: FROM, to: [preview ? (u?.user?.email ?? to) : to], subject, html, text }),
+  });
+  const data = await res.json().catch(() => ({}));
+  console.log(JSON.stringify({ audit: 'payment_failed_email', user: uid, ok: res.ok }));
+  return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
+}
+
 async function sendOne(to: string, uid: string, c: Campaign, scheduledAt?: string) {
   const unsub = await unsubUrl(uid);
   const res = await fetch('https://api.resend.com/emails', {
@@ -302,7 +327,9 @@ Deno.serve(async (req) => {
   // "low credits" e-mail to a subscriber (account notice): sent by the database trigger of migration 0038, with the cron token
   const cron = Deno.env.get('PUBLISHER_CRON_TOKEN');
   if (cron && cron.length >= 32 && req.headers.get('Authorization') === `Bearer ${cron}`) {
-    const sys = await req.clone().json().catch(() => ({})) as { low_credits?: string; trial_welcome?: string; trial_reminder?: string };
+    const sys = await req.clone().json().catch(() => ({})) as { low_credits?: string; trial_welcome?: string; trial_reminder?: string;
+      payment_failed?: { user_id: string; invoice_url: string; amount: number; next_attempt: number | null; preview?: boolean } };
+    if (sys.payment_failed?.user_id) { const f = sys.payment_failed; return paymentFailedEmail(f.user_id, f.invoice_url, Number(f.amount) || 0, f.next_attempt ?? null, !!f.preview); }
     if (sys.trial_welcome || sys.trial_reminder) return trialEmail(sys.trial_welcome ? 'welcome' : 'reminder', (sys.trial_welcome ?? sys.trial_reminder)!);
     const { low_credits } = sys;
     if (!low_credits) return Response.json({ error: 'low_credits required' }, { status: 400 });

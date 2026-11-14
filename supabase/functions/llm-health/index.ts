@@ -40,6 +40,22 @@ Deno.serve(async (req) => {
     }
     return json({ method: methodOff, changed: out });
   }
+  const addEvent = url.searchParams.get('stripe_webhook_add'); // operator: list the webhook endpoints, optionally add one event to Storyit's
+  if (url.searchParams.get('stripe_webhooks') === '1' || (addEvent && /^[a-z_.]{5,60}$/.test(addEvent))) {
+    const H = { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` };
+    const list = await (await fetch('https://api.stripe.com/v1/webhook_endpoints?limit=10', { headers: H })).json();
+    const out: unknown[] = [];
+    for (const w of list.data ?? []) {
+      let events: string[] = w.enabled_events;
+      if (addEvent && /stripe-webhook/.test(w.url) && !events.includes('*') && !events.includes(addEvent)) {
+        const body = new URLSearchParams(); [...events, addEvent].forEach((e) => body.append('enabled_events[]', e));
+        const r = await (await fetch(`https://api.stripe.com/v1/webhook_endpoints/${w.id}`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/x-www-form-urlencoded' }, body })).json();
+        events = r.enabled_events ?? events;
+      }
+      out.push({ url: w.url, status: w.status, events });
+    }
+    return json({ endpoints: out, error: list.error?.message });
+  }
   const cust = url.searchParams.get('stripe_customer'); // operator: a customer's subscriptions and last invoices
   if (cust && /^cus_[A-Za-z0-9]{6,40}$/.test(cust)) {
     const H = { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` };
@@ -47,7 +63,7 @@ Deno.serve(async (req) => {
     const inv = await (await fetch(`https://api.stripe.com/v1/invoices?customer=${cust}&limit=6`, { headers: H })).json();
     return json({
       subscriptions: (subs.data ?? []).map((x: any) => ({ id: x.id, status: x.status, trial_end: x.trial_end && new Date(x.trial_end * 1000).toISOString(), cancel_at_period_end: x.cancel_at_period_end, price: x.items?.data?.[0]?.price?.id, created: new Date(x.created * 1000).toISOString() })),
-      invoices: (inv.data ?? []).map((x: any) => ({ id: x.id, status: x.status, amount_due: x.amount_due, amount_paid: x.amount_paid, reason: x.billing_reason, created: new Date(x.created * 1000).toISOString(), attempts: x.attempt_count, next_attempt: x.next_payment_attempt && new Date(x.next_payment_attempt * 1000).toISOString(), error: x.last_finalization_error?.message })),
+      invoices: (inv.data ?? []).map((x: any) => ({ id: x.id, status: x.status, amount_due: x.amount_due, amount_paid: x.amount_paid, reason: x.billing_reason, created: new Date(x.created * 1000).toISOString(), attempts: x.attempt_count, url: x.hosted_invoice_url, next_attempt_unix: x.next_payment_attempt, next_attempt: x.next_payment_attempt && new Date(x.next_payment_attempt * 1000).toISOString(), error: x.last_finalization_error?.message })),
     });
   }
   if (url.searchParams.get('stripe_methods') === '1') { // which payment methods Stripe Checkout offers (Apple Pay, Google Pay…)
