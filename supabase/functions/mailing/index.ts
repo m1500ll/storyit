@@ -11,6 +11,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const APP = (Deno.env.get('APP_URL') ?? 'https://storyit.fun').replace(/\/$/, '');
 const FROM = Deno.env.get('MAIL_FROM') ?? 'Storyit <hello@storyit.fun>';
+/** where a customer's "Reply" goes: the owner's own inbox (hello@storyit.fun has no mailbox yet) */
+const REPLY_TO = Deno.env.get('MAIL_REPLY_TO') ?? 'etook0.pro@gmail.com';
 const SELF = `${Deno.env.get('SUPABASE_URL')}/functions/v1/mailing`;
 
 const sign = async (uid: string) => {
@@ -267,7 +269,7 @@ ${li('🔁 Sans engagement : vous pouvez résilier quand vous voulez.')}
   const html = shell(inner, '#').replace(/Vous recevez cet e-mail car vous avez un compte Storyit\. <a href="#" style="color:#7a7390">Se désinscrire<\/a>/, foot);
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM, to: [to], subject, html, text }),
+    body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [to], subject, html, text }),
   });
   const data = await res.json().catch(() => ({}));
   console.log(JSON.stringify({ audit: `trial_${kind}_email`, user: uid, ok: res.ok }));
@@ -292,7 +294,7 @@ ${retry ? `<tr><td style="font-size:13px;line-height:1.6;color:#4b4560;text-alig
   const html = shell(inner, '#').replace(/Vous recevez cet e-mail car vous avez un compte Storyit\. <a href="#" style="color:#7a7390">Se désinscrire<\/a>/, 'Message lié à votre abonnement Storyit.');
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM, to: [preview ? (u?.user?.email ?? to) : to], subject, html, text }),
+    body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [preview ? (u?.user?.email ?? to) : to], subject, html, text }),
   });
   const data = await res.json().catch(() => ({}));
   console.log(JSON.stringify({ audit: 'payment_failed_email', user: uid, ok: res.ok }));
@@ -305,7 +307,7 @@ async function sendOne(to: string, uid: string, c: Campaign, scheduledAt?: strin
     method: 'POST',
     headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      from: FROM, to: [to], subject: c.subject, html: c.html(unsub), text: c.text(unsub), ...(scheduledAt ? { scheduled_at: scheduledAt } : {}),
+      from: FROM, reply_to: REPLY_TO, to: [to], subject: c.subject, html: c.html(unsub), text: c.text(unsub), ...(scheduledAt ? { scheduled_at: scheduledAt } : {}),
       headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' },
     }),
   });
@@ -341,7 +343,7 @@ Deno.serve(async (req) => {
       const html = shell(b.inner, '#').replace(/Vous recevez cet e-mail car vous avez un compte Storyit\. <a href="#" style="color:#7a7390">Se désinscrire<\/a>/, 'Storyit · storyit.fun');
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: FROM, to: [b.to], subject: b.subject, html, text: b.text, ...(b.reply_to ? { reply_to: b.reply_to } : {}) }),
+        body: JSON.stringify({ from: FROM, to: [b.to], subject: b.subject, html, text: b.text, reply_to: b.reply_to || REPLY_TO }),
       });
       const data = await res.json().catch(() => ({}));
       console.log(JSON.stringify({ audit: 'branded_email', ok: res.ok }));
@@ -366,7 +368,7 @@ Deno.serve(async (req) => {
     const text = `Plus que ${left} crédits\n\nBonjour,\n\nVous approchez de la fin de vos crédits Storyit. Rechargez maintenant pour ne pas être bloqué au milieu de votre prochaine vidéo.\n\n- 10 000 crédits pour 12 $, 50 000 crédits pour 49 $\n- Les crédits rechargés n'expirent jamais\n- Ou activez la recharge automatique : plus jamais à court, au montant que vous choisissez\n\nRecharger mes crédits : ${APP}/app/billing\n\nÀ très vite,\nL'équipe Storyit`;
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM, to: [to], subject: `⚠️ Plus que ${left} crédits sur Storyit`, html, text }),
+      body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [to], subject: `⚠️ Plus que ${left} crédits sur Storyit`, html, text }),
     });
     const data = await res.json().catch(() => ({}));
     console.log(JSON.stringify({ audit: 'low_credits_email', user: low_credits, ok: res.ok }));
@@ -379,7 +381,7 @@ Deno.serve(async (req) => {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(direct.to ?? '') || !direct.subject || !direct.html || !direct.text) return Response.json({ error: 'to, subject, html and text are required' }, { status: 400 });
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM, to: [direct.to], subject: direct.subject, html: direct.html, text: direct.text, ...(direct.reply_to ? { reply_to: direct.reply_to } : {}) }),
+      body: JSON.stringify({ from: FROM, to: [direct.to], subject: direct.subject, html: direct.html, text: direct.text, reply_to: direct.reply_to || REPLY_TO }),
     });
     const data = await res.json().catch(() => ({}));
     return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
