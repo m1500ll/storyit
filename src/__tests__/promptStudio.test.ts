@@ -72,10 +72,10 @@ describe('Creative Studio V4', () => {
   it('Grok prompts carry the 8 blocks, the timed French dialogue, voices and pronunciation', () => {
     const d = { style: 'fruits', script: script(), videos: { clips: [{ head_lock: [{ name: 'Kévin', head: 'watermelon' }, { name: 'Lila', head: 'lemon' }], look_lock: '', shots: [{ start: 0, end: 3.3, text: 'push-in on KÉVIN TALKING' }], sound: 'kitchen ambience, a slap at 0.0s' }] } };
     const g = grokPrompt(d, 0);
-    for (const b of ['① Animate this image: 10-second', 'glossy whole fruit heads, never cut', '② HEAD LOCK: KÉVIN and LILA', '③ SPEAKER LOCK', '④ PACE', '⑤ Camera always moving', '⑥ SHOT LIST:', '⑦ DIALOGUE (in French, spoken clearly at a brisk pace, word for word; each line ACTED', '⑧ PRONUNCIATION: "Kévin" = "Ké-vin"', 'No music, no subtitles, no text.']) expect(g).toContain(b);
+    for (const b of ['① Animate this image: 10-second', 'glossy whole fruit heads, never cut', '② HEAD LOCK: KÉVIN and LILA', '③ SPEAKER LOCK', '④ PACE', '⑤ Smooth, controlled camera', '⑥ SHOT LIST:', '⑦ DIALOGUE (in French, spoken clearly at a brisk pace, word for word; each line ACTED', '⑧ PRONUNCIATION: "Kévin" = "Ké-vin"', 'No music, no subtitles, no text.']) expect(g).toContain(b);
     expect(g).toMatch(/KÉVIN \(young street voice\) 0\.1-3\.\ds: «/);
     expect(g).toContain('LILA (cold sharp voice)');
-    expect(g).toContain('Fast push-in from the very first frame'); // clip 1 only
+    expect(g).toContain('Slow push-in from the very first frame'); // clip 1 only
   });
   it('cover, hashtags and the troubleshooting list', () => {
     const d = { style: 'fruits', part: 2, script: script(), pack: normalizePhase('pack', { cover: { setting: 's', glow: 'red', characters: [{ name: 'Kévin', pose: 'crying' }, { name: 'Lila', pose: 'smirking' }] }, caption: 'c', pinned_comment: 'Team Kévin ou Team Lila ?', hashtags: ['#a1', 'b2 c3', '#d4', 'e5', 'f6', 'a1'] }) };
@@ -96,5 +96,15 @@ describe('acting directions', () => {
     expect(s.clips[0].lines[0].tone).toBe('laughing mockingly');
     const d = { script: s, videos: { clips: s.clips.map(() => ({ head_lock: [], look_lock: '', shots: [], sound: 'rain' })) } };
     expect(grokPrompt(d, 0)).toContain('LILA (voix suave) [laughing mockingly] 0.1-');
+  });
+});
+
+describe('anti-hallucination rules', () => {
+  it('master prompt and Grok blocks keep the feasibility rules', async () => {
+    const { MASTER_PROMPT } = await import('@shared/promptStudio.ts');
+    expect(MASTER_PROMPT).toContain('FAISABLE PAR L\'IA');
+    expect(MASTER_PROMPT).toContain('2 personnages par clip');
+    expect(MASTER_PROMPT).toContain('jamais de whip pan');
+    expect(MASTER_PROMPT).toContain('LES IDÉES QUI CARTONNENT');
   });
 });
