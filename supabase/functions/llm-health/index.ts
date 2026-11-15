@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
     const k = (n: string) => Deno.env.get(n) ?? '';
     const results = await Promise.all([
       probe('OpenAI (scripts + images)', () => fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', signal: T(20_000), headers: { Authorization: `Bearer ${k('OPENAI_API_KEY')}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'gpt-5-mini', max_completion_tokens: 16, reasoning_effort: 'minimal', messages: [{ role: 'user', content: 'OK' }] }) })),
+        body: JSON.stringify({ model: 'gpt-5-mini', max_completion_tokens: 300, reasoning_effort: 'minimal', messages: [{ role: 'user', content: 'OK' }] }) })),
       probe('xAI Grok (animation)', () => fetch('https://api.x.ai/v1/models', { signal: T(15_000), headers: { Authorization: `Bearer ${k('XAI_API_KEY')}` } })),
       probe('Anthropic Claude (Animated Studio)', () => fetch('https://api.anthropic.com/v1/messages', { method: 'POST', signal: T(20_000),
         headers: { 'x-api-key': k('ANTHROPIC_API_KEY'), 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
