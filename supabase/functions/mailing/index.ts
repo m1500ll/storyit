@@ -326,9 +326,27 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Not found', { status: 404 });
   // "low credits" e-mail to a subscriber (account notice): sent by the database trigger of migration 0038, with the cron token
   const cron = Deno.env.get('PUBLISHER_CRON_TOKEN');
-  if (cron && cron.length >= 32 && req.headers.get('Authorization') === `Bearer ${cron}`) {
+  const byCron = !!cron && cron.length >= 32 && req.headers.get('Authorization') === `Bearer ${cron}`;
+  // campaigns can also be started with the cron token (from any session, through the database); everything else below
+  const isCampaign = byCron && 'campaign' in ((await req.clone().json().catch(() => ({}))) as Record<string, unknown>);
+  if (byCron && !isCampaign) {
     const sys = await req.clone().json().catch(() => ({})) as { low_credits?: string; trial_welcome?: string; trial_reminder?: string;
-      payment_failed?: { user_id: string; invoice_url: string; amount: number; next_attempt: number | null; preview?: boolean } };
+      payment_failed?: { user_id: string; invoice_url: string; amount: number; next_attempt: number | null; preview?: boolean };
+      branded?: { to: string; subject: string; inner: string; text: string; reply_to?: string } };
+    // one business e-mail in the Storyit look (black banner, white card, signature): any session sends it through the
+    // database with the cron token (scripts/send-branded-mail.py). `inner` = the <tr> rows of the body.
+    if (sys.branded) {
+      const b = sys.branded;
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(b.to ?? '') || !b.subject || !b.inner || !b.text) return Response.json({ error: 'to, subject, inner and text are required' }, { status: 400 });
+      const html = shell(b.inner, '#').replace(/Vous recevez cet e-mail car vous avez un compte Storyit\. <a href="#" style="color:#7a7390">Se désinscrire<\/a>/, 'Storyit · storyit.fun');
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ from: FROM, to: [b.to], subject: b.subject, html, text: b.text, ...(b.reply_to ? { reply_to: b.reply_to } : {}) }),
+      });
+      const data = await res.json().catch(() => ({}));
+      console.log(JSON.stringify({ audit: 'branded_email', ok: res.ok }));
+      return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
+    }
     if (sys.payment_failed?.user_id) { const f = sys.payment_failed; return paymentFailedEmail(f.user_id, f.invoice_url, Number(f.amount) || 0, f.next_attempt ?? null, !!f.preview); }
     if (sys.trial_welcome || sys.trial_reminder) return trialEmail(sys.trial_welcome ? 'welcome' : 'reminder', (sys.trial_welcome ?? sys.trial_reminder)!);
     const { low_credits } = sys;
@@ -354,7 +372,7 @@ Deno.serve(async (req) => {
     console.log(JSON.stringify({ audit: 'low_credits_email', user: low_credits, ok: res.ok }));
     return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
   }
-  if (req.headers.get('Authorization') !== `Bearer ${Deno.env.get('MAILING_TOKEN')}` || !Deno.env.get('MAILING_TOKEN')) return new Response('Unauthorized', { status: 401 });
+  if (!isCampaign && (req.headers.get('Authorization') !== `Bearer ${Deno.env.get('MAILING_TOKEN')}` || !Deno.env.get('MAILING_TOKEN'))) return new Response('Unauthorized', { status: 401 });
   const { campaign, test_to, scheduled_at, cancel, direct } = await req.json().catch(() => ({})) as { campaign?: string; test_to?: string; scheduled_at?: string; cancel?: boolean;
     direct?: { to: string; subject: string; html: string; text: string; reply_to?: string } };
   if (direct) { // one business e-mail (partnership request…), replies go to reply_to

@@ -29,6 +29,19 @@ avant tout envoi à des clients.
   génère une image OpenAI, renvoie du base64 — payant).
 - OpenAI n'est pas joignable directement depuis la session : passer par `llm-health?image=1`.
 
+## Envoyer un e-mail (IMPORTANT : jamais de texte brut improvisé)
+- **Un mail à une personne** (partenariat, client, test) : `python3 scripts/send-branded-mail.py mail.json`.
+  Le mail sort au style Storyit (bannière noire, carte blanche, boutons violets #7c3aed, encadrés #f4f0ff, signature
+  « À très vite, L'équipe Storyit »), depuis hello@storyit.fun. Les blocs HTML à copier sont en tête du script.
+  Toujours un **aperçu au propriétaire d'abord** (« [APERÇU] » devant le sujet), envoi réel seulement après son « envoie ».
+  `reply_to` = l'e-mail du propriétaire (table auth.users, id 433ced9f-142d-4daf-92f2-40cabbaba0f0) pour qu'il reçoive les réponses.
+- **Une campagne à tous les inscrits** : l'ajouter dans `CAMPAIGNS` (`supabase/functions/mailing/index.ts`, mêmes blocs
+  + lien de désinscription via `shell(inner, unsub)`), déployer, puis
+  `python3 scripts/call-function.py mailing '{"campaign":"<id>","test_to":"<email du propriétaire>"}'` (aperçu étiqueté
+  automatiquement), et seulement après accord : `'{"campaign":"<id>"}'` (jamais deux fois à la même personne).
+- Appeler n'importe quelle fonction avec le jeton cron : `python3 scripts/call-function.py <fn> '<json>'` ou `--get '<query>'`.
+  Plus besoin du MAILING_TOKEN.
+
 ## Produit (ce qui est en ligne)
 - **Animated Studio : en pause** (`src/components/layout/AnimatedPause.tsx`, `ANIMATED_PAUSED = true`). Caché partout,
   admins seulement (« Animated Studio (caché) » dans le menu admin). Ne pas le remettre sans demande.
