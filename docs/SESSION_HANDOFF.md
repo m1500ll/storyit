@@ -7,7 +7,7 @@ avant tout envoi à des clients.
 ## Règles permanentes
 - Ne lance aucune dépense payante (génération d'images/vidéos, débit Stripe) sans accord explicite du propriétaire.
 - Secrets uniquement dans les secrets des Edge Functions / réseau de l'environnement. Jamais dans le chat, jamais en `VITE_`.
-  Le MAILING_TOKEN est lu depuis un fichier local du scratchpad, jamais affiché.
+  Plus besoin du MAILING_TOKEN : mails et campagnes passent par `scripts/send-branded-mail.py` / `scripts/call-function.py` (jeton cron du coffre).
 - Aucun fichier avec des e-mails clients dans le dépôt. Pas d'identifiant de modèle dans les commits.
 - CLAUDE.md : skills `storyit-ux` + `ui-ux-pro-max` avant toute UI ; données via `src/services` ; vérifier avec
   `npx tsc -b && npm run build`, `npx vitest run` et une capture Playwright (ordinateur + iPhone) avant de pousser.
@@ -89,8 +89,8 @@ avant tout envoi à des clients.
   jetable + alias gmail fonctionnent. Crédits retirés (accord) : hamzaboudouaia29, hamzaboudouaia011, motivationnouhan.
 - Migration 0045 : alerte au propriétaire si une vidéo n'est pas finie 50 min après la commande (cron 10 min, 1 mail / 3 h,
   via `notify-signup` mode `alert`, propriétaire uniquement).
-- `MAILING_TOKEN` régénéré (accord) : valeur dans `<scratchpad>/mailing_token` de la session du 15/11 seulement. Une nouvelle
-  session devra le régénérer (avec accord) via `POST /v1/projects/<ref>/secrets`. Aperçus aux beaux couleurs : rendre le
+- `MAILING_TOKEN` régénéré (accord). Ne plus le régénérer : depuis le 15/11 au soir, `mailing` accepte aussi le jeton cron
+  (campagnes + mails « branded »), voir la section « Envoyer un e-mail ». Aperçus aux beaux couleurs : rendre le
   HTML avec `shell()` de `mailing/index.ts`, l'envoyer au propriétaire via `notify-signup` `{alert:{subject:"[APERÇU] …",html}}`.
 - Relance « Votre paiement n'est pas passé » envoyée à Baptiste et Nouhan (paiement de 29 $ refusé le 13/11, avant que le
   mail automatique existe).
