@@ -1,4 +1,4 @@
-# Storyit — passation entre sessions (état au 14/11/2026)
+# Storyit — passation entre sessions (état au 15/11/2026)
 
 À lire en entier avant toute action. Le propriétaire est débutant et parle français : réponses simples, une action par
 étape. Il veut être prévenu avant toute dépense payante (OpenAI, Grok, Stripe…), et il doit voir les mails « [APERÇU] »
@@ -66,8 +66,24 @@ avant tout envoi à des clients.
 - Partenaires : 15 % du premier paiement (7 jours après le clic), lien `storyit.fun/?via=code`, tableau de bord, paiement
   des commissions au choix (crypto USDT recommandé, virement UE, PayPal) quand le partenaire le demande.
 
+## Fait le 15/11
+- Jeton Supabase : secret réseau de l'environnement (hôte `api.supabase.com`, en-tête Authorization, préfixe Bearer). Plus
+  besoin d'en-tête dans curl, le proxy l'ajoute.
+- **Panne vidéo du 14/11 ~20 h → 15/11 12 h : limite de dépense Modal atteinte (7 $).** Le propriétaire l'a montée à 20 $.
+  Symptôme : `prompt_videos` en `queued` avec `attempts = 0`. Commande Animated bloquée annulée et remboursée.
+- Migration 0044 appliquée (+ `email_key` rempli pour les anciens comptes). Attention : « Confirm email » est désactivé
+  dans Supabase Auth (`mailer_autoconfirm = true`), donc la condition « e-mail confirmé » ne filtre rien ; les règles
+  jetable + alias gmail fonctionnent. Crédits retirés (accord) : hamzaboudouaia29, hamzaboudouaia011, motivationnouhan.
+- Migration 0045 : alerte au propriétaire si une vidéo n'est pas finie 50 min après la commande (cron 10 min, 1 mail / 3 h,
+  via `notify-signup` mode `alert`, propriétaire uniquement).
+- `MAILING_TOKEN` régénéré (accord) : valeur dans `<scratchpad>/mailing_token` de la session du 15/11 seulement. Une nouvelle
+  session devra le régénérer (avec accord) via `POST /v1/projects/<ref>/secrets`. Aperçus aux beaux couleurs : rendre le
+  HTML avec `shell()` de `mailing/index.ts`, l'envoyer au propriétaire via `notify-signup` `{alert:{subject:"[APERÇU] …",html}}`.
+- Relance « Votre paiement n'est pas passé » envoyée à Baptiste et Nouhan (paiement de 29 $ refusé le 13/11, avant que le
+  mail automatique existe).
+
 ## En attente / à faire
-1. **Migration 0044 anti-abus NON appliquée** (`supabase/migrations/0044_welcome_bonus_guard.sql`) : crédits de bienvenue
+1. ~~Migration 0044~~ (faite le 15/11). Ancienne note : **Migration 0044 anti-abus NON appliquée** (`supabase/migrations/0044_welcome_bonus_guard.sql`) : crédits de bienvenue
    seulement après confirmation de l'e-mail, pas d'e-mail jetable, une fois par vraie boîte (alias gmail). Le propriétaire
    a signalé quelqu'un qui crée plusieurs comptes. L'appliquer via l'API SQL, puis repérer les doublons
    (`email_key`) et demander au propriétaire s'il faut retirer les crédits.
