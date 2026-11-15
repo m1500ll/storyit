@@ -45,6 +45,14 @@ avant tout envoi à des clients.
   Plus besoin du MAILING_TOKEN.
 
 ## Produit (ce qui est en ligne)
+- **Storytelling (15/11)** : les phases créatives (3 idées, script, relecture-critique) sont écrites par **Claude Opus 5.5**
+  (`_shared/claudeWriter.ts`, effort `low` pour tenir dans les ~135 s d'une requête, ~66 s mesurées, ~0,15 $ par script),
+  avec la méthode « salle des scénaristes », la BIBLIOTHÈQUE DE HOOKS et les PLANS MINUTÉS du MASTER_PROMPT. Les phases
+  techniques (images, Grok, légende) restent sur gpt-5-mini. Échec Claude = repli automatique. Coupure : secret
+  `CLAUDE_WRITER=off`. Test opérateur payant : `scripts/call-function.py llm-health '' --get 'writer_test=1'`.
+- Vidéos : dialogues ~3,3 mots/s, une intonation (`tone`) par réplique transmise à Grok, règles anti-hallucinations
+  (2 personnages par clip, caméra fluide, liste d'interdits « FAISABLE PAR L'IA »).
+
 - **Animated Studio : en pause** (`src/components/layout/AnimatedPause.tsx`, `ANIMATED_PAUSED = true`). Caché partout,
   admins seulement (« Animated Studio (caché) » dans le menu admin). Ne pas le remettre sans demande.
 - **Creative Studio** (ex « Prompt Studio », renommé partout) = produit principal, 1er dans le menu, onglet « Créer » sur mobile.
