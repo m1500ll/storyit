@@ -30,6 +30,8 @@ avant tout envoi à des clients.
 - OpenAI n'est pas joignable directement depuis la session : passer par `llm-health?image=1`.
 
 ## Envoyer un e-mail (IMPORTANT : jamais de texte brut improvisé)
+- Depuis le 15/11, **tous** les mails de `mailing` (campagnes, automatiques, branded, direct) ont par défaut
+  `reply_to` = e-mail du propriétaire (`REPLY_TO`, modifiable par le secret `MAIL_REPLY_TO`) : « Répondre » arrive chez lui.
 - **Un mail à une personne** (partenariat, client, test) : `python3 scripts/send-branded-mail.py mail.json`.
   Le mail sort au style Storyit (bannière noire, carte blanche, boutons violets #7c3aed, encadrés #f4f0ff, signature
   « À très vite, L'équipe Storyit »), depuis hello@storyit.fun. Les blocs HTML à copier sont en tête du script.
