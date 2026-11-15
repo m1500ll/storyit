@@ -1,9 +1,10 @@
-import { ImagePlus, Lightbulb, Sparkles, Trash2, X } from 'lucide-react';
+import { ImagePlus, Lightbulb, Plus, Sparkles, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Button, Card, LoadState, Modal, PageHeader, useToast } from '@/components/ui';
 import { usePaywall } from '@/components/billing/Paywall';
 import { CharacterCard } from '@/components/characters/CharacterCard';
+import { ImportCharacter } from '@/components/characters/ImportCharacter';
 import { UniverseGrid } from '@/components/characters/UniverseGrid';
 import { useLiveQuery } from '@/hooks/useStore';
 import { characters, photoToDataUrl, type UserCharacter } from '@/services/characters';
@@ -25,6 +26,8 @@ export default function CharactersPage() {
   const [ideaBusy, setIdeaBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<UserCharacter | null>(null);
+  const [params] = useSearchParams();
+  const [importing, setImporting] = useState(params.get('import') === '1');
   const fileRef = useRef<HTMLInputElement>(null);
   const { data: mine = [], loading, error: listError } = useLiveQuery(() => characters.list(), 'user-characters');
   const library = LIBRARY.filter((c) => c.ready);
@@ -113,8 +116,9 @@ export default function CharactersPage() {
         <div className="min-w-0">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-sm font-semibold text-zinc-100">Mes personnages <span className="font-normal tabular-nums text-zinc-500">({mine.filter((c) => c.status === 'ready').length})</span></h2>
-            <Link to="/app/prompts" className="touch-hit text-xs text-violet-300 hover:underline">Créer une vidéo avec eux →</Link>
+            <Button size="sm" variant="secondary" disabled={!characters.available} onClick={() => setImporting(true)}><Plus className="h-4 w-4" /> Importer mon personnage</Button>
           </div>
+          <Link to="/app/prompts" className="touch-hit mt-1 inline-block text-xs text-violet-300 hover:underline">Créer une vidéo avec eux →</Link>
           {loading ? <div className="mt-3"><LoadState loading error={null} /></div> : listError ? <div className="mt-3"><LoadState loading={false} error={listError} /></div> : mine.length === 0 ? (
             <div className="mt-3 rounded-2xl border border-dashed border-line/15 px-4 py-10 text-center">
               <p className="text-sm font-medium text-zinc-200">Aucun personnage pour l’instant</p>
@@ -145,6 +149,7 @@ export default function CharactersPage() {
         </div>
       </div>
 
+      <ImportCharacter open={importing} onClose={() => setImporting(false)} />
       <Modal open={!!open} onClose={() => setOpen(null)} title={open ? `${open.name} · ${open.role}` : ''}>
         {open && (
           <div>

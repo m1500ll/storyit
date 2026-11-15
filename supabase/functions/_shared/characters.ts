@@ -46,7 +46,7 @@ export function characterSheetPrompt(universe: Universe, look: string, withPhoto
   return `Character reference sheet of ONE original character${st ? `, ${st}` : ''}
 Clean neutral light grey background, soft studio lighting.
 
-THE CHARACTER: ${look.trim().replace(/\.$/, '')}.${withPhoto ? ' Keep the face of the person in the attached photo (same facial features, same age), recreated in this style.' : ''} No logo, no brand, no readable text anywhere.
+THE CHARACTER: ${look.trim().replace(/\.$/, '')}.${withPhoto ? ' Recreate faithfully the character in the attached reference image: same face and facial features, same hairstyle and hair color, same skin tone, same outfit, colors and accessories, only redrawn in this style.' : ''} Every detail listed above must appear exactly as described. No logo, no brand, no readable text anywhere.
 
 LAYOUT OF THE SHEET:
 - Top row, full body, same pose and same scale: front view, 3/4 view, side view, back view.

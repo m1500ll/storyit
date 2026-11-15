@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { CharacterCard } from '@/components/characters/CharacterCard';
 import { LoadState } from '@/components/ui';
@@ -20,6 +20,12 @@ export function CastPicker({ value, onChange }: { value: string[]; onChange: (id
   if (loading) return <LoadState loading error={null} />;
   return (
     <div>
+      {items.length > 1 && (
+        <p className="mb-2 flex items-center justify-between gap-2 text-xs text-zinc-400">
+          <span>Clique sur <strong className="text-zinc-200">plusieurs personnages</strong> pour les mettre ensemble dans la vidéo.</span>
+          <span className={'shrink-0 rounded-full px-2 py-0.5 tabular-nums ' + (value.length ? 'bg-violet-600 text-white' : 'bg-line/10 text-zinc-400')}>{value.length} / {MAX_CAST}</span>
+        </p>
+      )}
       <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
         {items.map((c) => (
           <li key={c.id} className="min-w-0"><CharacterCard c={c} selected={value.includes(c.id)} disabled={full && !value.includes(c.id)} onToggle={() => toggle(c.id)} /></li>
@@ -27,6 +33,11 @@ export function CastPicker({ value, onChange }: { value: string[]; onChange: (id
         <li className="min-w-0">
           <Link to="/app/characters" className="surface flex aspect-[3/4] h-full min-h-[160px] w-full flex-col items-center justify-center gap-2 p-3 text-center text-xs text-zinc-300 hover:border-violet-400/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60">
             <Plus className="h-5 w-5 text-violet-300" aria-hidden /> Créer un personnage
+          </Link>
+        </li>
+        <li className="min-w-0">
+          <Link to="/app/characters?import=1" className="surface flex aspect-[3/4] h-full min-h-[160px] w-full flex-col items-center justify-center gap-2 p-3 text-center text-xs text-zinc-300 hover:border-violet-400/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/60">
+            <Upload className="h-5 w-5 text-violet-300" aria-hidden /> Importer mon personnage
           </Link>
         </li>
       </ul>

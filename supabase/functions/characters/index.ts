@@ -24,8 +24,34 @@ const LOOK_SCHEMA = { type: 'OBJECT', properties: {
   role: { type: 'STRING', description: 'Son rôle en 2 à 4 mots (ex. « La méchante jalouse »)' },
   personality: { type: 'STRING', description: '3 traits de caractère en français, séparés par des virgules' },
   voice: { type: 'STRING', description: 'Sa voix en français (timbre, débit), 4 à 8 mots' },
-  look: { type: 'STRING', description: 'IN ENGLISH, 60 to 110 words: age, gender, build and height, face (realistic adult features), skin (and its material if any), hair, eyes, complete signature outfit with colors, one accessory. No brand, no logo, no text, no real person, no copyrighted character.' },
-}, required: ['name', 'role', 'personality', 'voice', 'look'] };
+  look: { type: 'STRING', description: 'IN ENGLISH, 80 to 140 words: age, gender, build and height, face (realistic adult features), skin (and its material if any), hair (style and exact color), eyes, complete signature outfit with exact colors, accessories. It must contain EVERY visual detail the client asked for. No brand, no logo, no text, no real person, no copyrighted character.' },
+  must_keep: { type: 'ARRAY', items: { type: 'STRING' }, description: 'IN ENGLISH: every visual detail the client asked for, one per item, translated faithfully (exact colors, hairstyle, clothes, accessories, tattoos, marks, attitude). Never a name of a real person, a brand or an existing character.' },
+}, required: ['name', 'role', 'personality', 'voice', 'look', 'must_keep'] };
+
+/** the same writer, but it SEES the reference image (OpenAI vision): the look is written from the picture itself */
+async function writeWithImage(system: string, prompt: string, schema: unknown, image: string) {
+  const key = Deno.env.get('OPENAI_API_KEY');
+  for (const m of openaiModels()) {
+    try {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', { method: 'POST', signal: AbortSignal.timeout(60_000),
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: m.model, response_format: { type: 'json_object' }, ...(/^(gpt-5|o\d)/.test(m.model) ? { reasoning_effort: 'low' } : {}),
+          messages: [
+            { role: 'system', content: `${system}\n\nRéponds UNIQUEMENT avec un objet JSON valide qui respecte ce schéma :\n${JSON.stringify(schema)}` },
+            { role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: image } }] },
+          ] }) });
+      if (!res.ok) { console.error('vision writer', m.model, res.status, (await res.text()).slice(0, 200)); continue; }
+      const text = (await res.json())?.choices?.[0]?.message?.content;
+      const r = text ? JSON.parse(String(text).replace(/^```(?:json)?\s*|\s*```$/g, '')) : null;
+      if (r) return r;
+    } catch (e) { console.error('vision writer', m.model, e instanceof Error ? e.message : e); }
+  }
+  throw new Error('writer unavailable');
+}
+const withDetails = (look: any) => {
+  const keep = (Array.isArray(look?.must_keep) ? look.must_keep : []).map((x: unknown) => str(x, 120)).filter(Boolean).slice(0, 15);
+  return str(`${str(look?.look, 1200)}${keep.length ? ` Key details that must always appear: ${keep.join('; ')}.` : ''}`, 1800);
+};
 
 async function write(system: string, prompt: string, schema: unknown) {
   for (const m of openaiModels()) {
@@ -55,7 +81,7 @@ async function drawSheet(prompt: string, photo: { bytes: Uint8Array; type: strin
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
-  let body: { action?: string; id?: string; universe?: string; description?: string; photo?: string; consent?: boolean };
+  let body: { action?: string; id?: string; universe?: string; description?: string; photo?: string; consent?: boolean; image?: string; name?: string };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
   const user = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } } });
   const { data: auth } = await user.auth.getUser();
@@ -91,6 +117,30 @@ Deno.serve(async (req) => {
     } catch { return json({ error: 'Le service est très demandé : réessayez dans un instant.' }, 502); }
   }
 
+  if (body.action === 'import') {
+    const m = /^data:(image\/(?:png|jpeg|webp));base64,(.+)$/.exec(body.image ?? '');
+    if (!m) return json({ error: 'Image : PNG, JPEG ou WebP uniquement.' }, 400);
+    if (!body.consent) return json({ error: 'Confirmez que c’est votre création ou que vous avez le droit de l’utiliser.' }, 400);
+    const bytes = Uint8Array.from(atob(m[2]), (c) => c.charCodeAt(0));
+    if (bytes.length > 8 * 1024 * 1024) return json({ error: 'Image trop lourde (8 Mo maximum).' }, 400);
+    let look: any;
+    try {
+      look = await writeWithImage('Tu es directeur artistique. Tu décris un personnage à partir de sa planche ou de son image, pour qu’un dessinateur le reproduise à l’identique dans chaque scène.',
+        `Voici l’image du personnage du client${body.name ? ` (il l’appelle « ${str(body.name, 40)} »)` : ''}${body.description ? `. Précisions du client : « ${str(body.description, 400)} »` : ''}. Décris fidèlement son apparence (look et must_keep), invente un rôle, un caractère et une voix qui lui vont.${body.name ? ` Garde le prénom « ${str(body.name, 40)} ».` : ''} Ne cite aucun nom de marque, de jeu ou de personnage existant.`, LOOK_SCHEMA, body.image!);
+    } catch { return json({ error: 'Le service est très demandé : réessayez dans un instant.' }, 502); }
+    const fields = { name: str(body.name, 40) || str(look?.name, 40) || 'Sans nom', role: str(look?.role, 80), personality: str(look?.personality, 200), voice: str(look?.voice, 120), look: withDetails(look) };
+    if (!fields.look) return json({ error: 'Réessayez : l’image n’a pas pu être analysée.' }, 502);
+    const { data: row, error: insErr } = await admin.from('user_characters').insert({ user_id: uid, universe: 'perso', description: str(body.description, 800) || 'Personnage importé', ...fields, status: 'generating', credits_charged: 0 }).select(COLS).single();
+    if (insErr || !row) return json({ error: 'Impossible d’enregistrer le personnage.' }, 500);
+    const ext = m[1].split('/')[1].replace('jpeg', 'jpg');
+    const path = `${uid}/${row.id}.${ext}`;
+    const up = await admin.storage.from('characters').upload(path, bytes, { contentType: m[1], upsert: true });
+    if (up.error) { await admin.from('user_characters').delete().eq('id', row.id); return json({ error: 'L’envoi de l’image a échoué, réessayez.' }, 500); }
+    await admin.from('user_characters').update({ status: 'ready', sheet_path: path }).eq('id', row.id);
+    const { data: signed } = await admin.storage.from('characters').createSignedUrl(path, 3600);
+    return json({ character: { ...row, status: 'ready', sheet_path: path, sheet_url: signed?.signedUrl ?? null } });
+  }
+
   if (body.action !== 'create') return json({ error: 'Action inconnue' }, 400);
   if (!Deno.env.get('OPENAI_API_KEY')) return json({ error: 'La création de personnages n’est pas encore disponible.' }, 503);
   if (!isUniverse(body.universe)) return json({ error: 'Choisissez un univers.' }, 400);
@@ -111,10 +161,13 @@ Deno.serve(async (req) => {
   // the look first (free if it fails), then the charge, then the drawing in the background
   let look: any;
   try {
-    look = await write('Tu es directeur artistique d’un studio de mini-séries 3D verticales. Tu crées des personnages originaux, adultes, avec un visage humain réaliste.',
-      `Univers : ${UNIVERSES[universe].label} — ${UNIVERSES[universe].hint}.${universe === 'perso' ? ' Le client décrit lui-même le style : respecte-le à la lettre.' : ''}\nDescription du client : « ${description} »${photo ? '\nLe client fournit une photo de référence : décris une tenue et un style, mais PAS les traits du visage (ils viennent de la photo).' : ''}\nCrée la fiche du personnage. Le prénom doit être original (jamais celui d’une célébrité ou d’un personnage connu).`, LOOK_SCHEMA);
+    const sys = 'Tu es directeur artistique d’un studio de mini-séries 3D verticales. Tu crées des personnages originaux, adultes, avec un visage humain réaliste. Tu respectes à la lettre chaque détail visuel demandé par le client.';
+    const ask = `Univers : ${UNIVERSES[universe].label} — ${UNIVERSES[universe].hint}.${universe === 'perso' ? ' Le client décrit lui-même le style : respecte-le à la lettre.' : ''}\nDescription du client : « ${description} »\nCrée la fiche du personnage en gardant TOUS les détails visuels qu’il demande (couleurs exactes, coiffure, tenue, accessoires, attitude). Le prénom doit être original (jamais celui d’une célébrité ou d’un personnage connu).`;
+    look = body.photo
+      ? await writeWithImage(sys, `${ask}\nLe client joint une image de référence (sa photo ou sa propre création) : décris FIDÈLEMENT ce que tu vois (visage, coiffure et couleur des cheveux, teint, tenue et couleurs, accessoires) pour que le dessin lui ressemble vraiment. Si l’image montre un personnage connu d’un jeu, d’un film, d’un dessin animé ou d’une marque, ne le recopie pas : garde seulement l’ambiance et crée un design original.`, LOOK_SCHEMA, body.photo)
+      : await write(sys, ask, LOOK_SCHEMA);
   } catch { return json({ error: 'Le service est très demandé : réessayez dans un instant. Aucun crédit n’a été utilisé.' }, 502); }
-  const fields = { name: str(look?.name, 40) || 'Sans nom', role: str(look?.role, 80), personality: str(look?.personality, 200), voice: str(look?.voice, 120), look: str(look?.look, 1200) };
+  const fields = { name: str(look?.name, 40) || 'Sans nom', role: str(look?.role, 80), personality: str(look?.personality, 200), voice: str(look?.voice, 120), look: withDetails(look) };
   if (!fields.look) return json({ error: 'Réessayez : la fiche du personnage est revenue vide. Aucun crédit n’a été utilisé.' }, 502);
 
   const { error: payErr } = await user.rpc('consume_credits', { p_amount: CHARACTER_COST, p_story_id: null, p_description: `Création du personnage ${fields.name}` });

@@ -35,6 +35,12 @@ export const characters = {
     store.notify();
     return r.character;
   },
+  /** the customer's own character sheet or picture, kept as is (free) */
+  async importSheet(input: { image: string; name?: string; description?: string; consent: boolean }): Promise<UserCharacter> {
+    const r = await call<{ character: UserCharacter }>({ action: 'import', ...input });
+    store.notify();
+    return r.character;
+  },
   async idea(universe: Universe): Promise<string> {
     return (await call<{ idea: string }>({ action: 'idea', universe })).idea;
   },
@@ -45,10 +51,10 @@ export const characters = {
   refresh: () => store.notify(),
 };
 
-/** a photo as a data URL, resized to at most 1024 px (keeps the upload small and fast) */
-export async function photoToDataUrl(file: File): Promise<string> {
+/** a photo as a data URL, resized to at most `maxSide` px (keeps the upload small and fast) */
+export async function photoToDataUrl(file: File, maxSide = 1024): Promise<string> {
   const img = await createImageBitmap(file);
-  const scale = Math.min(1, 1024 / Math.max(img.width, img.height));
+  const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
   canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
