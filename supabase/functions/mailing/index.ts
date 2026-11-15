@@ -96,10 +96,10 @@ L'équipe Storyit
 Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${unsub}`,
   },
   convert_free_active: {
-    subject: '🎬 Vous créez déjà des vidéos : passez à la vitesse supérieure',
+    subject: '🎬 Vos histoires méritent de devenir des vidéos',
     audience: 'free_active',
-    html: (unsub) => shell(`<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Vous faites partie de nos créateurs les plus actifs</td></tr>
-<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Vous avez déjà créé plusieurs vidéos avec Storyit, merci ! Pour continuer sans vous soucier des crédits, l’offre <strong>Creator</strong> est faite pour vous :</td></tr>
+    html: (unsub) => shell(`<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Passez à la vitesse supérieure sur Storyit</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Vous avez déjà commencé à créer avec Storyit, merci ! Pour aller au bout de vos histoires et en faire des vidéos sans vous soucier des crédits, l’offre <strong>Creator</strong> est faite pour vous :</td></tr>
 <tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.9">
 <tr><td>🎬 <strong>43 000 crédits chaque mois</strong> : environ 7 vidéos complètes de 30 s,</td></tr>
 <tr><td>🧑‍🎤 vos <strong>propres personnages</strong>, réutilisables dans toute votre série,</td></tr>
@@ -109,7 +109,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 <tr><td align="center" style="padding:24px 0 8px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Passer à Creator</a></td></tr>`, unsub),
     text: (unsub) => `Bonjour,
 
-Vous avez déjà créé plusieurs vidéos avec Storyit, merci ! Pour continuer sans vous soucier des crédits, l'offre Creator est faite pour vous :
+Vous avez déjà commencé à créer avec Storyit, merci ! Pour aller au bout de vos histoires et en faire des vidéos sans vous soucier des crédits, l'offre Creator est faite pour vous :
 
 - 43 000 crédits chaque mois : environ 7 vidéos complètes de 30 s,
 - vos propres personnages, réutilisables dans toute votre série,
@@ -441,12 +441,12 @@ Deno.serve(async (req) => {
   if (error) return Response.json({ error: error.message }, { status: 500 });
   const { data: out } = await admin.from('profiles').select('id').eq('marketing_opt_out', true);
   const { data: done } = await admin.from('email_sends').select('user_id').eq('campaign', campaign);
-  if (c.audience === 'free_active') { // free accounts that already spent more than 1 500 credits (the most active ones)
+  if (c.audience === 'free_active') { // free accounts that already spent 1 500 credits or more (the most active ones)
     const { data: prof } = await admin.from('profiles').select('id').eq('plan', 'free');
     const { data: tx } = await admin.from('credit_transactions').select('user_id, amount, description').eq('type', 'consumption').in('user_id', (prof ?? []).map((r: { id: string }) => r.id));
     const spent = new Map<string, number>();
     for (const t of (tx ?? []) as { user_id: string; amount: number; description: string }[]) if (!/^Crédits de bienvenue retirés/.test(t.description ?? '')) spent.set(t.user_id, (spent.get(t.user_id) ?? 0) - t.amount);
-    const keep = new Set([...spent].filter(([, v]) => v > 1500).map(([k]) => k));
+    const keep = new Set([...spent].filter(([, v]) => v >= 1500).map(([k]) => k));
     (done ?? []).push(...(prof ?? []).filter((r: { id: string }) => !keep.has(r.id)).map((r: { id: string }) => ({ user_id: r.id })));
     const { data: paid } = await admin.from('profiles').select('id').neq('plan', 'free');
     (done ?? []).push(...(paid ?? []).map((r: { id: string }) => ({ user_id: r.id })));
