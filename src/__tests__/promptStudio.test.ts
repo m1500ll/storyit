@@ -17,7 +17,7 @@ const script = () => normalizePhase('script', {
 
 describe('Creative Studio V4', () => {
   it('master prompt keeps the key rules of the meta-prompt', () => {
-    for (const rule of ['durée totale imposée', '2,6-3,2 mots/s', '5 mots minimum', 'PHRASE FRANÇAISE COMPLÈTE', '5 hooks', 'cliffhanger', 'Grille /10', 'HISTOIRE ET RYTHME']) expect(MASTER_PROMPT).toContain(rule);
+    for (const rule of ['durée totale imposée', '2,9-3,5 mots/s', '5 mots minimum', 'PHRASE FRANÇAISE COMPLÈTE', '5 hooks', 'cliffhanger', 'Grille /10', 'HISTOIRE ET RYTHME']) expect(MASTER_PROMPT).toContain(rule);
   });
   it('the story is enough to start: the script step needs no concepts', () => {
     expect(PHASES.script.requires).toEqual([]);
@@ -48,7 +48,7 @@ describe('Creative Studio V4', () => {
     const review = buildReviewPrompt(bad);
     expect(review).toContain('RELECTEUR');
     expect(review).toContain('phrase coupée au milieu');
-    expect(review).toContain('2,6 à 3,2 mots/s');
+    expect(review).toContain('2,9 à 3,5 mots/s');
   });
   it('the checklist passes a clean 70 s script and flags the problems', () => {
     const s = script();
@@ -72,7 +72,7 @@ describe('Creative Studio V4', () => {
   it('Grok prompts carry the 8 blocks, the timed French dialogue, voices and pronunciation', () => {
     const d = { style: 'fruits', script: script(), videos: { clips: [{ head_lock: [{ name: 'Kévin', head: 'watermelon' }, { name: 'Lila', head: 'lemon' }], look_lock: '', shots: [{ start: 0, end: 3.3, text: 'push-in on KÉVIN TALKING' }], sound: 'kitchen ambience, a slap at 0.0s' }] } };
     const g = grokPrompt(d, 0);
-    for (const b of ['① Animate this image: 10-second', 'glossy whole fruit heads, never cut', '② HEAD LOCK: KÉVIN and LILA', '③ SPEAKER LOCK', '④ PACE', '⑤ Camera always moving', '⑥ SHOT LIST:', '⑦ DIALOGUE (in French, spoken clearly at a natural pace, word for word):', '⑧ PRONUNCIATION: "Kévin" = "Ké-vin"', 'No music, no subtitles, no text.']) expect(g).toContain(b);
+    for (const b of ['① Animate this image: 10-second', 'glossy whole fruit heads, never cut', '② HEAD LOCK: KÉVIN and LILA', '③ SPEAKER LOCK', '④ PACE', '⑤ Camera always moving', '⑥ SHOT LIST:', '⑦ DIALOGUE (in French, spoken clearly at a brisk pace, word for word; each line ACTED', '⑧ PRONUNCIATION: "Kévin" = "Ké-vin"', 'No music, no subtitles, no text.']) expect(g).toContain(b);
     expect(g).toMatch(/KÉVIN \(young street voice\) 0\.1-3\.\ds: «/);
     expect(g).toContain('LILA (cold sharp voice)');
     expect(g).toContain('Fast push-in from the very first frame'); // clip 1 only
@@ -84,5 +84,17 @@ describe('Creative Studio V4', () => {
     expect(coverPrompt(d)).toContain('3:4 vertical format');
     expect(Object.keys(FIX_PROBLEMS)).toEqual(expect.arrayContaining(['slow', 'speaker', 'look', 'hook']));
     expect(buildFixPrompt({ style: 'fruits', script: script() }, 2, 'speaker', '')).toContain('clip 3');
+  });
+});
+
+describe('acting directions', () => {
+  it('keeps each line tone and writes it in brackets in the Grok dialogue', async () => {
+    const { normalizePhase, grokPrompt } = await import('@shared/promptStudio.ts');
+    const clip = (n: number) => ({ seconds: 6, location: 'cuisine', characters: ['Lila'], summary: 's', open_question: 'q', new_thing: 'n', mini_hook: 'm',
+      lines: [{ character: 'Lila', start: 0.1, end: 2.9, text: `Tu crois vraiment que je vais te croire ${n} ?`, tone: 'laughing mockingly' }] });
+    const s = normalizePhase('script', { title: 'T', paradox: 'p', synopsis: 's', characters: [{ name: 'Lila', head: 'h', outfit: 'o', voice: 'voix suave' }], locations: ['cuisine'], clips: [clip(1), clip(2)] }) as any;
+    expect(s.clips[0].lines[0].tone).toBe('laughing mockingly');
+    const d = { script: s, videos: { clips: s.clips.map(() => ({ head_lock: [], look_lock: '', shots: [], sound: 'rain' })) } };
+    expect(grokPrompt(d, 0)).toContain('LILA (voix suave) [laughing mockingly] 0.1-');
   });
 });

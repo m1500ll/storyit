@@ -71,7 +71,8 @@ HISTOIRE ET RYTHME
 2. STRUCTURE : clip 1 = hook ; contexte compris par le conflit, jamais expliqué à froid ; mini-révélation + réplique culte vers 30-40 s ; retournement ; dernier clip = cliffhanger coupé au pic, rien de résolu.
 3. CASTING : 3 à 5 personnages, 3 maximum par image ; 2 à 4 lieux par partie.
 4. RÉTENTION : la question du hook reste ouverte jusqu'au bout ; du neuf toutes les 5-10 s (info, vanne, émotion, retournement) ; chaque scène est pire que la précédente ; chaque clip finit sur un mini-hook (menace, délai, révélation coupée, arrivée, choix). Aucun plan de décor, d'ambiance ni de quelqu'un qui marche. À bannir : explication à froid, répétition, transition, bonne nouvelle sans prix à payer. Le héros répond, il ne subit pas : chaque scène change le rapport de force.
-5. DIALOGUE NATUREL QUI A DU SENS (règle n°1) : on parle comme dans la vraie vie, à 2,6-3,2 mots/s : 6 s ≈ 17 mots (2 répliques), 10 s ≈ 29 mots (3 répliques), 15 s ≈ 44 mots (4-5 répliques). Chaque réplique est une PHRASE FRANÇAISE COMPLÈTE ET CORRECTE (sujet, vrai verbe conjugué, jamais coupée au milieu), qui RÉPOND à la précédente et fait avancer l'histoire. Jamais de mots ajoutés pour faire durer (« maintenant », « ici », « immédiatement », « absolument », « vraiment », « tout » en fin de phrase). Chaque réplique fait 5 mots minimum. Pas de « Quoi ?! » isolé. 1re réplique à 0,1 s, chacune 0,1 s après la précédente, la dernière finit 0,1-0,2 s avant la fin. Un trou se comble par une vanne, jamais par un silence. Seuls les personnages VISIBLES sur l'image parlent, jamais hors champ, jamais d'eux à la 3e personne. Chaque personnage a un vrai PRÉNOM humain (Kévin, Lila, Moussa, Inès…), jamais le nom de son fruit, de son objet ou de sa pierre ; la prononciation s'écrit en syllabes avec des tirets (« Ké-vin »), jamais en alphabet phonétique. Pas de mots rares, une voix décrite par personnage, identique dans tous les clips.
+5. JEU D'ACTEUR : chaque réplique a son intonation (champ tone, en anglais) : rire moqueur, ricanement, chuchoté, crié, sanglot, soupir, sarcasme, panique… Varie d'une réplique à l'autre, comme de vrais acteurs ; les rires et soupirs se jouent dans la voix, jamais écrits dans le texte.
+5 bis. DIALOGUE NATUREL QUI A DU SENS (règle n°1) : on parle comme dans la vraie vie, à 2,9-3,5 mots/s, avec du peps : 6 s ≈ 19 mots (2 répliques), 10 s ≈ 32 mots (3 répliques), 15 s ≈ 48 mots (4-5 répliques). Chaque réplique est une PHRASE FRANÇAISE COMPLÈTE ET CORRECTE (sujet, vrai verbe conjugué, jamais coupée au milieu), qui RÉPOND à la précédente et fait avancer l'histoire. Jamais de mots ajoutés pour faire durer (« maintenant », « ici », « immédiatement », « absolument », « vraiment », « tout » en fin de phrase). Chaque réplique fait 5 mots minimum. Pas de « Quoi ?! » isolé. 1re réplique à 0,1 s, chacune 0,1 s après la précédente, la dernière finit 0,1-0,2 s avant la fin. Un trou se comble par une vanne, jamais par un silence. Seuls les personnages VISIBLES sur l'image parlent, jamais hors champ, jamais d'eux à la 3e personne. Chaque personnage a un vrai PRÉNOM humain (Kévin, Lila, Moussa, Inès…), jamais le nom de son fruit, de son objet ou de sa pierre ; la prononciation s'écrit en syllabes avec des tirets (« Ké-vin »), jamais en alphabet phonétique. Pas de mots rares, une voix décrite par personnage, identique dans tous les clips.
 
 LE HOOK (les 3 premières secondes)
 Résume l'histoire en UNE phrase paradoxe. Image du clip 1 = le moment le plus fort DÉJÀ EN COURS (gifle levée, valise jetée dehors, billet déchiré), jamais un décor vide, une marche ou une pose. 1re réplique à 0,1 s, 6 à 10 mots, 1er mot = le choc (chiffre, ordre, accusation, objet) ; jamais « Salut », « Alors », « Écoute » ni un prénom seul ; l'enjeu ou la menace arrive avant 3 s. Écris 5 hooks avec 5 mécaniques différentes (chiffre impossible, ordre humiliant, révélation, rêve brisé, règle absurde, cri, aveu, plan secret, vanne), garde le meilleur. Test : son coupé, on comprend l'image ? Image cachée, on comprend la phrase ? Qui, problème et enjeu compris en 3 s ; un objet, un chiffre ou un lieu précis ; aucune expression imagée. Partie 2+ : la 1re réplique repose l'idée de la série pour les nouveaux, puis le cliffhanger d'avant.
@@ -93,7 +94,8 @@ const I = (description?: string) => ({ type: 'INTEGER', ...(description ? { desc
 const arr = (items: unknown, description?: string) => ({ type: 'ARRAY', items, ...(description ? { description } : {}) });
 const obj = (properties: Record<string, unknown>, required = Object.keys(properties)) => ({ type: 'OBJECT', properties, required });
 
-const line = obj({ character: S('Nom du personnage qui parle (visible sur l’image)'), start: N('Début en secondes, ex. 0.1'), end: N('Fin en secondes'), text: S('Réplique exacte en français, 6 mots minimum') });
+const line = obj({ character: S('Nom du personnage qui parle (visible sur l’image)'), start: N('Début en secondes, ex. 0.1'), end: N('Fin en secondes'), text: S('Réplique exacte en français, 6 mots minimum'),
+  tone: S('IN ENGLISH, 2 to 6 words: HOW the line is acted (e.g. "laughing mockingly", "whispering, terrified", "shouting in anger", "sobbing", "sarcastic, rolling eyes", "sighing, exhausted"); vary from line to line') });
 
 const conceptsSchema = obj({
   concepts: arr(obj({
@@ -120,7 +122,7 @@ const scriptSchema = obj({
     seconds: I('6, 10 ou 15'), location: S('Un seul lieu'), characters: arr(S(), 'Personnages visibles (3 max)'),
     summary: S('Ce qui se passe, en une phrase'), open_question: S('La question ouverte pour le spectateur'),
     new_thing: S('Ce qui est nouveau dans ce clip'), mini_hook: S('Le mini-hook de fin de clip'),
-    lines: arr(line, 'Répliques minutées : phrases complètes et naturelles, 2,6 à 3,2 mots/s'),
+    lines: arr(line, 'Répliques minutées : phrases complètes et naturelles, 2,9 à 3,5 mots/s'),
   }), 'Entre 2 et 9 clips, à la durée totale imposée'),
   engagement: obj({
     levers: arr(S(), '2-3 leviers'), references: arr(S(), '2 à 4 références et le clip où elles sont placées'),
@@ -174,7 +176,7 @@ export const PHASES: Record<PhaseKey, { number: 1 | 2 | 3 | 4 | 5; key: string; 
 export const FIX_SCHEMA = fixSchema;
 
 export const FIX_PROBLEMS: Record<string, { label: string; rule: string }> = {
-  slow: { label: 'Ralenti ou blancs', rule: 'Ajoute une réplique utile ou une vanne (jamais des mots de remplissage) pour atteindre 2,6-3,2 mots/s, répliques collées.' },
+  slow: { label: 'Ralenti ou blancs', rule: 'Ajoute une réplique utile ou une vanne (jamais des mots de remplissage) pour atteindre 2,9-3,5 mots/s, répliques collées.' },
   flat: { label: 'Mou, pas assez dynamique', rule: 'Plans plus courts (1,5-3 s), cadrage différent à chaque plan, un geste par plan, crash zooms sur les mots-chocs.' },
   speaker: { label: 'Le mauvais personnage parle', rule: 'Rallonge chaque réplique à 6 mots minimum et précise dans chaque plan « the camera stays on X\'s face for his whole line ».' },
   look: { label: 'L’apparence change', rule: 'Complète le HEAD LOCK et ajoute un LOOK LOCK (« It is NOT a … »), privilégie les plans moyens.' },
@@ -222,7 +224,7 @@ export function buildPhasePrompt(phase: PhaseKey, ctx: Record<string, any>): str
       return `${style}\nPropose 3 histoires de mini-drama très différentes, pensées pour une vidéo de ${lengthLabel(projectLength(ctx))} (${LENGTH_RANGE[projectLength(ctx)].join(' à ')} s), avec un enjeu qui accroche les jeunes, un méchant, 2 à 4 lieux et un cliffhanger possible.${veille}${ctx.story ? `\nPiste de l'utilisateur : ${ctx.story}` : ''}${tweak}`;
     }
     case 'script':
-      return `${style}${part}\n${story}\nLivre : le PITCH (titre, phrase paradoxe, synopsis, 3 à 5 personnages avec prénom phonétique, tête, visage, mains et cou, tenue signature, accessoire, voix), les lieux, les 5 hooks avec 5 mécaniques, le hook retenu (image + pourquoi), 2 hooks de rechange, le DÉCOUPAGE en clips de 6, 10 ou 15 s (${lengthRule(projectLength(ctx))} Clip 1 = le hook retenu) avec pour chaque clip : lieu, personnages visibles, résumé, question ouverte, ce qui est nouveau, mini-hook et répliques qui remplissent tout le clip. BUDGET DE MOTS (compte-les, tous les mots de toutes les répliques du clip) : clip de 6 s = 15 à 19 mots en 2 répliques, 10 s = 26 à 32 mots en 3 répliques, 15 s = 40 à 48 mots en 4-5 répliques ; 5 mots minimum par réplique. LE SENS AVANT TOUT : chaque réplique est une phrase complète, avec un vrai verbe, qu'un ado dirait vraiment, et qui répond à la précédente ; jamais de mots de remplissage pour faire le compte, jamais de phrase coupée. Relis chaque clip à voix haute dans ta tête avant de répondre. Les minutages sont recalculés par le code, l'ENGAGEMENT (leviers, références placées, réplique culte, commentaire visé, notes) et le cliffhanger. Vérifie tes calculs avant de répondre.${tweak}`;
+      return `${style}${part}\n${story}\nLivre : le PITCH (titre, phrase paradoxe, synopsis, 3 à 5 personnages avec prénom phonétique, tête, visage, mains et cou, tenue signature, accessoire, voix), les lieux, les 5 hooks avec 5 mécaniques, le hook retenu (image + pourquoi), 2 hooks de rechange, le DÉCOUPAGE en clips de 6, 10 ou 15 s (${lengthRule(projectLength(ctx))} Clip 1 = le hook retenu) avec pour chaque clip : lieu, personnages visibles, résumé, question ouverte, ce qui est nouveau, mini-hook et répliques qui remplissent tout le clip. BUDGET DE MOTS (compte-les, tous les mots de toutes les répliques du clip) : clip de 6 s = 17 à 21 mots en 2 répliques, 10 s = 29 à 35 mots en 3 répliques, 15 s = 44 à 52 mots en 4-5 répliques ; 5 mots minimum par réplique. LE SENS AVANT TOUT : chaque réplique est une phrase complète, avec un vrai verbe, qu'un ado dirait vraiment, et qui répond à la précédente ; jamais de mots de remplissage pour faire le compte, jamais de phrase coupée. Relis chaque clip à voix haute dans ta tête avant de répondre. Les minutages sont recalculés par le code, l'ENGAGEMENT (leviers, références placées, réplique culte, commentaire visé, notes) et le cliffhanger. Vérifie tes calculs avant de répondre.${tweak}`;
     case 'images':
       return `${style}\nPitch et découpage validés : ${JSON.stringify(ctx.script)}\nLivre la PLANCHE (pour chaque personnage, une description complète en anglais : tête + visage + couleur des mains et du cou + tenue complète + accessoire ; elle sera recopiée mot pour mot) puis, pour CHAQUE clip dans l'ordre, l'image de départ : décor en une phrase riche, pour chaque personnage visible son action en cours (jamais une pose), son émotion et sa position, et les raccords du clip d'avant. Tous les personnages qui parlent dans le clip doivent être sur l'image.${tweak}`;
     case 'videos':
@@ -253,8 +255,8 @@ function listOf(raw: any, key: string): any[] {
   }
   return [];
 }
-export type Line = { character: string; start: number; end: number; text: string };
-const lines = (l: unknown): Line[] => (Array.isArray(l) ? l : []).map((x: any) => ({ character: str(x?.character, 60), start: num(x?.start), end: num(x?.end), text: str(x?.text, 400) })).filter((x) => x.text);
+export type Line = { character: string; start: number; end: number; text: string; tone?: string };
+const lines = (l: unknown): Line[] => (Array.isArray(l) ? l : []).map((x: any) => ({ character: str(x?.character, 60), start: num(x?.start), end: num(x?.end), text: str(x?.text, 400), ...(str(x?.tone, 60) ? { tone: str(x?.tone, 60) } : {}) })).filter((x) => x.text);
 const clipSeconds = (s: unknown) => { const n = Number(s); return n >= 13 ? 15 : n >= 8 ? 10 : 6; };
 /** Models are poor at timestamps: the code times the lines itself, by word count, exactly as the rules say
  *  (first line at 0.1 s, 0.1 s between two lines, the last one ends 0.15 s before the end of the clip). */
@@ -345,15 +347,15 @@ export function normalizePhase(phase: PhaseKey, raw: any): any {
   }
 }
 
-/** clips whose word count is out of the natural 2.6-3.2 words/s budget (tolerance 2.3-3.5) */
-export const BUDGET: Record<number, [number, number]> = { 6: [15, 19], 10: [26, 32], 15: [40, 48] };
+/** clips whose word count is out of the lively 2.9-3.5 words/s budget (tolerance 2.6-3.8) */
+export const BUDGET: Record<number, [number, number]> = { 6: [17, 21], 10: [29, 35], 15: [44, 52] };
 export function paceProblems(script: any): { clip: number; words: number; target: [number, number] }[] {
   const first = script?.clips?.[0]?.lines?.[0];
   const hook = first ? words(first.text) : 8;
   const out = (script?.clips ?? []).map((c: any, i: number) => {
     const w = c.lines.reduce((a: number, l: Line) => a + words(l.text), 0);
     const wps = w / c.seconds;
-    return wps < 2.3 || wps > 3.5 ? { clip: i + 1, words: w, target: BUDGET[c.seconds] ?? [Math.round(c.seconds * 2.6), Math.round(c.seconds * 3.2)] } : null;
+    return wps < 2.6 || wps > 3.8 ? { clip: i + 1, words: w, target: BUDGET[c.seconds] ?? [Math.round(c.seconds * 2.9), Math.round(c.seconds * 3.5)] } : null;
   }).filter(Boolean) as { clip: number; words: number; target: [number, number] }[];
   if (hook < 6 || hook > 10) out.push({ clip: 0, words: hook, target: [6, 10] }); // clip 0 = the hook line itself
   return out;
@@ -380,12 +382,12 @@ Vérifie et CORRIGE les répliques, clip par clip :
 2. Chaque réplique répond à la précédente ou réagit à ce qui se passe : la conversation a une logique, l'histoire se suit d'un clip à l'autre, on comprend qui veut quoi.
 3. Ça sonne comme un vrai ado qui parle : simple, naturel, drôle ou tendu, sans mots rares ni tournures de poème.
 4. Aucun mot de remplissage pour faire durer (« maintenant », « ici », « immédiatement », « absolument », « vraiment » en fin de phrase).
-5. Rythme naturel : 2,6 à 3,2 mots/s (6 s = 15 à 19 mots, 10 s = 26 à 32 mots, 15 s = 40 à 48 mots, en comptant tous les mots du clip), 5 mots minimum par réplique, 1re réplique du clip 1 = le hook de 6 à 10 mots.
+5. Rythme vivant : 2,9 à 3,5 mots/s (6 s = 17 à 21 mots, 10 s = 29 à 35 mots, 15 s = 44 à 52 mots, en comptant tous les mots du clip), 5 mots minimum par réplique, 1re réplique du clip 1 = le hook de 6 à 10 mots.
 ${sense.length ? `Problèmes déjà repérés :\n${sense.map((p) => `- clip ${p.clip}, ${p.character} : « ${p.text} » → ${p.issue}`).join('\n')}\n` : ''}${pace.filter((p) => p.clip > 0).length ? `Clips hors budget de mots : ${pace.filter((p) => p.clip > 0).map((p) => `clip ${p.clip} (${p.words} mots, il en faut ${p.target[0]} à ${p.target[1]})`).join(', ')}\n` : ''}Garde les mêmes personnages, les mêmes lieux, la même histoire, le même nombre de clips et les mêmes durées. Ne change que les répliques qui en ont besoin. Renvoie le JSON complet du découpage, identique pour tout le reste.`;
 }
 export function buildRepairPrompt(script: any, problems: { clip: number; words: number; target: [number, number] }[]): string {
   return `Voici ton découpage : ${JSON.stringify(script)}
-Ces clips ne respectent pas le budget de mots (rythme naturel : 2,6 à 3,2 mots/s) :
+Ces clips ne respectent pas le budget de mots (rythme vivant : 2,9 à 3,5 mots/s) :
 ${problems.map((p) => (p.clip === 0 ? `- la 1re réplique du clip 1 (le hook) : ${p.words} mots, il en faut entre 6 et 10, 1er mot = le choc (le reste du clip 1 garde son budget)` : `- clip ${p.clip} : ${p.words} mots, il en faut entre ${p.target[0]} et ${p.target[1]}`)).join('\n')}
 Réécris UNIQUEMENT les répliques de ces clips pour tomber dans le budget (compte les mots), sans mots de remplissage, en gardant des phrases complètes qui ont du sens, les personnages, le ton et 5 mots minimum par réplique. Renvoie le JSON complet du découpage, identique pour tout le reste.`;
 }
@@ -447,7 +449,8 @@ export function grokPrompt(d: any, i: number): string {
   const dialogue = clip.lines.map((l: Line) => {
     const first = !seen.has(l.character); seen.add(l.character);
     const vc = first && voice(l.character) ? ` (${voice(l.character)})` : '';
-    return `${upper(l.character)}${vc} ${l.start.toFixed(1)}-${l.end.toFixed(1)}s: « ${l.text.replace(/^[«"\s]+|[»"\s]+$/g, '')} »`;
+    const tone = l.tone ? ` [${cl(l.tone)}]` : '';
+    return `${upper(l.character)}${vc}${tone} ${l.start.toFixed(1)}-${l.end.toFixed(1)}s: « ${l.text.replace(/^[«"\s]+|[»"\s]+$/g, '')} »`;
   }).join('\n');
   const pron = chars.filter((c) => c.phonetic && visible.some((n: string) => n.toLowerCase() === c.name.toLowerCase())).map((c) => `"${c.name}" = "${c.phonetic}"`).join(', ');
   const list = (a: string[]) => (a.length <= 1 ? a.join('') : `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}`);
@@ -455,10 +458,10 @@ export function grokPrompt(d: any, i: number): string {
     `① Animate this image: ${clip.seconds}-second vertical 9:16 clip, the image is the first frame. MULTI-SHOT scene edited like a Pixar movie: hard cuts between camera angles, each cut lands exactly when the speaker changes. Same characters, same outfits, same ${st.heads}, same set and same light in every shot; faces and proportions never change; no new characters appear; no morphing, no crossfade.`,
     `② HEAD LOCK: ${list(names)} ALWAYS keep their heads exactly as in the first frame (${heads.map((h: any) => `${upper(h.name)}: ${h.head}`).join(', ')}), with NOTHING else on their head; same outfits in every shot.${v.look_lock ? `\n${v.look_lock}` : ''}`,
     `③ SPEAKER LOCK: during each line's time range, the shot shows the face of THAT speaker and ONLY that speaker's mouth moves; the camera never cuts away mid-line; listeners keep their mouths CLOSED; nobody speaks off-screen.`,
-    `④ PACE: lively but NATURAL speech, about 3 words per second, every word articulated clearly and pronounced exactly as written, the first word at 0.1s, no long pauses, no slow motion; each line starts right when the previous one ends.`,
+    `④ PACE: brisk, lively and natural speech, about 3.3 words per second (a little faster than a calm conversation), every word articulated clearly and pronounced exactly as written, the first word at 0.1s, no long pauses, no slow motion; each line starts right when the previous one ends.`,
     `⑤ Camera always moving: fast push-ins, whip pans on cuts, crash zoom on the key word, slight handheld shake on shocks. Every shot lasts 1.5-3.5 s and never repeats the previous framing; something new happens every 1-2 s. Big expressive cartoon acting with a gesture in every shot; listeners react with mouths closed. The last half-second is a silent extreme close-up of the key reaction.${i === 0 ? ' Fast push-in from the very first frame, a sharp sound effect at 0.0s, cut to the reaction around 2s.' : ''}`,
     `⑥ SHOT LIST:\n${retimeShots(clip.lines, v.shots).map((s) => `${s.start.toFixed(1)}-${s.end.toFixed(1)}s ${s.text}`).join('\n')}`,
-    `⑦ DIALOGUE (in French, spoken clearly at a natural pace, word for word):\n${dialogue}`,
+    `⑦ DIALOGUE (in French, spoken clearly at a brisk pace, word for word; each line ACTED with the emotion in [brackets]: real laughs, sighs, sobs, whispers, shouts and mocking tones in the voice and on the face, never spoken aloud as words):\n${dialogue}`,
     `⑧ ${pron ? `PRONUNCIATION: ${pron}.\n` : ''}SOUND: ${cl(v.sound)}.\nNo music, no subtitles, no text.`,
   ].join('\n\n');
 }
@@ -505,7 +508,7 @@ export function checklist(d: any): Check[] {
     { ok: (s.hook_candidates?.length ?? 0) >= 5 && (s.backup_hooks?.length ?? 0) >= 2, label: '5 hooks écrits, 2 de rechange', detail: `${s.hook_candidates?.length ?? 0} hooks, ${s.backup_hooks?.length ?? 0} de rechange` },
     { ok: clips.every((c) => c.mini_hook), label: 'Un mini-hook à la fin de chaque clip', detail: `${clips.filter((c) => c.mini_hook).length}/${clips.length}` },
     { ok: !senseProblems(s).length, label: 'Phrases complètes, sans remplissage', detail: senseProblems(s).length ? senseProblems(s).slice(0, 3).map((p) => `clip ${p.clip} : « ${p.text.slice(0, 40)}… » (${p.issue})`).join(' · ') : 'aucune phrase cassée repérée' },
-    { ok: !badPace.length, label: 'Rythme naturel 2,6-3,2 mots/s par clip', detail: badPace.length ? `à revoir : clip ${badPace.join(', ')}` : stats.map((x) => x.wps.toFixed(1)).join(' · ') },
+    { ok: !badPace.length, label: 'Rythme vivant 2,9-3,5 mots/s par clip', detail: badPace.length ? `à revoir : clip ${badPace.join(', ')}` : stats.map((x) => x.wps.toFixed(1)).join(' · ') },
     { ok: !shortLines, label: 'Répliques de 6 mots minimum', detail: shortLines ? `${shortLines} réplique(s) trop courte(s)` : 'toutes OK' },
     { ok: !timing.length, label: 'Minutage collé (1re à 0,1 s, pas de trou, fin à 0,1-0,2 s)', detail: timing.length ? `à revoir : clip ${timing.join(', ')}` : 'OK' },
     { ok: (s.characters ?? []).every((c: Char) => c.phonetic && c.voice), label: 'Prénoms phonétiques et voix décrites', detail: `${(s.characters ?? []).filter((c: Char) => c.phonetic && c.voice).length}/${s.characters?.length ?? 0}` },
