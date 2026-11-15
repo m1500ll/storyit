@@ -12,6 +12,7 @@ import { applyCast, castOf, DEFAULT_VIDEO_LENGTH, FIX_PROBLEMS, FIX_SCHEMA, isVi
 import { classifyGeminiError, GeminiError, KEY_MESSAGES, keyHint, looksLikeGeminiKey } from '../_shared/geminiKey.ts';
 import { decrypt, encrypt } from '../_shared/social.ts';
 import { backups, backupText, openaiModels } from '../_shared/backupLlm.ts';
+import { claudeJson, claudeWriterReady } from '../_shared/claudeWriter.ts';
 import { reserveAi } from '../_shared/aiBudget.ts';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
@@ -50,10 +51,17 @@ async function callGemini(key: string, model: string, body: unknown, timeoutMs: 
 // One request must answer before the 150 s gateway limit, or the browser only sees "Failed to send a request".
 const REQUEST_BUDGET = 135_000;
 
-async function generateText(key: string, prompt: string, schema: unknown, allowBackup = false, check: (raw: unknown) => unknown = (r) => r, deadline = Date.now() + REQUEST_BUDGET) {
+async function generateText(key: string, prompt: string, schema: unknown, allowBackup = false, check: (raw: unknown) => unknown = (r) => r, deadline = Date.now() + REQUEST_BUDGET, creative = false) {
   const started = Date.now();
   const budget = deadline - started;
   let last: GeminiError = new GeminiError('other', 0);
+  // the story itself (ideas, script, critic) is written by Claude, the best storyteller; any failure falls back below
+  if (creative && claudeWriterReady()) {
+    const left = budget - (Date.now() - started);
+    const out = left > 45_000 ? await claudeJson(MASTER_PROMPT, prompt, schema, Math.min(left - 25_000, 120_000)) : null;
+    console.log('claude writer', out ? 'ok' : 'failed', `${Math.round((Date.now() - started) / 1000)}s`);
+    if (out) { try { return check(out); } catch (e) { console.error('claude writer invalid', e instanceof Error ? e.message : e); } }
+  }
   // ChatGPT (OpenAI API) first when OPENAI_API_KEY is set; then Gemini, then the free backups
   for (const m of openaiModels()) {
     const left = budget - (Date.now() - started);
@@ -222,7 +230,7 @@ Deno.serve(async (req) => {
     if (!project?.data?.script) return json({ error: 'Écrivez d’abord le découpage.' }, 400);
     const d = { ...project.data } as Record<string, any>;
     try {
-      const fixed: any = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', buildReviewPrompt(d.script), PHASES.script.schema, true, (r) => normalizePhase('script', r));
+      const fixed: any = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', buildReviewPrompt(d.script), PHASES.script.schema, true, (r) => normalizePhase('script', r), Date.now() + REQUEST_BUDGET, true);
       const before = paceProblems(d.script).length + senseProblems(d.script).length;
       if (paceProblems(fixed).length + senseProblems(fixed).length <= before) {
         d.script = applyCast('script', fixed, d);
@@ -345,6 +353,7 @@ Deno.serve(async (req) => {
     }
     const phasePrompt = buildPhasePrompt(phase, { ...data, trends, feedback: String(body.feedback ?? '').slice(0, 600) });
     const valid = (r: unknown) => normalizePhase(phase, r);
+    const creativePhase = phase === 'concepts' || phase === 'script'; // the story is written by Claude
     let raw;
     if (ownKey) {
       // The user's key first (their quota). If Google refuses it (no billing, quota, overload), the user still gets their
@@ -353,18 +362,18 @@ Deno.serve(async (req) => {
         const g = e instanceof GeminiError ? e : null;
         if (g?.problem === 'blocked') throw e;
         if (g?.problem === 'invalid' || g?.problem === 'no_billing') await flag(g.problem, g.message);
-        raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true, valid, deadline);
+        raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true, valid, deadline, creativePhase);
       }
     } else {
-      raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true, valid, deadline);
+      raw = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', phasePrompt, PHASES[phase].schema, true, valid, deadline, creativePhase);
     }
     if (phase === 'script') { // relecture: a second AI pass checks that every line makes sense and fixes it
       const before = paceProblems(raw).length + senseProblems(raw).length;
       let reviewed = false;
       console.log('script check', before, 'problems', `${Math.round((deadline - Date.now()) / 1000)}s left`);
-      if (deadline - Date.now() > 40_000) {
+      if (deadline - Date.now() > 70_000) { // the critic is a Claude pass: when too little time is left it runs as its own request
         try {
-          const fixed: any = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', buildReviewPrompt(raw), PHASES.script.schema, true, valid, deadline);
+          const fixed: any = await generateText(Deno.env.get('GEMINI_API_KEY') ?? '', buildReviewPrompt(raw), PHASES.script.schema, true, valid, deadline, true);
           if (paceProblems(fixed).length + senseProblems(fixed).length <= before) raw = fixed;
           reviewed = true;
         } catch (e) { console.error('script review', e instanceof Error ? e.message : e); } // the browser asks for the review next

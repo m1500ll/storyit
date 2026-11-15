@@ -83,6 +83,29 @@ La vidéo est animée par une IA : écris uniquement ce qu'elle rend bien.
 - NON : foule ou figurants, bagarre, poursuite, véhicule qui roule, chute, explosion, feu, eau qui coule, animal (sauf s'il est un personnage), miroir ou reflet, écran ou texte lisible (SMS, panneau, journal), mains qui manipulent de petits objets (écrire, taper, compter des billets, cuisiner en détail), personnage qui entre ou sort du cadre en plein clip, nouvel objet ou nouveau personnage qui apparaît en cours de clip, transformation (sauf l'effet listé plus bas).
 - Une action par clip, qui commence déjà sur l'image de départ ; décor simple et identique du début à la fin du clip.
 
+BIBLIOTHÈQUE DE HOOKS (formules qui arrêtent le scroll ; adapte-les, ne les recopie jamais mot pour mot)
+1. L'ultimatum : « Tu as 24 heures pour quitter ma maison. »
+2. La découverte : « J'ai trouvé 50 000 euros dans le sac de mon mari. »
+3. L'aveu brutal : « Ce bébé n'est pas de toi, et ta mère le sait. »
+4. Le chiffre impossible : « Elle m'a fait payer 3 000 euros pour un verre d'eau. »
+5. L'humiliation publique : « Il m'a quittée devant 200 invités, au micro. »
+6. La règle absurde : « Dans cette famille, celui qui pleure est déshérité. »
+7. Le retournement de rôle : « Mon stagiaire vient de devenir mon patron. »
+8. Le mensonge démasqué : « Tu disais être au travail ? Tu étais à mon mariage. »
+9. La menace : « Si tu ouvres cette lettre, tu perds ta fille. »
+10. La trahison du proche : « Ma meilleure amie porte ma robe de mariée. »
+11. Le karma immédiat : « Elle s'est moquée du serveur. Le serveur, c'était le propriétaire. »
+12. Le choix impossible : « Ton frère ou ton héritage. Tu as dix secondes. »
+13. Le secret de famille : « Papa a une deuxième famille, à trois rues d'ici. »
+14. L'injustice : « On m'a virée pour avoir aidé une cliente. »
+15. Le piège : « Je savais que tu viendrais voler ce coffre. »
+
+PLANS MINUTÉS (le squelette de l'histoire)
+- 30 s : 0-3 s choc + enjeu ; 3-12 s le conflit monte (qui veut quoi) ; 12-22 s le pire arrive / la révélation ; 22-30 s retournement préparé + coupure au pic.
+- 45 s : 0-3 s choc ; 3-12 s conflit ; 12-25 s escalade (chaque réplique empire la situation) ; 25-35 s révélation + réplique culte ; 35-45 s retournement + cliffhanger.
+- 1 min : 0-3 s choc ; 3-15 s conflit ; 15-30 s escalade ; 30-42 s révélation + réplique culte ; 42-55 s retournement ; 55-65 s cliffhanger coupé au pic.
+Le retournement doit être préparé par un détail montré ou dit avant (un objet, une phrase), pour qu'on se dise « mais oui ! ».
+
 LE HOOK (les 3 premières secondes)
 Résume l'histoire en UNE phrase paradoxe. Image du clip 1 = le moment le plus fort DÉJÀ EN COURS (gifle levée, valise jetée dehors, billet déchiré), jamais un décor vide, une marche ou une pose. 1re réplique à 0,1 s, 6 à 10 mots, 1er mot = le choc (chiffre, ordre, accusation, objet) ; jamais « Salut », « Alors », « Écoute » ni un prénom seul ; l'enjeu ou la menace arrive avant 3 s. Écris 5 hooks avec 5 mécaniques différentes (chiffre impossible, ordre humiliant, révélation, rêve brisé, règle absurde, cri, aveu, plan secret, vanne), garde le meilleur. Test : son coupé, on comprend l'image ? Image cachée, on comprend la phrase ? Qui, problème et enjeu compris en 3 s ; un objet, un chiffre ou un lieu précis ; aucune expression imagée. Partie 2+ : la 1re réplique repose l'idée de la série pour les nouveaux, puis le cliffhanger d'avant.
 
@@ -233,7 +256,7 @@ export function buildPhasePrompt(phase: PhaseKey, ctx: Record<string, any>): str
       return `${style}\nPropose 3 histoires de mini-drama très différentes (3 moteurs émotionnels différents parmi LES IDÉES QUI CARTONNENT, toutes FAISABLES PAR L'IA : 2 personnages par scène, actions simples), pensées pour une vidéo de ${lengthLabel(projectLength(ctx))} (${LENGTH_RANGE[projectLength(ctx)].join(' à ')} s), avec un enjeu qui accroche les jeunes, un méchant, 2 à 4 lieux et un cliffhanger possible.${veille}${ctx.story ? `\nPiste de l'utilisateur : ${ctx.story}` : ''}${tweak}`;
     }
     case 'script':
-      return `${style}${part}\n${story}\nLivre : le PITCH (titre, phrase paradoxe, synopsis, 3 à 5 personnages avec prénom phonétique, tête, visage, mains et cou, tenue signature, accessoire, voix), les lieux, les 5 hooks avec 5 mécaniques, le hook retenu (image + pourquoi), 2 hooks de rechange, le DÉCOUPAGE en clips de 6, 10 ou 15 s (${lengthRule(projectLength(ctx))} Clip 1 = le hook retenu) avec pour chaque clip : lieu, personnages visibles, résumé, question ouverte, ce qui est nouveau, mini-hook et répliques qui remplissent tout le clip. BUDGET DE MOTS (compte-les, tous les mots de toutes les répliques du clip) : clip de 6 s = 17 à 21 mots en 2 répliques, 10 s = 29 à 35 mots en 3 répliques, 15 s = 44 à 52 mots en 4-5 répliques ; 5 mots minimum par réplique. LE SENS AVANT TOUT : chaque réplique est une phrase complète, avec un vrai verbe, qu'un ado dirait vraiment, et qui répond à la précédente ; jamais de mots de remplissage pour faire le compte, jamais de phrase coupée. Relis chaque clip à voix haute dans ta tête avant de répondre. Les minutages sont recalculés par le code, l'ENGAGEMENT (leviers, références placées, réplique culte, commentaire visé, notes) et le cliffhanger. Vérifie tes calculs avant de répondre.${tweak}`;
+      return `${style}${part}\n${story}\nLivre : le PITCH (titre, phrase paradoxe, synopsis, 3 à 5 personnages avec prénom phonétique, tête, visage, mains et cou, tenue signature, accessoire, voix), les lieux, les 5 hooks avec 5 mécaniques, le hook retenu (image + pourquoi), 2 hooks de rechange, le DÉCOUPAGE en clips de 6, 10 ou 15 s (${lengthRule(projectLength(ctx))} Clip 1 = le hook retenu) avec pour chaque clip : lieu, personnages visibles, résumé, question ouverte, ce qui est nouveau, mini-hook et répliques qui remplissent tout le clip. BUDGET DE MOTS (compte-les, tous les mots de toutes les répliques du clip) : clip de 6 s = 17 à 21 mots en 2 répliques, 10 s = 29 à 35 mots en 3 répliques, 15 s = 44 à 52 mots en 4-5 répliques ; 5 mots minimum par réplique. LE SENS AVANT TOUT : chaque réplique est une phrase complète, avec un vrai verbe, qu'un ado dirait vraiment, et qui répond à la précédente ; jamais de mots de remplissage pour faire le compte, jamais de phrase coupée. Relis chaque clip à voix haute dans ta tête avant de répondre. Les minutages sont recalculés par le code, l'ENGAGEMENT (leviers, références placées, réplique culte, commentaire visé, notes) et le cliffhanger. Vérifie tes calculs avant de répondre.\nMÉTHODE DE LA SALLE DES SCÉNARISTES (dans ta réflexion, pas dans la réponse) : 1) choisis le moteur émotionnel ; 2) écris 10 hooks avec 10 formules différentes de la BIBLIOTHÈQUE et note-les /10 (arrêt du scroll, clarté, enjeu), garde le meilleur ; 3) pose le PLAN MINUTÉ de la durée demandée ; 4) écris le découpage ; 5) relis-le comme un critique exigeant (hook, tension qui monte, retournement préparé et surprenant, réplique culte, fin coupée au pic, chaque personnage a sa façon de parler) et réécris tout passage en dessous de 8/10. Ne livre que la version finale.${tweak}`;
     case 'images':
       return `${style}\nPitch et découpage validés : ${JSON.stringify(ctx.script)}\nLivre la PLANCHE (pour chaque personnage, une description complète en anglais : tête + visage + couleur des mains et du cou + tenue complète + accessoire ; elle sera recopiée mot pour mot) puis, pour CHAQUE clip dans l'ordre, l'image de départ : décor en une phrase riche, pour chaque personnage visible son action en cours (jamais une pose), son émotion et sa position, et les raccords du clip d'avant. Tous les personnages qui parlent dans le clip doivent être sur l'image.${tweak}`;
     case 'videos':
@@ -385,8 +408,9 @@ export function senseProblems(script: any): { clip: number; character: string; t
 /** second AI pass: a script editor checks that every line makes sense and fixes what does not */
 export function buildReviewPrompt(script: any): string {
   const pace = paceProblems(script), sense = senseProblems(script);
-  return `Tu es le RELECTEUR du découpage ci-dessous, avant qu'il soit animé et doublé. Voici le découpage : ${JSON.stringify(script)}
-Vérifie et CORRIGE les répliques, clip par clip :
+  return `Tu es le CRITIQUE et RELECTEUR du découpage ci-dessous, avant qu'il soit animé et doublé. Voici le découpage : ${JSON.stringify(script)}
+D'abord, note l'histoire comme un producteur exigeant de séries TikTok (dans ta réflexion) : hook qui arrête le scroll /2, enjeu clair avant 10 s /2, tension qui monte à chaque clip /2, retournement préparé ET surprenant /2, fin coupée au pic qui donne envie de la suite /2. Pour tout critère sous 2, réécris les répliques concernées (garde les mêmes clips, durées, lieux et personnages ; renforce le hook avec la BIBLIOTHÈQUE DE HOOKS si besoin ; ajoute une réplique culte de 8 mots max si elle manque).
+Ensuite, vérifie et CORRIGE les répliques, clip par clip :
 1. Chaque réplique est une phrase française complète et correcte (sujet, vrai verbe conjugué), jamais coupée, jamais une suite de mots sans lien.
 2. Chaque réplique répond à la précédente ou réagit à ce qui se passe : la conversation a une logique, l'histoire se suit d'un clip à l'autre, on comprend qui veut quoi.
 3. Ça sonne comme un vrai ado qui parle : simple, naturel, drôle ou tendu, sans mots rares ni tournures de poème.

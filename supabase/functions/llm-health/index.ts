@@ -40,6 +40,17 @@ Deno.serve(async (req) => {
     }
     return json({ method: methodOff, changed: out });
   }
+  if (url.searchParams.get('writer_test') === '1') { // operator: one real script written by the Claude storyteller (paid, ~$0.2)
+    const W = await import('../_shared/claudeWriter.ts');
+    const story = url.searchParams.get('story') ?? 'Une femme découvre que son mari a une deuxième famille à trois rues de chez eux.';
+    const t0 = Date.now();
+    const effort = (url.searchParams.get('effort') ?? 'low') as 'low' | 'medium' | 'high';
+    const raw = await W.claudeJson(MASTER_PROMPT, buildPhasePrompt('script', { style: 'fruits', universe: 'fruits', story, length: 45 }), PHASES.script.schema, 140_000, effort);
+    let script: any = null; let invalid: string | null = null;
+    try { script = raw ? normalizePhase('script', raw) : null; } catch (e) { invalid = e instanceof Error ? e.message : String(e); }
+    return json({ seconds: Math.round((Date.now() - t0) / 1000), effort, usage: W.lastUsage, ok: !!script, invalid, title: script?.title, paradox: script?.paradox,
+      clips: script?.clips?.map((c: any) => ({ s: c.seconds, lines: c.lines.map((l: any) => `${l.character}${l.tone ? ` [${l.tone}]` : ''}: ${l.text}`) })) });
+  }
   const addEvent = url.searchParams.get('stripe_webhook_add'); // operator: list the webhook endpoints, optionally add one event to Storyit's
   if (url.searchParams.get('stripe_webhooks') === '1' || (addEvent && /^[a-z_.]{5,60}$/.test(addEvent))) {
     const H = { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` };
