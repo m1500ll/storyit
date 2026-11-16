@@ -76,6 +76,12 @@ HISTOIRE ET RYTHME
 
 LES IDÉES QUI CARTONNENT
 Modèle n°1, celui qui marche le mieux en ce moment : L'IRONIE DRAMATIQUE. Le spectateur sait tout dès la 1re seconde (le méchant annonce son plan en le faisant), la victime, elle, ne sait rien. Le méchant est culotté (la victime vient lui demander de l'aide, il fait semblant d'être outré), on a envie de crier « c'est lui ! » en commentaire, puis le karma se prépare (un piège, une caméra, un témoin) et la fin promet qu'il va se faire prendre. Enjeu tiré du quotidien (un objet volé, de l'argent, un chiffre précis), compris en 2 secondes. Les personnages disent ce qu'ils font et pensent tout haut (« Je vais descendre voir dehors », « Faut que je cache ça vite ») : on comprend l'histoire même sans regarder l'écran.
+Les autres modèles qui font des millions de vues (choisis-en UN par histoire) :
+Modèle n°2, LE SUSPENSE « ON SAIT, ELLE NON » : un personnage gentil fait entrer le danger (elle ouvre la porte, elle prend un inconnu en voiture). Un plus faible a compris et prévient (« N'ouvre surtout pas ! »), personne ne l'écoute. Au milieu, LE MESSAGER confirme au spectateur que c'est bien le danger : un flash info à la radio ou à la télé, un policier au téléphone (« vous êtes la cinquième à nous appeler »), un résultat d'analyse. Il donne LE SIGNE pour le reconnaître (« il ne cligne jamais des yeux »), puis on voit ce signe sur le méchant. Le gentil laisse le plus faible seul avec lui (« je reviens dans deux minutes ») et le méchant prononce la dernière phrase, calme et glaçante. La menace reste dans les mots et les regards, jamais montrée.
+Modèle n°3, LE ZÉRO QUI CACHAIT SA FORCE : un champion arrogant humilie les nouveaux devant tout le monde. Le plus banal (gris, cabossé, sans pouvoir) obtient un score nul et tout le monde rit. Il répond calmement au lieu de pleurer, encaisse le coup « fatal »… et ne bouge pas : « T'as fini ? ». Le spectateur attend la revanche de la partie 2.
+Modèle n°4, L'ESCALADE ABSURDE DE LA MATIÈRE : le problème du personnage vient de ce qu'il EST (un steak transpire de la graisse, un citron est acide, un glaçon fond), et la solution « médicale » ou « pro » est en fait ce qu'on fait vraiment à cette matière (le chirurgien d'un steak le cuit : « tu es à point »). Toutes les vannes sont des jeux de mots sur sa matière (« persillé », « œuf dur », « que du cholestérol »), un prix délirant et précis (180 000 €, « en 300 fois »), et une mère dramatique qui en fait trop.
+Modèle n°5, LE RICHE ET L'HUMBLE + L'ENQUÊTE : une riche capricieuse paie une fortune (un chiffre précis) pour un service ; une personne simple et chaleureuse la soigne à sa façon (corvées, histoire de chèvre racontée) et ça marche. Puis un indice révèle un sabotage (le flacon a été trafiqué) : on lance la chasse au coupable, à suivre.
+Les ingrédients qu'on retrouve dans TOUTES ces vidéos : le titre « PARTIE 1 - … » avec une promesse en 3 mots ; un compte à rebours dit à voix haute (« dans dix minutes », « dix secondes ») ; un chiffre précis ; un adulte qui ne voit rien pendant que le spectateur sait ; la dernière image coupe en pleine action, sur la phrase la plus forte.
 Une bonne histoire tient en une phrase et repose sur un moteur émotionnel universel : trahison d'un proche, secret de couple ou de famille, argent et héritage, humiliation puis revanche, injustice au travail ou à l'école, mensonge qui se retourne, karma immédiat, choix impossible. Enjeu concret et compréhensible par un ado (argent, honneur, amour, famille, réputation), méchant qu'on adore détester, retournement inattendu MAIS logique (préparé par un détail montré avant). Pas de rêve, pas de « tout ça n'était qu'un cauchemar », pas de magie qui règle tout, pas d'univers compliqué à expliquer.
 
 FAISABLE PAR L'IA (anti-hallucinations, règle aussi importante que le sens)
@@ -101,6 +107,11 @@ BIBLIOTHÈQUE DE HOOKS (formules qui arrêtent le scroll ; adapte-les, ne les re
 13. Le secret de famille : « Papa a une deuxième famille, à trois rues d'ici. »
 14. L'injustice : « On m'a virée pour avoir aidé une cliente. »
 15. Le piège : « Je savais que tu viendrais voler ce coffre. »
+16. L'avertissement ignoré : « Maman, ne lui ouvre surtout pas la porte ! »
+17. Le ras-le-bol de la matière : « Je ne supporte plus ce corps qui fond au soleil. »
+18. La loi du plus fort : « Ici, les nouveaux sont des déchets, et je suis le champion. »
+19. Le caprice à prix fou : « 150 000 euros, et il n'y a même pas la clim ? »
+20. Le flash info : « Flash spécial : l'homme recherché ne cligne jamais des yeux. »
 
 PLANS MINUTÉS (le squelette de l'histoire)
 - 30 s : 0-3 s choc + enjeu ; 3-12 s le conflit monte (qui veut quoi) ; 12-22 s le pire arrive / la révélation ; 22-30 s retournement préparé + coupure au pic.
