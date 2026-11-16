@@ -12,14 +12,16 @@ export const MAX_CAST = 5;
 
 export type Universe = 'realiste' | 'matieres' | 'fruits' | 'humains' | 'animaux' | 'objets' | 'horreur' | 'pate' | 'anime' | 'perso';
 /** adult realistic faces everywhere: the customers found the cartoon "baby faces" too childish */
+/** fruit and object heads: the WHOLE head is the fruit or the object (the viral fruit-drama look), the body stays a tall adult */
+const ADULT_BODY = 'ADULT character with an adult personality and adult expressions (NOT a child, NOT a baby) and TALL realistic adult proportions, about 7.5 heads tall, long legs (NOT chibi, NOT stocky).';
 const ADULT = 'ADULT character with a realistic, mature adult human face (real adult facial structure: defined jaw, cheekbones, adult-sized eyes, natural nose and lips; NOT a child, NOT a baby face, NOT big cartoon eyes) and TALL realistic adult proportions, about 7.5 heads tall, long legs (NOT chibi, NOT stocky).';
 export const UNIVERSES: Record<Universe, { label: string; hint: string; example: string; style: string }> = {
   realiste: { label: 'Réaliste', hint: 'Comme une vraie personne filmée', example: 'Une chirurgienne élégante qui cache un tatouage sous sa blouse',
     style: `photorealistic cinematic style, like a frame from a live-action movie, real skin texture, natural lighting. ${ADULT}` },
   matieres: { label: 'Pierres et métaux', hint: 'Humain réaliste, peau en diamant, rubis, or…', example: 'Un homme d’affaires ambitieux à la peau de diamant, en costume bleu nuit',
     style: `high-end cinematic 3D render, realistic like a modern animated feature film for adults. Fully human shape (human head, nose, lips, ears, hands): ONLY the skin and hair are made of the material described, with facets, reflections and sparkles; NOT a gemstone-shaped head, NOT a robot, NOT a statue pose. ${ADULT}` },
-  fruits: { label: 'Fruits 3D', hint: 'Humain réaliste, peau et cheveux de fruit', example: 'Une influenceuse à la peau de fraise, jalouse de sa sœur',
-    style: `high-end cinematic 3D render, realistic like a modern animated feature film for adults. Fully human head, face and body; ONLY the skin has the color and texture of the fruit described (for example strawberry-red skin with tiny golden seeds) and the hair is made of the fruit's leaves or stem; the face stays a real adult human face. ${ADULT}` },
+  fruits: { label: 'Fruits 3D', hint: 'La tête est un vrai fruit entier avec un visage, corps humain', example: 'Une influenceuse fraise, jalouse de sa sœur',
+    style: `high-end 3D animated feature film render (Pixar quality), ultra detailed, glossy. HUMAN clothed adult body with real hands; the WHOLE HEAD IS a big, glossy, WHOLE real FRUIT of the kind described, with the fruit's real shape and real skin texture (seeds, spikes, dimples, peel, stem and leaves on top as on the real fruit). It is NOT a human head with fruit-colored skin: no human hair, no human ears, no human skull shape. The fruit is always intact, never cut, bitten, peeled or rotten. The face is sculpted directly ON the fruit: big expressive eyes, expressive eyebrows, a clearly visible mouth, plus adult details that fit the role (mustache, wrinkles, glasses, makeup, stubble). ${ADULT_BODY}` },
   humains: { label: 'Humains 3D', hint: 'Style film d’animation, visage adulte', example: 'Un chauffeur de taxi de 45 ans, fatigué mais courageux',
     style: `high-end cinematic 3D animated movie style with realistic adult anatomy and a mature, believable adult face (not a cartoon baby face), detailed skin and hair. ${ADULT}` },
   animaux: { label: 'Animaux 3D', hint: 'Animal debout comme un humain', example: 'Un lion en costume crème, le patron respecté du quartier',
