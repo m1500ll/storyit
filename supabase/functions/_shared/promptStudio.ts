@@ -184,7 +184,7 @@ const conceptsSchema = obj({
 const scriptSchema = obj({
   title: S('Titre de la série'), paradox: S('Phrase paradoxe'), synopsis: S('3-4 phrases'),
   characters: arr(obj({
-    name: S('Vrai prénom humain (pas le nom du fruit)'), phonetic: S('Prénom découpé en syllabes avec des tirets, ex. Ké-vin (pas d’alphabet phonétique)'),
+    name: S('Vrai prénom, ou prénom-jeu de mots sur sa tête qui sonne comme un prénom (Frésio, Bananella) ; jamais le nom brut du fruit'), phonetic: S('Prénom découpé en syllabes avec des tirets, ex. Ké-vin (pas d’alphabet phonétique)'),
     head: S('IN ENGLISH: the head in the chosen style, detailed (kind, colors, shape round for good guys, angular for the villain)'),
     face: S('IN ENGLISH: cartoon face details'), hands_neck: S('IN ENGLISH: color of hands and neck'),
     outfit: S('IN ENGLISH: signature outfit, complete'), accessory: S('IN ENGLISH: one accessory'),
