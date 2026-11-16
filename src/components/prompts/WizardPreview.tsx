@@ -42,7 +42,14 @@ export function WizardPreview({ universe, cast, length, subtitles, music, story,
       <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
         <span className="flex flex-col items-start gap-1.5">
           <span key={length} className="anim-popin rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-white backdrop-blur">{lengthLabel(length)}</span>
-          {watermark && !mini && <span className="anim-popin text-[10px] font-extrabold text-white/75 [text-shadow:0_1px_2px_rgb(0_0_0/0.8)]">Fait avec Storyit.fun</span>}
+          {watermark && !mini && (
+            <span className="anim-popin inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-400 to-coral-500 p-px shadow-lg shadow-black/30">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-950/80 py-0.5 pl-0.5 pr-2">
+                <img src="/brand/storyit-icon-48.png" alt="" className="h-4 w-4 rounded-[5px]" />
+                <span className="flex flex-col leading-none"><span className="text-[5px] font-bold uppercase tracking-[0.2em] text-white/70">Fait avec</span><span className="whitespace-nowrap text-[9px] font-extrabold text-white">Storyit.fun</span></span>
+              </span>
+            </span>
+          )}
         </span>
         {!mini && cast.length > 0 && (
           <span className="flex -space-x-2">

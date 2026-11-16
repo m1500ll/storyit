@@ -284,7 +284,7 @@ export function CreateWizard() {
               <input type="checkbox" checked={watermark} onChange={(e) => setWatermark(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-emerald-500" />
               <span className="min-w-0 text-sm">
                 <span className="flex flex-wrap items-center gap-2 font-medium text-zinc-100">Ajouter le logo Storyit <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300">−10 %</span></span>
-                <span className="mt-0.5 block text-xs text-zinc-400">Un petit « Fait avec Storyit.fun » discret en haut à gauche de la vidéo. Vous économisez {formatCredits(watermarkSaving(total(length)))} crédits.</span>
+                <span className="mt-0.5 block text-xs text-zinc-400">Une mini bannière « Fait avec Storyit.fun » en haut à gauche de la vidéo. Vous économisez {formatCredits(watermarkSaving(total(length)))} crédits.</span>
               </span>
             </label>
             <p className="mt-2 text-xs text-zinc-500">Débité au lancement. Si la vidéo ne peut pas être créée, les crédits de la vidéo sont rendus automatiquement.</p>
