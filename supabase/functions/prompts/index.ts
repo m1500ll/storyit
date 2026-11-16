@@ -6,7 +6,7 @@
 // - Scene images: generated with the user's key only (Google bills the user), stored privately in `renders`.
 // - Keys: AES-GCM encrypted (TOKEN_ENCRYPTION_KEY), never returned to the browser.
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { isSubtitleStyle, musicById, VIDEO_PRICES } from '../_shared/promptVideo.ts';
+import { isSubtitleStyle, musicById, VIDEO_PRICES, watermarkSaving } from '../_shared/promptVideo.ts';
 import { isUniverse, UNIVERSES, LIBRARY, libraryCast, MAX_CAST, type CastChar } from '../_shared/characters.ts';
 import { applyCast, castOf, DEFAULT_VIDEO_LENGTH, FIX_PROBLEMS, FIX_SCHEMA, isVideoLength, MASTER_PROMPT, PHASES, STYLES, buildFixPrompt, buildPhasePrompt, buildReviewPrompt, normalizePhase, paceProblems, senseProblems, styleOf, type PhaseKey } from '../_shared/promptStudio.ts';
 import { classifyGeminiError, GeminiError, KEY_MESSAGES, keyHint, looksLikeGeminiKey } from '../_shared/geminiKey.ts';
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 
   let body: { action?: string; project_id?: string; phase?: PhaseKey; idea?: string; choice?: number; feedback?: string; key?: string; scene?: number; style?: string; story?: string; part?: number; previous_end?: string; problem?: string; note?: string; length?: number; cast?: unknown; universe?: string;
-    auto?: { subtitles?: string; music?: string | null }; internal_uid?: string; attempt?: number };
+    auto?: { subtitles?: string; music?: string | null; watermark?: boolean }; internal_uid?: string; attempt?: number };
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
   const action = body.action ?? 'phase';
   // the automatic pipeline calls itself (through the database, with the cron token) for each next step of a project
@@ -310,7 +310,9 @@ Deno.serve(async (req) => {
   }
   const ownKey = await userKey();
   const billable = !ownKey && !project; // only a brand-new project is charged
-  const autoVideo = !project && phase === 'script' && body.auto ? VIDEO_PRICES.eco[isVideoLength(body.length) ? body.length : DEFAULT_VIDEO_LENGTH] : 0;
+  const autoPrice = !project && phase === 'script' && body.auto ? VIDEO_PRICES.eco[isVideoLength(body.length) ? body.length : DEFAULT_VIDEO_LENGTH] : 0;
+  // the Storyit watermark: 10 % off the whole (story + video), taken off the video (a refund gives back what was paid)
+  const autoVideo = autoPrice && body.auto?.watermark === true ? autoPrice - watermarkSaving(PROJECT_COST + autoPrice) : autoPrice;
   if (billable) {
     const { data: profile } = await user.from('profiles').select('credit_balance').eq('id', uid).single();
     if (!profile || profile.credit_balance < PROJECT_COST + autoVideo) return json({ error: 'Crédits insuffisants : rechargez votre solde pour continuer.' }, 402);
@@ -327,7 +329,7 @@ Deno.serve(async (req) => {
     if (isUniverse(body.universe)) data.universe = body.universe; // the visual universe of the wizard (replaces the head styles)
     data.cast_chars = await castSnapshot(body.cast); // the characters picked (theirs or the library's, 0 to 5), frozen for the series
     if (autoVideo) { // the wizard: everything runs by itself up to the finished video
-      data.options = { subtitles: isSubtitleStyle(body.auto?.subtitles) ? body.auto!.subtitles : 'karaoke', music: typeof body.auto?.music === 'string' && body.auto.music.startsWith(`upload:${uid}/`) && !body.auto.music.includes('..') ? body.auto.music.slice(0, 200) : musicById(body.auto?.music)?.id ?? null };
+      data.options = { subtitles: isSubtitleStyle(body.auto?.subtitles) ? body.auto!.subtitles : 'karaoke', music: typeof body.auto?.music === 'string' && body.auto.music.startsWith(`upload:${uid}/`) && !body.auto.music.includes('..') ? body.auto.music.slice(0, 200) : musicById(body.auto?.music)?.id ?? null, watermark: body.auto?.watermark === true };
       data.auto = { status: 'running', step: 'script', started_at: new Date().toISOString() };
     }
   }

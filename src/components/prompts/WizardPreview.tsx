@@ -23,9 +23,9 @@ function LiveSubtitle({ style }: { style: SubtitleStyle }) {
 }
 
 /** The video being put together: the universe's scene drifting, the cast, the length, subtitles and music. */
-export function WizardPreview({ universe, cast, length, subtitles, music, story, className, mini }: {
+export function WizardPreview({ universe, cast, length, subtitles, music, story, className, mini, watermark }: {
   universe: Universe; cast: { id: string; name: string; image: string | null }[]; length: VideoLength;
-  subtitles: SubtitleStyle; music: string | null; story: string; className?: string; mini?: boolean;
+  subtitles: SubtitleStyle; music: string | null; story: string; className?: string; mini?: boolean; watermark?: boolean;
 }) {
   return (
     <figure className={cn('relative aspect-[9/16] w-full overflow-hidden rounded-[1.75rem] border-[5px] border-zinc-900 bg-zinc-900 shadow-2xl shadow-violet-900/30', className)}
@@ -40,7 +40,10 @@ export function WizardPreview({ universe, cast, length, subtitles, music, story,
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/70" />
 
       <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
-        <span key={length} className="anim-popin rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-white backdrop-blur">{lengthLabel(length)}</span>
+        <span className="flex flex-col items-start gap-1.5">
+          <span key={length} className="anim-popin rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-white backdrop-blur">{lengthLabel(length)}</span>
+          {watermark && !mini && <span className="anim-popin text-[10px] font-extrabold text-white/75 [text-shadow:0_1px_2px_rgb(0_0_0/0.8)]">Fait avec Storyit.fun</span>}
+        </span>
         {!mini && cast.length > 0 && (
           <span className="flex -space-x-2">
             {cast.slice(0, 5).map((c) => (

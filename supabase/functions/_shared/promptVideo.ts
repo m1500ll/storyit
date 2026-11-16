@@ -21,6 +21,9 @@ export const VIDEO_PRICES: Record<VideoQuality, Record<VideoLength, number>> = {
   standard: { 30: 10000, 45: 15000, 60: 19500 },
   premium: { 30: 20000, 45: 30000, 60: 39000 },
 };
+/** "Fait avec Storyit.fun" on the video: 10 % off the wizard's total (story + video), taken off the video part, rounded to 100 */
+export const WATERMARK_DISCOUNT = 0.1;
+export const watermarkSaving = (total: number) => Math.round((total * WATERMARK_DISCOUNT) / 100) * 100;
 /** which length a script of `seconds` belongs to (older 66-75 s scripts count as a minute) */
 export const lengthOf = (seconds: number): VideoLength => (seconds <= 38 ? 30 : seconds <= 53 ? 45 : 60);
 export const videoCost = (q: VideoQuality, seconds: number) => VIDEO_PRICES[q][lengthOf(seconds)];
@@ -76,6 +79,8 @@ export type VideoPlan = {
   clips: { seconds: number; image_prompt: string; grok_prompt: string; lines?: { start: number; end: number; text: string }[] }[];
   /** wizard options, burned in by the worker: subtitle style and a music track of the library */
   subtitles?: SubtitleStyle; music?: string | null;
+  /** "Fait avec Storyit.fun" burned in at the top left (the customer took the 10 % discount) */
+  watermark?: boolean;
 };
 
 /** every prompt the worker needs, frozen at order time (later edits of the project do not change a running video) */
@@ -91,5 +96,6 @@ export function buildVideoPlan(d: any, quality: VideoQuality): VideoPlan {
       lines: (c.lines ?? []).map((l: any) => ({ start: Number(l.start) || 0, end: Number(l.end) || 0, text: String(l.text ?? '').replace(/^[«"\s]+|[»"\s]+$/g, '') })) })),
     subtitles: isSubtitleStyle(d?.options?.subtitles) ? d.options.subtitles : 'none',
     music: typeof d?.options?.music === 'string' && d.options.music.startsWith('upload:') ? d.options.music : musicById(d?.options?.music)?.id ?? null,
+    watermark: d?.options?.watermark === true,
   };
 }

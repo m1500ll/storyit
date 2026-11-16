@@ -15,7 +15,7 @@ import { formatCredits, PROMPT_PROJECT_COST } from '@/services/credits';
 import { promptStudio } from '@/services/promptStudio';
 import { useCredits } from '@/hooks/useStore';
 import { LIBRARY, librarySheet, UNIVERSES, type Universe } from '@shared/characters.ts';
-import { MUSIC_TRACKS, SUBTITLE_STYLES, VIDEO_PRICES, type SubtitleStyle } from '@shared/promptVideo.ts';
+import { MUSIC_TRACKS, SUBTITLE_STYLES, VIDEO_PRICES, watermarkSaving, type SubtitleStyle } from '@shared/promptVideo.ts';
 import { DEFAULT_VIDEO_LENGTH, lengthLabel, VIDEO_LENGTHS, type VideoLength } from '@shared/promptVideo.ts';
 
 const STEPS = ['Univers', 'Personnages', 'Durée', 'Personnalise', 'Ton histoire'] as const;
@@ -51,6 +51,7 @@ export function CreateWizard() {
   const [subtitles, setSubtitles] = useState<SubtitleStyle>('karaoke');
   const [music, setMusic] = useState<string | null>('yara-yara');
   const [story, setStory] = useState('');
+  const [watermark, setWatermark] = useState(false); // opt-in: "Fait avec Storyit.fun" on the video for 10 % off
   const [busy, setBusy] = useState(false);
   const [ideaBusy, setIdeaBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,6 +79,8 @@ export function CreateWizard() {
 
   useEffect(() => () => { audio.current?.pause(); }, []);
   useEffect(() => { if (step !== 3) { audio.current?.pause(); setPlaying(null); } }, [step]);
+  const saving = watermark ? watermarkSaving(total(length)) : 0;
+  const due = total(length) - saving;
   const pick = (l: VideoLength) => { picked.current = true; setLength(l); };
   const go = (n: number) => { setStep(n); setError(null); top.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
 
@@ -103,7 +106,7 @@ export function CreateWizard() {
   const generate = async () => {
     setBusy(true); setError(null);
     try {
-      const p = await promptStudio.generate({ phase: 'script', story, universe, cast, length, auto: { subtitles, music } });
+      const p = await promptStudio.generate({ phase: 'script', story, universe, cast, length, auto: { subtitles, music, watermark } });
       toast('C’est parti : votre vidéo se crée toute seule.');
       navigate(`/app/prompts/${p.id}`);
     } catch (e) {
@@ -274,8 +277,16 @@ export function CreateWizard() {
               <div className="flex justify-between gap-3"><dt className="text-zinc-400">Vidéo finie · {lengthLabel(length)} · {UNIVERSES[universe].label}</dt><dd className="tabular-nums text-zinc-100">{formatCredits(VIDEO_PRICES.eco[length])}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-zinc-400">Sous-titres · {SUBTITLE_STYLES.find((x) => x.id === subtitles)?.label}</dt><dd className="text-emerald-300">Inclus</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-zinc-400">Musique · {upload && music === upload.value ? upload.name : MUSIC_TRACKS.find((x) => x.id === music)?.title ?? 'aucune'}</dt><dd className="text-emerald-300">Inclus</dd></div>
-              <div className="flex justify-between gap-3 border-t border-line/10 pt-2 font-semibold"><dt className="text-zinc-100">Total</dt><dd className="tabular-nums text-violet-300">{formatCredits(total(length))} crédits</dd></div>
+              {saving > 0 && <div className="flex justify-between gap-3"><dt className="text-zinc-400">Logo Storyit sur la vidéo</dt><dd className="tabular-nums text-emerald-300">−{formatCredits(saving)}</dd></div>}
+              <div className="flex justify-between gap-3 border-t border-line/10 pt-2 font-semibold"><dt className="text-zinc-100">Total</dt><dd className="tabular-nums text-violet-300">{saving > 0 && <s className="mr-2 font-normal text-zinc-500">{formatCredits(total(length))}</s>}{formatCredits(due)} crédits</dd></div>
             </dl>
+            <label className={cn('surface mt-3 flex cursor-pointer items-start gap-3 p-4 transition', watermark ? 'border-emerald-400/60 ring-2 ring-emerald-400/30' : 'hover:border-violet-400/40')}>
+              <input type="checkbox" checked={watermark} onChange={(e) => setWatermark(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-emerald-500" />
+              <span className="min-w-0 text-sm">
+                <span className="flex flex-wrap items-center gap-2 font-medium text-zinc-100">Ajouter le logo Storyit <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300">−10 %</span></span>
+                <span className="mt-0.5 block text-xs text-zinc-400">Un petit « Fait avec Storyit.fun » discret en haut à gauche de la vidéo. Vous économisez {formatCredits(watermarkSaving(total(length)))} crédits.</span>
+              </span>
+            </label>
             <p className="mt-2 text-xs text-zinc-500">Débité au lancement. Si la vidéo ne peut pas être créée, les crédits de la vidéo sont rendus automatiquement.</p>
           </section>
         )}
@@ -286,12 +297,12 @@ export function CreateWizard() {
         {step > 0 ? <Button variant="secondary" onClick={() => go(step - 1)}><ArrowLeft className="h-4 w-4" /> Retour</Button> : <span />}
         {step < 4
           ? <Button disabled={step === 3 && !!upload && music === upload.value && !rights} onClick={() => go(step + 1)}>Suivant <ArrowRight className="h-4 w-4" /></Button>
-          : <Button disabled={!promptStudio.available || !story.trim()} onClick={() => void generate()}><Sparkles className="h-4 w-4" /> Générer · {formatCredits(total(length))} crédits</Button>}
+          : <Button disabled={!promptStudio.available || !story.trim()} onClick={() => void generate()}><Sparkles className="h-4 w-4" /> Générer · {formatCredits(due)} crédits</Button>}
       </div>
      </div>
      <aside className="hidden lg:block" aria-label="Aperçu de la vidéo">
        <div className="sticky top-24">
-         <WizardPreview universe={universe} cast={castCards} length={length} subtitles={subtitles} music={music} story={story} />
+         <WizardPreview universe={universe} cast={castCards} length={length} subtitles={subtitles} music={music} story={story} watermark={watermark} />
          <p className="mt-3 text-center text-xs text-zinc-500">Aperçu : ta vidéo prend forme à chaque choix</p>
        </div>
      </aside>

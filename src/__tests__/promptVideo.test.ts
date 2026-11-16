@@ -57,3 +57,16 @@ describe('Creative Studio → video', () => {
     expect(plan).toMatchObject({ video_model: 'grok-imagine-video', resolution: '720p', title: 'Le billet déchiré' });
   });
 });
+
+describe('Storyit watermark discount', () => {
+  it('takes 10 % of the whole off, rounded to 100 credits', async () => {
+    const { watermarkSaving } = await import('@shared/promptVideo.ts');
+    expect(watermarkSaving(1500 + 4500)).toBe(600);
+    expect(watermarkSaving(1500 + 7000)).toBe(900);
+    expect(watermarkSaving(1500 + 9000)).toBe(1100);
+  });
+  it('freezes the choice in the video plan', () => {
+    expect(buildVideoPlan({ ...project(), options: { subtitles: 'none', music: null, watermark: true } }, 'eco').watermark).toBe(true);
+    expect(buildVideoPlan(project(), 'eco').watermark).toBe(false);
+  });
+});

@@ -291,10 +291,13 @@ def subtitles_ass(plan, kept, style):
     head = ("[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\nWrapStyle: 0\nScaledBorderAndShadow: yes\n\n"
             "[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
             "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n"
-            f"Style: Sub,Inter Display ExtraBold,96,{pc},{sc},&H00000000,&H96000000,-1,{it},0,0,100,100,0,0,1,{ol},{sh},2,90,90,560,1\n\n"
+            f"Style: Sub,Inter Display ExtraBold,96,{pc},{sc},&H00000000,&H96000000,-1,{it},0,0,100,100,0,0,1,{ol},{sh},2,90,90,560,1\n"
+            "Style: Mark,Inter Display ExtraBold,42,&H40FFFFFF,&H40FFFFFF,&H80000000,&H00000000,-1,0,0,0,100,100,0,0,1,3,0,7,60,60,210,1\n\n"
             "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n")
     events, offset = [], 0.0
-    for c, (start, length) in zip(plan["clips"], kept):
+    if plan.get("watermark"):   # "Fait avec Storyit.fun", top left (clear of TikTok's buttons and caption), the whole video
+        events.append(f"Dialogue: 1,{ass_time(0)},{ass_time(sum(k[1] for k in kept) + 1)},Mark,,0,0,0,,Fait avec Storyit.fun")
+    for c, (start, length) in zip(plan["clips"], kept) if style != "none" else []:
         for ln in c.get("lines") or []:
             words = ass_escape(ln.get("text", "")).split()
             a, b = max(0.0, float(ln["start"]) - start), min(length, float(ln["end"]) - start)
@@ -312,12 +315,12 @@ def subtitles_ass(plan, kept, style):
 
 
 def finish(src, out, tmp, plan, kept):
-    """burns the subtitles and mixes the music under the voices (ducked while someone speaks); no option: plain copy"""
+    """burns the subtitles and the Storyit watermark, mixes the music under the voices (ducked while someone speaks); no option: plain copy"""
     style, music = plan.get("subtitles") or "none", plan.get("music")
-    if style == "none" and not music:
+    if style == "none" and not music and not plan.get("watermark"):
         os.replace(src, out); return
     vf, inputs, filters = [], ["-i", src], []
-    if style != "none":
+    if style != "none" or plan.get("watermark"):
         ass = os.path.join(tmp, "subs.ass"); open(ass, "w", encoding="utf-8").write(subtitles_ass(plan, kept, style))
         vf = ["-vf", f"ass={ass}:fontsdir={FONTS}"]
     amap = ["-map", "0:a:0", "-c:a", "copy"]
