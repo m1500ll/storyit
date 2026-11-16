@@ -337,7 +337,7 @@ def finish(src, out, tmp, plan, kept):
         graph.append(f"{video}ass={ass}:fontsdir={FONTS}[vs]"); video = "[vs]"
     if mark:   # "Fait avec Storyit.fun" banner, top left: clear of TikTok's buttons (right) and caption (bottom), the whole video
         inputs += ["-i", WATERMARK]
-        graph.append(f"[{inputs.count('-i') - 1}:v]format=rgba[wm];{video}[wm]overlay=48:190:format=auto[vw]"); video = "[vw]"
+        graph.append(f"[{inputs.count('-i') - 1}:v]format=rgba[wm];{video}[wm]overlay=32:174:format=auto[vw]"); video = "[vw]"
     if video != "[0:v]":
         vout = video
     run("ffmpeg", "-v", "error", "-y", *inputs, *(["-filter_complex", ";".join(graph)] if graph else []), "-map", vout, *amap,
