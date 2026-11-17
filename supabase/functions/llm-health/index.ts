@@ -14,6 +14,19 @@ Deno.serve(async (req) => {
   const token = Deno.env.get('PUBLISHER_CRON_TOKEN');
   if (!token || token.length < 32 || !timingSafeEqual(req.headers.get('Authorization') ?? '', `Bearer ${token}`)) return json({ error: 'Forbidden' }, 403);
   const url = new URL(req.url);
+  if (url.searchParams.get('image_edit') === '1' && req.method === 'POST') { // operator: OpenAI image edit (outpainting): the PNG's transparent area is redrawn
+    const { prompt, image, size = '1536x1024', quality = 'medium' } = await req.json().catch(() => ({}));
+    if (typeof prompt !== 'string' || typeof image !== 'string') return json({ error: 'prompt and image required' }, 400);
+    const bytes = Uint8Array.from(atob(image), (c) => c.charCodeAt(0));
+    const fd = new FormData();
+    fd.append('model', 'gpt-image-1.5'); fd.append('prompt', prompt); fd.append('size', size); fd.append('quality', quality); fd.append('n', '1');
+    fd.append('image', new Blob([bytes], { type: 'image/png' }), 'image.png');
+    fd.append('mask', new Blob([bytes], { type: 'image/png' }), 'mask.png');
+    const r = await fetch('https://api.openai.com/v1/images/edits', { method: 'POST', signal: AbortSignal.timeout(240_000), headers: { Authorization: `Bearer ${Deno.env.get('OPENAI_API_KEY')}` }, body: fd });
+    const d = await r.json();
+    if (!r.ok) return json({ error: d?.error?.message ?? r.status }, 502);
+    return json({ b64: d.data?.[0]?.b64_json, usage: d.usage });
+  }
   if (url.searchParams.get('image') === '1' && req.method === 'POST') { // operator-only: one OpenAI image (e.g. a character sheet), returned as JPEG base64
     const { prompt, size = '1536x1024', quality = 'high', transparent = false } = await req.json().catch(() => ({}));
     if (typeof prompt !== 'string' || prompt.length < 20 || prompt.length > 8000) return json({ error: 'prompt required' }, 400);

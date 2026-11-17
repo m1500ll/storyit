@@ -34,12 +34,12 @@ export function Hero() {
           trial link, promo film and promises placed exactly over their drawn spots (coordinates in % of the artwork). */}
       {fr && (
         // The whole artwork always fits the screen (never cropped, never taller than the window); wider screens get a
-        // soft blurred extension on the sides. Overlays and text sizes use the artwork's own box (container units).
+        // the generated extension of the artwork on the sides. Overlays and text sizes use the artwork's own box (container units).
         <div className="relative hidden w-full overflow-hidden lg:block" style={{ height: 'min(100svh, calc(100vw * 941 / 1672))' }}>
-          <img src="/landing/city/hero-scene.webp" alt="" aria-hidden className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-2xl" />
+          {/* the artwork extended on both sides (generated edges): fills screens up to 21:9 without blur or seams */}
+          <img src="/landing/city/hero-wide.webp" alt="" {...{ fetchpriority: "high" }} width={4948} height={1882}
+            className="absolute left-1/2 top-0 h-full w-auto max-w-none -translate-x-1/2" />
           <div className="absolute left-1/2 top-0 h-full -translate-x-1/2" style={{ aspectRatio: '1672 / 941', containerType: 'size' }}>
-            <img src="/landing/city/hero-scene.webp" alt="" fetchPriority="high" width={3344} height={1882}
-              className="absolute inset-0 h-full w-full object-cover [mask-image:linear-gradient(90deg,transparent,#000_2.5%,#000_97.5%,transparent)]" />
             {/* vector headline (traced once from the owner's poster lettering) and brush stroke: sharp at every size */}
             <h1 className="absolute m-0" style={{ left: '25.9%', top: '13.6%', width: '50.68%' }}>
               <img src="/landing/city/headline-fr.svg" alt="Crée des vidéos IA virales qui rapportent." width={892} height={177} className="block h-auto w-full" />

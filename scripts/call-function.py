@@ -28,6 +28,7 @@ def sql(query: str):
 
 def main():
     fn, body = sys.argv[1], (sys.argv[2] if len(sys.argv) > 2 else "")
+    if body.startswith("@"): body = open(body[1:], encoding="utf-8").read()  # large JSON bodies from a file
     if "--get" in sys.argv:
         qs = sys.argv[sys.argv.index("--get") + 1]
         q = f"select net.http_get(url:='{BASE}{fn}?{qs}', headers:={AUTH}, timeout_milliseconds:=120000) as id"
