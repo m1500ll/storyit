@@ -79,52 +79,54 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
           const included = !current && rank(p.id) < rank(currentPlan);
           const featured = 'featured' in p && p.featured;
           return (
-            <div key={p.id} className={cn('rounded-xl border p-4', p.id === 'free' && current && 'hidden sm:block', featured ? 'border-violet-500/40 bg-violet-500/[0.06]' : 'border-line/[0.08] bg-ink-850')}>
-              <div className="flex items-center justify-between">
+            <div key={p.id} className={cn('flex min-w-0 flex-col rounded-xl border p-4', p.id === 'free' && current && 'hidden sm:block', featured ? 'border-violet-500/40 bg-violet-500/[0.06]' : 'border-line/[0.08] bg-ink-850')}>
+              <div className="flex min-h-6 items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-zinc-100">{p.name}</p>
                 {current ? <span className="rounded-full bg-line/10 px-2 py-0.5 text-[11px] text-zinc-300">Actuelle</span>
-                  : 'badge' in p && <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300">Meilleur rapport qualité-prix</span>}
+                  : 'badge' in p ? <span className="whitespace-nowrap rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-300">Le plus rentable</span>
+                  : 'compareAt' in p && interval !== 'year' && <span className="whitespace-nowrap rounded-full bg-coral-500/15 px-2 py-0.5 text-[11px] font-medium text-coral-300">Offre de lancement</span>}
               </div>
               {(() => { const yearly = interval === 'year' && 'yearly' in p ? p.yearly : null; return (<>
-              <p className="mt-2 flex flex-wrap items-baseline gap-x-2 font-display text-3xl text-zinc-50">
+              <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-display text-3xl text-zinc-50">
                 {p.price > 0 && (yearly || 'compareAt' in p) && <s className="font-sans text-base text-zinc-500" aria-label={`au lieu de ${yearly ? p.price : 'compareAt' in p ? p.compareAt : p.price} $`}>{yearly ? p.price : 'compareAt' in p ? p.compareAt : p.price} $</s>}
-                <span>{yearly ? Math.round(yearly / 12) : p.price} $<span className="font-sans text-xs text-zinc-500">{p.period === 'month' ? '/mois' : ''}</span></span>
-                {!yearly && 'compareAt' in p && <span className="self-center rounded-full bg-coral-500/15 px-2 py-0.5 font-sans text-[11px] font-medium leading-4 text-coral-300">Offre de lancement</span>}
+                <span className="whitespace-nowrap">{yearly ? Math.round(yearly / 12) : p.price} $<span className="font-sans text-xs text-zinc-500">{p.period === 'month' ? '/mois' : ''}</span></span>
               </p>
               {yearly ? <p className="text-[11px] text-zinc-400">{yearly} $ réglés une fois pour l’année · <span className="font-semibold text-emerald-300">vous économisez {p.price * 12 - yearly} $</span></p>
                 : p.price > 0 && <p className="text-[11px] text-zinc-500">Facturé chaque mois</p>}
-              <p className="text-xs text-violet-300">{yearly ? `${formatCredits(p.credits * 12)} crédits d’un coup (12 mois)` : `${formatCredits(p.credits)} crédits ${p.period === 'month' ? '/ mois' : 'pour commencer'}`} · ≈ {projectsFor(p.credits)} projets Creative Studio / mois</p>
+              <p className="mt-2 text-sm font-semibold text-violet-300">{yearly ? `${formatCredits(p.credits * 12)} crédits d’un coup (12 mois)` : `${formatCredits(p.credits)} crédits ${p.period === 'month' ? '/ mois' : 'pour commencer'}`}</p>
+              <p className="text-[11px] text-zinc-500">≈ {projectsFor(p.credits)} projets Creative Studio / mois</p>
               </>); })()}
               {!compact && (
                 <ul className="mt-3 space-y-1.5">
                   {p.perksFr.map((k) => <li key={k} className="flex gap-1.5 text-xs text-zinc-400"><Check className="h-3.5 w-3.5 shrink-0 text-violet-400" />{k}</li>)}
                 </ul>
               )}
+              <div className="mt-auto" />
               {p.id !== 'free' && trialHere && !current && !included && (
                 <>
-                  <Button className="mt-4 h-12 w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-[15px] shadow-[0_10px_30px_-10px_rgba(139,92,246,0.9)] hover:brightness-110" loading={pending === `${p.id}:trial`}
+                  <Button className="mt-4 h-11 w-full whitespace-nowrap bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 text-sm shadow-[0_10px_30px_-10px_rgba(139,92,246,0.9)] hover:brightness-110" loading={pending === `${p.id}:trial`}
                     disabled={pending !== null} onClick={() => buy(p.id as ProductKey, true)}>
-                    <Gift className="h-4 w-4" aria-hidden /> Essayer {TRIAL.days} jours pour {TRIAL.price} $ <ArrowRight className="h-4 w-4" aria-hidden />
+                    <Gift className="h-4 w-4 shrink-0" aria-hidden /> Essayer pour {TRIAL.price} $ <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
                   </Button>
                   <p className="mt-1.5 text-[11px] leading-snug text-zinc-500">
-                    {TRIAL.price} $ aujourd’hui et {formatCredits(TRIAL.credits)} crédits pour tester. Passage automatique à {p.name} ({p.price} $/mois) au bout de {TRIAL.days} jours, ou plus tôt dès qu’il vous reste {formatCredits(TRIAL.switchAt)} crédits d’essai ou moins. Résiliable à tout moment avant.
+                    {TRIAL.days} jours d’essai : {TRIAL.price} $ aujourd’hui et {formatCredits(TRIAL.credits)} crédits pour tester. Passage automatique à {p.name} ({p.price} $/mois) au bout de {TRIAL.days} jours, ou plus tôt dès qu’il vous reste {formatCredits(TRIAL.switchAt)} crédits d’essai ou moins. Résiliable à tout moment avant.
                   </p>
                   <button type="button" onClick={() => buy(p.id as ProductKey)} disabled={pending !== null}
-                    className="touch-hit mt-1 text-[11px] text-violet-300 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50">
+                    className="touch-hit mt-2 block w-full text-center text-xs text-violet-300 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50">
                     {pending === p.id ? '…' : `Ou s’abonner maintenant pour ${p.price} $/mois`}
                   </button>
                 </>
               )}
               {p.id !== 'free' && !(trialHere && !current && !included) && (
                 interval === 'year' && 'yearly' in p ? (
-                  <Button size="sm" className="mt-4 w-full" variant={featured && !included ? 'primary' : 'secondary'} disabled={included}
+                  <Button size="sm" className="mt-4 h-auto min-h-9 w-full py-2 leading-tight" variant={featured && !included ? 'primary' : 'secondary'} disabled={included}
                     loading={pending === `${p.id}_year`} onClick={() => buy(`${p.id}_year` as ProductKey)}>
-                    {included ? 'Inclus dans votre offre' : current ? 'Passer à l’annuel (−20 %)' : `Choisir ${p.name} · ${Math.round(p.yearly / 12)} $/mois`}
+                    {included ? 'Inclus dans votre offre' : current ? 'Passer à l’annuel (−20 %)' : `Choisir ${p.name}`}
                   </Button>
                 ) : (
-                <Button size="sm" className="mt-4 w-full" variant={featured && !included ? 'primary' : 'secondary'} disabled={current || included}
+                <Button size="sm" className="mt-4 h-auto min-h-9 w-full py-2 leading-tight" variant={featured && !included ? 'primary' : 'secondary'} disabled={current || included}
                   loading={pending === p.id} onClick={() => buy(p.id as ProductKey)}>
-                  {current ? 'Votre offre' : included ? 'Inclus dans votre offre' : currentPrice > 0 ? `Passer à ${p.name} · +${p.price - currentPrice} $ aujourd’hui` : `Passer à ${p.name}`}
+                  {current ? 'Votre offre' : included ? 'Inclus dans votre offre' : currentPrice > 0 ? `Passer à ${p.name} (+${p.price - currentPrice} $)` : `Passer à ${p.name}`}
                 </Button>
                 )
               )}
@@ -137,12 +139,12 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
       <div className="grid gap-3 sm:grid-cols-2">
         {CREDIT_PACKS.map((pack) => (
           <button key={pack.id} onClick={() => buy(pack.id)} disabled={pending !== null}
-            className="flex items-center justify-between rounded-xl border border-line/[0.08] bg-ink-850 px-4 py-3 text-left transition hover:border-violet-500/40 disabled:opacity-50">
-            <span className="flex items-center gap-2 text-sm text-zinc-100">
-              <Coins className="h-4 w-4 text-violet-300" />{formatCredits(pack.credits)} crédits
-              {'badge' in pack && <span className="rounded-full bg-coral-500/15 px-2 py-0.5 text-[11px] text-coral-300">Le plus avantageux</span>}
+            className="flex items-center justify-between gap-3 rounded-xl border border-line/[0.08] bg-ink-850 px-4 py-3 text-left transition hover:border-violet-500/40 disabled:opacity-50">
+            <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-100">
+              <span className="flex items-center gap-2 whitespace-nowrap"><Coins className="h-4 w-4 shrink-0 text-violet-300" />{formatCredits(pack.credits)} crédits</span>
+              {'badge' in pack && <span className="whitespace-nowrap rounded-full bg-coral-500/15 px-2 py-0.5 text-[11px] text-coral-300">Meilleur prix</span>}
             </span>
-            <span className="text-right"><span className="block text-sm font-semibold text-zinc-100">{pending === pack.id ? '…' : `${pack.price} $`}</span><span className="block text-[11px] text-zinc-500">≈ {projectsFor(pack.credits)} projets</span></span>
+            <span className="shrink-0 text-right"><span className="block whitespace-nowrap text-sm font-semibold text-zinc-100">{pending === pack.id ? '…' : `${pack.price} $`}</span><span className="block whitespace-nowrap text-[11px] text-zinc-500">≈ {projectsFor(pack.credits)} projets</span></span>
           </button>
         ))}
       </div>
