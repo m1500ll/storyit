@@ -142,3 +142,9 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 - New account catalogue/webhook/portal created by `llm-health?stripe_setup_new=1` (idempotent). Status: `llm-health?stripe_account_status=1`.
 - To finish: when the new account can charge, set STRIPE_NEW_ACCOUNT_LIVE to 'on'; later ask Stripe to migrate customers, then
   move subscriptions and set stripe_account='new'. admin-stats still reads only the legacy account.
+
+## Auth e-mails and confirmation (Nov 17 2026)
+- E-mail confirmation is ON (`mailer_autoconfirm=false`). Every auth e-mail (sign-up confirmation, reset, e-mail change) goes through the Send Email hook → Edge Function `auth-email` (Resend, Storyit look, FR/EN from `user_metadata.lang`). Deploy with `--no-verify-jwt`. Hook secret: `SEND_EMAIL_HOOK_SECRET` (function secret) = `hook_send_email_secrets` (auth config). Email rate limit: 300/h.
+- AuthPage: "Renvoyer l'e-mail" button after sign-up or on "Email not confirmed".
+- Clipping access: subscribers only, 1 video during the $1 trial, admins unlimited (`clips-analyze` + `src/lib/clipAccess.ts`).
+- Google sign-in: the button shows automatically once the Google provider is enabled in Supabase (owner creates the OAuth client in Google Cloud; callback `https://hubkgvfiiszthzqyfguf.supabase.co/auth/v1/callback`).

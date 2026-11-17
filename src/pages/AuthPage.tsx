@@ -28,7 +28,7 @@ const COPY_EN: Record<Mode, { title: string; sub: string; cta: string }> = {
 const L_FR = {
   wrong: 'E-mail ou mot de passe incorrect. Réessayez, ou réinitialisez votre mot de passe.', exists: 'Cet e-mail a déjà un compte : connectez-vous plutôt.',
   noGoogle: 'La connexion Google n’est pas encore activée.', confirm: 'Confirmez d’abord votre e-mail : regardez votre boîte de réception.',
-  resetSent: 'Si un compte existe pour cet e-mail, un lien de réinitialisation est en route.', checkInbox: 'Regardez votre boîte de réception pour confirmer votre e-mail : vos 3 000 crédits offerts arrivent dès la confirmation. Connectez-vous ensuite.',
+  resetSent: 'Si un compte existe pour cet e-mail, un lien de réinitialisation est en route.', checkInbox: 'C’est presque fini : on vient de vous envoyer un e-mail. Cliquez sur « Confirmer mon e-mail » pour activer votre compte (pensez à regarder dans les spams).', resend: 'Renvoyer l’e-mail', resent: 'E-mail renvoyé. Il peut mettre une minute à arriver.',
   perks: ['3 000 crédits offerts pour essayer les studios', 'Des vidéos IA prêtes pour TikTok, Reels et Shorts', 'Offre gratuite, sans carte, sans engagement'],
   redirect: 'Redirection vers Google…', google: 'Continuer avec Google', orEmail: 'ou avec un e-mail', password: 'Mot de passe', passNew: 'Mot de passe (6 caractères minimum)…', pass: 'Mot de passe…',
   forgotQ: 'Mot de passe oublié ?', back: 'Retour à la connexion', noAccount: 'Pas de compte ? Créez-en un', haveAccount: 'Déjà un compte ? Connectez-vous',
@@ -37,7 +37,7 @@ const L_FR = {
 const L_EN = {
   wrong: 'Wrong email or password. Try again, or reset your password.', exists: 'This email already has an account — sign in instead.',
   noGoogle: 'Google sign-in isn’t enabled yet on this project.', confirm: 'Confirm your email first — check your inbox.',
-  resetSent: 'If an account exists for this email, a reset link is on its way.', checkInbox: 'Check your inbox to confirm your email: your 3,000 free credits arrive as soon as it is confirmed. Then sign in.',
+  resetSent: 'If an account exists for this email, a reset link is on its way.', checkInbox: 'Almost done: we just sent you an email. Click “Confirm my email” to activate your account (check your spam folder too).', resend: 'Resend the email', resent: 'Email sent again. It can take a minute to arrive.',
   perks: ['3,000 free credits to try the studios', 'AI videos ready for TikTok, Reels and Shorts', 'Free plan, no card, cancel anytime'],
   redirect: 'Redirecting to Google…', google: 'Continue with Google', orEmail: 'or with email', password: 'Password', passNew: 'Password (6+ characters)…', pass: 'Password…',
   forgotQ: 'Forgot password?', back: 'Back to sign in', noAccount: 'No account? Create one', haveAccount: 'Already have an account? Sign in',
@@ -67,7 +67,8 @@ export default function AuthPage() {
   const from = (location.state as { from?: string } | null)?.from ?? (nextParam?.startsWith('/app') ? nextParam : '/app');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState<'form' | 'google' | null>(null);
+  const [loading, setLoading] = useState<'form' | 'google' | 'resend' | null>(null);
+  const [unconfirmed, setUnconfirmed] = useState(false);
   const [message, setMessage] = useState<{ kind: 'error' | 'info'; text: string } | null>(null);
   // Show "Continue with Google" only when the provider is really enabled on the auth server.
   useSeo({ title: L.seo, path: '/login', noindex: true });
@@ -86,6 +87,13 @@ export default function AuthPage() {
   if (!supabase || session) return <Navigate to={from} replace />;
 
   const switchMode = (m: Mode) => { setMode(m); setMessage(null); };
+
+  const resend = async () => {
+    setLoading('resend');
+    const { error } = await supabase!.auth.resend({ type: 'signup', email, options: { emailRedirectTo: withAffiliate(`${window.location.origin}${from}`) } });
+    setLoading(null);
+    setMessage(error ? { kind: 'error', text: friendly(error.message, L) } : { kind: 'info', text: L.resent });
+  };
 
   const google = async () => {
     setLoading('google');
@@ -109,10 +117,11 @@ export default function AuthPage() {
     }
     const { data, error } = mode === 'signin'
       ? await supabase!.auth.signInWithPassword({ email, password })
-      : await supabase!.auth.signUp({ email, password, options: { emailRedirectTo: withAffiliate(`${window.location.origin}${from}`), data: pendingAffiliate() ? { via: pendingAffiliate() } : undefined } });
+      : await supabase!.auth.signUp({ email, password, options: { emailRedirectTo: withAffiliate(`${window.location.origin}${from}`), data: { lang, ...(pendingAffiliate() ? { via: pendingAffiliate() } : {}) } } });
     setLoading(null);
-    if (error) return setMessage({ kind: 'error', text: friendly(error.message, L) });
+    if (error) { setUnconfirmed(/email not confirmed/i.test(error.message)); return setMessage({ kind: 'error', text: friendly(error.message, L) }); }
     if (data.session) return navigate(from, { replace: true });
+    setUnconfirmed(true);
     setMessage({ kind: 'info', text: L.checkInbox });
   };
 
@@ -172,7 +181,12 @@ export default function AuthPage() {
             <button type="button" onClick={() => switchMode('forgot')} className="block text-xs text-zinc-500 hover:text-zinc-300">{L.forgotQ}</button>
           )}
           <div aria-live="polite">
-            {message && <p className={message.kind === 'error' ? 'text-xs text-coral-300' : 'text-xs text-emerald-300'}>{message.text}</p>}
+            {message && <p aria-live="polite" className={message.kind === 'error' ? 'text-xs text-coral-300' : 'text-xs text-emerald-300'}>{message.text}</p>}
+            {unconfirmed && email && mode !== 'forgot' && (
+              <button type="button" onClick={resend} disabled={loading !== null}
+                className="touch-hit text-xs font-semibold text-violet-300 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50">
+                {loading === 'resend' ? '…' : L.resend}</button>
+            )}
           </div>
           <Button type="submit" className="w-full" loading={loading === 'form'} disabled={loading === 'google'}>{copy.cta}</Button>
         </form>
