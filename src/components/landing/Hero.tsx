@@ -33,13 +33,13 @@ export function Hero() {
       {/* Desktop, French: the owner's neon-city artwork as is (public/landing/city/hero-scene.webp), with the real
           trial link, promo film and promises placed exactly over their drawn spots (coordinates in % of the artwork). */}
       {fr && (
-        // The whole artwork always fits the screen (never cropped, never taller than the window); wider screens get a
-        // the generated extension of the artwork on the sides. Overlays and text sizes use the artwork's own box (container units).
-        <div className="relative hidden w-full overflow-hidden lg:block" style={{ height: 'min(100svh, calc(100vw * 941 / 1672))' }}>
-          {/* the artwork extended on both sides (generated edges): fills screens up to 21:9 without blur or seams */}
-          <img src="/landing/city/hero-wide.webp" alt="" {...{ fetchpriority: "high" }} width={4948} height={1882}
-            className="absolute left-1/2 top-0 h-full w-auto max-w-none -translate-x-1/2" />
-          <div className="absolute left-1/2 top-0 h-full -translate-x-1/2" style={{ aspectRatio: '1672 / 941', containerType: 'size' }}>
+        // The artwork always spans the full width (no generated side bands). On screens wider than 16:9 it is cropped
+        // a little, up to 5 % at the top and 5 % at the bottom (only sky and street there), instead of shrinking.
+        // Overlays and text sizes use the artwork's own box (container units), so they stay exactly on their drawn spots.
+        <div className="relative hidden w-full overflow-hidden lg:block" style={{ height: 'clamp(calc(100vw * 941 / 1672 * 0.9), 100svh, calc(100vw * 941 / 1672))' }}>
+          <div className="absolute left-0 top-1/2 w-full -translate-y-1/2" style={{ aspectRatio: '1672 / 941', containerType: 'size' }}>
+            <img src="/landing/city/hero-scene.webp" alt="" {...{ fetchpriority: "high" }} width={3344} height={1882}
+              className="absolute inset-0 h-full w-full" />
             {/* vector headline (traced once from the owner's poster lettering) and brush stroke: sharp at every size */}
             <h1 className="absolute m-0" style={{ left: '25.9%', top: '13.6%', width: '50.68%' }}>
               <img src="/landing/city/headline-fr.svg" alt="Crée des vidéos IA virales qui rapportent." width={892} height={177} className="block h-auto w-full" />
