@@ -63,10 +63,15 @@ export function Hero() {
           <div className="absolute inset-0 bg-gradient-to-b from-[#1a0b2e]/50 via-[#1a0b2e]/40 to-[rgb(var(--ink-950))]" />
         </div>
         <div className="relative mx-auto max-w-6xl px-4 pt-28 text-center md:px-6 md:pt-36">
-          <h1 className="mx-auto max-w-4xl text-balance font-hero text-5xl font-extrabold italic leading-[1.02] tracking-[-0.03em] text-white [text-shadow:0_4px_24px_rgba(0,0,0,0.5)] md:text-7xl">
-            {fr ? <>Crée des <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">vidéos IA</span> virales qui rapportent.</>
-              : <>Create viral <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">AI videos</span> that earn money.</>}
-          </h1>
+          {fr ? (
+            <h1 className="mx-auto max-w-xl">
+              <img src="/landing/city/headline-fr.webp" alt="Crée des vidéos IA virales qui rapportent." width={880} height={166} className="h-auto w-full" />
+            </h1>
+          ) : (
+            <h1 className="mx-auto max-w-4xl text-balance font-hero text-5xl font-extrabold italic leading-[1.02] tracking-[-0.03em] text-white [text-shadow:0_4px_24px_rgba(0,0,0,0.5)] md:text-7xl">
+              Create viral <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent">AI videos</span> that earn money.
+            </h1>
+          )}
           <StartLink to="/app/billing?interval=month" className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#1b0f33]/85 px-2 py-1.5 pr-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-[#2a0f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400">
             <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-bold text-white">⚡ {fr ? 'Essai' : 'Trial'}</span>{fr ? '3 jours pour 1 $ · 7 000 crédits' : '3 days for $1 · 7,000 credits'} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </StartLink>
