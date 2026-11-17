@@ -7,7 +7,7 @@ import { PlanPicker } from './PlanPicker';
 import { TrialUpgrade } from './TrialUpgrade';
 
 /** Why the sheet opened: lets the headline match what the user was trying to do. */
-export type PaywallReason = 'credits' | 'accounts' | 'library' | 'publications';
+export type PaywallReason = 'credits' | 'accounts' | 'library' | 'publications' | 'clips' | 'clipsTrial';
 interface PaywallState { required?: number; reason?: PaywallReason }
 const PaywallContext = createContext<(state?: PaywallState) => void>(() => {});
 
@@ -60,12 +60,16 @@ const HEADLINE: Record<PaywallReason, string> = {
   accounts: 'Connectez plus de comptes',
   library: 'Stockez plus de vidéos',
   publications: 'Programmez plus de publications',
+  clips: 'Le clipping IA est réservé aux abonnés',
+  clipsTrial: 'Ta vidéo d’essai est faite',
 };
 const SUB: Record<PaywallReason, string> = {
   credits: 'Les crédits servent au Creative Studio, à la vidéo automatique, à la traduction et au découpage en clips.',
   accounts: 'Creator connecte jusqu’à 10 comptes TikTok et Instagram, Studio n’a pas de limite.',
   library: 'Creator stocke jusqu’à 500 vidéos, Studio n’a pas de limite.',
   publications: 'Creator programme jusqu’à 2 000 publications à l’avance, Studio n’a pas de limite.',
+  clips: 'Prends une formule (ou l’essai à 1 $) pour transformer tes longues vidéos en clips.',
+  clipsTrial: 'Pendant l’essai, tu peux découper 1 vidéo. Passe à l’abonnement complet pour en faire autant que tu veux.',
 };
 
 export const usePaywall = () => useContext(PaywallContext);

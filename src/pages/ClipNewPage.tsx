@@ -3,7 +3,8 @@ import { useEffect, useId, useState, type DragEvent, type FormEvent } from 'reac
 import { useNavigate } from 'react-router-dom';
 import { usePaywall } from '@/components/billing/Paywall';
 import { Button, Card } from '@/components/ui';
-import { useCredits } from '@/hooks/useStore';
+import { useClipProjects, useCredits, useProfile } from '@/hooks/useStore';
+import { clipAccess } from '@/lib/clipAccess';
 import { cn } from '@/lib/cn';
 import { preloadFFmpeg } from '@/lib/ffmpeg';
 import { formatDuration, formatSize } from '@/lib/clipFormat';
@@ -31,6 +32,12 @@ export default function ClipNewPage() {
   const navigate = useNavigate();
   const openPaywall = usePaywall();
   const { balance, known } = useCredits();
+  const { data: profile } = useProfile();
+  const { data: projects } = useClipProjects();
+  const used = (projects ?? []).filter((p) => p.status === 'ready' || p.status === 'analyzing').length;
+  const access = clipAccess(profile, used);
+  const locked = access !== 'ok';
+  const unlock = () => openPaywall({ reason: access === 'trial_limit' ? 'clipsTrial' : 'clips' });
   const inputId = useId();
   const [picked, setPicked] = useState<Picked | null>(null);
   const [title, setTitle] = useState('');
@@ -76,6 +83,7 @@ export default function ClipNewPage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!picked) return;
+    if (locked) { unlock(); return; }
     if (known && balance < cost) { openPaywall({ required: cost }); return; }
     setSubmitting(true);
     setError(null);
@@ -167,9 +175,21 @@ export default function ClipNewPage() {
               <div className="flex justify-between gap-3 text-zinc-400"><span>Prix</span><span className="text-right tabular-nums text-zinc-100">{picked ? `${formatCredits(cost)} crédits` : `${CREDIT_COSTS.clipMinute} crédits par minute de vidéo`}</span></div>
               <div className="mt-1 flex justify-between text-zinc-500"><span>Ton solde</span><span className="tabular-nums">{known ? `${formatCredits(balance)} crédits` : '…'}</span></div>
             </div>
-            <Button type="submit" size="lg" className="mt-5 w-full" disabled={!picked} loading={submitting}>
-              {picked ? `Trouver les meilleurs moments · ${formatCredits(cost)} crédits` : 'Choisis d’abord une vidéo'}
-            </Button>
+            {locked ? (
+              <div className="mt-5 rounded-xl border border-fuchsia-400/30 bg-fuchsia-500/10 p-3 text-sm text-zinc-200" role="status">
+                <p className="flex items-start gap-2"><Lock className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-300" aria-hidden />
+                  {access === 'trial_limit'
+                    ? 'Pendant l’essai, tu peux découper 1 vidéo. Passe à l’abonnement pour continuer.'
+                    : 'Le clipping IA est réservé aux abonnés.'}</p>
+                <Button type="button" size="lg" className="mt-3 w-full" onClick={unlock}>
+                  <Crown className="h-4 w-4" aria-hidden /> {access === 'trial_limit' ? 'Passer à l’abonnement' : 'Voir les formules'}
+                </Button>
+              </div>
+            ) : (
+              <Button type="submit" size="lg" className="mt-5 w-full" disabled={!picked} loading={submitting}>
+                {picked ? `Trouver les meilleurs moments · ${formatCredits(cost)} crédits` : 'Choisis d’abord une vidéo'}
+              </Button>
+            )}
             <p className="mt-2 text-center text-[11px] text-zinc-500">Débité seulement si des clips sont trouvés.</p>
             {error && <p className="mt-3 rounded-lg bg-coral-500/10 px-3 py-2 text-xs text-coral-300" aria-live="polite">{error}</p>}
           </Card>

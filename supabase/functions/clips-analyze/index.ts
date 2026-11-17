@@ -224,6 +224,25 @@ Deno.serve(async (req) => {
     return json({ error: 'Cette vidéo est déjà en cours d’analyse.' }, 409);
   }
 
+  // Clipping is for subscribers: free accounts are refused, the $1 trial gets ONE video (keep in sync with clipAccess.ts).
+  const refuse = async (error: string, code: string) => {
+    await admin.storage.from('clip-audio').remove([`${user.id}/${projectId}.mp3`]);
+    return json({ error, code }, 403);
+  };
+  const { data: who } = await admin.from('profiles').select('plan, trial_ends_at, is_admin').eq('id', user.id).single();
+  if (!who?.is_admin) {
+    if (!who?.plan || who.plan === 'free') {
+      return refuse('Le clipping IA est réservé aux abonnés. Choisis une formule pour l’utiliser.', 'subscription_required');
+    }
+    if (who.trial_ends_at && new Date(who.trial_ends_at).getTime() > Date.now()) {
+      const { count } = await admin.from('clip_projects').select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id).neq('id', projectId).in('status', ['ready', 'analyzing']);
+      if ((count ?? 0) >= 1) {
+        return refuse('Pendant l’essai, tu peux découper 1 vidéo. Passe à l’abonnement complet pour continuer.', 'trial_limit');
+      }
+    }
+  }
+
   const audioPath = `${user.id}/${projectId}.mp3`;
   const fail = async (message: string, status = 502) => {
     await admin.from('clip_projects').update({ status: 'failed', error_message: message }).eq('id', projectId);
