@@ -15,12 +15,13 @@ Deno.serve(async (req) => {
   if (!token || token.length < 32 || !timingSafeEqual(req.headers.get('Authorization') ?? '', `Bearer ${token}`)) return json({ error: 'Forbidden' }, 403);
   const url = new URL(req.url);
   if (url.searchParams.get('image') === '1' && req.method === 'POST') { // operator-only: one OpenAI image (e.g. a character sheet), returned as JPEG base64
-    const { prompt, size = '1536x1024', quality = 'high' } = await req.json().catch(() => ({}));
+    const { prompt, size = '1536x1024', quality = 'high', transparent = false } = await req.json().catch(() => ({}));
     if (typeof prompt !== 'string' || prompt.length < 20 || prompt.length > 8000) return json({ error: 'prompt required' }, 400);
     const r = await fetch('https://api.openai.com/v1/images/generations', { method: 'POST', signal: AbortSignal.timeout(240_000),
       headers: { Authorization: `Bearer ${Deno.env.get('OPENAI_API_KEY')}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model: 'gpt-image-1.5', prompt, size: ['1536x1024', '1024x1536', '1024x1024'].includes(size) ? size : '1536x1024',
-        quality: ['low', 'medium', 'high'].includes(quality) ? quality : 'high', output_format: 'jpeg', output_compression: 88, n: 1 }) });
+        quality: ['low', 'medium', 'high'].includes(quality) ? quality : 'high', n: 1,
+        ...(transparent ? { background: 'transparent', output_format: 'png' } : { output_format: 'jpeg', output_compression: 88 }) }) });
     const d = await r.json();
     if (!r.ok) return json({ error: d?.error?.message ?? r.status }, 502);
     return json({ b64: d.data?.[0]?.b64_json, usage: d.usage });

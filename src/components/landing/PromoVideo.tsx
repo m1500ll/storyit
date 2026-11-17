@@ -6,7 +6,7 @@ import { useLang } from '@/lib/lang';
 const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** The 18-second Storyit promo film: plays silently while visible; one tap restarts it with sound. */
-export function PromoVideo({ className = 'relative mx-auto max-w-5xl px-4 pb-2 pt-8 md:px-6 md:pt-12' }: { className?: string }) {
+export function PromoVideo({ className = 'relative mx-auto max-w-5xl px-4 pb-2 pt-8 md:px-6 md:pt-12', poster = '/showcase/storyit-promo.webp', frameClassName = 'border border-line/10', autoPlay = true }: { className?: string; poster?: string; frameClassName?: string; autoPlay?: boolean }) {
   const { ref, inView } = useInView<HTMLDivElement>(0.35);
   const vid = useRef<HTMLVideoElement>(null);
   const fr = useLang() === 'fr';
@@ -15,9 +15,9 @@ export function PromoVideo({ className = 'relative mx-auto max-w-5xl px-4 pb-2 p
   useEffect(() => {
     const v = vid.current;
     if (!v) return;
-    if (inView && !reducedMotion()) v.play().catch(() => {});
+    if (inView && autoPlay && !reducedMotion()) v.play().catch(() => {});
     else if (!inView) v.pause();
-  }, [inView]);
+  }, [inView, autoPlay]);
 
   const withSound = () => {
     const v = vid.current;
@@ -35,8 +35,8 @@ export function PromoVideo({ className = 'relative mx-auto max-w-5xl px-4 pb-2 p
   return (
     <section id="film" aria-labelledby="film-title" className={className}>
       <h2 id="film-title" className="sr-only">{fr ? 'Storyit en 18 secondes' : 'Storyit in 18 seconds'}</h2>
-      <div ref={ref} className="group relative overflow-hidden rounded-3xl border border-line/10 bg-black shadow-[0_40px_120px_-40px_rgba(124,58,237,0.55)]">
-        <video ref={vid} src="/showcase/storyit-promo.mp4" poster="/showcase/storyit-promo.webp" muted loop playsInline preload="metadata"
+      <div ref={ref} className={`group relative overflow-hidden rounded-3xl bg-black shadow-[0_40px_120px_-40px_rgba(124,58,237,0.55)] ${frameClassName}`}>
+        <video ref={vid} src="/showcase/storyit-promo.mp4" poster={poster} muted loop playsInline preload="metadata"
           width={1920} height={1080} className="aspect-video w-full object-cover" aria-label={fr ? 'Film de présentation Storyit' : 'Storyit promo film'} />
         {!sound ? (
           <button type="button" onClick={withSound}
