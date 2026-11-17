@@ -146,12 +146,9 @@ Deno.serve(async (req) => {
     // just looking at the plans must not create a Stripe customer (it showed up as a "new customer" who never paid)
     if (!customerId && action === 'status') return json({ trialing: false, trial_end: null, product: null });
     if (action === 'auto_topup' && body.enabled && (!profile?.plan || profile.plan === 'free')) return json({ error: 'La recharge automatique est réservée aux abonnés.' }, 409);
-    // a customer of the old account with no running subscription (never paid, or cancelled): moves to the new account
-    // on their next payment, so they never hit the old account once it is closed
-    if (customerId && acct === 'legacy' && newCustomersAccount() === 'new' && action === 'checkout') {
-      const subs = await stripe(`subscriptions?customer=${customerId}&status=all&limit=20`).catch(() => ({ data: [] }));
-      if (!(subs?.data ?? []).some((x: any) => ['active', 'trialing', 'past_due', 'unpaid', 'incomplete'].includes(x.status))) { acct = 'new'; customerId = null; }
-    }
+    // the old Stripe account is abandoned (Nov 17 2026): its customers start again on the new account
+    if (customerId && acct === 'legacy' && newCustomersAccount() === 'new') { acct = 'new'; customerId = null; }
+    if (!customerId && action === 'status') return json({ trialing: false, trial_end: null, product: null });
     if (!customerId) {
       const customer = await stripe('customers', { email: user.email ?? '', 'metadata[user_id]': user.id });
       customerId = customer.id as string;

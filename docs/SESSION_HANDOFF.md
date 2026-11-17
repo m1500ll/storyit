@@ -137,7 +137,7 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 - 'legacy' = original account (STRIPE_SECRET_KEY, STRIPE_PRICE_*, STRIPE_WEBHOOK_SECRET); 'new' = company account ETO Core - F.Z.E
   (same names + _NEW; key is a restricted rk_live, "full access except sensitive operations"). Helper: `_shared/stripeAccount.ts`.
 - `profiles.stripe_account` (migration 0047, applied): null with a customer id = legacy. New customers go to 'new' only when
-  the secret STRIPE_NEW_ACCOUNT_LIVE is not 'off' (set to on Nov 17: the new account can charge; the legacy one is restricted). Legacy customers without a running subscription move to the new account on their next checkout.
+  the secret STRIPE_NEW_ACCOUNT_LIVE is not 'off' (set to on Nov 17: the new account can charge; the legacy one is restricted). The legacy account is abandoned (owner, Nov 17): billing moves any legacy customer to a new customer on the new account at their next action; legacy subscriptions will not renew.
 - The webhook verifies with both signing secrets; billing, auto-topup, trial-convert pick the customer's account.
 - New account catalogue/webhook/portal created by `llm-health?stripe_setup_new=1` (idempotent). Status: `llm-health?stripe_account_status=1`.
 - To finish: when the new account can charge, set STRIPE_NEW_ACCOUNT_LIVE to 'on'; later ask Stripe to migrate customers, then
