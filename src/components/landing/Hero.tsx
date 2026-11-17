@@ -55,7 +55,7 @@ export function Hero() {
               </StartLink>
             </div>
             {/* the film fills the painted 2:1 frame (cropped a little top and bottom, no dark bands) and covers its border */}
-            <PromoVideo className="absolute text-left" poster="/landing/city/promo-poster.webp" autoPlay={false} neon
+            <PromoVideo className="absolute text-left" poster="/landing/city/promo-frame.webp" neon
               frameClassName="h-full rounded-[1.2cqw] ring-1 ring-white/10" videoClassName="h-full w-full object-cover"
               style={{ left: '26.2%', top: '37.6%', width: '48.9%', height: '43.5%' }} />
             <ul className="absolute grid grid-cols-3 items-center divide-x divide-white/10 rounded-[1.3cqw] border border-violet-400/30 bg-[#1a0d33] shadow-[0_0_2cqw_-0.6cqw_rgba(168,85,247,0.7)]"
@@ -89,7 +89,7 @@ export function Hero() {
           <StartLink to="/app/billing?interval=month" className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#1b0f33]/85 px-2 py-1.5 pr-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-[#2a0f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400">
             <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-bold text-white">⚡ {fr ? 'Essai' : 'Trial'}</span>{fr ? '3 jours pour 1 $ · 7 000 crédits' : '3 days for $1 · 7,000 credits'} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </StartLink>
-          <PromoVideo className="relative mx-auto mt-6 max-w-3xl text-left" poster="/landing/city/promo-poster.webp" autoPlay={false} neon
+          <PromoVideo className="relative mx-auto mt-6 max-w-3xl text-left" poster="/landing/city/promo-frame.webp" neon
             frameClassName="ring-1 ring-white/10" videoClassName="aspect-video w-full object-cover" />
           <ul className="mx-auto mt-4 grid max-w-2xl grid-cols-1 gap-3 rounded-2xl border border-violet-400/30 bg-[#1a0d33] p-4 text-left sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-white/10">
             {PROMISES[lang].map(([Icon, a, b]) => (
