@@ -99,3 +99,11 @@
   input:not([type='checkbox']):not([type='radio']), select, textarea { font-size: 16px !important; }
 }
 
+
+/* AI clipping: caption font used in exports (public/fonts/caption.otf), so the preview uses the same face. */
+@font-face {
+  font-family: 'Clip Caption';
+  src: url('/fonts/caption.otf') format('opentype');
+  font-weight: 800;
+  font-display: swap;
+}

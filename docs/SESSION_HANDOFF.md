@@ -123,3 +123,12 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 `supabase/functions/prompt-videos/index.ts`, `render-engine/promptvideo/run.py` (worker), `supabase/functions/mailing/index.ts`,
 `supabase/functions/stripe-webhook/index.ts`, `supabase/functions/billing/index.ts`, `src/pages/PromptStudioPage.tsx`,
 `src/components/prompts/*`, `src/components/characters/*`, `src/pages/CharactersPage.tsx`, `brand-logo/` (logos, bannières, pdp).
+
+## AI clipping ("Découper une vidéo", Nov 17 2026)
+- Ported from the owner's Clipit app (m1500ll/clipit). Routes `/app/clips`, `/app/clips/new`, `/app/clips/:projectId`, `/app/clips/:projectId/:clipId`.
+- The video stays in the browser (IndexedDB `storyit-clips`); ffmpeg.wasm extracts the audio (mono 16 kHz, 24 kbps), uploaded to the private
+  `clip-audio` bucket; the `clips-analyze` Edge Function (Gemini, inline audio) returns 2-8 moments, saves them, charges
+  `CREDIT_COSTS.clipMinute` (100 credits per started minute, owner's choice) only on success via `charge_credits`, and deletes the audio.
+- Migration 0046 (applied): `clip_projects`, `clips`, `credit_transactions.clip_project_id`, `charge_credits`, bucket, RLS, realtime.
+- ONE shared ffmpeg engine and queue: `src/lib/ffmpeg.ts` (assemble.ts and compress.ts go through `exclusive`).
+- Needs Gemini credit (the prepaid balance was empty on Nov 17): without it the analysis fails cleanly, no credits charged.

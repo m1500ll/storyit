@@ -1,6 +1,6 @@
 import {
   BookOpen, CalendarDays, Clapperboard, Handshake, Languages, CreditCard, FolderOpen, History, LayoutDashboard, LifeBuoy, Link2, Menu, Send,
-  Settings, TrendingUp, UsersRound, Wand2, X, BarChart3 } from 'lucide-react';
+  Scissors, Settings, TrendingUp, UsersRound, Wand2, X, BarChart3 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/cn';
@@ -20,6 +20,7 @@ const sections = [
   { title: 'Créer', items: [
     { to: '/app/prompts', label: 'Creative Studio', icon: Wand2, badge: 'Vidéo IA' },
     { to: '/app/characters', label: 'Personnages', icon: UsersRound },
+    { to: '/app/clips', label: 'Découper une vidéo', icon: Scissors, badge: 'Nouveau' },
     { to: '/app/translate', label: 'Traduire une vidéo', icon: Languages, badge: 'Nouveau' },
   ] },
   { title: 'Diffuser', items: [

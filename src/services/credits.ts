@@ -10,7 +10,11 @@ export const CREDIT_COSTS = {
   sceneRetry: 0,
   publishPack: 100, // titles, captions, hashtags, platform variants, thumbnail prompt
   thumbnail: 200, // one image variant; refunded if generation fails
+  clipMinute: 100, // AI clipping: per started minute of source video, charged only if clips are found (mirrored in supabase/functions/clips-analyze)
 } as const;
+
+/** AI clipping cost of a source video: CREDIT_COSTS.clipMinute per started minute. */
+export const clipCostFor = (seconds: number) => Math.max(1, Math.ceil(seconds / 60)) * CREDIT_COSTS.clipMinute;
 
 /** Perks must stay true to what the product does. Account/video limits mirror the `plan_limits` table (server-enforced). */
 export const PLANS = [

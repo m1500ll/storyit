@@ -51,3 +51,11 @@ export function useStory(id: string | undefined) {
 export function usePublishPack(storyId: string | undefined) {
   return useLiveQuery(() => (storyId ? repository.getPublishPack(storyId) : Promise.resolve({ pack: null, thumbnails: [] })), `pack:${storyId}`);
 }
+
+export function useClipProjects() {
+  return useLiveQuery(() => repository.listClipProjects(), 'clip-projects');
+}
+
+export function useClipProject(id: string | undefined) {
+  return useLiveQuery(() => (id ? repository.getClipProject(id) : Promise.resolve(null)), `clip-project:${id}`);
+}

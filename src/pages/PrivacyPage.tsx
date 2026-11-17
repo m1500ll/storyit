@@ -23,7 +23,7 @@ const PROCESSORS = [
   ['OpenAI', 'Writes scripts and prompts from the text you submit, and draws the images of automatic videos', 'openai.com/policies/privacy-policy'],
   ['xAI (Grok)', 'Animates the images of automatic videos', 'x.ai/legal/privacy-policy'],
   ['Anthropic (Claude)', 'Runs the Animated Studio conversation that shapes your video', 'www.anthropic.com/legal/privacy'],
-  ['Google (Gemini API)', 'Backup writer and voices for some videos', 'policies.google.com/privacy'],
+  ['Google (Gemini API)', 'Backup writer and voices for some videos; finds the best moments of a video in the AI clipping tool (audio track only)', 'policies.google.com/privacy'],
   ['ElevenLabs', 'Voice-overs and translated voices', 'elevenlabs.io/privacy-policy'],
   ['Groq, OpenRouter', 'Backup writers, only when the main AI providers are unavailable', 'groq.com/privacy-policy'],
   ['Modal', 'Video rendering, editing and translation servers', 'modal.com/legal/privacy-policy'],
@@ -101,6 +101,7 @@ export default function PrivacyPage() {
         <Section id="ai" title="5. AI generation">
           <p>When you generate stories, scripts, images, voices or videos, the text and images you submit (your idea, the chosen story and characters) are sent to the AI providers listed above to produce the result. Do not include personal or sensitive information about real people in your ideas.</p>
           <p><strong>OpenAI:</strong> Storyit takes part in OpenAI’s data-sharing programme. The text sent to OpenAI’s writing models (your ideas, stories and scripts) may be used by OpenAI to improve and train its models. Images, payment details and account data are not part of it.</p>
+          <p><strong>AI clipping:</strong> the video you clip never leaves your device. It is kept in your browser (IndexedDB) and cut and exported there. Only its audio track is sent to Google Gemini to find the best moments and transcribe the captions; it is stored temporarily in our private storage and deleted right after the analysis, whether it succeeds or fails. The clips found (times, titles, captions) are saved in your account.</p>
           <p>Generated content belongs to you. <strong>We</strong> do not use your content to train AI models. Google processes it under the <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noreferrer">Gemini API Terms</a>{LEGAL.geminiPaidTier ? ', on a paid tier where Google does not use your prompts or results to improve its products.' : ', which may allow Google to use submitted text to improve its products.'}</p>
         </Section>
 

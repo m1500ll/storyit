@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
+import type { Clip, ClipProjectWithClips, Database } from '@/types/database';
 import type { StoryWithScenes } from '@/types/domain';
 import { store } from '../store';
 import { InsufficientCreditsError } from '../errors';
@@ -18,6 +18,25 @@ function required<T>(res: { data: T; error: { message: string } | null }): NonNu
   const data = unwrap(res);
   if (data == null) throw new Error('Unexpected empty response from Supabase');
   return data;
+}
+
+/** Postgres numerics can arrive as strings: normalise once here. */
+const normClip = (c: Clip): Clip => ({ ...c, start_s: Number(c.start_s), end_s: Number(c.end_s), captions: Array.isArray(c.captions) ? c.captions : [] });
+const normClipProject = (p: ClipProjectWithClips): ClipProjectWithClips => ({
+  ...p,
+  duration_seconds: Number(p.duration_seconds),
+  source_size: Number(p.source_size),
+  clips: (p.clips ?? []).map(normClip).sort((a, b) => a.position - b.position),
+});
+
+/** The `{ error }` message our Edge Functions return on non-2xx responses. */
+async function edgeError(error: unknown): Promise<string> {
+  const ctx = (error as { context?: Response }).context;
+  if (ctx && typeof ctx.json === 'function') {
+    const body = (await ctx.json().catch(() => ({}))) as { error?: string };
+    if (body.error) return body.error;
+  }
+  return error instanceof Error ? error.message : 'La requête a échoué.';
 }
 
 const sortScenes = (s: StoryWithScenes): StoryWithScenes => ({ ...s, scenes: [...s.scenes].sort((a, b) => a.position - b.position) });
@@ -172,6 +191,52 @@ export function createSupabaseRepository(db: SupabaseClient<Database>): Reposito
       store.notify();
     },
 
+    async listClipProjects() {
+      const rows = required(await db.from('clip_projects').select('*, clips(*)').order('created_at', { ascending: false }));
+      return (rows as unknown as ClipProjectWithClips[]).map(normClipProject);
+    },
+    async getClipProject(id) {
+      const row = unwrap(await db.from('clip_projects').select('*, clips(*)').eq('id', id).maybeSingle());
+      return row ? normClipProject(row as unknown as ClipProjectWithClips) : null;
+    },
+    async createClipProject(input) {
+      const row = required(await db.from('clip_projects').insert({
+        user_id: await uid(), title: input.title.slice(0, 120), source_name: input.sourceName.slice(0, 200),
+        source_size: input.sourceSize, duration_seconds: Math.round(input.duration * 100) / 100, clip_length: input.clipLength,
+      }).select().single());
+      store.notify();
+      return { ...row, duration_seconds: Number(row.duration_seconds), source_size: Number(row.source_size) };
+    },
+    async renameClipProject(id, title) {
+      unwrap(await db.from('clip_projects').update({ title: title.slice(0, 120) }).eq('id', id));
+      store.notify();
+    },
+    async deleteClipProject(id) {
+      unwrap(await db.from('clip_projects').delete().eq('id', id));
+      store.notify();
+    },
+    async analyzeClipProject(id, audio) {
+      const path = `${await uid()}/${id}.mp3`;
+      const up = await db.storage.from('clip-audio').upload(path, audio, { contentType: 'audio/mpeg', upsert: true });
+      if (up.error) throw new Error(`L’envoi du son a échoué : ${up.error.message}`);
+      const { error } = await db.functions.invoke('clips-analyze', { body: { projectId: id } });
+      store.notify();
+      if (error) {
+        const msg = await edgeError(error);
+        if (/insuffisants|not enough/i.test(msg)) throw new InsufficientCreditsError(Number(/(\d+) crédits/.exec(msg)?.[1] ?? 0), 0);
+        throw new Error(msg);
+      }
+    },
+    async updateClip(id, patch) {
+      const row = required(await db.from('clips').update(patch).eq('id', id).select().single());
+      store.notify();
+      return normClip(row);
+    },
+    async deleteClip(id) {
+      unwrap(await db.from('clips').delete().eq('id', id));
+      store.notify();
+    },
+
     async approveStory(id, hash) {
       unwrap(await db.from('stories').update({ approved_hash: hash, approved_at: new Date().toISOString(), status: 'approved' }).eq('id', id));
       store.notify();
@@ -182,7 +247,7 @@ export function createSupabaseRepository(db: SupabaseClient<Database>): Reposito
 /** Pushes DB changes (e.g. from a render worker or another tab) into the UI. */
 export function subscribeToRealtime(db: SupabaseClient<Database>) {
   const channel = db.channel('storyit-changes');
-  for (const table of ['stories', 'scenes', 'profiles', 'credit_transactions', 'publish_packs', 'thumbnails'] as const) {
+  for (const table of ['stories', 'scenes', 'profiles', 'credit_transactions', 'publish_packs', 'thumbnails', 'clip_projects', 'clips'] as const) {
     channel.on('postgres_changes', { event: '*', schema: 'public', table }, () => store.notify());
   }
   channel.subscribe();

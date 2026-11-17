@@ -1,5 +1,8 @@
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
 import { buildAss, speechSpan, timeWords } from './captions';
+import { exclusive, loadFFmpeg } from './ffmpeg';
+
+export { loadFFmpeg };
 
 export interface AssemblyScene {
   clipUrl: string;
@@ -13,32 +16,6 @@ export type AssemblyProgress = { step: 'loading' | 'scene' | 'joining'; current:
 
 const W = 720;
 const H = 1280;
-let instance: Promise<FFmpeg> | null = null;
-
-/** ffmpeg.wasm core from a CDN (~30 MB, above the 25 MB per-file limit of the site host), pinned to the installed
- *  @ffmpeg/core version and fetched only when someone exports. Loaded as same-origin blob URLs for the ffmpeg worker. */
-const CORE_BASE = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/esm';
-async function blobURL(url: string, type: string) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Could not download the video tools (${res.status}).`);
-  return URL.createObjectURL(new Blob([await res.arrayBuffer()], { type }));
-}
-
-/** Lazy-loads ffmpeg.wasm (fetched only when someone exports). */
-export function loadFFmpeg(): Promise<FFmpeg> {
-  instance ??= (async () => {
-    const [{ FFmpeg }, coreURL, wasmURL] = await Promise.all([
-      import('@ffmpeg/ffmpeg'),
-      blobURL(`${CORE_BASE}/ffmpeg-core.js`, 'text/javascript'),
-      blobURL(`${CORE_BASE}/ffmpeg-core.wasm`, 'application/wasm'),
-    ]);
-    const ff = new FFmpeg();
-    await ff.load({ coreURL, wasmURL });
-    return ff;
-  })().catch((e) => { instance = null; throw e; });
-  return instance;
-}
-
 /** Runs an ffmpeg command and returns everything it logged (used to read silencedetect results). */
 async function captureLog(ff: FFmpeg, args: string[]) {
   let out = '';
@@ -92,7 +69,12 @@ export function wrapCaption(text: string, max = 22, lines = 3): string {
  * Builds the final 9:16 episode: each clip is looped/trimmed to its scene length, voice-over is laid
  * on top, captions are burned in, then all scenes are concatenated. Runs entirely in the browser.
  */
-export async function assembleEpisode(scenes: AssemblyScene[], onProgress: (p: AssemblyProgress) => void): Promise<Blob> {
+/** Runs in the app-wide ffmpeg queue (ffmpeg.wasm runs one command at a time). */
+export function assembleEpisode(scenes: AssemblyScene[], onProgress: (p: AssemblyProgress) => void): Promise<Blob> {
+  return exclusive(() => assembleEpisodeNow(scenes, onProgress));
+}
+
+async function assembleEpisodeNow(scenes: AssemblyScene[], onProgress: (p: AssemblyProgress) => void): Promise<Blob> {
   onProgress({ step: 'loading', current: 0, total: scenes.length });
   const ff = await loadFFmpeg();
   await ff.writeFile('caption.otf', await fetchBytes('/fonts/caption.otf'));

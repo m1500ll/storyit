@@ -1,4 +1,4 @@
-import { loadFFmpeg } from './assemble';
+import { exclusive, loadFFmpeg } from './ffmpeg';
 
 /** Bitrate plan to fit a video under `targetBytes` (pure, tested). */
 export function compressionPlan(durationSeconds: number, targetBytes: number, height: number | null) {
@@ -18,7 +18,12 @@ export type CompressProgress = { step: 'loading' | 'encoding'; ratio: number };
  * Re-encodes a video in the browser (ffmpeg.wasm, H.264 + AAC, MP4) so it fits under `targetBytes`.
  * Nothing leaves the device until the result is uploaded.
  */
-export async function compressVideo(file: File, durationSeconds: number, height: number | null, targetBytes: number,
+export function compressVideo(file: File, durationSeconds: number, height: number | null, targetBytes: number,
+  onProgress: (p: CompressProgress) => void): Promise<File> {
+  return exclusive(() => compressVideoNow(file, durationSeconds, height, targetBytes, onProgress));
+}
+
+async function compressVideoNow(file: File, durationSeconds: number, height: number | null, targetBytes: number,
   onProgress: (p: CompressProgress) => void): Promise<File> {
   const plan = compressionPlan(durationSeconds, targetBytes, height);
   if (!plan) throw new Error('This video is too long to fit the size limit with acceptable quality. Shorten it first.');

@@ -2,6 +2,7 @@
  * Supabase database types. Mirrors supabase/migrations/0001_init.sql.
  * Regenerate with: npx supabase gen types typescript --project-id <id> > src/types/database.ts
  */
+import type { Caption, CaptionStyleId, ClipLengthId, LayoutId } from './clips';
 
 export type StoryStatus = 'draft' | 'concept_selected' | 'scenes_ready' | 'generating' | 'in_review' | 'approved' | 'published';
 export type SceneStatus = 'pending' | 'queued' | 'generating' | 'generated' | 'failed';
@@ -12,6 +13,20 @@ export type AspectRatio = '9:16' | '1:1' | '16:9';
 
 type Timestamp = string; // ISO-8601
 type UUID = string;
+
+/** AI clipping (migration 0046). Rows are type aliases, not interfaces, so `.from()` resolves. */
+export type ClipProjectStatus = 'uploading' | 'analyzing' | 'ready' | 'failed';
+export type ClipProject = {
+  id: UUID; user_id: UUID; title: string; source_name: string; source_size: number; duration_seconds: number;
+  clip_length: ClipLengthId; status: ClipProjectStatus; error_message: string | null; created_at: Timestamp; updated_at: Timestamp;
+};
+export type Clip = {
+  id: UUID; project_id: UUID; user_id: UUID; position: number; start_s: number; end_s: number; title: string; hook: string;
+  reason: string; score: number; captions: Caption[]; caption_style: CaptionStyleId; layout: LayoutId; show_title: boolean;
+  created_at: Timestamp; updated_at: Timestamp;
+};
+export type ClipEditableFields = Pick<Clip, 'start_s' | 'end_s' | 'title' | 'captions' | 'caption_style' | 'layout' | 'show_title'>;
+export type ClipProjectWithClips = ClipProject & { clips: Clip[] };
 
 export interface Database {
   public: {
@@ -91,10 +106,22 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      clip_projects: {
+        Row: ClipProject;
+        Insert: Pick<ClipProject, 'user_id' | 'title' | 'source_name' | 'source_size' | 'duration_seconds' | 'clip_length'>;
+        Update: { title?: string };
+        Relationships: [];
+      };
+      clips: {
+        Row: Clip;
+        Insert: never;
+        Update: Partial<ClipEditableFields>;
+        Relationships: [{ foreignKeyName: 'clips_project_id_fkey'; columns: ['project_id']; isOneToOne: false; referencedRelation: 'clip_projects'; referencedColumns: ['id'] }];
+      };
       credit_transactions: {
         Row: {
           id: UUID; user_id: UUID; type: CreditTransactionType; amount: number; balance_after: number;
-          story_id: UUID | null; description: string; created_at: Timestamp;
+          story_id: UUID | null; clip_project_id?: UUID | null; description: string; created_at: Timestamp;
         };
         Insert: Omit<Database['public']['Tables']['credit_transactions']['Row'], 'id' | 'created_at' | 'balance_after'>;
         Update: never;

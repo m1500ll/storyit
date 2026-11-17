@@ -3,4 +3,4 @@ import { mockRepository } from './mockRepository';
 import { createSupabaseRepository } from './supabaseRepository';
 
 export const repository = supabase ? createSupabaseRepository(supabase) : mockRepository;
-export type { RenderProgress, Repository, SceneEditableFields } from './types';
+export type { NewClipProjectInput, RenderProgress, Repository, SceneEditableFields } from './types';

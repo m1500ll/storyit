@@ -61,7 +61,7 @@ const HEADLINE: Record<PaywallReason, string> = {
   publications: 'Programmez plus de publications',
 };
 const SUB: Record<PaywallReason, string> = {
-  credits: 'Les crédits servent au Creative Studio, à la vidéo automatique et à la traduction.',
+  credits: 'Les crédits servent au Creative Studio, à la vidéo automatique, à la traduction et au découpage en clips.',
   accounts: 'Creator connecte jusqu’à 10 comptes TikTok et Instagram, Studio n’a pas de limite.',
   library: 'Creator stocke jusqu’à 500 vidéos, Studio n’a pas de limite.',
   publications: 'Creator programme jusqu’à 2 000 publications à l’avance, Studio n’a pas de limite.',

@@ -5,6 +5,7 @@ import { InsufficientCreditsError } from '../errors';
 import type { Repository } from './types';
 import { CREDIT_COSTS } from '../credits';
 import type { PublishPack } from '@/lib/publishPack';
+import { mockClips } from './mockClips';
 
 const demoPacks = new Map<string, PublishPack>();
 
@@ -22,6 +23,7 @@ const changed = <T>(value: T): Promise<T> => {
 };
 
 export const mockRepository: Repository = {
+  ...mockClips,
   getProfile: async () => mockDb.profile,
   listTransactions: async () => mockDb.transactions,
   getReferrals: async () => ({

@@ -1,10 +1,13 @@
-import type { CreditTransaction, Profile, Scene, StoryStatus } from '@/types/database';
+import type { Clip, ClipEditableFields, ClipProject, ClipProjectWithClips, CreditTransaction, Profile, Scene, StoryStatus } from '@/types/database';
+import type { ClipLengthId } from '@/types/clips';
 import type { SceneDraft, StoryConcept, StoryWithScenes } from '@/types/domain';
 import type { PublishPack, Thumbnail } from '@/lib/publishPack';
 
 /** referral programme (migration 0021) */
 export interface ReferralFriend { label: string; status: 'signed_up' | 'qualified'; reward_months: number; created_at: string; qualified_at: string | null }
 export interface ReferralSummary { code: string; friends: ReferralFriend[] }
+
+export interface NewClipProjectInput { title: string; sourceName: string; sourceSize: number; duration: number; clipLength: ClipLengthId }
 
 export type SceneEditableFields = Pick<Scene, 'narration' | 'dialogue' | 'image_prompt' | 'video_prompt'>;
 
@@ -42,6 +45,17 @@ export interface Repository {
   /** Renders one thumbnail variant from the pack prompt (costs credits, refunded on failure). */
   generateThumbnail(storyId: string, aspect: '9:16' | '16:9'): Promise<void>;
   savePublishChoices(storyId: string, choices: Partial<Pick<PublishPack, 'selected_title' | 'edited_caption' | 'selected_thumbnail_id'>>): Promise<void>;
+
+  // AI clipping (migration 0046): the video stays in the browser, only its audio track goes to the AI
+  listClipProjects(): Promise<ClipProjectWithClips[]>;
+  getClipProject(id: string): Promise<ClipProjectWithClips | null>;
+  createClipProject(input: NewClipProjectInput): Promise<ClipProject>;
+  renameClipProject(id: string, title: string): Promise<void>;
+  deleteClipProject(id: string): Promise<void>;
+  /** Uploads the audio track and asks the AI for the best moments. Charges credits on success only. */
+  analyzeClipProject(id: string, audio: Blob): Promise<void>;
+  updateClip(id: string, patch: Partial<ClipEditableFields>): Promise<Clip>;
+  deleteClip(id: string): Promise<void>;
 }
 
 export interface RenderProgress { finished: boolean; done: number; failed: number; total: number }
