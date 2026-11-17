@@ -18,9 +18,9 @@ const tabs = [
 /** Everything the desktop sidebar offers, so no page is unreachable on a phone. */
 const sections = [
   { title: 'Créer', items: [
+    { to: '/app/clips', label: 'Découper une vidéo', icon: Scissors, badge: 'Nouveau' },
     { to: '/app/prompts', label: 'Creative Studio', icon: Wand2, badge: 'Vidéo IA' },
     { to: '/app/characters', label: 'Personnages', icon: UsersRound },
-    { to: '/app/clips', label: 'Découper une vidéo', icon: Scissors, badge: 'Nouveau' },
     { to: '/app/translate', label: 'Traduire une vidéo', icon: Languages, badge: 'Nouveau' },
   ] },
   { title: 'Diffuser', items: [

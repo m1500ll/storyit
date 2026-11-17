@@ -1,5 +1,6 @@
-import { ArrowRight, Clapperboard, Languages, Plus, Sparkles } from 'lucide-react';
-import { DUB_CREDITS_PER_MIN, formatCredits } from '@/services/credits';
+import { ArrowRight, Clapperboard, Languages, Plus, Scissors, Sparkles } from 'lucide-react';
+import { ClipVisual } from '@/components/clips/ClipPromo';
+import { CREDIT_COSTS, DUB_CREDITS_PER_MIN, formatCredits } from '@/services/credits';
 import { useNavigate } from 'react-router-dom';
 import { DistributionOverview } from '@/components/dashboard/DistributionOverview';
 import { PromptStudioHero } from '@/components/dashboard/PromptStudioHero';
@@ -29,6 +30,21 @@ export default function DashboardPage() {
           <ArrowRight className="h-4 w-4 shrink-0 text-coral-300" aria-hidden />
         </button>
       )}
+      <section aria-labelledby="dash-clips" className="relative mb-8 overflow-hidden rounded-2xl border border-fuchsia-400/30 bg-gradient-to-br from-violet-600/[0.16] via-ink-900/80 to-coral-500/[0.08] p-5 shadow-[0_0_60px_-28px_rgba(217,70,239,0.7)] md:p-7">
+        <div aria-hidden className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-fuchsia-500/20 blur-3xl" />
+        <div className="relative grid items-center gap-6 lg:grid-cols-[1fr_1.1fr]">
+          <div className="min-w-0">
+            <p className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-400/40 bg-fuchsia-500/15 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.14em] text-fuchsia-200"><Sparkles className="h-3 w-3" aria-hidden /> Nouveau · Clips IA</p>
+            <h2 id="dash-clips" className="mt-3 text-balance font-display text-3xl leading-tight text-zinc-50 md:text-4xl">Transforme une longue vidéo en clips viraux</h2>
+            <p className="mt-2 text-sm text-zinc-300">Ajoute un podcast, une interview ou un live : l’IA trouve jusqu’à 8 moments forts, écrit un titre façon TikTok et des sous-titres animés calés sur la voix.</p>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <Button size="lg" onClick={() => navigate('/app/clips/new')}><Scissors className="h-4 w-4" /> Découper une vidéo</Button>
+              <span className="text-xs text-zinc-400 tabular-nums">{CREDIT_COSTS.clipMinute} crédits par minute · débités seulement si des clips sont trouvés</span>
+            </div>
+          </div>
+          <ClipVisual compact />
+        </div>
+      </section>
       <PromptStudioHero />
       <CommunityCard />
       <Card className="mb-8 overflow-hidden border-coral-400/30 bg-gradient-to-r from-coral-500/[0.08] via-violet-500/[0.06] to-transparent">

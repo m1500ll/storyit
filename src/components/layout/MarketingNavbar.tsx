@@ -5,8 +5,8 @@ import { LangSwitch, LogoMark, ThemeToggle } from '../ui';
 import { useLang } from '@/lib/lang';
 
 const LINKS = {
-  fr: [['/#how', 'Comment ça marche'], ['/#examples', 'Exemples'], ['/#money', 'Résultats'], ['/#pricing', 'Tarifs'], ['/#faq', 'FAQ']],
-  en: [['/en#how', 'How it works'], ['/en#examples', 'Examples'], ['/en#money', 'Results'], ['/en#pricing', 'Pricing'], ['/en#faq', 'FAQ']],
+  fr: [['/#clips', 'Clips IA'], ['/#how', 'Comment ça marche'], ['/#examples', 'Exemples'], ['/#money', 'Résultats'], ['/#pricing', 'Tarifs'], ['/#faq', 'FAQ']],
+  en: [['/en#clips', 'AI clips'], ['/en#how', 'How it works'], ['/en#examples', 'Examples'], ['/en#money', 'Results'], ['/en#pricing', 'Pricing'], ['/en#faq', 'FAQ']],
 } as const;
 const pill = 'touch-hit inline-flex h-10 items-center justify-center whitespace-nowrap rounded-full px-3.5 text-sm font-semibold sm:px-5 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0a14]';
 

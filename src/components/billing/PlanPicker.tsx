@@ -46,7 +46,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
           <p className="relative mt-3 text-balance font-display text-3xl leading-tight text-zinc-50">Essayez tout Storyit 3 jours pour {TRIAL.price} $</p>
           <ul className="relative mt-3 space-y-1.5 text-sm text-zinc-300">
             <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span><strong className="text-zinc-100">{formatCredits(TRIAL.credits)} crédits</strong> : une vidéo complète de 30 s avec le Creative Studio</span></li>
-            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>Tout Storyit : Creative Studio, vidéo automatique, traduction</span></li>
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>Tout Storyit : Creative Studio, clips IA (1 vidéo), traduction</span></li>
             <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>Résiliable en 1 clic avant la fin de l’essai</span></li>
           </ul>
           <Button size="lg" className="relative mt-4 w-full sm:w-auto" loading={pending === 'creator:trial'} disabled={pending !== null} onClick={() => buy('creator', true)}>

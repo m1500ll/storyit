@@ -1,3 +1,4 @@
+import { ClipFeature } from '@/components/landing/ClipFeature';
 import { AutoVideoFeature } from '@/components/landing/AutoVideoFeature';
 import { CommunityBand } from '@/components/community/Community';
 import { MarketingNavbar } from '@/components/layout/MarketingNavbar';
@@ -35,6 +36,7 @@ export default function LandingPage({ lang = 'fr' }: { lang?: Lang }) {
       <MarketingNavbar overlay langTo={fr ? '/en' : '/'} />
       <main id="main">
       <Hero />
+      <ClipFeature />
       <Showcase />
       <AutoVideoFeature />
       <VideosPerMonth />

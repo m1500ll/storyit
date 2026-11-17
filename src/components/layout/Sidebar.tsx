@@ -46,11 +46,11 @@ export function Sidebar() {
     {
       title: 'Créer',
       items: [
-        { to: '/app/prompts', label: 'Creative Studio', icon: Wand2, badge: <span className="rounded-full bg-coral-500/15 px-1.5 text-[11px] text-coral-300">Vidéo IA</span> },
-        { to: '/app/characters', label: 'Personnages', icon: UsersRound },
         { to: '/app/clips', label: 'Découper une vidéo', icon: Scissors, badge: clipBusy
           ? <Loader2 className="h-3.5 w-3.5 animate-spin text-violet-300 motion-reduce:animate-none" aria-label="Analyse en cours" />
           : clipCount ? <span className="text-[11px] tabular-nums text-zinc-500">{clipCount}</span> : <span className="rounded-full bg-violet-500/15 px-1.5 text-[11px] text-violet-300">Nouveau</span> },
+        { to: '/app/prompts', label: 'Creative Studio', icon: Wand2, badge: <span className="rounded-full bg-coral-500/15 px-1.5 text-[11px] text-coral-300">Vidéo IA</span> },
+        { to: '/app/characters', label: 'Personnages', icon: UsersRound },
         { to: '/app/translate', label: 'Traduire une vidéo', icon: Languages, badge: <span className="rounded-full bg-violet-500/15 px-1.5 text-[11px] text-violet-300">Nouveau</span> },
       ],
     },
