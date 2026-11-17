@@ -3,19 +3,19 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 export type Theme = 'light' | 'dark';
 const KEY = 'storyit:theme';
 
-/** Stored choice, else the OS preference. Must match the inline script in index.html. */
+/** Stored choice, else dark (the neon-city art direction is dark). Must match the inline script in index.html. */
 function initialTheme(): Theme {
   if (typeof window === 'undefined') return 'dark'; // build-time pre-rendering
   try {
     const saved = localStorage.getItem(KEY);
     if (saved === 'light' || saved === 'dark') return saved;
   } catch { /* storage blocked */ }
-  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  return 'dark';
 }
 
 function apply(theme: Theme) {
   document.documentElement.dataset.theme = theme;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f7f6fb' : '#0a0a0c');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f7f6fb' : '#10081e');
 }
 
 const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>({ theme: 'dark', toggle: () => {} });
@@ -24,17 +24,6 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(initialTheme);
 
   useEffect(() => apply(theme), [theme]);
-
-  // Follow OS changes until the user picks a theme explicitly.
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: light)');
-    const onChange = () => {
-      try { if (localStorage.getItem(KEY)) return; } catch { /* ignore */ }
-      setTheme(mq.matches ? 'light' : 'dark');
-    };
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
 
   const toggle = useCallback(() => {
     setTheme((t) => {

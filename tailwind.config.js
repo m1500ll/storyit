@@ -28,8 +28,6 @@ export default {
         // headings and big numbers: a bold modern grotesque (src/main.tsx loads it)
         display: ['"Bricolage Grotesque"', 'Inter', 'system-ui', 'sans-serif'],
         hero: ['"Bricolage Grotesque"', 'Inter', 'system-ui', 'sans-serif'],
-        // neon-city art direction: the chunky poster headline (src/fonts.css)
-        poster: ['"Titan One"', '"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
       },
       boxShadow: { glow: '0 0 40px -10px rgba(139,92,246,0.45)' },
     },

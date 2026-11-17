@@ -1,8 +1,8 @@
-import { FileVideo, Lock, Sparkles, UploadCloud, X } from 'lucide-react';
+import { CircleCheck, Clapperboard, Crown, FileVideo, Lock, Sparkles, Star, UploadCloud, X, Zap } from 'lucide-react';
 import { useEffect, useId, useState, type DragEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePaywall } from '@/components/billing/Paywall';
-import { Button, Card, PageHeader } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import { useCredits } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
 import { preloadFFmpeg } from '@/lib/ffmpeg';
@@ -95,8 +95,15 @@ export default function ClipNewPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Clips IA" title="Transforme une vidéo en clips"
-        description="Ajoute une longue vidéo : l’IA trouve les meilleurs moments et en fait des clips verticaux avec un titre et des sous-titres." />
+      <header className="mb-8">
+        <p className="inline-flex items-center gap-1.5 rounded-full border border-violet-400/30 bg-violet-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-violet-200"><Sparkles className="h-3 w-3" aria-hidden /> Clips IA</p>
+        <h1 className="mt-3 font-display text-4xl text-zinc-50 md:text-5xl">Transforme une vidéo en{' '}
+          <span className="relative inline-block bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text pr-1 italic text-transparent">clips
+            <svg aria-hidden viewBox="0 0 120 14" preserveAspectRatio="none" className="absolute -bottom-2 left-0 h-3 w-[130%]"><path d="M2 11 C 40 4, 80 3, 118 6" stroke="#e879f9" strokeWidth="3" fill="none" strokeLinecap="round" /></svg>
+          </span>
+        </h1>
+        <p className="mt-3 max-w-xl text-sm text-zinc-300 md:text-base">Ajoute une longue vidéo : l’IA trouve les meilleurs moments et en fait des clips verticaux avec un titre et des sous-titres.</p>
+      </header>
 
       <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="min-w-0 space-y-6">
@@ -104,8 +111,8 @@ export default function ClipNewPage() {
             <label htmlFor={inputId}
               onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}
               className={cn('flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-16 text-center transition-colors focus-within:ring-2 focus-within:ring-violet-500/50',
-                dragging ? 'border-violet-400 bg-violet-500/10' : 'border-line/15 bg-ink-900 hover:border-violet-500/40 hover:bg-line/[0.02]')}>
-              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-violet-500/15 text-violet-300"><UploadCloud className="h-6 w-6" /></span>
+                dragging ? 'border-violet-400 bg-violet-500/10' : 'border-violet-400/30 bg-ink-900/70 backdrop-blur-md hover:border-violet-400/60 hover:bg-ink-900/80')}>
+              <span className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-[0_0_30px_-6px_rgba(217,70,239,0.8)]"><UploadCloud className="h-7 w-7" aria-hidden /></span>
               <span className="text-base font-medium text-zinc-100">Dépose ta vidéo ici, ou clique pour la choisir</span>
               <span className="text-xs text-zinc-500">MP4, MOV ou WebM · jusqu’à {MAX_SOURCE_SECONDS / 60} minutes · podcasts, interviews, vlogs, lives, conférences</span>
               <input id={inputId} type="file" accept="video/*,.mkv" className="sr-only" onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ''; }} />
@@ -127,14 +134,18 @@ export default function ClipNewPage() {
           )}
 
           <fieldset>
-            <legend className="label mb-3">Durée des clips</legend>
-            <div className="grid grid-cols-3 gap-2">
+            <legend className="mb-3 flex items-center gap-2 text-sm font-semibold text-zinc-100"><Zap className="h-4 w-4 text-amber-300" aria-hidden /> Durée des clips</legend>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {(Object.keys(CLIP_LENGTHS) as ClipLengthId[]).map((k) => (
-                <label key={k} className={cn('cursor-pointer rounded-xl border px-3 py-3 text-center text-sm transition-colors focus-within:ring-2 focus-within:ring-violet-500/50',
-                  length === k ? 'border-violet-500/50 bg-violet-500/10 text-zinc-100' : 'border-line/10 text-zinc-400 hover:text-zinc-200')}>
+                <label key={k} className={cn('relative cursor-pointer rounded-xl border px-2 py-3.5 text-center text-sm backdrop-blur-md transition focus-within:ring-2 focus-within:ring-violet-500/50 sm:px-3',
+                  length === k ? 'border-fuchsia-400/70 bg-violet-600/20 text-zinc-50 shadow-[0_0_28px_-8px_rgba(217,70,239,0.9)]' : 'border-line/10 bg-ink-900/60 text-zinc-300 hover:border-violet-400/40')}>
                   <input type="radio" name="length" value={k} checked={length === k} onChange={() => setLength(k)} className="sr-only" />
-                  <span className="block font-medium tabular-nums">{CLIP_LENGTHS[k].label}</span>
-                  <span className="text-[11px] text-zinc-500">{k === 'short' ? 'Percutant' : k === 'medium' ? 'Recommandé' : 'Pour raconter'}</span>
+                  {k === 'medium' && <span className="absolute -top-2.5 right-2 rounded-full bg-fuchsia-600 px-2 py-0.5 text-[10px] font-semibold text-white">Populaire</span>}
+                  <span className="flex items-center justify-center gap-1.5 font-semibold tabular-nums">
+                    {k === 'short' ? <Zap className="h-4 w-4 text-amber-300" aria-hidden /> : k === 'medium' ? <Star className="h-4 w-4 text-fuchsia-300" aria-hidden /> : <Clapperboard className="h-4 w-4 text-coral-400" aria-hidden />}
+                    {CLIP_LENGTHS[k].label}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-zinc-400">{k === 'short' ? 'Parfait pour TikTok' : k === 'medium' ? 'Recommandé' : 'Pour YouTube'}</span>
                 </label>
               ))}
             </div>
@@ -146,10 +157,10 @@ export default function ClipNewPage() {
 
         <aside>
           <Card className="lg:sticky lg:top-24">
-            <p className="label">Ce que tu obtiens</p>
+            <p className="label flex items-center gap-1.5 text-zinc-300"><Crown className="h-3.5 w-3.5 text-amber-300" aria-hidden /> Ce que tu obtiens</p>
             <ul className="mt-3 space-y-2 text-sm text-zinc-400">
               {['Jusqu’à 8 meilleurs moments, classés par potentiel viral', 'Un titre accrocheur pour chaque clip', 'Des sous-titres mot à mot, en 3 styles', 'Des MP4 verticaux 9:16 : retouches et exports gratuits'].map((t) => (
-                <li key={t} className="flex gap-2"><Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-300" />{t}</li>
+                <li key={t} className="flex gap-2 text-zinc-200"><CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-400" aria-hidden />{t}</li>
               ))}
             </ul>
             <div className="mt-5 border-t border-line/5 pt-4 text-sm">

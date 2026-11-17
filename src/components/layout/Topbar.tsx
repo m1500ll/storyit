@@ -13,7 +13,7 @@ export function Topbar() {
   const openPaywall = usePaywall();
   const name = profile?.display_name ?? 'Studio';
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 sm:gap-4 border-b border-line/[0.06] bg-ink-950/80 px-4 backdrop-blur md:px-8">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 sm:gap-4 border-b border-line/[0.06] bg-ink-950/55 px-4 backdrop-blur-md md:px-8">
       <div className="lg:hidden"><Logo to="/app" /></div>
       <div className="hidden lg:block" />
       <div className="flex min-w-0 items-center gap-1.5 sm:gap-3">

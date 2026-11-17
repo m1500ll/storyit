@@ -23,7 +23,7 @@ function NavItem({ to, label, icon: Icon, end, badge, locked }: Item) {
     <NavLink to={to} end={end}
       className={({ isActive }) => cn(
         'flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition',
-        isActive ? 'bg-line/[0.07] text-zinc-50' : 'text-zinc-400 hover:bg-line/[0.04] hover:text-zinc-200',
+        isActive ? 'border border-violet-400/40 bg-gradient-to-r from-violet-600/35 to-fuchsia-600/20 text-zinc-50 shadow-[0_0_24px_-8px_rgba(168,85,247,0.8)]' : 'border border-transparent text-zinc-400 hover:bg-line/[0.04] hover:text-zinc-200',
       )}>
       <Icon className="h-4 w-4 shrink-0" />
       <span className="flex-1">{label}</span>
@@ -84,7 +84,7 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-line/[0.06] bg-ink-950 px-4 py-5 lg:flex">
+    <aside className="sticky top-0 z-[1] hidden h-screen w-64 shrink-0 flex-col overflow-y-auto border-r border-violet-400/[0.12] bg-ink-950/80 px-4 py-5 backdrop-blur-md lg:flex">
       <Logo to="/app" />
       <nav className="mt-8 space-y-6" aria-label="Menu principal">
         {sections.map((s) => (
