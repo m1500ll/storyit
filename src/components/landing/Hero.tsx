@@ -50,8 +50,8 @@ export function Hero() {
             <PromoVideo className="absolute text-left" poster="/landing/city/promo-poster.webp" autoPlay={false} neon
               frameClassName="h-full rounded-[1.4cqw] bg-[#0b0614]" videoClassName="h-full w-full object-contain"
               style={{ left: '26.75%', top: '38.4%', width: '47.9%', height: '42.35%' }} />
-            <ul className="absolute grid grid-cols-3 items-center divide-x divide-white/10 rounded-[1.3cqw] border border-violet-400/30 bg-[#1a0d33]/95 shadow-[0_0_2cqw_-0.6cqw_rgba(168,85,247,0.7)]"
-              style={{ left: '30.3%', top: '85.7%', width: '41.9%', height: '9.1%' }}>
+            <ul className="absolute grid grid-cols-3 items-center divide-x divide-white/10 rounded-[1.3cqw] border border-violet-400/30 bg-[#1a0d33] shadow-[0_0_2cqw_-0.6cqw_rgba(168,85,247,0.7)]"
+              style={{ left: '29.9%', top: '85.4%', width: '42.7%', height: '9.7%' }}>
               {PROMISES.fr.map(([Icon, a, b]) => (
                 <li key={a} className="flex h-full items-center justify-center gap-[0.8cqw] px-[0.6cqw]">
                   <Icon className="h-[1.9cqw] w-[1.9cqw] shrink-0 text-fuchsia-400" aria-hidden />
