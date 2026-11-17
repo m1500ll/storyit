@@ -1,5 +1,6 @@
 import { CheckCircle2, CreditCard as CardIcon, X } from 'lucide-react';
 import { useState } from 'react';
+import { billingPlan } from '@/services/billing';
 import { useSearchParams } from 'react-router-dom';
 import { PlanPicker } from '@/components/billing/PlanPicker';
 import { Button, Card, CardHeader, PageHeader } from '@/components/ui';
@@ -61,11 +62,16 @@ export default function BillingPage() {
         </Card>
       </div>
       <Card className="mt-6">
-        {profile?.plan === 'studio'
+        {billingPlan(profile).legacyPaid && (
+          <p role="status" className="mb-4 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            <strong>Storyit change de prestataire de paiement.</strong> Votre abonnement actuel ne se renouvellera pas : choisissez votre offre ci-dessous pour le réactiver. Vos crédits restent sur votre compte.
+          </p>
+        )}
+        {billingPlan(profile).plan === 'studio'
           ? <CardHeader title="Recharger des crédits" subtitle="Vous avez Studio, notre offre la plus complète. Les packs de crédits n’expirent jamais." />
           : <CardHeader title="Changer d’offre ou recharger" subtitle="Les offres se renouvellent chaque mois. Les packs de crédits n’expirent jamais." />}
         <TrialUpgrade />
-        <PlanPicker currentPlan={profile?.plan} trialUsed={profile?.trial_used} initialInterval={params.get('interval') === 'month' ? 'month' : 'year'} />
+        <PlanPicker currentPlan={billingPlan(profile).plan} trialUsed={billingPlan(profile).trialUsed} initialInterval={params.get('interval') === 'month' ? 'month' : 'year'} />
       </Card>
       </div>
       <AutoTopup />

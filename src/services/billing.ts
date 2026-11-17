@@ -57,3 +57,10 @@ export const billingService = {
     window.location.assign(await call({ action: 'portal' }));
   },
 };
+
+/** The old Stripe account was abandoned (Nov 2026): a paid plan still recorded there does not renew, so the customer
+ *  re-subscribes on the new account. For the plan picker that customer is on no plan (and the $1 trial is not offered). */
+export function billingPlan(profile: { plan?: string; trial_used?: boolean; stripe_account?: string | null } | null | undefined) {
+  const legacyPaid = !!profile?.plan && profile.plan !== 'free' && profile.stripe_account !== 'new';
+  return { plan: legacyPaid ? 'free' : profile?.plan, trialUsed: legacyPaid || !!profile?.trial_used, legacyPaid };
+}

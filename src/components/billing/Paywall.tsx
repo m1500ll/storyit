@@ -1,5 +1,6 @@
 import { Sparkles } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { billingPlan } from '@/services/billing';
 import { useProfile } from '@/hooks/useStore';
 import { PROMPT_PROJECT_COST, projectsFor, formatCredits } from '@/services/credits';
 import { PlanPicker } from './PlanPicker';
@@ -45,7 +46,7 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
               <li className="rounded-lg bg-line/[0.04] px-3 py-2">10 000 crédits ≈ {projectsFor(10000)} projets complets</li>
               <li className="rounded-lg bg-line/[0.04] px-3 py-2">Les crédits rechargés n’expirent jamais</li>
             </ul>
-            <div className="relative mt-6"><TrialUpgrade /><PlanPicker currentPlan={profile?.plan} trialUsed={profile?.trial_used} compact /></div>
+            <div className="relative mt-6"><TrialUpgrade /><PlanPicker currentPlan={billingPlan(profile).plan} trialUsed={billingPlan(profile).trialUsed} compact /></div>
             <button onClick={() => setState(null)} className="relative mt-4 w-full text-center text-xs text-zinc-500 hover:text-zinc-300">Plus tard</button>
           </div>
         </div>
