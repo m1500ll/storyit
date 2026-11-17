@@ -33,27 +33,33 @@ export function Hero() {
       {/* Desktop, French: the owner's neon-city artwork as is (public/landing/city/hero-scene.webp), with the real
           trial link, promo film and promises placed exactly over their drawn spots (coordinates in % of the artwork). */}
       {fr && (
-        <div className="relative hidden w-full lg:block" style={{ aspectRatio: '1672 / 941' }}>
-          <img src="/landing/city/hero-scene.webp" alt="" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover" />
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-[3%] bg-gradient-to-b from-transparent to-[rgb(var(--ink-950))]" />
-          <h1 className="sr-only">Crée des vidéos IA virales qui rapportent.</h1>
-          <div className="absolute" style={{ left: '41.4%', top: '30.6%', width: '17.8%', height: '4.6%' }}>
-            <StartLink to="/app/billing?interval=month" className="block h-full w-full rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400">
-              <span className="sr-only">Essai : 3 jours pour 1 $, 7 000 crédits</span>
-            </StartLink>
+        // The whole artwork always fits the screen (never cropped, never taller than the window); wider screens get a
+        // soft blurred extension on the sides. Overlays and text sizes use the artwork's own box (container units).
+        <div className="relative hidden w-full overflow-hidden lg:block" style={{ height: 'min(100svh, calc(100vw * 941 / 1672))' }}>
+          <img src="/landing/city/hero-scene.webp" alt="" aria-hidden className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-2xl" />
+          <div className="absolute left-1/2 top-0 h-full -translate-x-1/2" style={{ aspectRatio: '1672 / 941', containerType: 'size' }}>
+            <img src="/landing/city/hero-scene.webp" alt="" fetchPriority="high" width={3344} height={1882}
+              className="absolute inset-0 h-full w-full object-cover [mask-image:linear-gradient(90deg,transparent,#000_2.5%,#000_97.5%,transparent)]" />
+            <h1 className="sr-only">Crée des vidéos IA virales qui rapportent.</h1>
+            <div className="absolute" style={{ left: '41.4%', top: '30.6%', width: '17.8%', height: '4.6%' }}>
+              <StartLink to="/app/billing?interval=month" className="block h-full w-full rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400">
+                <span className="sr-only">Essai : 3 jours pour 1 $, 7 000 crédits</span>
+              </StartLink>
+            </div>
+            {/* the frame is 2:1 and the film 16:9: the whole film is shown (thin dark bands), never cut */}
+            <PromoVideo className="absolute text-left" poster="/landing/city/promo-poster.webp" autoPlay={false} neon
+              frameClassName="h-full rounded-[1.4cqw] bg-[#0b0614]" videoClassName="h-full w-full object-contain"
+              style={{ left: '26.75%', top: '38.4%', width: '47.9%', height: '42.35%' }} />
+            <ul className="absolute grid grid-cols-3 items-center divide-x divide-white/10 rounded-[1.3cqw] border border-violet-400/30 bg-[#1a0d33]/95 shadow-[0_0_2cqw_-0.6cqw_rgba(168,85,247,0.7)]"
+              style={{ left: '30.3%', top: '85.7%', width: '41.9%', height: '9.1%' }}>
+              {PROMISES.fr.map(([Icon, a, b]) => (
+                <li key={a} className="flex h-full items-center justify-center gap-[0.8cqw] px-[0.6cqw]">
+                  <Icon className="h-[1.9cqw] w-[1.9cqw] shrink-0 text-fuchsia-400" aria-hidden />
+                  <span className="whitespace-nowrap text-[0.98cqw] leading-[1.25] text-white"><span className="block font-medium">{a}</span>{b}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <PromoVideo className="absolute text-left" poster="/landing/city/promo-poster.webp" autoPlay={false} neon
-            frameClassName="h-full rounded-[1.6vw]" videoClassName="h-full w-full object-cover"
-            style={{ left: '26.7%', top: '38.35%', width: '47.95%', height: '42.4%' }} />
-          <ul className="absolute grid grid-cols-3 items-center divide-x divide-white/10 rounded-[1.4vw] border border-violet-400/30 bg-[#1a0d33]"
-            style={{ left: '30.3%', top: '85.7%', width: '41.9%', height: '9.1%' }}>
-            {PROMISES.fr.map(([Icon, a, b]) => (
-              <li key={a} className="flex items-center justify-center gap-[0.8vw] px-[0.8vw]">
-                <Icon className="h-[2.1vw] w-[2.1vw] shrink-0 text-fuchsia-400" aria-hidden />
-                <span className="text-[0.95vw] leading-tight text-white"><span className="block">{a}</span>{b}</span>
-              </li>
-            ))}
-          </ul>
         </div>
       )}
       {/* Phones, tablets and English: same artwork as a backdrop, real text stacked */}
@@ -76,7 +82,7 @@ export function Hero() {
             <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-bold text-white">⚡ {fr ? 'Essai' : 'Trial'}</span>{fr ? '3 jours pour 1 $ · 7 000 crédits' : '3 days for $1 · 7,000 credits'} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </StartLink>
           <PromoVideo className="relative mx-auto mt-6 max-w-3xl text-left" poster="/landing/city/promo-poster.webp" autoPlay={false} neon
-            frameClassName="border-2 border-violet-400/70 shadow-[0_0_40px_-6px_rgba(168,85,247,0.8)]" videoClassName="aspect-[2/1] w-full object-cover" />
+            frameClassName="border-2 border-violet-400/70 shadow-[0_0_40px_-6px_rgba(168,85,247,0.8)]" videoClassName="aspect-video w-full object-cover" />
           <ul className="mx-auto mt-4 grid max-w-2xl grid-cols-1 gap-3 rounded-2xl border border-violet-400/30 bg-[#1a0d33] p-4 text-left sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-white/10">
             {PROMISES[lang].map(([Icon, a, b]) => (
               <li key={a} className="flex items-center gap-3 sm:justify-center sm:px-3">
