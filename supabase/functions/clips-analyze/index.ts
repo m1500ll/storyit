@@ -146,6 +146,60 @@ function cleanClips(raw: RawClip[], duration: number, [min, max]: readonly [numb
   return out.slice(0, 10);
 }
 
+
+// ---------- Word-accurate captions (OpenAI speech-to-text, word timestamps) ----------
+
+interface Word { w: string; s: number; e: number }
+
+/** every spoken word with its own start/end (seconds), or null if the transcription is unavailable */
+async function transcribeWords(bytes: Uint8Array): Promise<Word[] | null> {
+  const key = Deno.env.get('OPENAI_API_KEY');
+  if (!key) return null;
+  try {
+    const fd = new FormData();
+    fd.append('file', new Blob([bytes], { type: 'audio/mpeg' }), 'audio.mp3');
+    fd.append('model', 'whisper-1');
+    fd.append('response_format', 'verbose_json');
+    fd.append('timestamp_granularities[]', 'word');
+    const res = await fetch('https://api.openai.com/v1/audio/transcriptions', { method: 'POST', headers: { Authorization: `Bearer ${key}` }, body: fd, signal: AbortSignal.timeout(110_000) });
+    if (!res.ok) { console.error('transcribe', res.status, (await res.text()).slice(0, 200)); return null; }
+    const d = await res.json();
+    const words = (d.words ?? []).map((x: any) => ({ w: String(x.word ?? '').trim(), s: num(x.start), e: num(x.end) })).filter((x: Word) => x.w && x.e >= x.s);
+    return words.length ? words : null;
+  } catch (e) { console.error('transcribe', e instanceof Error ? e.message : e); return null; }
+}
+
+/** caption chunks (1 to 3 words, cut on punctuation and pauses) built from the real word timings, each with its words */
+function chunksFromWords(words: Word[], start: number, end: number) {
+  const inside = words.filter((w) => w.e > start - 0.05 && w.s < end + 0.05);
+  const out: { start: number; end: number; text: string; words: { s: number; e: number; w: string }[] }[] = [];
+  let cur: Word[] = [];
+  const flush = () => {
+    if (!cur.length) return;
+    out.push({ start: round2(cur[0].s), end: round2(cur[cur.length - 1].e), text: cur.map((w) => w.w).join(' '), words: cur.map((w) => ({ s: round2(w.s), e: round2(w.e), w: w.w })) });
+    cur = [];
+  };
+  for (let i = 0; i < inside.length; i++) {
+    const w = inside[i];
+    if (cur.length && (cur.length >= 3 || w.s - cur[cur.length - 1].e > 0.35 || cur.map((x) => x.w).join(' ').length + w.w.length > 18)) flush();
+    cur.push(w);
+    if (/[.!?,;:…]$/.test(w.w)) flush();
+  }
+  flush();
+  // a caption stays on screen until the next one starts (no flicker between chunks)
+  for (let i = 0; i < out.length - 1; i++) if (out[i + 1].start - out[i].end < 0.25) out[i].end = out[i + 1].start;
+  return out;
+}
+
+/** clip edges moved onto word boundaries: never start or end in the middle of a word */
+function snapToWords(words: Word[], start: number, end: number) {
+  const first = words.find((w) => w.e > start + 0.05);
+  const last = [...words].reverse().find((w) => w.s < end - 0.05);
+  const s = first && Math.abs(first.s - start) < 1.2 ? Math.max(0, first.s - 0.08) : start;
+  const e = last && Math.abs(last.e - end) < 1.2 ? last.e + 0.25 : end;
+  return e - s > 3 ? { start: round2(s), end: round2(e) } : { start, end };
+}
+
 // ---------- Handler ----------
 
 Deno.serve(async (req) => {
@@ -208,8 +262,10 @@ Rules:
 - title: catchy, max 60 characters, in the spoken language.
 - score: honest 0-100 estimate of how well the clip would perform.`;
 
-    const out = await callGemini(prompt, encodeBase64(bytes));
-    const clips = cleanClips(Array.isArray(out?.clips) ? out.clips : [], duration, [min, max]);
+    // the AI picks the moments; the captions come from a speech-to-text with real word timings (in parallel)
+    const [out, words] = await Promise.all([callGemini(prompt, encodeBase64(bytes)), transcribeWords(bytes)]);
+    let clips = cleanClips(Array.isArray(out?.clips) ? out.clips : [], duration, [min, max]);
+    if (words) clips = clips.map((c) => { const b = snapToWords(words, c.start, Math.min(duration, c.end)); return { ...c, ...b, end: Math.min(duration, b.end), captions: chunksFromWords(words, b.start, Math.min(duration, b.end)) as RawClip['captions'] }; });
     if (clips.length === 0) throw new Error('L’IA n’a pas trouvé de moment clair à découper (y a-t-il de la parole dans cette vidéo ?)');
 
     await admin.from('clips').delete().eq('project_id', projectId);

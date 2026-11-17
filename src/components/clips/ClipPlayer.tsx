@@ -1,8 +1,9 @@
 import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { wrapTitle } from '@/lib/clipAss';
+import { CAPTION_BASE, CAPTION_LOOK } from '@/lib/clipAss';
+import { drawTitle, TITLE_TOP } from '@/lib/clipTitle';
 import { cn } from '@/lib/cn';
-import type { Caption, CaptionStyleId, LayoutId } from '@/types/clips';
+import type { Caption, CaptionAnimId, CaptionStyleId, LayoutId, TitleStyleId } from '@/types/clips';
 
 export interface PlayerClip {
   start_s: number;
@@ -12,15 +13,34 @@ export interface PlayerClip {
   captions: Caption[];
   caption_style: CaptionStyleId;
   layout: LayoutId;
+  caption_size: number;
+  caption_pos: number;
+  caption_anim: CaptionAnimId;
+  title_style: TitleStyleId;
 }
 
 // Sizes are expressed in 720-px-wide frame units so the preview matches the export (src/lib/clipAss.ts).
 const u = (px: number) => `calc(${px} / 720 * 100cqw)`;
-const CAPTION_CSS: Record<CaptionStyleId, CSSProperties> = {
-  bold: { color: '#fff', fontSize: u(68), textTransform: 'uppercase', WebkitTextStroke: `${u(12)} #000`, paintOrder: 'stroke fill' },
-  pop: { color: '#FFE14D', fontSize: u(68), textTransform: 'uppercase', WebkitTextStroke: `${u(12)} #000`, paintOrder: 'stroke fill' },
-  clean: { color: '#fff', fontSize: u(52), background: 'rgba(0,0,0,.6)', padding: `${u(6)} ${u(14)}`, borderRadius: u(6), boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' },
-};
+/** caption look in the preview, mirroring buildClipAss (src/lib/clipAss.ts) */
+function captionCss(style: CaptionStyleId, size: number): CSSProperties {
+  const look = CAPTION_LOOK[style];
+  const px = CAPTION_BASE * look.scale * (size / 100);
+  return look.box
+    ? { color: look.color, fontSize: u(px), background: 'rgba(0,0,0,.6)', padding: `${u(px * 0.12)} ${u(px * 0.26)}`, borderRadius: u(8), boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }
+    : { color: look.color, fontSize: u(px), textTransform: look.upper ? 'uppercase' : undefined, WebkitTextStroke: `${u(look.outline * 2 * (size / 100))} #000`, paintOrder: 'stroke fill' };
+}
+
+/** the title image (same PNG as the export) as a data URL */
+function useTitleImage(title: string, style: TitleStyleId, show: boolean) {
+  const [img, setImg] = useState<{ url: string; h: number } | null>(null);
+  useEffect(() => {
+    let off = false;
+    if (!show || !title.trim()) { setImg(null); return; }
+    const t = setTimeout(() => { void drawTitle(title, style).then((c) => { if (!off) setImg(c ? { url: c.toDataURL('image/png'), h: c.height } : null); }); }, 120);
+    return () => { off = true; clearTimeout(t); };
+  }, [title, style, show]);
+  return img;
+}
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
@@ -72,6 +92,8 @@ export function ClipPlayer({ src, clip, className, compact, onTime }: { src: str
   };
 
   const caption = clip.captions.find((c) => t >= c.start && t < c.end);
+  const titleImg = useTitleImage(clip.title, clip.title_style, clip.show_title);
+  const look = CAPTION_LOOK[clip.caption_style];
   const progress = Math.min(1, Math.max(0, (t - start) / Math.max(0.1, end - start)));
 
   return (
@@ -84,17 +106,17 @@ export function ClipPlayer({ src, clip, className, compact, onTime }: { src: str
         onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
         className={cn('absolute inset-0 h-full w-full', clip.layout === 'fill' ? 'object-cover' : 'object-contain')} />
 
-      {clip.show_title && clip.title.trim() && (
-        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-[9.7%]" style={{ top: u(150) }}>
-          <p className="whitespace-pre-line text-center font-extrabold leading-[1.15] text-zinc-900"
-            style={{ fontSize: u(50), background: '#fff', padding: `${u(4)} ${u(16)}`, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone', display: 'inline' }}>
-            {wrapTitle(clip.title)}
-          </p>
-        </div>
+      {titleImg && (
+        <img src={titleImg.url} alt="" className="pointer-events-none absolute inset-x-0 w-full" style={{ top: u(TITLE_TOP) }} />
       )}
       {caption && (
-        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-[8.3%] text-center" style={{ bottom: u(330) }}>
-          <p className="font-extrabold leading-[1.15]" style={{ ...CAPTION_CSS[clip.caption_style], display: 'inline' }}>{caption.text}</p>
+        <div className="pointer-events-none absolute inset-x-0 flex justify-center px-[9.7%] text-center" style={{ bottom: u(clip.caption_pos) }}>
+          <p key={clip.caption_anim === 'none' ? 'static' : caption.start} className={cn('font-extrabold leading-[1.15]', clip.caption_anim !== 'none' && 'motion-safe:animate-[clippop_0.11s_ease-out]')}
+            style={{ ...captionCss(clip.caption_style, clip.caption_size), display: 'inline' }}>
+            {clip.caption_anim === 'karaoke' && caption.words?.length
+              ? caption.words.map((w, i) => <span key={i} style={{ color: t >= w.s && t < w.e ? look.hi : undefined }}>{i ? ' ' : ''}{w.w}</span>)
+              : caption.text}
+          </p>
         </div>
       )}
 

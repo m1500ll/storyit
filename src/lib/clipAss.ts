@@ -1,18 +1,23 @@
-import type { Caption, CaptionStyleId } from '@/types/clips';
+import type { Caption, CaptionAnimId, CaptionStyleId } from '@/types/clips';
 
-/** AI clipping: the ASS subtitle file burned into an exported clip (title box on top, captions in the lower third). */
+/** AI clipping: the ASS subtitle file burned into an exported clip (captions only; the title is a PNG, see clipTitle.ts). */
 
 /** Output frame. Matches the export resolution in ffmpeg.ts and the preview (ClipPlayer). */
 export const CLIP_FRAME = { w: 720, h: 1280 } as const;
 /** Family name inside public/fonts/caption.otf (Inter Display ExtraBold). */
 export const CAPTION_FONT = 'Inter Display ExtraBold';
+/** caption font size at 100 %, in frame pixels (the customer scales it from 60 to 150 %) */
+export const CAPTION_BASE = 56;
 
-// ASS colours are &HAABBGGRR (alpha 00 = opaque).
-const STYLES: Record<CaptionStyleId, { size: number; primary: string; outline: string; back: string; border: 1 | 3; outlineW: number; upper: boolean }> = {
-  bold: { size: 68, primary: '&H00FFFFFF', outline: '&H00000000', back: '&H80000000', border: 1, outlineW: 6, upper: true },
-  pop: { size: 68, primary: '&H004DE1FF', outline: '&H00000000', back: '&H80000000', border: 1, outlineW: 6, upper: true },
-  clean: { size: 52, primary: '&H00FFFFFF', outline: '&H99000000', back: '&H99000000', border: 3, outlineW: 14, upper: false },
+/** Look of each caption style. Colours are CSS hex; `hi` is the colour of the word being spoken (karaoke). */
+export const CAPTION_LOOK: Record<CaptionStyleId, { color: string; hi: string; outline: number; box: boolean; upper: boolean; scale: number }> = {
+  bold: { color: '#FFFFFF', hi: '#FFE14D', outline: 6, box: false, upper: true, scale: 1 },
+  pop: { color: '#FFE14D', hi: '#FFFFFF', outline: 6, box: false, upper: true, scale: 1 },
+  clean: { color: '#FFFFFF', hi: '#FFE14D', outline: 0, box: true, upper: false, scale: 0.86 },
 };
+
+/** #RRGGBB → ASS &HBBGGRR& */
+const assColor = (hex: string) => `&H${hex.slice(5, 7)}${hex.slice(3, 5)}${hex.slice(1, 3)}&`.toUpperCase();
 
 const ts = (s: number) => {
   const cs = Math.max(0, Math.round(s * 100));
@@ -25,7 +30,7 @@ const ts = (s: number) => {
 const escapeText = (t: string) => t.replace(/\\/g, '\\\\').replace(/[{}]/g, '').replace(/\s*\n\s*/g, '\\N').trim();
 
 /** Wraps a title onto at most 3 lines of ~`max` characters. */
-export function wrapTitle(text: string, max = 24): string {
+export function wrapTitle(text: string, max = 22): string {
   const words = text.replace(/\s+/g, ' ').trim().split(' ');
   const lines: string[] = [];
   let line = '';
@@ -36,17 +41,23 @@ export function wrapTitle(text: string, max = 24): string {
   return lines.slice(0, 3).join('\n');
 }
 
-/** Captions that fall inside [start, end], shifted to clip time (0 = clip start). */
+/** Captions that fall inside [start, end], shifted to clip time (0 = clip start), word timings included. */
 export function captionsForClip(captions: Caption[], start: number, end: number): Caption[] {
   return captions
     .filter((c) => c.end > start && c.start < end && c.text.trim())
-    .map((c) => ({ start: Math.max(0, c.start - start), end: Math.min(end, c.end) - start, text: c.text.trim() }));
+    .map((c) => ({
+      start: Math.max(0, c.start - start), end: Math.min(end, c.end) - start, text: c.text.trim(),
+      ...(c.words?.length ? { words: c.words.map((w) => ({ s: Math.max(0, w.s - start), e: Math.max(0, w.e - start), w: w.w })) } : {}),
+    }));
 }
 
-/** Builds an Advanced SubStation file: timed captions near the bottom, optional title on top. */
-export function buildClipAss(opts: { captions: Caption[]; start: number; end: number; style: CaptionStyleId; title: string | null }): string {
-  const s = STYLES[opts.style];
-  const duration = opts.end - opts.start;
+export interface CaptionSettings { style: CaptionStyleId; size: number; pos: number; anim: CaptionAnimId }
+
+/** Builds the Advanced SubStation file of the captions (timed chunks, optional pop-in and word highlight). */
+export function buildClipAss(o: { captions: Caption[]; start: number; end: number } & CaptionSettings): string {
+  const look = CAPTION_LOOK[o.style];
+  const size = Math.round(CAPTION_BASE * look.scale * (o.size / 100));
+  const outline = Math.max(look.box ? 10 : 2, Math.round((look.box ? 12 : look.outline) * (o.size / 100)));
   const head = `[Script Info]
 ScriptType: v4.00+
 PlayResX: ${CLIP_FRAME.w}
@@ -56,19 +67,25 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Caption,${CAPTION_FONT},${s.size},${s.primary},&H00FFFFFF,${s.outline},${s.back},-1,0,0,0,100,100,0,0,${s.border},${s.outlineW},0,2,60,60,330,1
-Style: Title,${CAPTION_FONT},50,&H00111111,&H00FFFFFF,&H00FFFFFF,&H00FFFFFF,-1,0,0,0,100,100,0,0,3,16,0,8,70,70,150,1
+Style: Caption,${CAPTION_FONT},${size},${assColor(look.color)},&H00FFFFFF,${look.box ? '&H66000000' : '&H00000000'},&H66000000,-1,0,0,0,100,100,0,0,${look.box ? 3 : 1},${outline},0,2,70,70,${Math.round(o.pos)},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 `;
+  const up = (t: string) => (look.upper ? t.toLocaleUpperCase() : t);
   const lines: string[] = [];
-  if (opts.title?.trim()) {
-    lines.push(`Dialogue: 1,${ts(0)},${ts(duration)},Title,,0,0,0,,${escapeText(wrapTitle(opts.title))}`);
-  }
-  for (const c of captionsForClip(opts.captions, opts.start, opts.end)) {
-    const text = s.upper ? c.text.toLocaleUpperCase() : c.text;
-    lines.push(`Dialogue: 0,${ts(c.start)},${ts(c.end)},Caption,,0,0,0,,${escapeText(text)}`);
+  for (const c of captionsForClip(o.captions, o.start, o.end)) {
+    const pop = o.anim !== 'none' ? '{\\fscx78\\fscy78\\t(0,110,\\fscx100\\fscy100)}' : '';
+    let text: string;
+    if (o.anim === 'karaoke' && c.words?.length) {
+      // each word switches to the highlight colour while it is spoken (times relative to the line start, in ms)
+      text = c.words.map((w) => {
+        const a = Math.max(0, Math.round((w.s - c.start) * 1000));
+        const b = Math.max(a + 1, Math.round((w.e - c.start) * 1000));
+        return `{\\1c${assColor(look.color)}\\t(${a},${a},\\1c${assColor(look.hi)})\\t(${b},${b},\\1c${assColor(look.color)})}${escapeText(up(w.w))}`;
+      }).join(' ');
+    } else text = escapeText(up(c.text));
+    lines.push(`Dialogue: 0,${ts(c.start)},${ts(c.end)},Caption,,0,0,0,,${pop}${text}`);
   }
   return head + lines.join('\n') + '\n';
 }

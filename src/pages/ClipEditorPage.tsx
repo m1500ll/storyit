@@ -12,11 +12,12 @@ import { renderClip } from '@/lib/ffmpeg';
 import { fileNameFor, formatDuration } from '@/lib/clipFormat';
 import { repository } from '@/services/repository';
 import type { Clip, ClipEditableFields } from '@/types/database';
-import { CAPTION_STYLES, LAYOUTS, type CaptionStyleId, type LayoutId } from '@/types/clips';
+import { CAPTION_ANIMS, CAPTION_STYLES, LAYOUTS, TITLE_STYLES, type CaptionAnimId, type CaptionStyleId, type LayoutId, type TitleStyleId } from '@/types/clips';
 
 const MIN_LENGTH = 3;
 const pick = (c: Clip): ClipEditableFields => ({
   start_s: c.start_s, end_s: c.end_s, title: c.title, captions: c.captions, caption_style: c.caption_style, layout: c.layout, show_title: c.show_title,
+  caption_size: c.caption_size, caption_pos: c.caption_pos, caption_anim: c.caption_anim, title_style: c.title_style,
 });
 
 type Save = 'idle' | 'saving' | 'saved' | 'error';
@@ -124,6 +125,7 @@ function ClipEditor() {
       const blob = await renderClip({
         source: source.file, start: draft.start_s, end: draft.end_s, captions: draft.captions,
         title: draft.show_title ? draft.title : null, style: draft.caption_style, layout: draft.layout,
+        captionSize: draft.caption_size, captionPos: draft.caption_pos, captionAnim: draft.caption_anim, titleStyle: draft.title_style,
         onProgress: (p) => setExp({ state: 'running', progress: p }),
       });
       if (exportUrl.current) URL.revokeObjectURL(exportUrl.current);
@@ -205,6 +207,7 @@ function ClipEditor() {
               <input type="checkbox" checked={draft.show_title} onChange={(e) => update({ show_title: e.target.checked })} className="h-4 w-4 accent-violet-500" />
               Afficher le titre sur la vidéo
             </label>
+            {draft.show_title && <div className="mt-4"><Choice name="Style du titre" value={draft.title_style} options={TITLE_STYLES} onChange={(v: TitleStyleId) => update({ title_style: v })} /></div>}
           </Card>
 
           <Card>
@@ -221,6 +224,18 @@ function ClipEditor() {
           <Card>
             <CardHeader title="Style des sous-titres" />
             <Choice name="Style des sous-titres" value={draft.caption_style} options={CAPTION_STYLES} onChange={(v: CaptionStyleId) => update({ caption_style: v })} />
+            <p className="label mb-3 mt-6">Animation</p>
+            <Choice name="Animation des sous-titres" value={draft.caption_anim} options={CAPTION_ANIMS} onChange={(v: CaptionAnimId) => update({ caption_anim: v })} />
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              <label className="block">
+                <span className="label flex justify-between"><span>Taille</span><span className="tabular-nums normal-case tracking-normal text-zinc-400">{draft.caption_size} %</span></span>
+                <input type="range" min={60} max={150} step={5} value={draft.caption_size} onChange={(e) => update({ caption_size: Number(e.target.value) })} className="mt-2 w-full accent-violet-500" aria-label="Taille des sous-titres" />
+              </label>
+              <label className="block">
+                <span className="label flex justify-between"><span>Hauteur</span><span className="normal-case tracking-normal text-zinc-400">{draft.caption_pos < 260 ? 'En bas' : draft.caption_pos < 520 ? 'Milieu bas' : 'Au centre'}</span></span>
+                <input type="range" min={120} max={760} step={10} value={draft.caption_pos} onChange={(e) => update({ caption_pos: Number(e.target.value) })} className="mt-2 w-full accent-violet-500" aria-label="Hauteur des sous-titres" />
+              </label>
+            </div>
             <p className="label mb-3 mt-6">Cadrage</p>
             <Choice name="Cadrage" value={draft.layout} options={LAYOUTS} onChange={(v: LayoutId) => update({ layout: v })} />
           </Card>

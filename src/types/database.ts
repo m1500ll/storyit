@@ -2,7 +2,7 @@
  * Supabase database types. Mirrors supabase/migrations/0001_init.sql.
  * Regenerate with: npx supabase gen types typescript --project-id <id> > src/types/database.ts
  */
-import type { Caption, CaptionStyleId, ClipLengthId, LayoutId } from './clips';
+import type { Caption, CaptionAnimId, CaptionStyleId, ClipLengthId, LayoutId, TitleStyleId } from './clips';
 
 export type StoryStatus = 'draft' | 'concept_selected' | 'scenes_ready' | 'generating' | 'in_review' | 'approved' | 'published';
 export type SceneStatus = 'pending' | 'queued' | 'generating' | 'generated' | 'failed';
@@ -23,9 +23,10 @@ export type ClipProject = {
 export type Clip = {
   id: UUID; project_id: UUID; user_id: UUID; position: number; start_s: number; end_s: number; title: string; hook: string;
   reason: string; score: number; captions: Caption[]; caption_style: CaptionStyleId; layout: LayoutId; show_title: boolean;
+  caption_size: number; caption_pos: number; caption_anim: CaptionAnimId; title_style: TitleStyleId;
   created_at: Timestamp; updated_at: Timestamp;
 };
-export type ClipEditableFields = Pick<Clip, 'start_s' | 'end_s' | 'title' | 'captions' | 'caption_style' | 'layout' | 'show_title'>;
+export type ClipEditableFields = Pick<Clip, 'start_s' | 'end_s' | 'title' | 'captions' | 'caption_style' | 'layout' | 'show_title' | 'caption_size' | 'caption_pos' | 'caption_anim' | 'title_style'>;
 export type ClipProjectWithClips = ClipProject & { clips: Clip[] };
 
 export interface Database {

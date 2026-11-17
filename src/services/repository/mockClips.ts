@@ -33,7 +33,8 @@ function sampleCaptions(start: number, end: number): Caption[] {
     const n = 2 + (w % 3);
     const text = Array.from({ length: n }, (_, k) => SAMPLE_WORDS[(w + k) % SAMPLE_WORDS.length]).join(' ');
     const len = 0.35 * n;
-    out.push({ start: +t.toFixed(2), end: +Math.min(end, t + len).toFixed(2), text });
+    const ws = text.split(' ').map((w, k) => ({ s: +(t + k * 0.35).toFixed(2), e: +(t + (k + 1) * 0.35).toFixed(2), w }));
+    out.push({ start: +t.toFixed(2), end: +Math.min(end, t + len).toFixed(2), text, words: ws });
     t += len;
     w += n;
   }
@@ -97,7 +98,7 @@ export const mockClips: ClipMethods = {
         id: id(), project_id: pid, user_id: mockDb.profile.id, position: i + 1, start_s: start, end_s: end,
         title: SAMPLE_TITLES[i % SAMPLE_TITLES.length]!, hook: 'Mode démo : la vraie IA cite ici la phrase d’ouverture.',
         reason: 'Mode démo : moment d’exemple. Avec le serveur Storyit, l’IA choisit les vrais meilleurs moments.', score: 92 - i * 7,
-        captions: sampleCaptions(start, end), caption_style: 'bold', layout: 'fill', show_title: true, created_at: now(), updated_at: now(),
+        captions: sampleCaptions(start, end), caption_style: 'bold', layout: 'fill', show_title: true, caption_size: 100, caption_pos: 300, caption_anim: 'karaoke', title_style: 'box', created_at: now(), updated_at: now(),
       });
     }
     mockDb.profile.credit_balance = balance - cost;

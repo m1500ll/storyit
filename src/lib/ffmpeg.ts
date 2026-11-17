@@ -1,6 +1,7 @@
 import type { FFFSType, FFmpeg } from '@ffmpeg/ffmpeg';
-import type { Caption, CaptionStyleId, LayoutId } from '@/types/clips';
+import type { Caption, CaptionAnimId, CaptionStyleId, LayoutId, TitleStyleId } from '@/types/clips';
 import { buildClipAss, CLIP_FRAME } from './clipAss';
+import { TITLE_TOP, titlePngBytes } from './clipTitle';
 
 /** ONE shared ffmpeg.wasm engine for the whole app (episode assembly, compression, AI clipping). */
 let instance: Promise<FFmpeg> | null = null;
@@ -98,6 +99,10 @@ export interface RenderClipOptions {
   title: string | null;
   style: CaptionStyleId;
   layout: LayoutId;
+  captionSize: number;
+  captionPos: number;
+  captionAnim: CaptionAnimId;
+  titleStyle: TitleStyleId;
   onProgress?: (p: number) => void;
 }
 
@@ -106,19 +111,23 @@ export async function renderClip(o: RenderClipOptions): Promise<Blob> {
   const duration = Math.max(1, o.end - o.start);
   const subs = 'subtitles=subs.ass:fontsdir=/fonts';
   const { w, h } = CLIP_FRAME;
-  const graph = o.layout === 'fill'
-    ? `[0:v]crop='min(iw,ih*9/16)':'min(ih,iw*16/9)',scale=${w}:${h},setsar=1,${subs}[v]`
+  const title = o.title ? await titlePngBytes(o.title, o.titleStyle) : null;
+  const base = o.layout === 'fill'
+    ? `[0:v]crop='min(iw,ih*9/16)':'min(ih,iw*16/9)',scale=${w}:${h},setsar=1,${subs}`
     : `[0:v]split=2[a][b];[a]scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},boxblur=24:2[bg];`
-      + `[b]scale=${w}:${h}:force_original_aspect_ratio=decrease[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2,setsar=1,${subs}[v]`;
+      + `[b]scale=${w}:${h}:force_original_aspect_ratio=decrease[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2,setsar=1,${subs}`;
+  // the title is the same PNG as in the preview, laid over the video for the whole clip
+  const graph = title ? `${base}[s];[s][1:v]overlay=0:${TITLE_TOP}:format=auto[v]` : `${base}[v]`;
   // input seeking (-ss before -i) resets timestamps: the ASS times are relative to the clip start
   const data = await run(o.source, duration, (input) => [
-    '-ss', o.start.toFixed(2), '-i', input, '-t', duration.toFixed(2),
+    '-ss', o.start.toFixed(2), '-i', input, ...(title ? ['-i', 'title.png'] : []),
     '-filter_complex', graph, '-map', '[v]', '-map', '0:a?',
     '-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '23', '-pix_fmt', 'yuv420p', '-r', '30',
-    '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', 'clip.mp4',
+    '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-t', duration.toFixed(2), 'clip.mp4',
   ], 'clip.mp4', o.onProgress, async (ff) => {
     await ensureCaptionFont(ff);
-    await ff.writeFile('subs.ass', buildClipAss(o));
+    await ff.writeFile('subs.ass', buildClipAss({ captions: o.captions, start: o.start, end: o.end, style: o.style, size: o.captionSize, pos: o.captionPos, anim: o.captionAnim }));
+    if (title) await ff.writeFile('title.png', title);
   });
   return new Blob([data], { type: 'video/mp4' });
 }
