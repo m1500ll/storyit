@@ -1,4 +1,4 @@
-import { ArrowRight, BarChart3, Clapperboard, Play, Zap } from 'lucide-react';
+import { ArrowRight, Play, Zap } from 'lucide-react';
 import { useState } from 'react';
 import { RESULT_HIGHLIGHTS } from '@/data/results';
 import { SHOWCASE_FRUIT, type ShowcaseVideo } from '@/data/showcase';
@@ -12,12 +12,6 @@ import { VideoCard } from './VideoCard';
 import { VideoLightbox } from './VideoLightbox';
 import { StartLink } from './StartLink';
 import { PromoVideo } from './PromoVideo';
-
-/** Neon-city art direction: 3 promises under the film (original illustrations, no game brand). */
-const PROMISES = {
-  fr: [[Clapperboard, 'Clippe tes parties', 'de jeux vidéo'], [Zap, 'Gagne de l’argent', 'sur TikTok & YouTube'], [BarChart3, 'Automatise ton', 'business de contenu']],
-  en: [[Clapperboard, 'Clip your best', 'gaming moments'], [Zap, 'Earn money', 'on TikTok and YouTube'], [BarChart3, 'Automate your', 'content business']],
-} as const;
 
 const FAN = [
   { tilt: -6, y: 18 }, { tilt: -3, y: 4 }, { tilt: 0, y: -6 }, { tilt: 3, y: 4 }, { tilt: 6, y: 18 },
@@ -58,15 +52,6 @@ export function Hero() {
             <PromoVideo className="absolute text-left" poster="/landing/city/promo-frame.webp" neon
               frameClassName="h-full rounded-[1.2cqw] ring-1 ring-white/10" videoClassName="h-full w-full object-cover"
               style={{ left: '26.2%', top: '37.6%', width: '48.9%', height: '43.5%' }} />
-            <ul className="absolute grid grid-cols-3 items-center divide-x divide-white/10 overflow-hidden rounded-full border border-white/15 bg-[#12081f]/80 shadow-[0_1.2cqw_3cqw_-1cqw_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.14)] backdrop-blur-2xl backdrop-saturate-150"
-              style={{ left: '29.9%', top: '85.4%', width: '42.7%', height: '9.7%' }}>
-              {PROMISES.fr.map(([Icon, a, b]) => (
-                <li key={a} className="flex h-full items-center justify-center gap-[0.8cqw] px-[0.6cqw]">
-                  <span className="grid h-[2.5cqw] w-[2.5cqw] shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-[0_0_1.2cqw_-0.2cqw_rgba(217,70,239,0.8)]"><Icon className="h-[1.25cqw] w-[1.25cqw] text-white" aria-hidden /></span>
-                  <span className="whitespace-nowrap text-[0.95cqw] leading-[1.25] text-white/75"><span className="block font-semibold text-white">{a}</span>{b}</span>
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
       )}
@@ -91,14 +76,6 @@ export function Hero() {
           </StartLink>
           <PromoVideo className="relative mx-auto mt-6 max-w-3xl text-left" poster="/landing/city/promo-frame.webp" neon
             frameClassName="ring-1 ring-white/10" videoClassName="aspect-video w-full object-cover" />
-          <ul className="mx-auto mt-4 grid max-w-2xl grid-cols-1 gap-3 rounded-2xl border border-white/15 bg-[#12081f]/80 p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-2xl sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-white/10">
-            {PROMISES[lang].map(([Icon, a, b]) => (
-              <li key={a} className="flex items-center gap-3 sm:justify-center sm:px-3">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-[0_0_16px_-4px_rgba(217,70,239,0.8)]"><Icon className="h-5 w-5 text-white" aria-hidden /></span>
-                <span className="text-sm leading-tight text-white/75"><span className="block font-semibold text-white">{a}</span>{b}</span>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
       <div className="relative mx-auto max-w-6xl px-4 pb-12 text-center md:px-6">
