@@ -2,6 +2,7 @@
 // migration 0034). Stripe then bills the plan the customer chose at its full monthly price, and stripe-webhook grants
 // the plan's credits on `invoice.paid`. Called only by the database, with the cron token.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { accountEnv, accountOf } from '../_shared/stripeAccount.ts';
 
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
 
@@ -12,16 +13,16 @@ function timingSafeEqual(a: string, b: string) {
   return r === 0;
 }
 
-async function stripe(path: string, params?: Record<string, string>) {
+const stripeWith = (key: string | undefined) => async (path: string, params?: Record<string, string>) => {
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
     method: params ? 'POST' : 'GET',
-    headers: { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}`, ...(params ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}) },
+    headers: { Authorization: `Bearer ${key}`, ...(params ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}) },
     body: params ? new URLSearchParams(params) : undefined,
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.error?.message ?? `Stripe ${res.status}`);
   return data;
-}
+};
 
 Deno.serve(async (req) => {
   const token = Deno.env.get('PUBLISHER_CRON_TOKEN');
@@ -30,8 +31,9 @@ Deno.serve(async (req) => {
   if (!user_id) return json({ error: 'user_id required' }, 400);
 
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-  const { data: profile } = await admin.from('profiles').select('stripe_customer_id').eq('id', user_id).single();
+  const { data: profile } = await admin.from('profiles').select('stripe_customer_id, stripe_account').eq('id', user_id).single();
   if (!profile?.stripe_customer_id) return json({ ok: false, reason: 'no customer' });
+  const stripe = stripeWith(accountEnv(accountOf(profile))('STRIPE_SECRET_KEY'));
   try {
     const subs = await stripe(`subscriptions?customer=${profile.stripe_customer_id}&status=trialing&limit=1`);
     const sub = subs?.data?.[0];

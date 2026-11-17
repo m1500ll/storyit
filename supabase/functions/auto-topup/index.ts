@@ -3,6 +3,7 @@
 // grants the credits at once. Any failure (declined card, bank check needed) switches the option off and tells the
 // customer on their billing page. At most 3 top-ups a day. Called only by the database, with the cron token.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { accountEnv, accountOf } from '../_shared/stripeAccount.ts';
 import { isTopupAmount, topupPriceCents } from '../_shared/stripe.ts';
 
 const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers: { 'Content-Type': 'application/json' } });
@@ -14,15 +15,15 @@ function timingSafeEqual(a: string, b: string) {
   for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return r === 0;
 }
-async function stripe(path: string, params?: Record<string, string>, idempotencyKey?: string) {
-  const headers: Record<string, string> = { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` };
+const stripeWith = (key: string | undefined) => async (path: string, params?: Record<string, string>, idempotencyKey?: string) => {
+  const headers: Record<string, string> = { Authorization: `Bearer ${key}` };
   if (params) headers['Content-Type'] = 'application/x-www-form-urlencoded';
   if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
   const res = await fetch(`https://api.stripe.com/v1/${path}`, { method: params ? 'POST' : 'GET', headers, body: params ? new URLSearchParams(params) : undefined });
   const data = await res.json();
   if (!res.ok) { const e = new Error(data?.error?.message ?? `Stripe ${res.status}`) as Error & { code?: string; pi?: any }; e.code = data?.error?.code; e.pi = data?.error?.payment_intent; throw e; }
   return data;
-}
+};
 
 Deno.serve(async (req) => {
   const token = Deno.env.get('PUBLISHER_CRON_TOKEN');
@@ -35,8 +36,9 @@ Deno.serve(async (req) => {
   if (!row || row.status !== 'pending') return json({ ok: false, reason: 'not pending' });
   const finish = (status: 'succeeded' | 'failed' | 'skipped', extra: Record<string, unknown> = {}) =>
     admin.from('auto_topups').update({ status, ...extra }).eq('id', topup_id);
-  const { data: p } = await admin.from('profiles').select('plan, stripe_customer_id, auto_topup_enabled, auto_topup_pack').eq('id', row.user_id).single();
+  const { data: p } = await admin.from('profiles').select('plan, stripe_customer_id, stripe_account, auto_topup_enabled, auto_topup_pack').eq('id', row.user_id).single();
   const credits = Number(row.credits);
+  const stripe = stripeWith(accountEnv(accountOf(p))('STRIPE_SECRET_KEY')); // the account holding this customer
   if (!p?.auto_topup_enabled || !p.stripe_customer_id || p.plan === 'free' || !isTopupAmount(credits)) { await finish('skipped', { error: 'option off or no plan' }); return json({ ok: false, reason: 'skipped' }); }
 
   const { count } = await admin.from('auto_topups').select('id', { count: 'exact', head: true }).eq('user_id', row.user_id).eq('status', 'succeeded').gte('created_at', new Date(Date.now() - 86_400_000).toISOString());

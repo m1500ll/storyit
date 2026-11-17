@@ -1,16 +1,18 @@
 // Supabase Edge Function: `stripe-webhook`
 // Applies Stripe payments to Storyit accounts (plan + credits). Deploy with "Verify JWT" DISABLED
 // (Stripe cannot send a Supabase JWT; authenticity is checked with the Stripe signature instead).
-// Secrets: STRIPE_WEBHOOK_SECRET (whsec_...), plus the STRIPE_PRICE_* used by `billing`.
+// Secrets: STRIPE_WEBHOOK_SECRET (whsec_...), plus the STRIPE_PRICE_* used by `billing`; the new Stripe account's with _NEW.
 // Events: checkout.session.completed, invoice.paid, invoice.payment_failed, customer.subscription.updated, customer.subscription.deleted
 // Referrals (migration 0021): a referred friend's first PAID subscription invoice qualifies the referral: the friend gets
 // REFERRAL_FRIEND_BONUS credits (default 100), the referrer free months as Stripe customer balance (months x the price of
 // their plan, Creator when they have none), which pays their next invoices. Secret: STRIPE_SECRET_KEY.
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { accountEnv, accountOf, stripeOn, type StripeAccount } from '../_shared/stripeAccount.ts';
 import { GRANTS, PRICE_ENV, TRIAL, invoicePriceId, planForSubscription, planLine, productForPrice, verifySignature, type ProductKey } from '../_shared/stripe.ts';
 
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-const env = (k: string) => Deno.env.get(k);
+/** settings of the Stripe account the current event comes from (set per request in the handler) */
+const baseEnv = (k: string) => Deno.env.get(k);
 
 async function userIdForCustomer(customerId: string | null | undefined) {
   if (!customerId) return null;
@@ -27,20 +29,12 @@ async function grant(userId: string, product: ProductKey, reset: boolean) {
   if (error) throw new Error(error.message);
 }
 
-async function stripeApi(path: string, params?: Record<string, string>, idempotencyKey?: string) {
-  const headers: Record<string, string> = { Authorization: `Bearer ${env('STRIPE_SECRET_KEY')}` };
-  if (params) headers['Content-Type'] = 'application/x-www-form-urlencoded';
-  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
-  const res = await fetch(`https://api.stripe.com/v1/${path}`, { method: params ? 'POST' : 'GET', headers, body: params ? new URLSearchParams(params) : undefined });
-  const data = await res.json();
-  if (!res.ok) throw new Error(`stripe ${path}: ${data?.error?.message ?? res.status}`);
-  return data;
-}
+const stripeApi = (acct: StripeAccount, path: string, params?: Record<string, string>, idempotencyKey?: string) => stripeOn(acct, path, params, idempotencyKey);
 
 /** rewards the referral of `referredId` (their first paid subscription invoice). Retry-safe: flags in the database plus
  *  an idempotency key per referral on the Stripe balance transaction. */
 async function rewardReferral(referredId: string) {
-  const bonus = Number(env('REFERRAL_FRIEND_BONUS') ?? '10000');
+  const bonus = Number(baseEnv('REFERRAL_FRIEND_BONUS') ?? '10000');
   const { data, error } = await admin.rpc('qualify_referral', { p_referred: referredId, p_friend_bonus: bonus });
   if (error) throw new Error('qualify_referral: ' + error.message);
   const r = (data as { referral_id: string; referrer_id: string; months: number; rank: number; reward_applied: boolean; bonus_applied: boolean; friend_bonus: number }[] | null)?.[0];
@@ -53,18 +47,19 @@ async function rewardReferral(referredId: string) {
     await admin.from('referrals').update({ bonus_applied: true }).eq('id', r.referral_id);
   }
   if (!r.reward_applied) {
-    const { data: ref } = await admin.from('profiles').select('plan, stripe_customer_id').eq('id', r.referrer_id).single();
+    const { data: ref } = await admin.from('profiles').select('plan, stripe_customer_id, stripe_account').eq('id', r.referrer_id).single();
     let customer = ref?.stripe_customer_id as string | null;
+    const racct = accountOf(ref); const renv = accountEnv(racct);
     if (!customer) {
       const { data: u } = await admin.auth.admin.getUserById(r.referrer_id);
-      customer = (await stripeApi('customers', { email: u.user?.email ?? '', 'metadata[user_id]': r.referrer_id }, `referrer-customer-${r.referrer_id}`)).id as string;
-      await admin.from('profiles').update({ stripe_customer_id: customer }).eq('id', r.referrer_id);
+      customer = (await stripeApi(racct, 'customers', { email: u.user?.email ?? '', 'metadata[user_id]': r.referrer_id }, `referrer-customer-${r.referrer_id}`)).id as string;
+      await admin.from('profiles').update({ stripe_customer_id: customer, stripe_account: racct }).eq('id', r.referrer_id);
     }
-    const priceId = env(ref?.plan === 'studio' || ref?.plan === 'pro' ? PRICE_ENV[ref.plan as 'pro' | 'studio'] : 'STRIPE_PRICE_CREATOR');
+    const priceId = renv(ref?.plan === 'studio' || ref?.plan === 'pro' ? PRICE_ENV[ref.plan as 'pro' | 'studio'] : 'STRIPE_PRICE_CREATOR');
     if (!priceId) throw new Error('referral reward: plan price not configured');
-    const price = await stripeApi(`prices/${priceId}`);
+    const price = await stripeApi(racct, `prices/${priceId}`);
     const amount = Number(price.unit_amount) * r.months;
-    await stripeApi(`customers/${customer}/balance_transactions`, {
+    await stripeApi(racct, `customers/${customer}/balance_transactions`, {
       amount: String(-amount), currency: String(price.currency),
       description: `Parrainage Storyit : ${r.months} mois offert${r.months > 1 ? 's' : ''} (ami n°${r.rank})`,
       'metadata[referral_id]': r.referral_id,
@@ -76,10 +71,15 @@ async function rewardReferral(referredId: string) {
 
 Deno.serve(async (req) => {
   const payload = await req.text();
-  const secret = env('STRIPE_WEBHOOK_SECRET');
-  if (!secret || !(await verifySignature(payload, req.headers.get('stripe-signature'), secret))) {
-    return new Response('Invalid signature', { status: 400 });
+  // both Stripe accounts post here: the signing secret that matches tells which account the event comes from
+  let acct: StripeAccount | null = null;
+  for (const a of ['legacy', 'new'] as StripeAccount[]) {
+    const secret = accountEnv(a)('STRIPE_WEBHOOK_SECRET');
+    if (secret && (await verifySignature(payload, req.headers.get('stripe-signature'), secret))) { acct = a; break; }
   }
+  if (!acct) return new Response('Invalid signature', { status: 400 });
+  const env = accountEnv(acct);
+  const api = (path: string, params?: Record<string, string>, idem?: string) => stripeApi(acct!, path, params, idem);
   const event = JSON.parse(payload);
 
   // Idempotency: Stripe retries; apply each event once.
@@ -108,9 +108,9 @@ Deno.serve(async (req) => {
           const price = env(PRICE_ENV[to]);
           const userId = (await userIdForCustomer(obj.customer)) ?? m.user_id;
           if (!userId || !price || !GRANTS[to]?.plan) break;
-          const sub = await stripeApi(`subscriptions/${m.subscription}`);
+          const sub = await api(`subscriptions/${m.subscription}`);
           if (sub.items.data[0].price.id !== price) {
-            await stripeApi(`subscriptions/${sub.id}`, { 'items[0][id]': sub.items.data[0].id, 'items[0][price]': price,
+            await api(`subscriptions/${sub.id}`, { 'items[0][id]': sub.items.data[0].id, 'items[0][price]': price,
               proration_behavior: 'none', 'metadata[product]': to }, `plan-upgrade-${obj.id}`);
           }
           const { error } = await admin.rpc('grant_credits', { p_user_id: userId, p_amount: Math.max(0, Number(m.credits) || 0),

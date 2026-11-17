@@ -6,10 +6,11 @@
 // plan): Stripe bills the full plan price at once and the webhook grants the plan's credits.
 // checkout on a higher plan while a plan is already running = upgrade of that subscription: the customer pays only the
 // price difference now (one invoice) and stripe-webhook switches the plan and grants only the credit difference.
-// Secrets: STRIPE_SECRET_KEY, STRIPE_PRICE_CREATOR, STRIPE_PRICE_PRO, STRIPE_PRICE_STUDIO, STRIPE_PRICE_{CREATOR,PRO,STUDIO}_YEAR, STRIPE_PRICE_PACK_100, STRIPE_PRICE_PACK_500
+// Secrets (per Stripe account, the new one with the _NEW suffix, see _shared/stripeAccount.ts): STRIPE_SECRET_KEY, STRIPE_PRICE_CREATOR, STRIPE_PRICE_PRO, STRIPE_PRICE_STUDIO, STRIPE_PRICE_{CREATOR,PRO,STUDIO}_YEAR, STRIPE_PRICE_PACK_100, STRIPE_PRICE_PACK_500
 // Optional: APP_URL (default http://localhost:5173)
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { GRANTS, isTopupAmount, TOPUP, TRIAL } from '../_shared/stripe.ts';
+import { accountEnv, accountOf, newCustomersAccount, stripeOn, type StripeAccount } from '../_shared/stripeAccount.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -34,21 +35,9 @@ type ProductKey = keyof typeof PRODUCTS;
 const PLAN_KEYS = ['creator', 'pro', 'studio'] as const;
 type PlanKey = (typeof PLAN_KEYS)[number];
 const PLAN_NAMES: Record<PlanKey, string> = { creator: 'Creator', pro: 'Pro', studio: 'Studio' };
-const planOfPrice = (priceId?: string | null) => PLAN_KEYS.find((p) => priceId && Deno.env.get(PRODUCTS[p].env) === priceId) ?? null;
+const planOfPriceIn = (env: (k: string) => string | undefined, priceId?: string | null) => PLAN_KEYS.find((p) => priceId && env(PRODUCTS[p].env) === priceId) ?? null;
 /** yearly product → its plan (creator_year → creator) */
-const yearlyPlanOfPrice = (priceId?: string | null) => PLAN_KEYS.find((p) => priceId && Deno.env.get(PRODUCTS[`${p}_year` as ProductKey].env) === priceId) ?? null;
-
-async function stripe(path: string, params?: Record<string, string>) {
-  const res = await fetch(`https://api.stripe.com/v1/${path}`, {
-    method: params ? 'POST' : 'GET',
-    headers: { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}`, ...(params ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}) },
-    body: params ? new URLSearchParams(params) : undefined,
-    signal: AbortSignal.timeout(15_000),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.error?.message ?? `Stripe error ${res.status}`);
-  return data;
-}
+const yearlyPlanOfPriceIn = (env: (k: string) => string | undefined, priceId?: string | null) => PLAN_KEYS.find((p) => priceId && env(PRODUCTS[`${p}_year` as ProductKey].env) === priceId) ?? null;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -64,6 +53,22 @@ Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
   const appUrl = Deno.env.get('APP_URL') ?? 'http://localhost:5173';
 
+  // the Stripe account of this request (see _shared/stripeAccount.ts): set from the caller's profile below
+  let acct: StripeAccount = newCustomersAccount();
+  const env = (k: string) => accountEnv(acct)(k);
+  const stripe = (path: string, params?: Record<string, string>) => stripeOn(acct, path, params);
+  const planOfPrice = (priceId?: string | null) => planOfPriceIn(env, priceId);
+  const yearlyPlanOfPrice = (priceId?: string | null) => yearlyPlanOfPriceIn(env, priceId);
+  /** admin lists: the latest objects of both accounts, newest first */
+  const listBoth = async (path: string) => {
+    const out: any[] = [];
+    for (const a of ['legacy', 'new'] as StripeAccount[]) {
+      if (!accountEnv(a)('STRIPE_SECRET_KEY')) continue;
+      try { out.push(...((await stripeOn(a, path))?.data ?? [])); } catch (e) { console.error('listBoth', a, e); }
+    }
+    return { data: out.sort((x, y) => (y.created ?? 0) - (x.created ?? 0)) };
+  };
+
   try {
     const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices' | 'auto_topup' | 'customer_payments' | 'recent_payments'; product?: ProductKey; trial?: boolean; user_id?: string; enabled?: boolean; threshold?: number; credits?: number };
     const { action, product, trial } = body;
@@ -72,8 +77,9 @@ Deno.serve(async (req) => {
     if (action === 'customer_subscriptions') { // admin: a customer's Stripe subscriptions (status, plan, cancellation)
       const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
       if (!me?.is_admin) return json({ error: 'Forbidden' }, 403);
-      const { data: who } = await admin.from('profiles').select('stripe_customer_id, plan').eq('id', String(body.user_id ?? '')).single();
+      const { data: who } = await admin.from('profiles').select('stripe_customer_id, stripe_account, plan').eq('id', String(body.user_id ?? '')).single();
       if (!who?.stripe_customer_id) return json({ plan: who?.plan ?? null, subscriptions: [] });
+      acct = accountOf(who);
       const subs = await stripe(`subscriptions?customer=${who.stripe_customer_id}&status=all&limit=10`);
       return json({ plan: who.plan, subscriptions: (subs?.data ?? []).map((s: any) => ({
         status: s.status, product: planOfPrice(s.items?.data?.[0]?.price?.id) ?? yearlyPlanOfPrice(s.items?.data?.[0]?.price?.id),
@@ -84,7 +90,7 @@ Deno.serve(async (req) => {
     if (action === 'recent_payments') { // admin: the latest payment attempts of all customers, failed ones included
       const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
       if (!me?.is_admin) return json({ error: 'Forbidden' }, 403);
-      const list = await stripe('payment_intents?limit=25');
+      const list = await listBoth('payment_intents?limit=25');
       const custs = [...new Set((list?.data ?? []).map((x: any) => x.customer).filter(Boolean))];
       const { data: owners } = await admin.from('profiles').select('id, stripe_customer_id, plan').in('stripe_customer_id', custs as string[]);
       const who = new Map((owners ?? []).map((o: any) => [o.stripe_customer_id, o]));
@@ -98,8 +104,9 @@ Deno.serve(async (req) => {
     if (action === 'customer_payments') { // admin: a customer's payment attempts and why they failed (declined card, 3-D Secure…)
       const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
       if (!me?.is_admin) return json({ error: 'Forbidden' }, 403);
-      const { data: who } = await admin.from('profiles').select('stripe_customer_id, plan').eq('id', String(body.user_id ?? '')).single();
+      const { data: who } = await admin.from('profiles').select('stripe_customer_id, stripe_account, plan').eq('id', String(body.user_id ?? '')).single();
       if (!who?.stripe_customer_id) return json({ plan: who?.plan ?? null, attempts: [] });
+      acct = accountOf(who);
       const [pis, subs] = await Promise.all([stripe(`payment_intents?customer=${who.stripe_customer_id}&limit=10`), stripe(`subscriptions?customer=${who.stripe_customer_id}&status=all&limit=5`)]);
       return json({ plan: who.plan,
         attempts: (pis?.data ?? []).map((x: any) => ({ created: x.created, amount: x.amount, status: x.status, error: x.last_payment_error?.message ?? null,
@@ -109,7 +116,7 @@ Deno.serve(async (req) => {
     if (action === 'recent_invoices') { // admin: every paid invoice (plans, upgrades, trials) with the Storyit account it belongs to
       const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
       if (!me?.is_admin) return json({ error: 'Forbidden' }, 403);
-      const list = await stripe('invoices?status=paid&limit=100');
+      const list = await listBoth('invoices?status=paid&limit=100');
       const custs = [...new Set((list?.data ?? []).map((i: any) => i.customer))];
       const { data: owners } = await admin.from('profiles').select('id, stripe_customer_id').in('stripe_customer_id', custs as string[]);
       const who = new Map((owners ?? []).map((o: any) => [o.stripe_customer_id, o.id]));
@@ -124,7 +131,7 @@ Deno.serve(async (req) => {
     if (action === 'recent_checkouts') {
       const { data: me } = await admin.from('profiles').select('is_admin').eq('id', user.id).single();
       if (!me?.is_admin) return json({ error: 'Forbidden' }, 403);
-      const list = await stripe('checkout/sessions?limit=50&expand[]=data.line_items');
+      const list = await listBoth('checkout/sessions?limit=50&expand[]=data.line_items');
       return json({ sessions: (list?.data ?? []).map((s: any) => ({
         created: s.created, status: s.status, paid: s.payment_status, mode: s.mode, product: s.metadata?.product ?? null,
         amount: s.amount_total, currency: s.currency, methods: s.payment_method_types, locale: s.locale,
@@ -133,15 +140,16 @@ Deno.serve(async (req) => {
     }
 
     // Get or create the Stripe customer for this user.
-    const { data: profile } = await admin.from('profiles').select('stripe_customer_id, plan, trial_used').eq('id', user.id).single();
+    const { data: profile } = await admin.from('profiles').select('stripe_customer_id, stripe_account, plan, trial_used').eq('id', user.id).single();
     let customerId = profile?.stripe_customer_id as string | null;
+    acct = accountOf(profile);
     // just looking at the plans must not create a Stripe customer (it showed up as a "new customer" who never paid)
     if (!customerId && action === 'status') return json({ trialing: false, trial_end: null, product: null });
     if (action === 'auto_topup' && body.enabled && (!profile?.plan || profile.plan === 'free')) return json({ error: 'La recharge automatique est réservée aux abonnés.' }, 409);
     if (!customerId) {
       const customer = await stripe('customers', { email: user.email ?? '', 'metadata[user_id]': user.id });
       customerId = customer.id as string;
-      await admin.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id);
+      await admin.from('profiles').update({ stripe_customer_id: customerId, stripe_account: acct }).eq('id', user.id);
     }
 
     /** ends a running trial now, on `target` if given: Stripe bills the full plan price at once */
@@ -150,7 +158,7 @@ Deno.serve(async (req) => {
       if (target !== current) {
         // switch the plan first, while still in trial (no charge): ending the trial in the same call as a price change
         // left the subscription on the new plan with no invoice at all
-        const price = Deno.env.get(PRODUCTS[target].env);
+        const price = env(PRODUCTS[target].env);
         if (!price) return json({ error: 'Price not configured.' }, 503);
         await stripe(`subscriptions/${sub.id}`, { 'items[0][id]': sub.items.data[0].id, 'items[0][price]': price, proration_behavior: 'none', 'metadata[product]': target });
       }
@@ -197,9 +205,9 @@ Deno.serve(async (req) => {
     }
 
     if (action !== 'checkout' || !product || !(product in PRODUCTS)) return json({ error: 'Unknown product' }, 400);
-    const { env, mode } = PRODUCTS[product];
-    const price = Deno.env.get(env);
-    if (!price) return json({ error: `Price not configured (${env}).` }, 503);
+    const { env: priceEnv, mode } = PRODUCTS[product];
+    const price = env(priceEnv);
+    if (!price) return json({ error: `Price not configured (${priceEnv}).` }, 503);
 
     const params: Record<string, string> = {
       mode,

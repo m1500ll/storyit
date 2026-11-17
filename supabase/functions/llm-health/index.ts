@@ -52,6 +52,75 @@ Deno.serve(async (req) => {
     return json({ seconds: Math.round((Date.now() - t0) / 1000), effort, usage: W.lastUsage, ok: !!script, invalid, title: script?.title, paradox: script?.paradox,
       clips: script?.clips?.map((c: any) => ({ s: c.seconds, lines: c.lines.map((l: any) => `${l.character}${l.tone ? ` [${l.tone}]` : ''}: ${l.text}`) })) });
   }
+  if (url.searchParams.get('stripe_account_status') === '1') { // operator: can each Stripe account take payments?
+    const out: Record<string, unknown> = {};
+    for (const [name, k] of [['legacy', 'STRIPE_SECRET_KEY'], ['new', 'STRIPE_SECRET_KEY_NEW']]) {
+      const key = Deno.env.get(k); if (!key) continue;
+      const a = await (await fetch('https://api.stripe.com/v1/account', { headers: { Authorization: `Bearer ${key}` } })).json();
+      out[name] = a.error ? { error: a.error.message } : { name: a.business_profile?.name ?? a.settings?.dashboard?.display_name, country: a.country, charges_enabled: a.charges_enabled,
+        payouts_enabled: a.payouts_enabled, details_submitted: a.details_submitted, currently_due: a.requirements?.currently_due, past_due: a.requirements?.past_due,
+        disabled_reason: a.requirements?.disabled_reason, deadline: a.requirements?.current_deadline };
+    }
+    return json(out);
+  }
+  if (url.searchParams.get('stripe_setup_new') === '1' && req.method === 'POST') {
+    // operator, once: copies the catalogue (products + prices), the webhook endpoint and the customer portal of the
+    // current Stripe account to the new one (STRIPE_SECRET_KEY_NEW). Idempotent (idempotency keys). Returns the new ids.
+    const call = async (key: string, path: string, body?: URLSearchParams, idem?: string) => {
+      const h: Record<string, string> = { Authorization: `Bearer ${key}` };
+      if (body) h['Content-Type'] = 'application/x-www-form-urlencoded';
+      if (idem) h['Idempotency-Key'] = idem;
+      const r = await fetch(`https://api.stripe.com/v1/${path}`, { method: body ? 'POST' : 'GET', headers: h, body, signal: AbortSignal.timeout(20_000) });
+      const d = await r.json(); if (!r.ok) throw new Error(`${path}: ${d?.error?.message ?? r.status}`); return d;
+    };
+    const OLD = Deno.env.get('STRIPE_SECRET_KEY')!, NEW = Deno.env.get('STRIPE_SECRET_KEY_NEW');
+    if (!NEW) return json({ error: 'STRIPE_SECRET_KEY_NEW missing' }, 400);
+    const keys = ['CREATOR', 'PRO', 'STUDIO', 'CREATOR_YEAR', 'PRO_YEAR', 'STUDIO_YEAR', 'PACK_100', 'PACK_500'];
+    const prices: Record<string, string> = {}; const productOf: Record<string, string> = {};
+    try {
+      for (const k of keys) {
+        const old = await call(OLD, `prices/${Deno.env.get(`STRIPE_PRICE_${k}`)}?expand[]=product`);
+        const op = old.product;
+        if (!productOf[op.id]) {
+          const b = new URLSearchParams({ name: op.name }); if (op.description) b.set('description', op.description);
+          for (const [mk, mv] of Object.entries(op.metadata ?? {})) b.set(`metadata[${mk}]`, String(mv));
+          if (op.statement_descriptor) b.set('statement_descriptor', op.statement_descriptor);
+          productOf[op.id] = (await call(NEW, 'products', b, `storyit-setup-product-${op.id}`)).id;
+        }
+        const b = new URLSearchParams({ product: productOf[op.id], currency: old.currency, unit_amount: String(old.unit_amount), 'metadata[storyit]': k.toLowerCase() });
+        if (old.nickname) b.set('nickname', old.nickname);
+        if (old.recurring) { b.set('recurring[interval]', old.recurring.interval); b.set('recurring[interval_count]', String(old.recurring.interval_count ?? 1)); }
+        if (old.tax_behavior && old.tax_behavior !== 'unspecified') b.set('tax_behavior', old.tax_behavior);
+        prices[k] = (await call(NEW, 'prices', b, `storyit-setup-price-${old.id}`)).id;
+      }
+      const oldHooks = await call(OLD, 'webhook_endpoints?limit=20');
+      const hook = (oldHooks.data ?? []).find((w: any) => /stripe-webhook/.test(w.url));
+      const hb = new URLSearchParams({ url: hook.url, description: 'Storyit (new account)' });
+      (hook.enabled_events as string[]).forEach((e) => hb.append('enabled_events[]', e));
+      const newHooks = await call(NEW, 'webhook_endpoints?limit=20');
+      let webhook_secret: string | null = null;
+      if (!(newHooks.data ?? []).some((w: any) => w.url === hook.url)) webhook_secret = (await call(NEW, 'webhook_endpoints', hb, 'storyit-setup-webhook')).secret ?? null;
+      const pb = new URLSearchParams({
+        'business_profile[headline]': 'Storyit : gérez votre abonnement', 'default_return_url': `${Deno.env.get('APP_URL') ?? 'https://www.storyit.fun'}/app/billing`,
+        'features[invoice_history][enabled]': 'true', 'features[payment_method_update][enabled]': 'true',
+        'features[customer_update][enabled]': 'true', 'features[customer_update][allowed_updates][]': 'email',
+        'features[subscription_cancel][enabled]': 'true', 'features[subscription_cancel][mode]': 'at_period_end',
+        'features[subscription_update][enabled]': 'true', 'features[subscription_update][proration_behavior]': 'create_prorations',
+        'features[subscription_update][default_allowed_updates][]': 'price',
+      });
+      let i = 0;
+      for (const [plan, yr] of [['CREATOR', 'CREATOR_YEAR'], ['PRO', 'PRO_YEAR'], ['STUDIO', 'STUDIO_YEAR']]) {
+        const pid = (await call(NEW, `prices/${prices[plan]}`)).product;
+        pb.set(`features[subscription_update][products][${i}][product]`, pid);
+        pb.append(`features[subscription_update][products][${i}][prices][]`, prices[plan]);
+        pb.append(`features[subscription_update][products][${i}][prices][]`, prices[yr]);
+        i++;
+      }
+      let portal = 'ok';
+      try { await call(NEW, 'billing_portal/configurations', pb, 'storyit-setup-portal'); } catch (e) { portal = e instanceof Error ? e.message : String(e); }
+      return json({ prices, webhook_url: hook.url, webhook_events: hook.enabled_events, webhook_secret, portal });
+    } catch (e) { return json({ error: e instanceof Error ? e.message : String(e), prices }, 502); }
+  }
   const addEvent = url.searchParams.get('stripe_webhook_add'); // operator: list the webhook endpoints, optionally add one event to Storyit's
   if (url.searchParams.get('stripe_webhooks') === '1' || (addEvent && /^[a-z_.]{5,60}$/.test(addEvent))) {
     const H = { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` };
