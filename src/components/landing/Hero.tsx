@@ -54,10 +54,10 @@ export function Hero() {
                 <span className="whitespace-nowrap">3 jours pour 1 $ · 7 000 crédits</span><ArrowRight className="h-[0.9cqw] w-[0.9cqw]" aria-hidden />
               </StartLink>
             </div>
-            {/* the frame is 2:1 and the film 16:9: the whole film is shown (thin dark bands), never cut */}
+            {/* the film fills the painted 2:1 frame (cropped a little top and bottom, no dark bands) and covers its border */}
             <PromoVideo className="absolute text-left" poster="/landing/city/promo-poster.webp" autoPlay={false} neon
-              frameClassName="h-full rounded-[1.4cqw] bg-[#0b0614]" videoClassName="h-full w-full object-contain"
-              style={{ left: '26.75%', top: '38.4%', width: '47.9%', height: '42.35%' }} />
+              frameClassName="h-full rounded-[1.2cqw] ring-1 ring-white/10" videoClassName="h-full w-full object-cover"
+              style={{ left: '26.2%', top: '37.6%', width: '48.9%', height: '43.5%' }} />
             <ul className="absolute grid grid-cols-3 items-center divide-x divide-white/10 rounded-[1.3cqw] border border-violet-400/30 bg-[#1a0d33] shadow-[0_0_2cqw_-0.6cqw_rgba(168,85,247,0.7)]"
               style={{ left: '29.9%', top: '85.4%', width: '42.7%', height: '9.7%' }}>
               {PROMISES.fr.map(([Icon, a, b]) => (
@@ -90,7 +90,7 @@ export function Hero() {
             <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-bold text-white">⚡ {fr ? 'Essai' : 'Trial'}</span>{fr ? '3 jours pour 1 $ · 7 000 crédits' : '3 days for $1 · 7,000 credits'} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </StartLink>
           <PromoVideo className="relative mx-auto mt-6 max-w-3xl text-left" poster="/landing/city/promo-poster.webp" autoPlay={false} neon
-            frameClassName="border-2 border-violet-400/70 shadow-[0_0_40px_-6px_rgba(168,85,247,0.8)]" videoClassName="aspect-video w-full object-cover" />
+            frameClassName="ring-1 ring-white/10" videoClassName="aspect-video w-full object-cover" />
           <ul className="mx-auto mt-4 grid max-w-2xl grid-cols-1 gap-3 rounded-2xl border border-violet-400/30 bg-[#1a0d33] p-4 text-left sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-white/10">
             {PROMISES[lang].map(([Icon, a, b]) => (
               <li key={a} className="flex items-center gap-3 sm:justify-center sm:px-3">
