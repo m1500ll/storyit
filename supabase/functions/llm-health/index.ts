@@ -114,6 +114,22 @@ Deno.serve(async (req) => {
     }
     return json({ apply, count: out.length, subscriptions: out });
   }
+  if (url.searchParams.get('stripe_risk') === '1') { // operator: charges (with Radar outcome), fraud warnings and disputes of the new account
+    const key = Deno.env.get('STRIPE_SECRET_KEY_NEW') ?? Deno.env.get('STRIPE_SECRET_KEY');
+    const get = async (p: string) => (await (await fetch(`https://api.stripe.com/v1/${p}`, { headers: { Authorization: `Bearer ${key}` } })).json());
+    const [charges, efw, disputes, reviews] = await Promise.all([get('charges?limit=100'), get('radar/early_fraud_warnings?limit=50'), get('disputes?limit=50'), get('reviews?limit=50')]);
+    return json({
+      charges: (charges.data ?? []).map((c: any) => ({ created: c.created, amount: c.amount, status: c.status, paid: c.paid, refunded: c.refunded, disputed: c.disputed,
+        email: c.billing_details?.email ?? c.receipt_email ?? null, customer: c.customer, country: c.payment_method_details?.card?.country, brand: c.payment_method_details?.card?.brand,
+        last4: c.payment_method_details?.card?.last4, funding: c.payment_method_details?.card?.funding, fingerprint: c.payment_method_details?.card?.fingerprint,
+        outcome: c.outcome ? { type: c.outcome.type, risk: c.outcome.risk_level, score: c.outcome.risk_score, reason: c.outcome.reason, network: c.outcome.network_status } : null,
+        failure: c.failure_code ?? null, ip_country: c.payment_method_details?.card?.three_d_secure?.result ?? null })),
+      early_fraud_warnings: (efw.data ?? []).map((w: any) => ({ created: w.created, charge: w.charge, type: w.fraud_type, actionable: w.actionable })),
+      disputes: (disputes.data ?? []).map((d: any) => ({ created: d.created, amount: d.amount, reason: d.reason, status: d.status, charge: d.charge })),
+      reviews: (reviews.data ?? []).map((r: any) => ({ created: r.created, reason: r.reason, open: r.open, charge: r.charge })),
+      errors: [charges.error, efw.error, disputes.error, reviews.error].filter(Boolean).map((e: any) => e.message),
+    });
+  }
   if (url.searchParams.get('stripe_recent') === '1') { // operator: the last checkouts, payments and subscriptions of each account
     const days = Math.min(30, Math.max(1, Number(url.searchParams.get('days') ?? 7)));
     const since = Math.floor(Date.now() / 1000) - days * 86_400;
