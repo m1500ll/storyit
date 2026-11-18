@@ -138,7 +138,9 @@ function ClipEditor() {
       update({ framing });
     } catch (e) {
       console.error('framing', e);
-      setScan({ state: 'error', message: 'L’analyse du cadrage n’a pas marché sur ce navigateur. Choisis un cadrage à la main.' });
+      setScan({ state: 'error', message: e instanceof Error && e.message === 'unreadable'
+        ? 'Ton navigateur n’arrive pas à lire les images de cette vidéo pour l’analyse. Essaie avec Chrome, ou convertis-la en MP4 (H.264). En attendant, choisis un cadrage à la main.'
+        : 'L’analyse du cadrage n’a pas marché sur ce navigateur. Choisis un cadrage à la main.' });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source.url, draft?.start_s, draft?.end_s]);

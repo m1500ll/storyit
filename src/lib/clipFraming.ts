@@ -14,44 +14,56 @@ export interface Sample { t: number; faces: Face[] }
 
 type Result = { faceLandmarks: { x: number; y: number }[][]; faceBlendshapes?: { categories: { categoryName: string; score: number }[] }[] };
 type Landmarker = { detect: (img: HTMLCanvasElement) => Result };
-let landmarker: Promise<Landmarker> | null = null;
-function loadLandmarker(): Promise<Landmarker> {
-  landmarker ??= (async () => {
+const landmarkers: Partial<Record<'GPU' | 'CPU', Promise<Landmarker>>> = {};
+function loadLandmarker(delegate: 'GPU' | 'CPU' = 'GPU'): Promise<Landmarker> {
+  landmarkers[delegate] ??= (async () => {
     const { FaceLandmarker, FilesetResolver } = await import('@mediapipe/tasks-vision');
     const files = await FilesetResolver.forVisionTasks(WASM);
-    const make = (delegate: 'GPU' | 'CPU') => FaceLandmarker.createFromOptions(files, {
-      baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: 'IMAGE', numFaces: 4, outputFaceBlendshapes: true,
-      minFaceDetectionConfidence: 0.45, minFacePresenceConfidence: 0.45,
+    const make = (d: 'GPU' | 'CPU') => FaceLandmarker.createFromOptions(files, {
+      baseOptions: { modelAssetPath: MODEL, delegate: d }, runningMode: 'IMAGE', numFaces: 4, outputFaceBlendshapes: true,
+      minFaceDetectionConfidence: 0.4, minFacePresenceConfidence: 0.4,
     });
-    return (await make('GPU').catch(() => make('CPU'))) as unknown as Landmarker;
-  })().catch((e) => { landmarker = null; throw e; });
-  return landmarker;
+    return (await (delegate === 'GPU' ? make('GPU').catch(() => make('CPU')) : make('CPU'))) as unknown as Landmarker;
+  })().catch((e) => { delete landmarkers[delegate]; throw e; });
+  return landmarkers[delegate]!;
 }
 
+/** Jumps to `t` and waits until that frame is really decoded (long stream recordings can take seconds to seek). */
 const seek = (v: HTMLVideoElement, t: number) => new Promise<void>((resolve) => {
-  const done = () => { v.removeEventListener('seeked', done); resolve(); };
-  v.addEventListener('seeked', done);
+  let finished = false;
+  const done = () => {
+    if (finished) return; finished = true;
+    v.removeEventListener('seeked', onSeeked);
+    resolve();
+  };
+  const onSeeked = () => {
+    const rvfc = (v as HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number }).requestVideoFrameCallback;
+    if (rvfc) { rvfc.call(v, () => done()); setTimeout(done, 400); } else done();
+  };
+  v.addEventListener('seeked', onSeeked);
   v.currentTime = t;
-  setTimeout(done, 1500);
+  setTimeout(done, 8000);
 });
 
-/** samples the faces of [start, end] of the video at `url` */
 /** a small grey copy of a frame (for finding the facecam window's edges) */
 export interface Grey { w: number; h: number; px: Float32Array }
 const GREY_W = 480;
 
-export async function sampleFaces(url: string, start: number, end: number, onProgress?: (p: number) => void): Promise<{ W: number; H: number; samples: Sample[]; greys: Grey[] }> {
-  const lm = await loadLandmarker();
+export async function sampleFaces(url: string, start: number, end: number, onProgress?: (p: number) => void): Promise<{ W: number; H: number; samples: Sample[]; greys: Grey[]; dark: number }> {
+  let lm = await loadLandmarker('GPU');
+  let onCpu = false;
   const v = document.createElement('video');
   v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
   await new Promise<void>((res, rej) => { v.onloadeddata = () => res(); v.onerror = () => rej(new Error('Vidéo illisible pour l’analyse du cadrage.')); });
   const W = v.videoWidth, H = v.videoHeight;
   // The detector sees a small version of each image, so a facecam face (a few % of a stream frame) is invisible on the
-  // whole frame: each corner of a landscape video is also looked at, zoomed in. Regions in source pixels.
+  // whole frame: the frame is also looked at in overlapping zoomed tiles (3×2 for a landscape video, 1×3 for a
+  // vertical one), so a camera anywhere (a corner, the middle of a side) is found. Regions in source pixels.
   const regions: { x: number; y: number; w: number; h: number }[] = [{ x: 0, y: 0, w: W, h: H }];
-  if (W / H > 1.2) {
-    const cw = Math.round(W * 0.34), ch = Math.round(H * 0.5);
-    for (const [x, y] of [[0, 0], [W - cw, 0], [0, H - ch], [W - cw, H - ch]] as const) regions.push({ x, y, w: cw, h: ch });
+  const [cols, rows] = W / H > 1.2 ? [3, 2] : W / H < 0.8 ? [1, 3] : [2, 2];
+  const tw = Math.round(W / cols * (cols > 1 ? 1.35 : 1)), th = Math.round(H / rows * (rows > 1 ? 1.35 : 1));
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    regions.push({ x: Math.round(cols > 1 ? c * (W - tw) / (cols - 1) : 0), y: Math.round(rows > 1 ? r * (H - th) / (rows - 1) : 0), w: tw, h: th });
   }
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
@@ -60,13 +72,24 @@ export async function sampleFaces(url: string, start: number, end: number, onPro
   const gw = GREY_W, gh = Math.round(GREY_W * H / W);
   const gc = Object.assign(document.createElement('canvas'), { width: gw, height: gh });
   const gctx = gc.getContext('2d', { willReadFrequently: true })!;
-  const n = Math.max(1, Math.floor((end - start) / STEP));
+  const step = end - start > 45 ? 0.6 : STEP;
+  const n = Math.max(1, Math.floor((end - start) / step));
   const greyEvery = Math.max(1, Math.floor(n / 8));
+  let dark = 0;
+  const hitTiles = new Set<number>();
   for (let i = 0; i <= n; i++) {
-    const t = Math.min(end - 0.05, start + i * STEP);
+    // some graphics cards return nothing without any error: after 6 frames without a single face, try the CPU once
+    if (i === 6 && !onCpu && samples.every((x) => !x.faces.length)) {
+      lm = await loadLandmarker('CPU'); onCpu = true; i = -1; samples.length = 0; greys.length = 0; dark = 0; hitTiles.clear();
+      continue;
+    }
+    const t = Math.min(end - 0.05, start + i * step);
     await seek(v, t);
     const faces: Face[] = [];
-    for (const rg of regions) {
+    // all the tiles on the first frames (to find where the cameras are), then only the whole frame and the tiles
+    // where a face was found: 3 to 4 times faster on long clips, same result
+    const active = i < 8 ? regions : regions.filter((_, k) => k === 0 || hitTiles.has(k));
+    for (const rg of active) {
       const scale = Math.min(1, 640 / rg.w);
       canvas.width = Math.round(rg.w * scale); canvas.height = Math.round(rg.h * scale);
       ctx.drawImage(v, rg.x, rg.y, rg.w, rg.h, 0, 0, canvas.width, canvas.height);
@@ -77,20 +100,25 @@ export async function sampleFaces(url: string, start: number, end: number, onPro
         const jaw = out.faceBlendshapes?.[k]?.categories.find((c) => c.categoryName === 'jawOpen')?.score ?? 0;
         const f = { cx: rg.x + ((x0 + x1) / 2) * rg.w, cy: rg.y + ((y0 + y1) / 2) * rg.h, w: (x1 - x0) * rg.w, h: (y1 - y0) * rg.h, jaw };
         // the same face seen in the whole frame and in a corner: keep one
+        if (f.w > 8 && f.h > 8 && rg !== regions[0]) hitTiles.add(regions.indexOf(rg));
         if (f.w > 8 && f.h > 8 && !faces.some((g) => Math.hypot(g.cx - f.cx, g.cy - f.cy) < Math.max(g.w, f.w) * 0.6)) faces.push(f);
       });
     }
     samples.push({ t: t - start, faces });
+    gctx.drawImage(v, 0, 0, gw, gh);
+    const d = gctx.getImageData(0, 0, gw, gh).data;
+    let lum = 0;
+    for (let k = 0; k < d.length; k += 64) lum += d[k]! + d[k + 1]! + d[k + 2]!;
+    if (lum / (d.length / 64) / 3 < 6) dark++;
     if (i % greyEvery === 0) {
-      gctx.drawImage(v, 0, 0, gw, gh);
-      const d = gctx.getImageData(0, 0, gw, gh).data, px = new Float32Array(gw * gh);
+      const px = new Float32Array(gw * gh);
       for (let k = 0; k < px.length; k++) px[k] = 0.299 * d[k * 4]! + 0.587 * d[k * 4 + 1]! + 0.114 * d[k * 4 + 2]!;
       greys.push({ w: gw, h: gh, px });
     }
     onProgress?.((i + 1) / (n + 1));
   }
   v.removeAttribute('src'); v.load();
-  return { W, H, samples, greys };
+  return { W, H, samples, greys, dark: dark / Math.max(1, samples.length) };
 }
 
 interface Track { faces: (Face & { t: number })[]; cx: number; cy: number }
@@ -166,6 +194,8 @@ export function classifyFraming(samples: Sample[], W: number, H: number, start: 
   // moves much more than the camera (otherwise it is just a person filmed in a room).
   const landscape = W / H > 1.2;
   const found: ClipFraming['cams'] = [];
+  // two people who both stay on screen, big: a conversation (follow who speaks), not a camera next to a shared screen
+  const bigStable = tracks.filter((tr) => tr.faces.length / n >= 0.5 && median(tr.faces.map((f) => f.h)) >= H * 0.24).length;
   for (const tr of [...tracks].sort((a, b) => b.faces.length - a.faces.length)) {
     const present = tr.faces.length / n;
     const fh = median(tr.faces.map((f) => f.h));
@@ -174,7 +204,7 @@ export function classifyFraming(samples: Sample[], W: number, H: number, start: 
     const nearSide = tr.cx < W * 0.33 || tr.cx > W * 0.67 || tr.cy < H * 0.3 || tr.cy > H * 0.7;
     const offCentre = Math.abs(tr.cx - W / 2) > W * 0.12;
     if (fh < H * 0.24 && nearSide) { found.push(greys.length ? refineCam(camAround(tr, W, H), greys, W, H) : camAround(tr, W, H)); continue; }
-    if (offCentre && greys.length >= 3) {
+    if (offCentre && bigStable < 2 && greys.length >= 3) {
       const cam = refineCam(reactCam(tr, W, H), greys, W, H, true);
       if (motionContrast(cam, greys, W) >= 2.2) found.push(cam);
     }
@@ -319,7 +349,9 @@ export function refineCam(cam: ClipFraming['cams'][number], greys: Grey[], W: nu
 
 /** the whole step: samples the clip, then classifies */
 export async function detectFraming(url: string, start: number, end: number, captions: Caption[], onProgress?: (p: number) => void): Promise<ClipFraming> {
-  const { W, H, samples, greys } = await sampleFaces(url, start, Math.min(end, start + 120), onProgress);
+  const { W, H, samples, greys, dark } = await sampleFaces(url, start, Math.min(end, start + 120), onProgress);
+  // nearly every frame black: the browser could not decode the video for the analysis (not "no face")
+  if (dark > 0.8) throw new Error('unreadable');
   return classifyFraming(samples, W, H, start, end, captions, greys);
 }
 
