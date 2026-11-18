@@ -161,8 +161,36 @@ function cleanClips(raw: RawClip[], duration: number, [min, max]: readonly [numb
 
 interface Word { w: string; s: number; e: number }
 
+/** The MP3 frames of the browser's audio (MPEG-2 layer III, 16 kHz, constant bitrate: 576 samples a frame), so a
+ *  short piece around a clip can be cut out without decoding. `info`: the first frame is LAME's silent Info/Xing frame. */
+function mp3Frames(b: Uint8Array) {
+  const at: number[] = [];
+  let i = b[0] === 0x49 && b[1] === 0x44 && b[2] === 0x33 ? 10 + ((b[6] << 21) | (b[7] << 14) | (b[8] << 7) | b[9]) : 0; // skip an ID3 tag
+  const RATES = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160];
+  while (i < b.length - 4) {
+    if (b[i] === 0xff && (b[i + 1] & 0xe0) === 0xe0 && ((b[i + 1] >> 3) & 3) === 2 && ((b[i + 1] >> 1) & 3) === 1 && ((b[i + 2] >> 2) & 3) === 2) {
+      const kbps = RATES[(b[i + 2] >> 4) & 15] ?? 0;
+      const len = Math.floor((72 * kbps * 1000) / 16000) + ((b[i + 2] >> 1) & 1);
+      if (len < 8) { i++; continue; }
+      at.push(i); i += len;
+    } else i++;
+  }
+  const head = at.length ? new TextDecoder().decode(b.subarray(at[0], at[0] + 60)) : '';
+  return { at, info: /Info|Xing/.test(head) };
+}
+
+/** The piece of audio covering [start, end] (seconds) and where it starts in the whole audio. Measured offline with
+ *  ffmpeg: a piece cut at frame k decodes from ((k − 1) × 576 − 1105) / 16 000 s, k counted from the Info frame (checked to the millisecond). */
+function audioSlice(b: Uint8Array, f: ReturnType<typeof mp3Frames>, start: number, end: number) {
+  const base = f.info ? 0 : 1;
+  const k0 = Math.max(f.info ? 1 : 0, Math.floor((start * 16000) / 576) + 1 - base);
+  const k1 = Math.min(f.at.length - 1, Math.ceil((end * 16000) / 576) + 2 - base);
+  if (k1 - k0 < 20) return null;
+  return { bytes: b.slice(f.at[k0], f.at[k1]), offset: ((k0 + base - 1) * 576 - 1105) / 16000 };
+}
+
 /** every spoken word with its own start/end (seconds), or null if the transcription is unavailable */
-async function transcribeWords(bytes: Uint8Array): Promise<Word[] | null> {
+async function transcribeWords(bytes: Uint8Array, timeoutMs = 110_000): Promise<Word[] | null> {
   const key = Deno.env.get('OPENAI_API_KEY');
   if (!key) return null;
   try {
@@ -171,7 +199,7 @@ async function transcribeWords(bytes: Uint8Array): Promise<Word[] | null> {
     fd.append('model', 'whisper-1');
     fd.append('response_format', 'verbose_json');
     fd.append('timestamp_granularities[]', 'word');
-    const res = await fetch('https://api.openai.com/v1/audio/transcriptions', { method: 'POST', headers: { Authorization: `Bearer ${key}` }, body: fd, signal: AbortSignal.timeout(110_000) });
+    const res = await fetch('https://api.openai.com/v1/audio/transcriptions', { method: 'POST', headers: { Authorization: `Bearer ${key}` }, body: fd, signal: AbortSignal.timeout(timeoutMs) });
     if (!res.ok) { console.error('transcribe', res.status, (await res.text()).slice(0, 200)); return null; }
     const d = await res.json();
     const words = (d.words ?? []).map((x: any) => ({ w: String(x.word ?? '').trim(), s: num(x.start), e: num(x.end) })).filter((x: Word) => x.w && x.e >= x.s);
@@ -312,9 +340,29 @@ Rules:
 - reactions: when nobody talks but something happens (laughs, screams, gasps, an awkward silence), a 1 to 3 word tag in CAPITALS in the spoken language, between asterisks, like *LAUGHS* or *SHOCKED*. Empty if none.
 - score: honest 0-100 estimate of how well the clip would perform.`;
 
+    const startedAt = Date.now();
     // the AI picks the moments; the captions come from a speech-to-text with real word timings (in parallel)
     const [out, words] = await Promise.all([callGemini(prompt, encodeBase64(bytes)), transcribeWords(bytes)]);
     let clips = cleanClips(Array.isArray(out?.clips) ? out.clips : [], duration, [min, max]);
+    // Whisper drifts on long audio: each clip is transcribed again on its own short piece (a few seconds of margin),
+    // which gives word timings accurate to a few hundredths of a second. Falls back on the whole-file words.
+    if (words && Date.now() - startedAt < 75_000) {
+      const frames = mp3Frames(bytes);
+      const pieces = await Promise.all(clips.map(async (c) => {
+        const sl = frames.at.length ? audioSlice(bytes, frames, Math.max(0, c.start - 3), Math.min(duration, c.end + 3)) : null;
+        if (!sl) return null;
+        const w = await transcribeWords(sl.bytes, 40_000);
+        return w ? w.map((x) => ({ ...x, s: round2(x.s + sl.offset), e: round2(x.e + sl.offset) })) : null;
+      }));
+      clips.forEach((c, i) => {
+        const p = pieces[i];
+        if (!p) return;
+        const lo = Math.max(0, c.start - 2.5), hi = c.end + 2.5;
+        const inside = p.filter((x) => x.s >= lo && x.e <= hi);
+        const outside = words.filter((x) => x.e < lo || x.s > hi);
+        words.splice(0, words.length, ...[...outside, ...inside].sort((a, b) => a.s - b.s));
+      });
+    }
     if (words) clips = clips.map((c) => { const b = snapToWords(words, c.start, Math.min(duration, c.end)); return { ...c, ...b, end: Math.min(duration, b.end), captions: chunksFromWords(words, b.start, Math.min(duration, b.end)) as RawClip['captions'] }; });
     clips = clips.map((c) => ({ ...c, captions: withReactions(markKeywords(c.captions, c.keywords ?? []), c.reactions ?? []) }));
     if (clips.length === 0) throw new Error('L’IA n’a pas trouvé de moment clair à découper (y a-t-il de la parole dans cette vidéo ?)');

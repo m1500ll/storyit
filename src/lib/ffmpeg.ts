@@ -89,7 +89,9 @@ export const AUDIO_BITRATE = 24_000;
 
 export async function extractAudio(source: Blob, duration: number, onProgress?: (p: number) => void): Promise<Blob> {
   const data = await run(source, duration,
-    (input) => ['-i', input, '-vn', '-ac', '1', '-ar', '16000', '-c:a', 'libmp3lame', '-b:a', '24k', 'audio.mp3'],
+    // aresample first_pts=0: when the sound starts after the picture (OBS, phones), silence is added in front so the audio
+    // keeps the video's timeline (without it every caption came out early by that gap, often ~0.4 s)
+    (input) => ['-i', input, '-vn', '-ac', '1', '-ar', '16000', '-af', 'aresample=async=1:first_pts=0', '-c:a', 'libmp3lame', '-b:a', '24k', 'audio.mp3'],
     'audio.mp3', onProgress);
   return new Blob([data], { type: 'audio/mpeg' });
 }

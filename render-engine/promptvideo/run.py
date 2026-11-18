@@ -6,7 +6,7 @@
 #  5. the video goes to the customer's library (and the cover, when the project has one, next to it); any failure refunds
 # Keys: the image and video keys are read from the `prompt-videos` Edge Function (worker_keys, RENDER_WORKER_TOKEN),
 # so they live only in the Edge Function secrets. Other secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
-import base64, hashlib, json, os, re, shutil, subprocess, tempfile, time, traceback, urllib.error, urllib.parse, urllib.request, uuid
+import base64, difflib, hashlib, json, os, re, shutil, subprocess, tempfile, time, traceback, urllib.error, urllib.parse, urllib.request, unicodedata, uuid
 from concurrent.futures import ThreadPoolExecutor
 
 SB = os.environ["SUPABASE_URL"].rstrip("/")
@@ -280,8 +280,70 @@ def ass_escape(t):
     return t.replace("\\", "").replace("{", "(").replace("}", ")").replace("\n", " ")
 
 
-def subtitles_ass(plan, kept, style):
-    """ASS file from the script's line timings: chunks of max 4 words, shown one after the other (TikTok style)"""
+def norm_word(w):
+    w = unicodedata.normalize("NFD", w.lower())
+    return "".join(ch for ch in w if ch.isalnum() and not unicodedata.combining(ch))
+
+
+def spoken_words(src, tmp, okey):
+    """every word really spoken in the finished video, with its own start/end (OpenAI Whisper), or None"""
+    if not okey or not has_audio(src): return None
+    try:
+        audio = os.path.join(tmp, "voice.mp3")
+        run("ffmpeg", "-v", "error", "-y", "-i", src, "-vn", "-ac", "1", "-ar", "16000", "-c:a", "libmp3lame", "-b:a", "64k", audio)
+        fields = {"model": "whisper-1", "response_format": "verbose_json", "timestamp_granularities[]": "word"}
+        body, ctype = multipart(fields, [("file", ("voice.mp3", open(audio, "rb").read(), "audio/mpeg"))])
+        out = retry(lambda: http("POST", f"{OPENAI}/audio/transcriptions", body, {"Authorization": f"Bearer {okey}", "Content-Type": ctype}, timeout=180))
+        words = [{"w": str(x.get("word", "")).strip(), "s": float(x["start"]), "e": float(x["end"])} for x in (out or {}).get("words") or []]
+        words = [x for x in words if x["w"] and x["e"] >= x["s"]]
+        return words or None
+    except Exception as e:  # the subtitles fall back on the script's timings
+        print("subtitle timing skipped", e, flush=True)
+        return None
+
+
+def timed_script_words(plan, kept, spoken):
+    """The script's words (right spelling) on the timings of the words really spoken. Script and transcript are
+    matched word by word; a script word with no match gets its time from its neighbours. When the voices said
+    something else (less than 40 % matched), the transcript itself is shown, so the text always follows the voice."""
+    script, offset = [], 0.0
+    for c, (start, length) in zip(plan["clips"], kept):
+        for li, ln in enumerate(c.get("lines") or []):
+            for w in ass_escape(ln.get("text", "")).split():
+                script.append({"w": w, "line": (id(c), li), "s0": offset + max(0.0, float(ln["start"]) - start)})
+        offset += length
+    if not spoken:
+        return None
+    a, b = [norm_word(x["w"]) for x in script], [norm_word(x["w"]) for x in spoken]
+    sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
+    match = {}
+    for blk in sm.get_matching_blocks():
+        for k in range(blk.size): match[blk.a + k] = blk.b + k
+    if not script or len(match) < 0.4 * len(script):
+        return [{"w": x["w"], "s": x["s"], "e": x["e"], "line": None} for x in spoken]
+    out = []
+    for i, x in enumerate(script):
+        if i in match:
+            sw = spoken[match[i]]; out.append({"w": x["w"], "s": sw["s"], "e": sw["e"], "line": x["line"]})
+        else:
+            out.append({"w": x["w"], "s": None, "e": None, "line": x["line"]})
+    # unmatched words: share the time between the matched neighbours
+    i = 0
+    while i < len(out):
+        if out[i]["s"] is not None: i += 1; continue
+        j = i
+        while j < len(out) and out[j]["s"] is None: j += 1
+        lo = out[i - 1]["e"] if i > 0 else (out[j]["s"] - 0.3 * (j - i) if j < len(out) else 0.0)
+        hi = out[j]["s"] if j < len(out) else lo + 0.3 * (j - i)
+        lo = max(0.0, lo); hi = max(hi, lo + 0.05 * (j - i)); step = (hi - lo) / (j - i)
+        for k in range(i, j): out[k]["s"], out[k]["e"] = lo + step * (k - i), lo + step * (k - i + 1)
+        i = j
+    return out
+
+
+def subtitles_ass(plan, kept, style, spoken=None):
+    """ASS file: chunks of max 4 words shown one after the other (TikTok style), timed on the voices really spoken
+    (spoken_words) when available, otherwise on the script's line timings"""
     looks = {  # PrimaryColour, SecondaryColour (karaoke: words switch from Secondary to Primary), italic, outline, shadow
         "karaoke": ("&H0000E5FF", "&H00FFFFFF", 0, 7, 2),
         "simple": ("&H00FFFFFF", "&H00FFFFFF", 0, 7, 2),
@@ -295,6 +357,25 @@ def subtitles_ass(plan, kept, style):
             "\n"
             "[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n")
     events, offset = [], 0.0
+    timed = timed_script_words(plan, kept, spoken)
+    if timed:
+        chunks, cur = [], []
+        for w in timed:
+            if cur and (len(cur) >= 4 or w["line"] != cur[-1]["line"] or w["s"] - cur[-1]["e"] > 0.35): chunks.append(cur); cur = []
+            cur.append(w)
+            if re.search(r"[.!?,;:…]$", w["w"]): chunks.append(cur); cur = []
+        if cur: chunks.append(cur)
+        for k, ch in enumerate(chunks):
+            a, b = ch[0]["s"], ch[-1]["e"]
+            nxt = chunks[k + 1][0]["s"] if k + 1 < len(chunks) else None
+            if nxt is not None and (nxt < b or nxt - b < 0.3): b = nxt   # never overlap, no flicker between two chunks
+            up = (lambda t: t) if style == "italique" else (lambda t: t.upper())
+            if style == "karaoke":
+                text = " ".join(f"{{\\k{max(1, round((w['e'] - w['s'] if i == len(ch) - 1 else ch[i + 1]['s'] - w['s']) * 100))}}}{up(w['w'])}" for i, w in enumerate(ch))
+            else:
+                text = " ".join(up(w["w"]) for w in ch)
+            events.append(f"Dialogue: 0,{ass_time(a)},{ass_time(max(b, a + 0.1))},Sub,,0,0,0,,{text}")
+        return head + "\n".join(events) + "\n"
     for c, (start, length) in zip(plan["clips"], kept):
         for ln in c.get("lines") or []:
             words = ass_escape(ln.get("text", "")).split()
@@ -306,7 +387,7 @@ def subtitles_ass(plan, kept, style):
             for ch in chunks:
                 d = per * len(ch)
                 text = " ".join(f"{{\\k{max(1, round(per * 100))}}}{w}" for w in ch) if style == "karaoke" else " ".join(ch)
-                events.append(f"Dialogue: 0,{ass_time(offset + t)},{ass_time(offset + t + d)},Sub,,0,0,0,,{text.upper() if style != 'italique' else text}")
+                events.append(f"Dialogue: 0,{ass_time(offset + t)},{ass_time(offset + t + d)},Sub,,0,0,0,,{text if style == 'italique' else re.sub(r'(?<=})[^{]+', lambda m: m.group(0).upper(), text) if style == 'karaoke' else text.upper()}")
                 t += d
         offset += length
     return head + "\n".join(events) + "\n"
@@ -315,7 +396,7 @@ def subtitles_ass(plan, kept, style):
 WATERMARK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "watermark.png")  # source: render-engine/scripts/watermark.html
 
 
-def finish(src, out, tmp, plan, kept):
+def finish(src, out, tmp, plan, kept, okey=None):
     """burns the subtitles and the Storyit banner, mixes the music under the voices (ducked while someone speaks); no option: plain copy"""
     style, music, mark = plan.get("subtitles") or "none", plan.get("music"), bool(plan.get("watermark"))
     if style == "none" and not music and not mark:
@@ -333,7 +414,7 @@ def finish(src, out, tmp, plan, kept):
         amap = ["-map", "[a]", "-c:a", "aac", "-b:a", "160k"]
     video = "[0:v]"
     if style != "none":
-        ass = os.path.join(tmp, "subs.ass"); open(ass, "w", encoding="utf-8").write(subtitles_ass(plan, kept, style))
+        ass = os.path.join(tmp, "subs.ass"); open(ass, "w", encoding="utf-8").write(subtitles_ass(plan, kept, style, spoken_words(src, tmp, okey)))
         graph.append(f"{video}ass={ass}:fontsdir={FONTS}[vs]"); video = "[vs]"
     if mark:   # "Fait avec Storyit.fun" banner, top left: clear of TikTok's buttons (right) and caption (bottom), the whole video
         inputs += ["-i", WATERMARK]
@@ -421,7 +502,7 @@ def produce(job):
         step("montage", 88)
         joined, out = os.path.join(tmp, "joined.mp4"), os.path.join(tmp, "final.mp4")
         kept = montage(files, joined, tmp)
-        finish(joined, out, tmp, plan, kept)
+        finish(joined, out, tmp, plan, kept, okey)
 
         step("library", 96)
         aid = str(uuid.uuid4()); path = f"{uid}/{aid}.mp4"; data = open(out, "rb").read()
