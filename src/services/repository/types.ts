@@ -14,6 +14,8 @@ export type SceneEditableFields = Pick<Scene, 'narration' | 'dialogue' | 'image_
 /** Persistence port. Implemented by an in-memory mock and by Supabase. */
 export interface Repository {
   getProfile(): Promise<Profile | null>;
+  /** the sign-up onboarding answers (goal, target, time, level, platforms) */
+  saveOnboarding(answers: Record<string, unknown>): Promise<void>;
   listTransactions(): Promise<CreditTransaction[]>;
   consumeCredits(amount: number, storyId: string, description: string): Promise<number>;
   /** the caller's referral code (created on first use) and the friends who signed up through it */

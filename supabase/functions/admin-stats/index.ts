@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
 
   const [usersRes, profilesRes, txRes, animRes, pvRes, dubRes, affRes, invOld, invNew, subOld, subNew] = await Promise.all([
     admin.auth.admin.listUsers({ perPage: 1000 }),
-    admin.from('profiles').select('id, plan, credit_balance, trial_used, trial_ends_at, affiliate_id, stripe_customer_id, marketing_opt_out, is_admin'),
+    admin.from('profiles').select('id, plan, credit_balance, trial_used, trial_ends_at, affiliate_id, stripe_customer_id, marketing_opt_out, is_admin, onboarding'),
     admin.from('credit_transactions').select('user_id, amount, type, description, created_at').order('created_at', { ascending: false }).limit(20000),
     admin.from('animated_projects').select('user_id, status'),
     admin.from('prompt_videos').select('user_id, status'),
@@ -130,6 +130,7 @@ Deno.serve(async (req) => {
       paidCents: money?.total ?? 0, lastPaymentAt: money?.last ?? null,
       credits: p.credit_balance ?? 0, spent: spent.get(u.id) ?? 0, videos: videos.get(u.id) ?? 0, lastActivityAt: lastAct.get(u.id) ?? null,
       partner: p.affiliate_id ? (affiliates.get(p.affiliate_id)?.code ?? 'partenaire') : null, isAdmin: !!p.is_admin, unsubscribed: !!p.marketing_opt_out,
+      onboarding: p.onboarding ? { goal: p.onboarding.goal ?? null, target: p.onboarding.target ?? null, time: p.onboarding.time ?? null, level: p.onboarding.level ?? null } : null,
     };
   }).sort((a, b) => Date.parse(b.signedUpAt) - Date.parse(a.signedUpAt));
 

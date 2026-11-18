@@ -25,6 +25,7 @@ const changed = <T>(value: T): Promise<T> => {
 export const mockRepository: Repository = {
   ...mockClips,
   getProfile: async () => mockDb.profile,
+  saveOnboarding: async () => {},
   listTransactions: async () => mockDb.transactions,
   getReferrals: async () => ({
     code: 'DEMO7K2X',

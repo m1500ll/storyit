@@ -44,6 +44,15 @@ function StatusBadge({ m }: { m: AdminMember }) {
   return <span className={cn('whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium', s.cls)}>{s.label}{(m.status === 'paying' || m.status === 'trial') && m.cancelAtPeriodEnd ? ' · a résilié' : ''}</span>;
 }
 
+const GOAL: Record<string, string> = { side: 'revenu en plus', business: 'en faire son business', grow: 'faire grandir son compte', test: 'curiosité' };
+const LEVEL: Record<string, string> = { zero: 'débutant', posted: 'a déjà posté', views: 'fait des vues', paid: 'monétise déjà' };
+/** the sign-up onboarding answers, in a few words */
+function onboardingLine(m: AdminMember) {
+  const o = m.onboarding;
+  if (!o) return '';
+  return [o.goal && GOAL[o.goal], o.target && `objectif ${o.target.replace('+', ' +')} $/mois`, o.time && `${o.time === '120' ? '2 h+' : o.time === '60' ? '1 h' : `${o.time} min`}/jour`, o.level && LEVEL[o.level]].filter(Boolean).join(' · ');
+}
+
 function payLine(m: AdminMember) {
   if (m.cancelAtPeriodEnd && (m.status === 'trial' || m.status === 'paying'))
     return `Résilié${m.canceledAt ? ` le ${day(m.canceledAt)}` : ''} · accès jusqu’au ${day(m.cancelAt ?? m.trialEndsAt ?? m.renewsAt)}, ne sera pas prélevé`;
@@ -132,6 +141,7 @@ export default function AdminDashboardPage() {
                     <li key={m.id} className="py-3">
                       <div className="flex items-start justify-between gap-2"><p className="min-w-0 break-all text-sm font-medium text-zinc-100">{m.email}</p><StatusBadge m={m} /></div>
                       <p className="mt-1 text-xs text-zinc-500">{payLine(m)}</p>
+                      {m.onboarding && <p className="mt-0.5 text-[11px] text-violet-300/80">{onboardingLine(m)}</p>}
                       <p className="mt-1.5 grid grid-cols-3 gap-2 text-xs text-zinc-400">
                         <span><span className="block text-[10px] text-zinc-500">Payé</span><span className="tabular-nums text-zinc-200">{m.paidCents ? usd(m.paidCents) : '—'}</span></span>
                         <span><span className="block text-[10px] text-zinc-500">Crédits</span><span className="tabular-nums text-zinc-200">{formatCredits(m.credits)}</span></span>
@@ -152,7 +162,7 @@ export default function AdminDashboardPage() {
                     <tbody className="divide-y divide-line/5">
                       {members.map((m) => (
                         <tr key={m.id} className="align-top">
-                          <td className="max-w-[260px] py-2.5 pr-3"><p className="truncate text-zinc-100" title={m.email}>{m.email}</p><p className="text-[11px] text-zinc-500">{payLine(m)}{m.partner ? ` · via ${m.partner}` : ''}</p></td>
+                          <td className="max-w-[260px] py-2.5 pr-3"><p className="truncate text-zinc-100" title={m.email}>{m.email}</p><p className="text-[11px] text-zinc-500">{payLine(m)}{m.partner ? ` · via ${m.partner}` : ''}</p>{m.onboarding && <p className="text-[11px] text-violet-300/80">{onboardingLine(m)}</p>}</td>
                           <td className="py-2.5 pr-3"><StatusBadge m={m} /></td>
                           <td className="py-2.5 pr-3 text-right tabular-nums text-zinc-200">{m.paidCents ? usd(m.paidCents) : '—'}</td>
                           <td className="py-2.5 pr-3 text-right tabular-nums text-zinc-200">{formatCredits(m.credits)}</td>

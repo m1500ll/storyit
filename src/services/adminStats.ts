@@ -7,6 +7,7 @@ export interface AdminMember {
   plan: string; status: MemberStatus; interval: 'month' | 'year' | null; renewsAt: number | null; cancelAtPeriodEnd: boolean; cancelAt?: number | null; canceledAt?: number | null; trialEndsAt: number | null;
   paidCents: number; lastPaymentAt: number | null; credits: number; spent: number; videos: number; lastActivityAt: number | null;
   partner: string | null; isAdmin: boolean; unsubscribed: boolean;
+  onboarding?: { goal: string | null; target: string | null; time: string | null; level: string | null } | null;
 }
 export interface AdminStats {
   generatedAt: number; stripeConnected: boolean;

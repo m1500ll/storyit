@@ -81,6 +81,11 @@ export function createSupabaseRepository(db: SupabaseClient<Database>): Reposito
   };
 
   return {
+    async saveOnboarding(answers) {
+      const id = await uid();
+      const { error } = await db.from('profiles').update({ onboarding: { ...answers, at: new Date().toISOString() } }).eq('id', id);
+      if (error) throw new Error(error.message);
+    },
     async getProfile() {
       const id = await uid();
       return unwrap(await db.from('profiles').select('*').eq('id', id).maybeSingle());
