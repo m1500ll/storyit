@@ -65,6 +65,26 @@ Deno.serve(async (req) => {
     return json({ seconds: Math.round((Date.now() - t0) / 1000), effort, usage: W.lastUsage, ok: !!script, invalid, title: script?.title, paradox: script?.paradox,
       clips: script?.clips?.map((c: any) => ({ s: c.seconds, lines: c.lines.map((l: any) => `${l.character}${l.tone ? ` [${l.tone}]` : ''}: ${l.text}`) })) });
   }
+  if (url.searchParams.get('stripe_recent') === '1') { // operator: the last checkouts, payments and subscriptions of each account
+    const days = Math.min(30, Math.max(1, Number(url.searchParams.get('days') ?? 7)));
+    const since = Math.floor(Date.now() / 1000) - days * 86_400;
+    const out: Record<string, unknown> = {};
+    for (const [name, k] of [['legacy', 'STRIPE_SECRET_KEY'], ['new', 'STRIPE_SECRET_KEY_NEW']]) {
+      const key = Deno.env.get(k); if (!key) continue;
+      const get = async (p: string) => (await (await fetch(`https://api.stripe.com/v1/${p}`, { headers: { Authorization: `Bearer ${key}` } })).json())?.data ?? [];
+      const [sessions, payments, subs] = await Promise.all([
+        get(`checkout/sessions?limit=30&created[gte]=${since}`),
+        get(`payment_intents?limit=30&created[gte]=${since}`),
+        get(`subscriptions?limit=30&status=all&created[gte]=${since}`),
+      ]);
+      out[name] = {
+        checkouts: sessions.map((s: any) => ({ id: s.id, created: s.created, status: s.status, paid: s.payment_status, amount: s.amount_total, currency: s.currency, customer: s.customer, user: s.client_reference_id, email: s.customer_details?.email ?? null, url: s.status === 'open' ? 'open' : null })),
+        payments: payments.map((p: any) => ({ id: p.id, created: p.created, status: p.status, amount: p.amount, currency: p.currency, customer: p.customer, description: p.description, error: p.last_payment_error?.message ?? null })),
+        subscriptions: subs.map((s: any) => ({ id: s.id, created: s.created, status: s.status, customer: s.customer, price: s.items?.data?.[0]?.price?.id, trial_end: s.trial_end })),
+      };
+    }
+    return json(out);
+  }
   if (url.searchParams.get('stripe_account_status') === '1') { // operator: can each Stripe account take payments?
     const out: Record<string, unknown> = {};
     for (const [name, k] of [['legacy', 'STRIPE_SECRET_KEY'], ['new', 'STRIPE_SECRET_KEY_NEW']]) {
