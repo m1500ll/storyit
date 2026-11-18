@@ -119,31 +119,68 @@ function camAround(tr: Track, W: number, H: number) {
   let w = Math.min(W, fw * 3.4), h = Math.min(H, w * 0.75);
   if (h < fh * 2.2) { h = Math.min(H, fh * 2.2); w = Math.min(W, h / 0.75); }
   let x = cx - w / 2, y = cy + fh * 0.2 - h / 2;
-  const snap = 0.06;
+  const snap = 0.01; // only a box really against the side is glued to it (refineCam finds the border of the others)
   if (x < W * snap) x = 0; if (x + w > W * (1 - snap)) x = W - w;
   if (y < H * snap) y = 0; if (y + h > H * (1 - snap)) y = H - h;
   x = Math.min(Math.max(0, x), W - w); y = Math.min(Math.max(0, y), H - h);
   return { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
 }
 
-/** Facecams, people and who speaks when. `captions` (source time) tell when someone is talking. */
-export function classifyFraming(samples: Sample[], W: number, H: number, start: number, end: number, captions: Caption[] = []): ClipFraming {
+/** How much the picture changes OUTSIDE `rect` compared with inside it, over the grey frames. A streamer's camera
+ *  barely changes (a person sitting in a room) while the shared screen next to it (a trailer, a game) changes a lot. */
+export function motionContrast(rect: { x: number; y: number; w: number; h: number }, greys: Grey[], W: number): number {
+  if (greys.length < 3) return 0;
+  const g0 = greys[0]!, s = g0.w / W, gw = g0.w, gh = g0.h;
+  const x0 = Math.round(rect.x * s), x1 = Math.round((rect.x + rect.w) * s), y0 = Math.round(rect.y * s), y1 = Math.round((rect.y + rect.h) * s);
+  let inside = 0, ni = 0, outside = 0, no = 0;
+  for (let k = 1; k < greys.length; k++) {
+    const a = greys[k - 1]!.px, b = greys[k]!.px;
+    for (let y = 0; y < gh; y += 3) for (let x = 0; x < gw; x += 3) {
+      const d = Math.abs(a[y * gw + x]! - b[y * gw + x]!);
+      if (x >= x0 && x < x1 && y >= y0 && y < y1) { inside += d; ni++; } else { outside += d; no++; }
+    }
+  }
+  return ni && no ? (outside / no) / Math.max(1, inside / ni) : 0;
+}
+
+/** a reaction camera: a box around the streamer reaching the nearest side of the frame (refined later on its edges) */
+function reactCam(tr: Track, W: number, H: number) {
+  const fw = median(tr.faces.map((f) => f.w)), fh = median(tr.faces.map((f) => f.h));
+  const cx = median(tr.faces.map((f) => f.cx)), cy = median(tr.faces.map((f) => f.cy));
+  const w = Math.min(W * 0.5, fw * 3.6), h = Math.min(H, Math.max(fh * 2.6, w * 0.75));
+  const x = cx < W / 2 ? Math.max(0, Math.min(cx - w / 2, 0)) : Math.min(W - w, Math.max(cx - w / 2, W - w));
+  const y = Math.min(Math.max(0, cy + fh * 0.2 - h / 2), H - h);
+  return { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
+}
+
+/** Facecams, people and who speaks when. `captions` (source time) tell when someone is talking; `greys` (small grey
+ *  frames) let a big streamer camera next to a shared screen (a reaction to a trailer) count as a facecam. */
+export function classifyFraming(samples: Sample[], W: number, H: number, start: number, end: number, captions: Caption[] = [], greys: Grey[] = []): ClipFraming {
   const base = { v: 1 as const, w: W, h: H, start, end, cams: [] as ClipFraming['cams'], segments: [] as ClipFraming['segments'] };
   const n = samples.length || 1;
   const tracks = tracksOf(samples, W).filter((tr) => tr.faces.length >= Math.max(2, n * 0.15));
   if (!tracks.length) return { ...base, kind: 'none' };
 
-  // a facecam: a small face that stays put, near a side of a landscape frame (a gameplay stream overlay)
+  // A facecam: a face that stays put in a landscape frame, off the middle. Small and near a side: a gameplay overlay.
+  // Bigger (up to half the height): a streamer's camera next to a screen share, kept only if the rest of the frame
+  // moves much more than the camera (otherwise it is just a person filmed in a room).
   const landscape = W / H > 1.2;
-  const cams = tracks.filter((tr) => {
+  const found: ClipFraming['cams'] = [];
+  for (const tr of [...tracks].sort((a, b) => b.faces.length - a.faces.length)) {
     const present = tr.faces.length / n;
     const fh = median(tr.faces.map((f) => f.h));
     const spread = Math.max(...tr.faces.map((f) => Math.abs(f.cx - tr.cx)));
+    if (!landscape || present < 0.5 || spread > W * 0.06 || fh > H * 0.5) continue;
     const nearSide = tr.cx < W * 0.33 || tr.cx > W * 0.67 || tr.cy < H * 0.3 || tr.cy > H * 0.7;
-    return landscape && present >= 0.5 && fh < H * 0.24 && spread < W * 0.06 && nearSide;
-  }).sort((a, b) => b.faces.length - a.faces.length);
-  if (cams.length >= 2) return { ...base, kind: 'two_cams', cams: cams.slice(0, 2).map((c) => camAround(c, W, H)) };
-  if (cams.length === 1) return { ...base, kind: 'facecam', cams: [camAround(cams[0]!, W, H)] };
+    const offCentre = Math.abs(tr.cx - W / 2) > W * 0.12;
+    if (fh < H * 0.24 && nearSide) { found.push(greys.length ? refineCam(camAround(tr, W, H), greys, W, H) : camAround(tr, W, H)); continue; }
+    if (offCentre && greys.length >= 3) {
+      const cam = refineCam(reactCam(tr, W, H), greys, W, H, true);
+      if (motionContrast(cam, greys, W) >= 2.2) found.push(cam);
+    }
+  }
+  if (found.length >= 2) return { ...base, kind: 'two_cams', cams: found.slice(0, 2) };
+  if (found.length === 1) return { ...base, kind: 'facecam', cams: [found[0]!] };
 
   // people on screen: follow whoever speaks (mouth moving while words are being said), with hard cuts held ≥ 1.2 s
   const speaking = (t: number) => captions.some((c) => c.start - start <= t && c.end - start >= t);
@@ -192,8 +229,9 @@ export function classifyFraming(samples: Sample[], W: number, H: number, start: 
 
 /** The facecam window's real edges. The box guessed from the face is a first idea; a facecam overlay has a straight
  *  border that stays in the same place in every frame while the picture around it changes, so the column (and row)
- *  with the strongest steady contrast near the guess is its inner edge. Boxes in source pixels. */
-export function refineCam(cam: ClipFraming['cams'][number], greys: Grey[], W: number, H: number): ClipFraming['cams'][number] {
+ *  with the strongest steady contrast near the guess is its inner edge. `useMotion` (a camera next to a moving shared
+ *  screen): the edge is where the picture goes from still to moving. Boxes in source pixels. */
+export function refineCam(cam: ClipFraming['cams'][number], greys: Grey[], W: number, H: number, useMotion = false): ClipFraming['cams'][number] {
   if (!greys.length) return cam;
   const g0 = greys[0]!, s = g0.w / W, gw = g0.w, gh = g0.h;
   const at = (g: Grey, x: number, y: number) => g.px[Math.min(gh - 1, Math.max(0, y)) * gw + Math.min(gw - 1, Math.max(0, x))]!;
@@ -207,28 +245,72 @@ export function refineCam(cam: ClipFraming['cams'][number], greys: Grey[], W: nu
   }));
   // the edge line: among the strong steady lines, the OUTERMOST one (`outward` = towards the middle of the frame),
   // since lines inside the cam picture (a chair, a shelf) are strong too
-  const best = (from: number, to: number, score: (v: number) => number, outward: 1 | -1) => {
+  const best = (from: number, to: number, score: (v: number) => number, outward: 1 | -1, keep = 0.55) => {
     const vals: { v: number; sc: number }[] = [];
     for (let v = Math.max(2, from); v <= Math.min(to, 10000); v++) vals.push({ v, sc: score(v) });
     if (!vals.length) return -1;
     const max = Math.max(...vals.map((x) => x.sc));
     const med = [...vals].sort((a, b) => a.sc - b.sc)[Math.floor(vals.length / 2)]!.sc;
     if (max <= Math.max(6, med * 2.5)) return -1;
-    const strong = vals.filter((x) => x.sc >= max * 0.55).map((x) => x.v);
+    const strong = vals.filter((x) => x.sc >= max * keep).map((x) => x.v);
     return outward === 1 ? Math.max(...strong) : Math.min(...strong);
   };
   const cy0 = Math.round(cam.y * s), cy1 = Math.round((cam.y + cam.h) * s);
+  // Next to a shared screen, the border is where the picture goes from still (the camera) to moving (the screen):
+  // the biggest step in motion beats a contrast line (a trailer has strong lines of its own).
+  const motionStep = (from: number, to: number, vertical: boolean, a0: number, a1: number, camLow: 1 | -1) => {
+    const len = vertical ? gw : gh, prof = new Float32Array(len);
+    for (let k = 1; k < greys.length; k++) {
+      const A = greys[k - 1]!.px, B = greys[k]!.px;
+      for (let v = 0; v < len; v++) for (let u = a0; u < a1; u += 2) {
+        const i = vertical ? u * gw + v : v * gw + u; prof[v] = prof[v]! + Math.abs(A[i]! - B[i]!);
+      }
+    }
+    const span = Math.max(1, ((a1 - a0) / 2) * (greys.length - 1));
+    let bv = -1, bs = 0; const win = 12;
+    for (let v = Math.max(win, from); v <= Math.min(len - win, to); v++) {
+      let lo = 0, hi = 0;
+      for (let d = 1; d <= win; d++) { lo += prof[v - d]!; hi += prof[v + d - 1]!; }
+      const step = (camLow === 1 ? hi - lo : lo - hi) / (win * span);
+      if (step > bs) { bs = step; bv = v; }
+    }
+    return bs > 6 ? bv : -1;
+  };
   // inner vertical edge: searched from half the guessed width to 2.6× it, on the side facing the middle of the frame
-  const inner = right
+  const moving = useMotion && greys.length >= 3;
+  const stepX = moving ? (right
+    ? motionStep(Math.round((cam.x + cam.w - cam.w * 2.6) * s), Math.round((cam.x + cam.w * 0.5) * s), true, cy0, cy1, -1)
+    : motionStep(Math.round((cam.x + cam.w * 0.5) * s), Math.round((cam.x + cam.w * 2.6) * s), true, cy0, cy1, 1)) : -1;
+  const inner = stepX > 0 ? stepX : right
     ? best(Math.round((cam.x + cam.w - cam.w * 2.6) * s), Math.round((cam.x + cam.w * 0.5) * s), (x) => colScore(x, cy0, cy1), -1)
     : best(Math.round((cam.x + cam.w * 0.5) * s), Math.round((cam.x + cam.w * 2.6) * s), (x) => colScore(x, cy0, cy1), 1);
   let { x, y, w, h } = cam;
   if (inner > 0) { const ex = inner / s; if (right) { w = x + w - ex; x = ex; } else { w = ex - x; } }
   const hx0 = Math.round(x * s), hx1 = Math.round((x + w) * s);
-  const edgeY = bottom
+  const stepY = moving ? (bottom
+    ? motionStep(Math.round((cam.y + cam.h - cam.h * 2.6) * s), Math.round((cam.y + cam.h * 0.5) * s), false, hx0 + 2, hx1 - 2, -1)
+    : motionStep(Math.round((cam.y + cam.h * 0.5) * s), Math.round((cam.y + cam.h * 2.6) * s), false, hx0 + 2, hx1 - 2, 1)) : -1;
+  const edgeY = stepY > 0 ? stepY : bottom
     ? best(Math.round((cam.y + cam.h - cam.h * 2.6) * s), Math.round((cam.y + cam.h * 0.5) * s), (yy) => rowScore(yy, hx0 + 2, hx1 - 2), -1)
     : best(Math.round((cam.y + cam.h * 0.5) * s), Math.round((cam.y + cam.h * 2.6) * s), (yy) => rowScore(yy, hx0 + 2, hx1 - 2), 1);
   if (edgeY > 0) { const ey = edgeY / s; if (bottom) { h = y + h - ey; y = ey; } else { h = ey - y; } }
+  // outer edges, when the window does not touch the side of the frame (an overlay placed a little inside it)
+  const ox0 = Math.round(x * s), ox1 = Math.round((x + w) * s), oy0 = Math.round(y * s), oy1 = Math.round((y + h) * s);
+  if (!bottom && oy0 > 2) {
+    const e = best(1, Math.round((y + h * 0.3) * s), (yy) => rowScore(yy, ox0 + 2, ox1 - 2), -1, 0.3);
+    if (e > 0) { const ey = e / s; h = y + h - ey; y = ey; } else if (y < H * 0.08) { h += y; y = 0; }
+  } else if (bottom && oy1 < gh - 2) {
+    const e = best(Math.round((y + h * 0.7) * s), gh - 2, (yy) => rowScore(yy, ox0 + 2, ox1 - 2), 1, 0.3);
+    if (e > 0) h = e / s - y; else if (H - (y + h) < H * 0.08) h = H - y;
+  }
+  const ny0 = Math.round(y * s), ny1 = Math.round((y + h) * s);
+  if (!right && ox0 > 2) {
+    const e = best(1, Math.round((x + w * 0.3) * s), (xx) => colScore(xx, ny0 + 2, ny1 - 2), -1, 0.3);
+    if (e > 0) { const ex = e / s; w = x + w - ex; x = ex; } else if (x < W * 0.08) { w += x; x = 0; }
+  } else if (right && ox1 < gw - 2) {
+    const e = best(Math.round((x + w * 0.7) * s), gw - 2, (xx) => colScore(xx, ny0 + 2, ny1 - 2), 1, 0.3);
+    if (e > 0) w = e / s - x; else if (W - (x + w) < W * 0.08) w = W - x;
+  }
   // keep a little inside the border (no line of the game in the crop)
   const m = 4;
   const out = { x: Math.round(x + m), y: Math.round(y + m), w: Math.round(w - 2 * m), h: Math.round(h - 2 * m) };
@@ -238,8 +320,7 @@ export function refineCam(cam: ClipFraming['cams'][number], greys: Grey[], W: nu
 /** the whole step: samples the clip, then classifies */
 export async function detectFraming(url: string, start: number, end: number, captions: Caption[], onProgress?: (p: number) => void): Promise<ClipFraming> {
   const { W, H, samples, greys } = await sampleFaces(url, start, Math.min(end, start + 120), onProgress);
-  const f = classifyFraming(samples, W, H, start, end, captions);
-  return f.cams.length ? { ...f, cams: f.cams.map((c) => refineCam(c, greys, W, H)) } : f;
+  return classifyFraming(samples, W, H, start, end, captions, greys);
 }
 
 /** framing still valid for this trim (detected on the same part of the video) */

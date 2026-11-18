@@ -139,3 +139,13 @@ describe('refineCam', () => {
     expect(c.x + c.w).toBeLessThanOrEqual(1920);
   });
 });
+
+describe('reaction layout', () => {
+  it('camera on the left third, shared screen on the right: the screen part never shows the camera', () => {
+    const p = planLayout('split', framing({ kind: 'facecam', cams: [{ x: 4, y: 4, w: 632, h: 1056 }] }), W, H);
+    const game = p.panels[1]!.src;
+    expect(game.x).toBeGreaterThanOrEqual(636);
+    expect(game.x + game.w).toBeLessThanOrEqual(W);
+    expect(game.w).toBeGreaterThan(900);
+  });
+});

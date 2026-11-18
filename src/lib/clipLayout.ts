@@ -52,18 +52,25 @@ export function fitInside(rect: Rect, aspect: number): Rect {
  *  is guessed from the face, so a margin is kept). Tries full-height crops slid sideways, then crops above or below
  *  the cams; falls back to the centre. */
 export function gameplayCrop(W: number, H: number, aspect: number, found: Rect[]): Rect {
-  const cams = found.map((c) => ({ x: c.x - c.w * 0.3, y: c.y - c.h * 0.15, w: c.w * 1.6, h: c.h * 1.3 }));
+  const cams = found.map((c) => { const mx = Math.min(c.w * 0.12 + 10, 60), my = Math.min(c.h * 0.12 + 10, 60); return { x: c.x - mx, y: c.y - my, w: c.w + 2 * mx, h: c.h + 2 * my }; });
   const hits = (q: Rect) => cams.some((c) => q.x < c.x + c.w && q.x + q.w > c.x && q.y < c.y + c.h && q.y + q.h > c.y);
   const centred = centre(W, H, aspect);
   if (!hits(centred)) return centred;
   const candidates: Rect[] = [];
+  // horizontal bands of the frame (whole height, or above / below the cams), then the free spans between the cams
   const bands = [{ y0: 0, y1: H }, ...cams.flatMap((c) => [{ y0: c.y + c.h, y1: H }, { y0: 0, y1: c.y }])]
-    .map((b) => ({ y0: Math.max(0, b.y0), y1: Math.min(H, b.y1) })).filter((b) => b.y1 - b.y0 >= H * 0.55);
+    .map((b) => ({ y0: Math.max(0, b.y0), y1: Math.min(H, b.y1) })).filter((b) => b.y1 - b.y0 >= H * 0.45);
   for (const b of bands) {
-    const h = Math.min(b.y1 - b.y0, W / aspect), w = h * aspect;
-    const xs = [W / 2 - w / 2, ...cams.flatMap((c) => [c.x - w, c.x + c.w])].filter((x) => x >= 0 && x + w <= W);
-    for (const x of xs) {
-      const q = { x: Math.round(x), y: Math.round(b.y0 + (b.y1 - b.y0 - h) / 2), w: Math.floor(w / 2) * 2, h: Math.floor(h / 2) * 2 };
+    const inBand = cams.filter((c) => c.y < b.y1 && c.y + c.h > b.y0).map((c) => [Math.max(0, c.x), Math.min(W, c.x + c.w)] as const).sort((a, b2) => a[0] - b2[0]);
+    const spans: [number, number][] = [];
+    let x = 0;
+    for (const [a, e] of inBand) { if (a > x) spans.push([x, a]); x = Math.max(x, e); }
+    if (x < W) spans.push([x, W]);
+    for (const [a, e] of spans) {
+      let w = Math.min(e - a, (b.y1 - b.y0) * aspect), h = w / aspect;
+      if (h > b.y1 - b.y0) { h = b.y1 - b.y0; w = h * aspect; }
+      if (w < W * 0.3) continue;
+      const q = { x: Math.round(a + (e - a - w) / 2), y: Math.round(b.y0 + (b.y1 - b.y0 - h) / 2), w: Math.floor(w / 2) * 2, h: Math.floor(h / 2) * 2 };
       if (!hits(q)) candidates.push(q);
     }
   }
