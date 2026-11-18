@@ -1,6 +1,7 @@
 import { ArrowLeft, Check, Copy, Download, Loader2, Minus, Plus, RotateCcw, ScanFace, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { CamPicker } from '@/components/clips/CamPicker';
 import { ClipPlayer } from '@/components/clips/ClipPlayer';
 import { ScoreBadge } from '@/components/clips/ClipBadges';
 import { SourceMissing } from '@/components/clips/SourceMissing';
@@ -79,6 +80,7 @@ function ClipEditor() {
   const [exp, setExp] = useState<Export>({ state: 'idle' });
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [scan, setScan] = useState<Scan>({ state: 'idle' });
+  const [picking, setPicking] = useState(false);
   const [videoSize, setVideoSize] = useState<{ w: number; h: number } | null>(null);
   const playhead = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout>>();
@@ -300,6 +302,12 @@ function ClipEditor() {
                 </p>
               ) : null}
             </div>
+            {source.url && (
+              <button type="button" onClick={() => setPicking(true)}
+                className="touch-hit mt-3 inline-flex items-center gap-1.5 rounded-lg border border-line/10 px-3 py-2 text-xs font-medium text-zinc-200 transition-colors hover:border-violet-400/50 hover:bg-violet-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">
+                <ScanFace className="h-3.5 w-3.5 text-violet-300" /> L’IA s’est trompée ? Indique la caméra toi-même
+              </button>
+            )}
             {(['split', 'stack', 'auto'] as LayoutId[]).includes(draft.layout) && (
               <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-zinc-300">
                 <input type="checkbox" checked={draft.divider} onChange={(e) => update({ divider: e.target.checked })} className="h-4 w-4 accent-violet-500" />
@@ -330,6 +338,16 @@ function ClipEditor() {
         </div>
       </div>
 
+      {source.url && (
+        <CamPicker open={picking} src={source.url} time={playhead.current > draft.start_s && playhead.current < draft.end_s ? playhead.current : draft.start_s + 0.5}
+          onClose={() => setPicking(false)}
+          onPick={(box, size) => {
+            setPicking(false);
+            // a camera chosen by hand: valid for the whole video, the clip switches to "camera on top"
+            update({ layout: 'split', framing: { v: 1, w: size.w, h: size.h, kind: 'facecam', cams: [box], segments: [], start: 0, end: project.duration_seconds + 1 } });
+            toast('Caméra enregistrée : elle passe en haut du clip');
+          }} />
+      )}
       <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Supprimer ce clip ?"
         footer={<><Button variant="secondary" onClick={() => setConfirmDelete(false)}>Annuler</Button><Button variant="danger" onClick={remove}>Supprimer le clip</Button></>}>
         « {draft.title} » sera retiré du projet. Les fichiers déjà téléchargés restent sur ton appareil.

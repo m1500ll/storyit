@@ -100,8 +100,11 @@ export async function sampleFaces(url: string, start: number, end: number, onPro
         const jaw = out.faceBlendshapes?.[k]?.categories.find((c) => c.categoryName === 'jawOpen')?.score ?? 0;
         const f = { cx: rg.x + ((x0 + x1) / 2) * rg.w, cy: rg.y + ((y0 + y1) / 2) * rg.h, w: (x1 - x0) * rg.w, h: (y1 - y0) * rg.h, jaw };
         // the same face seen in the whole frame and in a corner: keep one
-        if (f.w > 8 && f.h > 8 && rg !== regions[0]) hitTiles.add(regions.indexOf(rg));
-        if (f.w > 8 && f.h > 8 && !faces.some((g) => Math.hypot(g.cx - f.cx, g.cy - f.cy) < Math.max(g.w, f.w) * 0.6)) faces.push(f);
+        // a tile stays in use only if it shows a face the whole frame missed (a small facecam)
+        if (f.w > 8 && f.h > 8 && !faces.some((g) => Math.hypot(g.cx - f.cx, g.cy - f.cy) < Math.max(g.w, f.w) * 0.6)) {
+          faces.push(f);
+          if (rg !== regions[0]) hitTiles.add(regions.indexOf(rg));
+        }
       });
     }
     samples.push({ t: t - start, faces });
@@ -206,7 +209,7 @@ export function classifyFraming(samples: Sample[], W: number, H: number, start: 
     if (fh < H * 0.24 && nearSide) { found.push(greys.length ? refineCam(camAround(tr, W, H), greys, W, H) : camAround(tr, W, H)); continue; }
     if (offCentre && bigStable < 2 && greys.length >= 3) {
       const cam = refineCam(reactCam(tr, W, H), greys, W, H, true);
-      if (motionContrast(cam, greys, W) >= 2.2) found.push(cam);
+      if (motionContrast(cam, greys, W) >= 1.6) found.push(cam);
     }
   }
   if (found.length >= 2) return { ...base, kind: 'two_cams', cams: found.slice(0, 2) };
