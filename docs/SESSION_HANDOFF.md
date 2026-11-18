@@ -154,3 +154,9 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 - Layouts (`src/lib/clipLayout.ts`, one plan drawn by the canvas preview AND the ffmpeg export): auto, split (facecam top + gameplay), stack (2 cams + gameplay), track (follows who speaks), zoom (4:5 on blur), fill, fit. Neon divider option.
 - Face analysis runs in the browser (`src/lib/clipFraming.ts`, MediaPipe Face Landmarker: wasm from jsdelivr pinned 1.2.2, model in `public/models/face_landmarker.task`); corners are zoomed to find small facecams; result saved in `clips.framing` (migration 0050).
 - Playwright: route `cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.2/wasm/*` to node_modules (the sandbox blocks jsdelivr).
+
+## Conversion (Nov 18 2026)
+- "Your video is ready" sheet (Paywall reason `video`): $1 trial, Stripe `return_to` brings the customer back to their video; wizard draft kept in localStorage.
+- Reminder e-mails (`mailing` → `nudges`, hourly cron `storyit-nudges`, migration 0051): nudge_video_1 (2 h after a story without video), nudge_video_2 (+24 h), nudge_start_1 (24 h after sign-up, nothing made). LIVE since Nov 18 (secret NUDGES_LIVE=on); first run sent 13. Dry run: `{"nudges":{"dry":true}}`.
+- Google Pay on (new Stripe account). Wow moments: WelcomeIntro (once, accounts < 3 days) and StoryTrailer on the project page (no AI cost).
+- Owner refused: free first video (cost), landing page changes for partner traffic.
