@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
   };
 
   try {
-    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices' | 'auto_topup' | 'customer_payments' | 'recent_payments'; product?: ProductKey; trial?: boolean; user_id?: string; enabled?: boolean; threshold?: number; credits?: number };
+    const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices' | 'auto_topup' | 'customer_payments' | 'recent_payments'; product?: ProductKey; trial?: boolean; user_id?: string; enabled?: boolean; threshold?: number; credits?: number; return_to?: string };
     const { action, product, trial } = body;
 
     // Admin: the latest checkout pages (what was picked, at what price, did it end in a payment) to study drop-off.
@@ -215,14 +215,16 @@ Deno.serve(async (req) => {
     const price = env(priceEnv);
     if (!price) return json({ error: `Price not configured (${priceEnv}).` }, 503);
 
+    const back = typeof body.return_to === 'string' && /^\/app\/[A-Za-z0-9/_-]*(\?[A-Za-z0-9=&_-]*)?$/.test(body.return_to) ? body.return_to : '/app/billing';
     const params: Record<string, string> = {
       mode,
       customer: customerId,
       client_reference_id: user.id,
       'line_items[0][price]': price,
       'line_items[0][quantity]': '1',
-      success_url: `${appUrl}/app/billing?checkout=success`,
-      cancel_url: `${appUrl}/app/billing?checkout=cancelled`,
+      // back to where the customer was (e.g. their video, ready to be generated), never off the app
+      success_url: `${appUrl}${back}${back.includes('?') ? '&' : '?'}checkout=success`,
+      cancel_url: `${appUrl}${back}${back.includes('?') ? '&' : '?'}checkout=cancelled`,
       allow_promotion_codes: 'true',
       // reassurance right under Stripe's pay button
       'custom_text[submit][message]': mode === 'subscription'

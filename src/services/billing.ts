@@ -29,8 +29,9 @@ export type TrialStatus = { trialing: boolean; trial_end: number | null; product
 /** Stripe-hosted pages: card data never touches our app. */
 export const billingService = {
   /** trial: the $1 three-day trial of a plan (one per account), then the plan at full price */
-  async checkout(product: ProductKey, opts: { trial?: boolean } = {}): Promise<{ upgraded: boolean; paid: boolean }> {
-    const r = await callJson<{ url?: string; upgraded?: boolean; ok?: boolean; paid?: boolean; invoice_url?: string | null }>({ action: 'checkout', product, trial: opts.trial === true });
+  /** returnTo: an /app/… path Stripe sends the customer back to (with ?checkout=success|cancelled) */
+  async checkout(product: ProductKey, opts: { trial?: boolean; returnTo?: string } = {}): Promise<{ upgraded: boolean; paid: boolean }> {
+    const r = await callJson<{ url?: string; upgraded?: boolean; ok?: boolean; paid?: boolean; invoice_url?: string | null }>({ action: 'checkout', product, trial: opts.trial === true, ...(opts.returnTo ? { return_to: opts.returnTo } : {}) });
     if (r.url) { window.location.assign(r.url); return { upgraded: false, paid: false }; }
     // already on a plan: upgraded in place (only the price difference is billed), or the running trial was ended
     if (r.upgraded || r.ok) {

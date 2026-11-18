@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Check, Lightbulb, Music, Pause, Play, Sparkles, Upload, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, Card, useToast } from '@/components/ui';
 import { usePaywall } from '@/components/billing/Paywall';
 import { CastPicker } from '@/components/characters/CastPicker';
@@ -39,19 +39,43 @@ function Bars({ on }: { on: boolean }) {
   );
 }
 
+/** The wizard's choices, kept in this browser so nothing is lost when the customer leaves to pay (Stripe brings them
+ *  back with ?checkout=success) or reloads. Cleared once the video is launched. */
+const DRAFT_KEY = 'storyit:video-draft';
+type Draft = { step: number; universe: Universe; cast: string[]; length: VideoLength; subtitles: SubtitleStyle; music: string | null; story: string; watermark: boolean; at: number };
+function readDraft(): Draft | null {
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT_KEY) ?? 'null') as Draft | null;
+    return d && Date.now() - d.at < 3 * 86_400_000 ? d : null;
+  } catch { return null; }
+}
+
 /** The video wizard: universe → characters → length → subtitles & music → story; "Générer" runs everything by itself. */
 export function CreateWizard() {
   const navigate = useNavigate();
   const toast = useToast();
   const openPaywall = usePaywall();
-  const [step, setStep] = useState(0);
-  const [universe, setUniverse] = useState<Universe>('fruits');
-  const [cast, setCast] = useState<string[]>([]);
-  const [length, setLength] = useState<VideoLength>(DEFAULT_VIDEO_LENGTH);
-  const [subtitles, setSubtitles] = useState<SubtitleStyle>('karaoke');
-  const [music, setMusic] = useState<string | null>('yara-yara');
-  const [story, setStory] = useState('');
-  const [watermark, setWatermark] = useState(false); // opt-in: "Fait avec Storyit.fun" on the video for 10 % off
+  const [params, setParams] = useSearchParams();
+  const [draft] = useState(readDraft);
+  const [step, setStep] = useState(draft?.step ?? 0);
+  const [universe, setUniverse] = useState<Universe>(draft?.universe ?? 'fruits');
+  const [cast, setCast] = useState<string[]>(draft?.cast ?? []);
+  const [length, setLength] = useState<VideoLength>(draft?.length ?? DEFAULT_VIDEO_LENGTH);
+  const [subtitles, setSubtitles] = useState<SubtitleStyle>(draft?.subtitles ?? 'karaoke');
+  const [music, setMusic] = useState<string | null>(draft ? draft.music : 'yara-yara');
+  const [story, setStory] = useState(draft?.story ?? '');
+  const [watermark, setWatermark] = useState(draft?.watermark ?? false); // opt-in: "Fait avec Storyit.fun" on the video for 10 % off
+  // back from Stripe: say so, and land on the last step with the story ready to launch
+  const [paidBack] = useState(() => params.get('checkout'));
+  useEffect(() => {
+    if (!paidBack) return;
+    if (paidBack === 'success') toast('Paiement confirmé ! Tes crédits arrivent : clique sur « Générer » pour lancer ta vidéo.');
+    setParams((p) => { p.delete('checkout'); return p; }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ step, universe, cast, length, subtitles, music, story, watermark, at: Date.now() } satisfies Draft)); } catch { /* private mode */ }
+  }, [step, universe, cast, length, subtitles, music, story, watermark]);
   const [busy, setBusy] = useState(false);
   const [ideaBusy, setIdeaBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +94,7 @@ export function CreateWizard() {
   const top = useRef<HTMLDivElement>(null);
   const { balance, known } = useCredits();
   // a trial (7,000 credits) pays for 30 s, not 45 s: start on the longest length the balance covers
-  const picked = useRef(false);
+  const picked = useRef(!!draft);
   useEffect(() => {
     if (!known || picked.current) return;
     picked.current = true;
@@ -103,14 +127,18 @@ export function CreateWizard() {
     setIdeaBusy(true); setError(null);
     try { setStory(await promptStudio.storyIdea(universe, cast)); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setIdeaBusy(false); }
   };
+  // not enough credits: the "your video is ready" sheet ($1 trial), and Stripe brings the customer back here
+  const askToPay = () => openPaywall({ reason: 'video', required: due, returnTo: '/app/prompts' });
   const generate = async () => {
+    if (known && balance < due) { askToPay(); return; }
     setBusy(true); setError(null);
     try {
       const p = await promptStudio.generate({ phase: 'script', story, universe, cast, length, auto: { subtitles, music, watermark } });
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* private mode */ }
       toast('C’est parti : votre vidéo se crée toute seule.');
       navigate(`/app/prompts/${p.id}`);
     } catch (e) {
-      if (e instanceof InsufficientCreditsError || /insuffisants/i.test(String(e))) openPaywall();
+      if (e instanceof InsufficientCreditsError || /insuffisants/i.test(String(e))) askToPay();
       setError(e instanceof Error ? e.message : String(e));
       setBusy(false);
     }
@@ -299,6 +327,9 @@ export function CreateWizard() {
           ? <Button disabled={step === 3 && !!upload && music === upload.value && !rights} onClick={() => go(step + 1)}>Suivant <ArrowRight className="h-4 w-4" /></Button>
           : <Button disabled={!promptStudio.available || !story.trim()} onClick={() => void generate()}><Sparkles className="h-4 w-4" /> Générer · {formatCredits(due)} crédits</Button>}
       </div>
+      {step === 4 && known && balance < due && (
+        <p className="mt-2 text-right text-xs text-zinc-400">Tu as {formatCredits(balance)} crédits. Pas assez ? L’essai 3 jours à 1 $ en donne 7 000 : ta vidéo se lance juste après.</p>
+      )}
      </div>
      <aside className="hidden lg:block" aria-label="Aperçu de la vidéo">
        <div className="sticky top-24">
