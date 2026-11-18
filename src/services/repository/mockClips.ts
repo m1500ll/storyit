@@ -16,14 +16,15 @@ const projects: ClipProject[] = [];
 const clips: Clip[] = [];
 
 const SAMPLE_TITLES = [
-  'Personne ne te dit ça quand tu débutes',
-  'Le moment où tout a changé',
-  'Cette seule habitude a tout changé',
-  'Attends la fin…',
-  'L’erreur que tout le monde fait',
-  'La vérité, honnêtement',
+  'Personne ne te dit ÇA quand tu débutes sur TikTok 😭',
+  'Le moment où TOUT a changé pour lui 👀',
+  'Cette seule habitude a tout CHANGÉ 🔥',
+  'Il pensait que personne ne regardait… attends la fin 😳',
+  'L’erreur que TOUT le monde fait 💀',
+  'La vérité, honnêtement 😭💔',
 ];
 const SAMPLE_WORDS = 'ceci est un sous-titre de démo la vraie ia écrit les mots exacts prononcés dans ta vidéo au bon moment'.split(' ');
+const SAMPLE_KEYWORDS = new Set(['démo', 'vraie', 'exacts', 'moment']);
 
 function sampleCaptions(start: number, end: number): Caption[] {
   const out: Caption[] = [];
@@ -33,7 +34,7 @@ function sampleCaptions(start: number, end: number): Caption[] {
     const n = 2 + (w % 3);
     const text = Array.from({ length: n }, (_, k) => SAMPLE_WORDS[(w + k) % SAMPLE_WORDS.length]).join(' ');
     const len = 0.35 * n;
-    const ws = text.split(' ').map((w, k) => ({ s: +(t + k * 0.35).toFixed(2), e: +(t + (k + 1) * 0.35).toFixed(2), w }));
+    const ws = text.split(' ').map((w, k) => ({ s: +(t + k * 0.35).toFixed(2), e: +(t + (k + 1) * 0.35).toFixed(2), w, ...(SAMPLE_KEYWORDS.has(w) ? { hi: true } : {}) }));
     out.push({ start: +t.toFixed(2), end: +Math.min(end, t + len).toFixed(2), text, words: ws });
     t += len;
     w += n;
@@ -98,7 +99,7 @@ export const mockClips: ClipMethods = {
         id: id(), project_id: pid, user_id: mockDb.profile.id, position: i + 1, start_s: start, end_s: end,
         title: SAMPLE_TITLES[i % SAMPLE_TITLES.length]!, hook: 'Mode démo : la vraie IA cite ici la phrase d’ouverture.',
         reason: 'Mode démo : moment d’exemple. Avec le serveur Storyit, l’IA choisit les vrais meilleurs moments.', score: 92 - i * 7,
-        captions: sampleCaptions(start, end), caption_style: 'bold', layout: 'fill', show_title: true, caption_size: 100, caption_pos: 300, caption_anim: 'karaoke', title_style: 'box', created_at: now(), updated_at: now(),
+        captions: sampleCaptions(start, end), caption_style: 'clipper', layout: 'auto', show_title: true, caption_size: 100, caption_pos: 520, caption_anim: 'word', title_style: 'tiktok', framing: null, divider: true, created_at: now(), updated_at: now(),
       });
     }
     mockDb.profile.credit_balance = balance - cost;

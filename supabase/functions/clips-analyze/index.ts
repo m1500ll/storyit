@@ -30,7 +30,7 @@ const json = (body: unknown, status = 200) =>
 
 // ---------- Gemini ----------
 
-interface RawClip { start: number; end: number; title: string; hook: string; reason: string; score: number; captions: { start: number; end: number; text: string }[] }
+interface RawClip { start: number; end: number; title: string; hook: string; reason: string; score: number; captions: { start: number; end: number; text: string }[]; keywords?: string[]; reactions?: { start: number; end: number; text: string }[] }
 
 const schema = {
   type: 'OBJECT',
@@ -42,7 +42,7 @@ const schema = {
         properties: {
           start: { type: 'NUMBER', description: 'Clip start, seconds from the beginning of the audio' },
           end: { type: 'NUMBER', description: 'Clip end, seconds from the beginning of the audio' },
-          title: { type: 'STRING', description: 'Scroll-stopping title, max 60 characters, no hashtags' },
+          title: { type: 'STRING', description: 'TikTok clipper title: one sentence telling the moment, 40-90 characters, 1-2 key words in CAPITALS, ends with 1-2 emojis, no hashtags' },
           hook: { type: 'STRING', description: 'The opening line of the clip, verbatim' },
           reason: { type: 'STRING', description: 'One sentence: why this moment will perform' },
           score: { type: 'INTEGER', description: 'Virality potential 0-100' },
@@ -55,8 +55,14 @@ const schema = {
               required: ['start', 'end', 'text'],
             },
           },
+          keywords: { type: 'ARRAY', description: '3 to 8 punchy words actually spoken in the clip, to show in colour', items: { type: 'STRING' } },
+          reactions: {
+            type: 'ARRAY',
+            description: 'Moments inside the clip where nobody speaks but something happens (laughter, scream, gasp, long awkward silence)',
+            items: { type: 'OBJECT', properties: { start: { type: 'NUMBER' }, end: { type: 'NUMBER' }, text: { type: 'STRING' } }, required: ['start', 'end', 'text'] },
+          },
         },
-        required: ['start', 'end', 'title', 'hook', 'reason', 'score', 'captions'],
+        required: ['start', 'end', 'title', 'hook', 'reason', 'score', 'captions', 'keywords', 'reactions'],
       },
     },
   },
@@ -141,6 +147,10 @@ function cleanClips(raw: RawClip[], duration: number, [min, max]: readonly [numb
       hook: String(c.hook ?? '').trim().slice(0, 300),
       reason: String(c.reason ?? '').trim().slice(0, 300),
       score: Math.round(Math.min(100, Math.max(0, num(c.score, 50)))),
+      keywords: (Array.isArray(c.keywords) ? c.keywords : []).map((k) => String(k).trim()).filter(Boolean).slice(0, 10),
+      reactions: (Array.isArray(c.reactions) ? c.reactions : [])
+        .map((k) => ({ start: round2(num(k.start)), end: round2(num(k.end)), text: String(k.text ?? '').trim().toLocaleUpperCase().replace(/^\*?(.*?)\*?$/, '*$1*').slice(0, 30) }))
+        .filter((k) => k.text.length > 2 && k.end > k.start && k.start >= start - 1 && k.end <= end + 1),
     });
   }
   return out.slice(0, 10);
@@ -189,6 +199,25 @@ function chunksFromWords(words: Word[], start: number, end: number) {
   // a caption stays on screen until the next one starts (no flicker between chunks)
   for (let i = 0; i < out.length - 1; i++) if (out[i + 1].start - out[i].end < 0.25) out[i].end = out[i + 1].start;
   return out;
+}
+
+const norm = (w: string) => w.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}]/gu, '');
+
+/** flags the key words (shown in colour); without word timings, the keyword chunks are left as they are */
+function markKeywords(captions: any[], keywords: string[]) {
+  const keys = new Set(keywords.flatMap((k) => k.split(/\s+/)).map(norm).filter((k) => k.length > 1));
+  if (!keys.size) return captions;
+  return captions.map((c) => (Array.isArray(c.words) ? { ...c, words: c.words.map((w: any) => (keys.has(norm(w.w)) ? { ...w, hi: true } : w)) } : c));
+}
+
+/** reaction tags (*LAUGHS*) placed only where nobody speaks */
+function withReactions(captions: any[], reactions: { start: number; end: number; text: string }[]) {
+  const out = [...captions];
+  for (const r of reactions) {
+    const free = !captions.some((c) => c.start < r.end && c.end > r.start);
+    if (free && r.end - r.start >= 0.4) out.push({ start: r.start, end: Math.min(r.end, r.start + 2.5), text: r.text, action: true });
+  }
+  return out.sort((a, b) => a.start - b.start);
 }
 
 /** clip edges moved onto word boundaries: never start or end in the middle of a word */
@@ -278,13 +307,16 @@ Rules:
 - Clips must not overlap. Prefer fewer, better clips over weak ones (return fewer than ${target} if the content is thin).
 - Timestamps are seconds from the start of the audio, with decimals, and must be accurate to ±0.3 s.
 - captions: verbatim transcript of everything said inside the clip, in the spoken language, split into consecutive chunks of 1 to 4 words with their own start/end timestamps. Keep the speaker's words; fix only obvious transcription errors.
-- title: catchy, max 60 characters, in the spoken language.
+- title: written like the top TikTok clipping accounts, in the spoken language: one sentence that tells what happens ("Kai d*ed in Minecraft and was afraid to tell Speed as they LOST 4 hours of progress 😭💔"), 40 to 90 characters, 1 or 2 key words in CAPITALS, 1 or 2 fitting emojis at the end, swear words censored with * (f*ck, d*ed), no hashtags.
+- keywords: 3 to 8 punchy words actually said in the clip (names, numbers, strong words) that deserve to be shown in colour.
+- reactions: when nobody talks but something happens (laughs, screams, gasps, an awkward silence), a 1 to 3 word tag in CAPITALS in the spoken language, between asterisks, like *LAUGHS* or *SHOCKED*. Empty if none.
 - score: honest 0-100 estimate of how well the clip would perform.`;
 
     // the AI picks the moments; the captions come from a speech-to-text with real word timings (in parallel)
     const [out, words] = await Promise.all([callGemini(prompt, encodeBase64(bytes)), transcribeWords(bytes)]);
     let clips = cleanClips(Array.isArray(out?.clips) ? out.clips : [], duration, [min, max]);
     if (words) clips = clips.map((c) => { const b = snapToWords(words, c.start, Math.min(duration, c.end)); return { ...c, ...b, end: Math.min(duration, b.end), captions: chunksFromWords(words, b.start, Math.min(duration, b.end)) as RawClip['captions'] }; });
+    clips = clips.map((c) => ({ ...c, captions: withReactions(markKeywords(c.captions, c.keywords ?? []), c.reactions ?? []) }));
     if (clips.length === 0) throw new Error('L’IA n’a pas trouvé de moment clair à découper (y a-t-il de la parole dans cette vidéo ?)');
 
     await admin.from('clips').delete().eq('project_id', projectId);

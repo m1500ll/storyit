@@ -1,9 +1,10 @@
 import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { CAPTION_BASE, CAPTION_LOOK } from '@/lib/clipAss';
-import { drawTitle, TITLE_TOP } from '@/lib/clipTitle';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { CAPTION_BASE, CAPTION_LOOK, CLIP_FRAME, wordTimeline } from '@/lib/clipAss';
+import { drawPlan, planLayout } from '@/lib/clipLayout';
+import { drawTitle } from '@/lib/clipTitle';
 import { cn } from '@/lib/cn';
-import type { Caption, CaptionAnimId, CaptionStyleId, LayoutId, TitleStyleId } from '@/types/clips';
+import type { Caption, CaptionAnimId, CaptionStyleId, ClipFraming, LayoutId, TitleStyleId } from '@/types/clips';
 
 export interface PlayerClip {
   start_s: number;
@@ -17,6 +18,8 @@ export interface PlayerClip {
   caption_pos: number;
   caption_anim: CaptionAnimId;
   title_style: TitleStyleId;
+  framing?: ClipFraming | null;
+  divider?: boolean;
 }
 
 // Sizes are expressed in 720-px-wide frame units so the preview matches the export (src/lib/clipAss.ts).
@@ -27,7 +30,8 @@ function captionCss(style: CaptionStyleId, size: number): CSSProperties {
   const px = CAPTION_BASE * look.scale * (size / 100);
   return look.box
     ? { color: look.color, fontSize: u(px), background: 'rgba(0,0,0,.6)', padding: `${u(px * 0.12)} ${u(px * 0.26)}`, borderRadius: u(8), boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }
-    : { color: look.color, fontSize: u(px), textTransform: look.upper ? 'uppercase' : undefined, WebkitTextStroke: `${u(look.outline * 2 * (size / 100))} #000`, paintOrder: 'stroke fill' };
+    : { color: look.color, fontSize: u(px), textTransform: look.upper ? 'uppercase' : undefined, WebkitTextStroke: `${u(look.outline * 2 * (size / 100))} #000`, paintOrder: 'stroke fill',
+        ...(look.font === 'word' ? { fontFamily: "'Clip Word', Impact, sans-serif", fontWeight: 400, letterSpacing: '0.01em' } : {}) };
 }
 
 /** the title image (same PNG as the export) as a data URL */
@@ -44,24 +48,48 @@ function useTitleImage(title: string, style: TitleStyleId, show: boolean) {
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
-/** AI clipping: 9:16 preview of a clip: plays [start, end] in a loop with the title and live captions on top. */
+/** AI clipping: 9:16 preview of a clip: plays [start, end] in a loop, drawn with the same layout plan as the export
+ *  (src/lib/clipLayout.ts) on a canvas, with the title and live captions on top. */
 export function ClipPlayer({ src, clip, className, compact, onTime }: { src: string; clip: PlayerClip; className?: string; compact?: boolean; onTime?: (t: number) => void }) {
   const video = useRef<HTMLVideoElement>(null);
-  const bg = useRef<HTMLVideoElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const blur = useRef<HTMLCanvasElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [t, setT] = useState(clip.start_s);
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const { start_s: start, end_s: end } = clip;
+  const framing = clip.framing ?? null;
+  const divider = clip.divider ?? true;
+
+  const plan = useMemo(() => (size ? planLayout(clip.layout, framing, size.w, size.h, start) : null), [clip.layout, framing, size, start]);
 
   // Jump to the clip start when it loads or the trim changes.
   useEffect(() => {
     const v = video.current;
     if (!v) return;
-    const seek = () => { if (v.currentTime < start || v.currentTime > end) { v.currentTime = start; setT(start); } };
-    if (v.readyState >= 1) seek(); else v.addEventListener('loadedmetadata', seek, { once: true });
+    const ready = () => { setSize({ w: v.videoWidth, h: v.videoHeight }); if (v.currentTime < start || v.currentTime > end) { v.currentTime = start; setT(start); } };
+    if (v.readyState >= 1) ready(); else v.addEventListener('loadedmetadata', ready, { once: true });
   }, [src, start, end]);
 
-  // Frame-accurate caption timing while playing (timeupdate is too coarse for 1–4 word chunks).
+  // draws the current frame: while playing every animation frame, otherwise after each seek
+  const paint = useRef<() => void>(() => {});
+  paint.current = () => {
+    const v = video.current, c = canvas.current;
+    if (!v || !c || !plan) return;
+    blur.current ??= Object.assign(document.createElement('canvas'), { width: 36, height: 64 });
+    drawPlan(c.getContext('2d')!, v, plan, v.currentTime - start, divider, blur.current);
+  };
+  useEffect(() => {
+    const v = video.current;
+    if (!v) return;
+    const draw = () => paint.current();
+    v.addEventListener('seeked', draw); v.addEventListener('loadeddata', draw);
+    draw();
+    return () => { v.removeEventListener('seeked', draw); v.removeEventListener('loadeddata', draw); };
+  }, [plan, divider]);
+
+  // Frame-accurate caption timing while playing (timeupdate is too coarse for 1-word captions).
   useEffect(() => {
     if (!playing) return;
     let raf = 0;
@@ -71,7 +99,7 @@ export function ClipPlayer({ src, clip, className, compact, onTime }: { src: str
         if (v.currentTime >= end || v.currentTime < start - 0.5) v.currentTime = start;
         setT(v.currentTime);
         onTime?.(v.currentTime);
-        if (bg.current && Math.abs(bg.current.currentTime - v.currentTime) > 0.3) bg.current.currentTime = v.currentTime;
+        paint.current();
       }
       raf = requestAnimationFrame(tick);
     };
@@ -79,44 +107,41 @@ export function ClipPlayer({ src, clip, className, compact, onTime }: { src: str
     return () => cancelAnimationFrame(raf);
   }, [playing, start, end, onTime]);
 
-  useEffect(() => {
-    const b = bg.current;
-    if (!b) return;
-    if (playing) b.play().catch(() => {}); else b.pause();
-  }, [playing, clip.layout]);
-
   const toggle = () => {
     const v = video.current;
     if (!v) return;
     if (v.paused) { if (v.currentTime >= end) v.currentTime = start; v.play().catch(() => setPlaying(false)); } else v.pause();
   };
 
-  const caption = clip.captions.find((c) => t >= c.start && t < c.end);
+  const words = useMemo(() => (clip.caption_anim === 'word' ? wordTimeline(clip.captions) : null), [clip.caption_anim, clip.captions]);
+  const word = words?.find((w) => t >= w.s && t < w.e);
+  const caption = words ? null : clip.captions.find((c) => t >= c.start && t < c.end);
   const titleImg = useTitleImage(clip.title, clip.title_style, clip.show_title);
   const look = CAPTION_LOOK[clip.caption_style];
   const progress = Math.min(1, Math.max(0, (t - start) / Math.max(0.1, end - start)));
+  const titleTop = plan && titleImg ? Math.max(0, plan.titleY - titleImg.h / 2) : 0;
 
   return (
     <div className={cn('group relative aspect-[9/16] w-full overflow-hidden rounded-2xl bg-black', className)} style={{ containerType: 'inline-size', fontFamily: "'Clip Caption', Inter, sans-serif" }}>
-      {clip.layout === 'fit' && (
-        <video ref={bg} src={src} muted playsInline preload="metadata" aria-hidden="true" tabIndex={-1}
-          className="absolute inset-0 h-full w-full scale-110 object-cover opacity-80 blur-xl" />
-      )}
-      <video ref={video} src={src} muted={muted} playsInline preload="metadata"
-        onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
-        className={cn('absolute inset-0 h-full w-full', clip.layout === 'fill' ? 'object-cover' : 'object-contain')} />
+      <video ref={video} src={src} muted={muted} playsInline preload="auto"
+        onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} className="pointer-events-none absolute h-px w-px opacity-0" aria-hidden="true" tabIndex={-1} />
+      <canvas ref={canvas} width={CLIP_FRAME.w} height={CLIP_FRAME.h} className="absolute inset-0 h-full w-full" aria-label="Aperçu du clip" role="img" />
 
-      {titleImg && (
-        <img src={titleImg.url} alt="" className="pointer-events-none absolute inset-x-0 w-full" style={{ top: u(TITLE_TOP) }} />
+      {titleImg && plan && (
+        <img src={titleImg.url} alt="" className="pointer-events-none absolute inset-x-0 w-full" style={{ top: u(titleTop) }} />
       )}
-      {caption && (
+      {(word || caption) && (
         <div className="pointer-events-none absolute inset-x-0 flex justify-center px-[9.7%] text-center" style={{ bottom: u(clip.caption_pos) }}>
-          <p key={clip.caption_anim === 'none' ? 'static' : caption.start} className={cn('font-extrabold leading-[1.15]', clip.caption_anim !== 'none' && 'motion-safe:animate-[clippop_0.11s_ease-out]')}
-            style={{ ...captionCss(clip.caption_style, clip.caption_size), display: 'inline' }}>
-            {clip.caption_anim === 'karaoke' && caption.words?.length
-              ? caption.words.map((w, i) => <span key={i} style={{ color: t >= w.s && t < w.e ? look.hi : undefined }}>{i ? ' ' : ''}{w.w}</span>)
-              : caption.text}
-          </p>
+          {word ? (
+            <p key={word.s} className="leading-[1.1] motion-safe:animate-[clippop_0.11s_ease-out]" style={{ ...captionCss(clip.caption_style, clip.caption_size), display: 'inline', ...(word.hi ? { color: look.hi } : {}) }}>{word.text}</p>
+          ) : caption && (
+            <p key={clip.caption_anim === 'none' ? 'static' : caption.start} className={cn('font-extrabold leading-[1.15]', clip.caption_anim !== 'none' && 'motion-safe:animate-[clippop_0.11s_ease-out]')}
+              style={{ ...captionCss(clip.caption_style, clip.caption_size), display: 'inline' }}>
+              {caption.words?.length && (clip.caption_anim === 'karaoke' || caption.words.some((w) => w.hi))
+                ? caption.words.map((w, i) => <span key={i} style={{ color: (clip.caption_anim === 'karaoke' && t >= w.s && t < w.e) || w.hi ? look.hi : undefined }}>{i ? ' ' : ''}{w.w}</span>)
+                : caption.text}
+            </p>
+          )}
         </div>
       )}
 

@@ -1,7 +1,8 @@
 import type { FFFSType, FFmpeg } from '@ffmpeg/ffmpeg';
-import type { Caption, CaptionAnimId, CaptionStyleId, LayoutId, TitleStyleId } from '@/types/clips';
-import { buildClipAss, CLIP_FRAME } from './clipAss';
-import { TITLE_TOP, titlePngBytes } from './clipTitle';
+import type { Caption, CaptionAnimId, CaptionStyleId, ClipFraming, LayoutId, TitleStyleId } from '@/types/clips';
+import { buildClipAss } from './clipAss';
+import { layoutGraph, planLayout } from './clipLayout';
+import { titlePngBytes } from './clipTitle';
 
 /** ONE shared ffmpeg.wasm engine for the whole app (episode assembly, compression, AI clipping). */
 let instance: Promise<FFmpeg> | null = null;
@@ -42,13 +43,15 @@ export function exclusive<T>(job: () => Promise<T>): Promise<T> {
 }
 
 let fontReady: Promise<void> | null = null;
-/** The caption font (Inter Display ExtraBold) at /fonts/caption.otf inside the engine, written once. */
+/** The caption fonts (Inter Display ExtraBold, Anton) in /fonts inside the engine, written once. */
 function ensureCaptionFont(ff: FFmpeg): Promise<void> {
   fontReady ??= (async () => {
-    const res = await fetch('/fonts/caption.otf');
-    if (!res.ok) throw new Error('Impossible de charger la police des sous-titres.');
     await ff.createDir('/fonts').catch(() => {});
-    await ff.writeFile('/fonts/caption.otf', new Uint8Array(await res.arrayBuffer()));
+    for (const f of ['caption.otf', 'caption-word.ttf']) {
+      const res = await fetch(`/fonts/${f}`);
+      if (!res.ok) throw new Error('Impossible de charger la police des sous-titres.');
+      await ff.writeFile(`/fonts/${f}`, new Uint8Array(await res.arrayBuffer()));
+    }
   })().catch((e) => { fontReady = null; throw e; });
   return fontReady;
 }
@@ -91,6 +94,9 @@ export async function extractAudio(source: Blob, duration: number, onProgress?: 
   return new Blob([data], { type: 'audio/mpeg' });
 }
 
+/** height of a PNG, read from its header */
+const pngHeight = (png: Uint8Array) => new DataView(png.buffer, png.byteOffset).getUint32(20);
+
 export interface RenderClipOptions {
   source: Blob;
   start: number;
@@ -103,21 +109,23 @@ export interface RenderClipOptions {
   captionPos: number;
   captionAnim: CaptionAnimId;
   titleStyle: TitleStyleId;
+  framing: ClipFraming | null;
+  divider: boolean;
+  /** source video size in pixels */
+  width: number;
+  height: number;
   onProgress?: (p: number) => void;
 }
 
 /** Cuts [start, end], reframes to vertical 9:16, burns in captions and title. Returns an MP4. */
 export async function renderClip(o: RenderClipOptions): Promise<Blob> {
   const duration = Math.max(1, o.end - o.start);
-  const subs = 'subtitles=subs.ass:fontsdir=/fonts';
-  const { w, h } = CLIP_FRAME;
+  const plan = planLayout(o.layout, o.framing, o.width, o.height, o.start);
   const title = o.title ? await titlePngBytes(o.title, o.titleStyle) : null;
-  const base = o.layout === 'fill'
-    ? `[0:v]crop='min(iw,ih*9/16)':'min(ih,iw*16/9)',scale=${w}:${h},setsar=1,${subs}`
-    : `[0:v]split=2[a][b];[a]scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h},boxblur=24:2[bg];`
-      + `[b]scale=${w}:${h}:force_original_aspect_ratio=decrease[fg];[bg][fg]overlay=(W-w)/2:(H-h)/2,setsar=1,${subs}`;
-  // the title is the same PNG as in the preview, laid over the video for the whole clip
-  const graph = title ? `${base}[s];[s][1:v]overlay=0:${TITLE_TOP}:format=auto[v]` : `${base}[v]`;
+  const base = `${layoutGraph(plan, o.divider)};[base]subtitles=subs.ass:fontsdir=/fonts`;
+  // the title is the same PNG as in the preview, centred on the layout's title line for the whole clip
+  const titleTop = title ? Math.max(0, Math.round(plan.titleY - pngHeight(title) / 2)) : 0;
+  const graph = title ? `${base}[s];[s][1:v]overlay=0:${titleTop}:format=auto[v]` : `${base}[v]`;
   // input seeking (-ss before -i) resets timestamps: the ASS times are relative to the clip start
   const data = await run(o.source, duration, (input) => [
     '-ss', o.start.toFixed(2), '-i', input, ...(title ? ['-i', 'title.png'] : []),

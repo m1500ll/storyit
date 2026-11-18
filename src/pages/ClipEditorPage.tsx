@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Copy, Download, Loader2, Minus, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Copy, Download, Loader2, Minus, Plus, RotateCcw, ScanFace, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ClipPlayer } from '@/components/clips/ClipPlayer';
@@ -9,6 +9,8 @@ import { Button, Card, CardHeader, LoadState, Modal, ProgressBar, useToast } fro
 import { useClipProject } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
 import { renderClip } from '@/lib/ffmpeg';
+import { detectFraming, framingFits } from '@/lib/clipFraming';
+import { resolveLayout } from '@/lib/clipLayout';
 import { fileNameFor, formatDuration } from '@/lib/clipFormat';
 import { repository } from '@/services/repository';
 import type { Clip, ClipEditableFields } from '@/types/database';
@@ -18,14 +20,19 @@ const MIN_LENGTH = 3;
 const pick = (c: Clip): ClipEditableFields => ({
   start_s: c.start_s, end_s: c.end_s, title: c.title, captions: c.captions, caption_style: c.caption_style, layout: c.layout, show_title: c.show_title,
   caption_size: c.caption_size, caption_pos: c.caption_pos, caption_anim: c.caption_anim, title_style: c.title_style,
+  framing: c.framing ?? null, divider: c.divider ?? true,
 });
+/** layouts that need the face analysis */
+const NEEDS_FRAMING = new Set(['auto', 'split', 'stack', 'track']);
+type Scan = { state: 'idle' } | { state: 'running'; progress: number } | { state: 'error'; message: string };
+const KIND_LABEL = { facecam: 'L’IA a trouvé une facecam', two_cams: 'L’IA a trouvé deux facecams', people: 'L’IA a trouvé des personnes à l’écran', none: 'L’IA n’a trouvé aucun visage' } as const;
 
 type Save = 'idle' | 'saving' | 'saved' | 'error';
 type Export = { state: 'idle' } | { state: 'running'; progress: number } | { state: 'done'; url: string; name: string; stale: boolean } | { state: 'error'; message: string };
 
 function Choice<T extends string>({ name, value, options, onChange }: { name: string; value: T; options: Record<T, { label: string; description: string }>; onChange: (v: T) => void }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label={name}>
+    <div className={cn('grid gap-2', Object.keys(options).length === 4 ? 'sm:grid-cols-2 xl:grid-cols-4' : 'sm:grid-cols-3')} role="radiogroup" aria-label={name}>
       {(Object.keys(options) as T[]).map((k) => (
         <label key={k} className={cn('cursor-pointer rounded-xl border px-3 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-violet-500/50',
           value === k ? 'border-violet-500/50 bg-violet-500/10' : 'border-line/10 hover:border-line/20')}>
@@ -71,6 +78,8 @@ function ClipEditor() {
   const [save, setSave] = useState<Save>('idle');
   const [exp, setExp] = useState<Export>({ state: 'idle' });
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [scan, setScan] = useState<Scan>({ state: 'idle' });
+  const [videoSize, setVideoSize] = useState<{ w: number; h: number } | null>(null);
   const playhead = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const pending = useRef<Partial<ClipEditableFields>>({});
@@ -106,6 +115,39 @@ function ClipEditor() {
     timer.current = setTimeout(() => void flush(), 700);
   };
 
+  // video size (the layout plan and the export need it)
+  useEffect(() => {
+    if (!source.url) return;
+    const v = document.createElement('video');
+    v.preload = 'metadata'; v.muted = true; v.src = source.url;
+    v.onloadedmetadata = () => setVideoSize({ w: v.videoWidth, h: v.videoHeight });
+    return () => { v.removeAttribute('src'); };
+  }, [source.url]);
+
+  // face analysis (facecams, who speaks): once per clip, in the browser, saved on the clip
+  const scanFor = useRef<string | null>(null);
+  const runScan = useCallback(async (force = false) => {
+    if (!source.url || !draft) return;
+    const key = `${draft.start_s}-${draft.end_s}`;
+    if (!force && scanFor.current === key) return;
+    scanFor.current = key;
+    setScan({ state: 'running', progress: 0 });
+    try {
+      const framing = await detectFraming(source.url, draft.start_s, draft.end_s, draft.captions, (p) => setScan({ state: 'running', progress: p }));
+      setScan({ state: 'idle' });
+      update({ framing });
+    } catch (e) {
+      console.error('framing', e);
+      setScan({ state: 'error', message: 'L’analyse du cadrage n’a pas marché sur ce navigateur. Choisis un cadrage à la main.' });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source.url, draft?.start_s, draft?.end_s]);
+  useEffect(() => {
+    if (!draft || !source.url || !NEEDS_FRAMING.has(draft.layout) || framingFits(draft.framing, draft.start_s, draft.end_s)) return;
+    const t = setTimeout(() => void runScan(), 800);
+    return () => clearTimeout(t);
+  }, [draft, source.url, runScan]);
+
   if (!project || !clip || !draft) {
     if (!loading && !error && (!project || !clip)) {
       return <Card className="text-center"><p className="text-sm text-zinc-400">Ce clip n’existe pas ou a été supprimé.</p><Link to={projectId ? `/app/clips/${projectId}` : '/app/clips'} className="touch-hit mt-3 inline-block text-sm text-violet-300 hover:underline">Retour au projet</Link></Card>;
@@ -126,6 +168,8 @@ function ClipEditor() {
         source: source.file, start: draft.start_s, end: draft.end_s, captions: draft.captions,
         title: draft.show_title ? draft.title : null, style: draft.caption_style, layout: draft.layout,
         captionSize: draft.caption_size, captionPos: draft.caption_pos, captionAnim: draft.caption_anim, titleStyle: draft.title_style,
+        framing: framingFits(draft.framing, draft.start_s, draft.end_s) ? draft.framing : null, divider: draft.divider,
+        width: videoSize?.w ?? 1920, height: videoSize?.h ?? 1080,
         onProgress: (p) => setExp({ state: 'running', progress: p }),
       });
       if (exportUrl.current) URL.revokeObjectURL(exportUrl.current);
@@ -236,8 +280,30 @@ function ClipEditor() {
                 <input type="range" min={120} max={760} step={10} value={draft.caption_pos} onChange={(e) => update({ caption_pos: Number(e.target.value) })} className="mt-2 w-full accent-violet-500" aria-label="Hauteur des sous-titres" />
               </label>
             </div>
-            <p className="label mb-3 mt-6">Cadrage</p>
+          </Card>
+
+          <Card>
+            <CardHeader title="Cadrage" subtitle="Auto : l’IA repère la facecam ou la personne qui parle et cadre le clip pour toi." />
             <Choice name="Cadrage" value={draft.layout} options={LAYOUTS} onChange={(v: LayoutId) => update({ layout: v })} />
+            <div className="mt-4 text-xs" aria-live="polite">
+              {scan.state === 'running' ? (
+                <p className="flex items-center gap-2 text-zinc-300"><Loader2 className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" />L’IA regarde la vidéo pour trouver les visages… {Math.round(scan.progress * 100)} %</p>
+              ) : scan.state === 'error' ? (
+                <p className="text-coral-300">{scan.message}</p>
+              ) : framingFits(draft.framing, draft.start_s, draft.end_s) && NEEDS_FRAMING.has(draft.layout) ? (
+                <p className="flex flex-wrap items-center gap-2 text-zinc-400">
+                  <ScanFace className="h-3.5 w-3.5 text-violet-300" />{KIND_LABEL[draft.framing!.kind]}
+                  {videoSize && draft.layout === 'auto' && <> : cadrage <strong className="font-medium text-zinc-200">{LAYOUTS[resolveLayout('auto', draft.framing, videoSize.w, videoSize.h)].label}</strong></>}.
+                  <button type="button" onClick={() => void runScan(true)} className="touch-hit rounded text-violet-300 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">Relancer l’analyse</button>
+                </p>
+              ) : null}
+            </div>
+            {(['split', 'stack', 'auto'] as LayoutId[]).includes(draft.layout) && (
+              <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-zinc-300">
+                <input type="checkbox" checked={draft.divider} onChange={(e) => update({ divider: e.target.checked })} className="h-4 w-4 accent-violet-500" />
+                Ligne néon entre les cadres
+              </label>
+            )}
           </Card>
 
           <Card>

@@ -1,4 +1,4 @@
-import { ArrowRight, Captions, Scissors, Sparkles, Type, UploadCloud, type LucideIcon } from 'lucide-react';
+import { ArrowRight, Captions, Gamepad2, ScanFace, Scissors, Sparkles, Type, UploadCloud, type LucideIcon } from 'lucide-react';
 import { ClipVisual } from '@/components/clips/ClipPromo';
 import { useLang } from '@/lib/lang';
 import { CREDIT_COSTS } from '@/services/credits';
@@ -8,14 +8,18 @@ import { StartLink } from './StartLink';
 export function ClipFeature() {
   const fr = useLang() === 'fr';
   const steps: [LucideIcon, string, string][] = fr
-    ? [[UploadCloud, 'Ajoute ta vidéo', 'Podcast, interview, live ou vlog, jusqu’à 30 minutes.'],
+    ? [[UploadCloud, 'Ajoute ta vidéo', 'Podcast, interview, rediff de live ou vlog, jusqu’à 30 minutes.'],
        [Scissors, 'L’IA trouve les pépites', 'Jusqu’à 8 moments forts, classés par potentiel viral.'],
-       [Type, 'Titre façon TikTok', 'Un titre accrocheur en bandeau, contour ou néon.'],
-       [Captions, 'Sous-titres animés', 'Calés mot à mot sur la voix, taille et position réglables.']]
-    : [[UploadCloud, 'Add your video', 'Podcast, interview, stream or vlog, up to 30 minutes.'],
+       [Gamepad2, 'Facecam + gameplay', 'Sur une rediff de stream, la caméra en haut, le jeu en dessous, tout seul.'],
+       [ScanFace, 'Le cadre suit qui parle', 'Podcast à plusieurs : l’image passe sur la personne qui prend la parole.'],
+       [Type, 'Titres façon TikTok', 'Écrits par l’IA comme les gros comptes de clips, avec MAJUSCULES et emojis.'],
+       [Captions, 'Sous-titres 1 mot', 'Calés sur la voix, mots-clés en jaune, réactions *ENTRE ÉTOILES*.']]
+    : [[UploadCloud, 'Add your video', 'Podcast, interview, stream VOD or vlog, up to 30 minutes.'],
        [Scissors, 'The AI finds the gems', 'Up to 8 best moments, ranked by viral potential.'],
-       [Type, 'TikTok-style title', 'A catchy title as a band, outline or neon.'],
-       [Captions, 'Animated captions', 'Timed word by word on the voice, size and position adjustable.']];
+       [Gamepad2, 'Facecam + gameplay', 'On a stream VOD, the cam on top and the game below, automatically.'],
+       [ScanFace, 'The frame follows the speaker', 'Multi-person podcast: the picture cuts to whoever talks.'],
+       [Type, 'TikTok-style titles', 'Written by the AI like the big clipping accounts, with CAPS and emojis.'],
+       [Captions, 'One-word captions', 'Timed on the voice, key words in yellow, reactions *IN STARS*.']];
   return (
     <section id="clips" aria-labelledby="clips-title" className="relative mx-auto max-w-6xl scroll-mt-24 px-4 py-16 md:px-6 md:py-20">
       <div className="relative overflow-hidden rounded-3xl border border-fuchsia-400/25 bg-gradient-to-br from-violet-600/[0.14] via-ink-900/80 to-coral-500/[0.08] p-6 shadow-[0_0_80px_-30px_rgba(217,70,239,0.6)] md:p-10">

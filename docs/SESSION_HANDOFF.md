@@ -148,3 +148,9 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 - AuthPage: "Renvoyer l'e-mail" button after sign-up or on "Email not confirmed".
 - Clipping access: subscribers only, 1 video during the $1 trial, admins unlimited (`clips-analyze` + `src/lib/clipAccess.ts`).
 - Google sign-in: the button shows automatically once the Google provider is enabled in Supabase (owner creates the OAuth client in Google Cloud; callback `https://hubkgvfiiszthzqyfguf.supabase.co/auth/v1/callback`).
+
+## AI clipping, clipper look (Nov 18 2026)
+- Analysed @liuclipper. New defaults for clips: title `tiktok` (TikTok Sans SemiBold on white bands, AI writes the clipper-style title with CAPS + emojis), captions `clipper` + `word` (Anton, one word at a time, AI keywords in yellow, *REACTION* tags where nobody speaks), layout `auto`.
+- Layouts (`src/lib/clipLayout.ts`, one plan drawn by the canvas preview AND the ffmpeg export): auto, split (facecam top + gameplay), stack (2 cams + gameplay), track (follows who speaks), zoom (4:5 on blur), fill, fit. Neon divider option.
+- Face analysis runs in the browser (`src/lib/clipFraming.ts`, MediaPipe Face Landmarker: wasm from jsdelivr pinned 1.2.2, model in `public/models/face_landmarker.task`); corners are zoomed to find small facecams; result saved in `clips.framing` (migration 0050).
+- Playwright: route `cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.2/wasm/*` to node_modules (the sandbox blocks jsdelivr).

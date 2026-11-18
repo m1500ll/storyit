@@ -167,7 +167,7 @@ export default function ClipNewPage() {
           <Card className="lg:sticky lg:top-24">
             <p className="label flex items-center gap-1.5 text-zinc-300"><Crown className="h-3.5 w-3.5 text-amber-300" aria-hidden /> Ce que tu obtiens</p>
             <ul className="mt-3 space-y-2 text-sm text-zinc-400">
-              {['Jusqu’à 8 meilleurs moments, classés par potentiel viral', 'Un titre accrocheur pour chaque clip', 'Des sous-titres mot à mot, en 3 styles', 'Des MP4 verticaux 9:16 : retouches et exports gratuits'].map((t) => (
+              {['Jusqu’à 8 meilleurs moments, classés par potentiel viral', 'Un titre façon TikTok écrit par l’IA', 'Facecam + gameplay et suivi de la parole automatiques', 'Sous-titres 1 mot calés sur la voix', 'Des MP4 verticaux 9:16 : retouches et exports gratuits'].map((t) => (
                 <li key={t} className="flex gap-2 text-zinc-200"><CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-fuchsia-400" aria-hidden />{t}</li>
               ))}
             </ul>

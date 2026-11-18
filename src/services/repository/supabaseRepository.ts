@@ -22,7 +22,7 @@ function required<T>(res: { data: T; error: { message: string } | null }): NonNu
 
 /** Postgres numerics can arrive as strings: normalise once here. */
 const normClip = (c: Clip): Clip => ({ ...c, start_s: Number(c.start_s), end_s: Number(c.end_s), captions: Array.isArray(c.captions) ? c.captions : [],
-  caption_size: Number(c.caption_size ?? 100), caption_pos: Number(c.caption_pos ?? 300), caption_anim: c.caption_anim ?? 'karaoke', title_style: c.title_style ?? 'box' });
+  caption_size: Number(c.caption_size ?? 100), caption_pos: Number(c.caption_pos ?? 300), caption_anim: c.caption_anim ?? 'karaoke', title_style: c.title_style ?? 'box', framing: c.framing ?? null, divider: c.divider ?? true });
 const normClipProject = (p: ClipProjectWithClips): ClipProjectWithClips => ({
   ...p,
   duration_seconds: Number(p.duration_seconds),
