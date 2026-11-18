@@ -2,7 +2,7 @@
 // Applies Stripe payments to Storyit accounts (plan + credits). Deploy with "Verify JWT" DISABLED
 // (Stripe cannot send a Supabase JWT; authenticity is checked with the Stripe signature instead).
 // Secrets: STRIPE_WEBHOOK_SECRET (whsec_...), plus the STRIPE_PRICE_* used by `billing`; the new Stripe account's with _NEW.
-// Events: checkout.session.completed, invoice.paid, invoice.payment_failed, customer.subscription.updated, customer.subscription.deleted
+// Events: checkout.session.completed, invoice.paid, invoice.payment_failed, invoice.payment_action_required, customer.subscription.updated, customer.subscription.deleted
 // Referrals (migration 0021): a referred friend's first PAID subscription invoice qualifies the referral: the friend gets
 // REFERRAL_FRIEND_BONUS credits (default 100), the referrer free months as Stripe customer balance (months x the price of
 // their plan, Creator when they have none), which pays their next invoices. Secret: STRIPE_SECRET_KEY.
@@ -155,7 +155,19 @@ Deno.serve(async (req) => {
         }
         break;
       }
+      case 'invoice.payment_action_required': {
+        // the bank wants the customer to confirm the payment (3-D Secure): nobody is there when Stripe charges, so
+        // e-mail them the Stripe page where they confirm it in a few seconds
+        const userId = await userIdForCustomer(obj.customer);
+        if (userId && obj.hosted_invoice_url && obj.amount_due > 0) {
+          await fetch(`${env('SUPABASE_URL')}/functions/v1/mailing`, { method: 'POST', headers: { Authorization: `Bearer ${env('PUBLISHER_CRON_TOKEN')}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ payment_failed: { user_id: userId, invoice_url: obj.hosted_invoice_url, amount: obj.amount_due, next_attempt: null, action: true } }) }).catch((e) => console.error('payment action mail', e));
+        }
+        break;
+      }
       case 'invoice.payment_failed': {
+        // a confirmation request (3-D Secure) also fails the payment once: that case already got its own e-mail
+        if (obj.payment_intent && typeof obj.payment_intent === 'object' && obj.payment_intent.status === 'requires_action') break;
         // a subscription payment was refused: e-mail the customer the Stripe page to pay it (or use another card)
         const userId = await userIdForCustomer(obj.customer);
         if (userId && obj.hosted_invoice_url && obj.amount_due > 0) {

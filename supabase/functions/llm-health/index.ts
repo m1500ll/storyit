@@ -205,7 +205,7 @@ Deno.serve(async (req) => {
   }
   const addEvent = url.searchParams.get('stripe_webhook_add'); // operator: list the webhook endpoints, optionally add one event to Storyit's
   if (url.searchParams.get('stripe_webhooks') === '1' || (addEvent && /^[a-z_.]{5,60}$/.test(addEvent))) {
-    const H = { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` };
+    const H = { Authorization: `Bearer ${(url.searchParams.get('acct') === 'legacy' ? null : Deno.env.get('STRIPE_SECRET_KEY_NEW')) ?? Deno.env.get('STRIPE_SECRET_KEY')}` };
     const list = await (await fetch('https://api.stripe.com/v1/webhook_endpoints?limit=10', { headers: H })).json();
     const out: unknown[] = [];
     for (const w of list.data ?? []) {

@@ -410,14 +410,34 @@ async function nudges(opts: { dry?: boolean; preview_to?: string }) {
   return Response.json({ live: true, sent: ok, planned: plan.length });
 }
 
+/** the bank asks the customer to confirm a subscription payment (3-D Secure, invoice.payment_action_required) */
+async function paymentActionEmail(to: string, previewTo: string | undefined, plan: { name: string; price: number; credits: number }, amount: string, invoiceUrl: string, uid: string, preview: boolean) {
+  const subject = `${preview ? '[APERÇU] ' : ''}🔐 Ta banque demande de confirmer ton paiement Storyit`;
+  const inner = `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Confirme ton paiement en 10 secondes</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Ton offre <strong>${plan.name}</strong> (${amount}) vient de démarrer, mais ta banque demande une confirmation de sécurité (3-D Secure) avant de valider le paiement. Comme le prélèvement est automatique, tu n’as pas pu la faire.</td></tr>
+<tr><td style="font-size:16px;line-height:1.6;padding-top:12px">Clique sur le bouton, puis confirme dans ton application bancaire ou par SMS : tes <strong>${fr(plan.credits)} crédits</strong> du mois arrivent tout de suite après.</td></tr>
+<tr><td align="center" style="padding:22px 0 8px"><a href="${invoiceUrl}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Confirmer mon paiement</a></td></tr>
+<tr><td style="font-size:13px;line-height:1.6;color:#4b4560;text-align:center">Tu ne veux pas continuer ? Tu peux résilier depuis « Offre et crédits » sur Storyit : rien ne sera débité.</td></tr>`;
+  const text = `Confirme ton paiement en 10 secondes\n\nBonjour,\n\nTon offre ${plan.name} (${amount}) vient de démarrer, mais ta banque demande une confirmation de sécurité (3-D Secure) avant de valider le paiement. Comme le prélèvement est automatique, tu n'as pas pu la faire.\n\nConfirme ici (application bancaire ou SMS), tes ${fr(plan.credits)} crédits du mois arrivent tout de suite après : ${invoiceUrl}\n\nTu ne veux pas continuer ? Tu peux résilier depuis « Offre et crédits » sur Storyit : rien ne sera débité.\n\nÀ très vite,\nL'équipe Storyit`;
+  const html = shell(inner, '#').replace(/Vous recevez cet e-mail car vous avez un compte Storyit\. <a href="#" style="color:#7a7390">Se désinscrire<\/a>/, 'Message lié à ton abonnement Storyit.');
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [previewTo ?? to], subject, html, text }),
+  });
+  const data = await res.json().catch(() => ({}));
+  console.log(JSON.stringify({ audit: 'payment_action_email', user: uid, ok: res.ok, preview }));
+  return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
+}
+
 /** a subscription payment failed (stripe-webhook, invoice.payment_failed): the link to pay or change the card */
-async function paymentFailedEmail(uid: string, invoiceUrl: string, amountCents: number, nextAttempt: number | null, preview = false) {
+async function paymentFailedEmail(uid: string, invoiceUrl: string, amountCents: number, nextAttempt: number | null, preview = false, action = false, previewTo?: string) {
   const [{ data: u }, { data: p }] = await Promise.all([admin.auth.admin.getUserById(uid), admin.from('profiles').select('plan').eq('id', uid).single()]);
   const to = u?.user?.email;
   if (!to || !/^https:\/\/invoice\.stripe\.com\//.test(invoiceUrl)) return Response.json({ skipped: true });
   const plan = PLAN_INFO[p?.plan ?? 'creator'] ?? PLAN_INFO.creator;
   const amount = `${(amountCents / 100).toFixed(2).replace('.', ',').replace(',00', '')} $`;
   const retry = nextAttempt ? frDate(new Date(nextAttempt * 1000).toISOString()) : null;
+  if (action) return paymentActionEmail(to, previewTo, plan, amount, invoiceUrl, uid, preview);
   const subject = `${preview ? '[APERÇU] ' : ''}⚠️ Votre paiement Storyit n’est pas passé`;
   const inner = `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Votre paiement n’est pas passé</td></tr>
 <tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Le paiement de votre offre <strong>${plan.name}</strong> (${amount}) a été refusé par votre banque. Ça arrive souvent : plafond de la carte, carte expirée ou solde insuffisant.</td></tr>
@@ -467,7 +487,7 @@ Deno.serve(async (req) => {
   const isCampaign = byCron && 'campaign' in ((await req.clone().json().catch(() => ({}))) as Record<string, unknown>);
   if (byCron && !isCampaign) {
     const sys = await req.clone().json().catch(() => ({})) as { low_credits?: string; trial_welcome?: string; trial_reminder?: string; nudges?: { dry?: boolean; preview_to?: string };
-      payment_failed?: { user_id: string; invoice_url: string; amount: number; next_attempt: number | null; preview?: boolean };
+      payment_failed?: { user_id: string; invoice_url: string; amount: number; next_attempt: number | null; preview?: boolean; action?: boolean; preview_to?: string };
       branded?: { to: string; subject: string; inner: string; text: string; reply_to?: string } };
     // one business e-mail in the Storyit look (black banner, white card, signature): any session sends it through the
     // database with the cron token (scripts/send-branded-mail.py). `inner` = the <tr> rows of the body.
@@ -483,7 +503,7 @@ Deno.serve(async (req) => {
       console.log(JSON.stringify({ audit: 'branded_email', ok: res.ok }));
       return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
     }
-    if (sys.payment_failed?.user_id) { const f = sys.payment_failed; return paymentFailedEmail(f.user_id, f.invoice_url, Number(f.amount) || 0, f.next_attempt ?? null, !!f.preview); }
+    if (sys.payment_failed?.user_id) { const f = sys.payment_failed; return paymentFailedEmail(f.user_id, f.invoice_url, Number(f.amount) || 0, f.next_attempt ?? null, !!f.preview, !!f.action, f.preview ? f.preview_to : undefined); }
     if (sys.nudges) return nudges(sys.nudges);
     if (sys.trial_welcome || sys.trial_reminder) return trialEmail(sys.trial_welcome ? 'welcome' : 'reminder', (sys.trial_welcome ?? sys.trial_reminder)!);
     const { low_credits } = sys;
