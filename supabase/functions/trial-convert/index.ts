@@ -38,6 +38,8 @@ Deno.serve(async (req) => {
     const subs = await stripe(`subscriptions?customer=${profile.stripe_customer_id}&status=trialing&limit=1`);
     const sub = subs?.data?.[0];
     if (!sub) return json({ ok: false, reason: 'no trial' });
+    // the customer cancelled during the trial: never bill them (the trial just ends on its date, then the plan stops)
+    if (sub.cancel_at || sub.cancel_at_period_end) return json({ ok: false, reason: 'cancelled' });
     // the chosen plan stays the same: only the trial stops, and Stripe invoices the full price now
     const updated = await stripe(`subscriptions/${sub.id}`, { trial_end: 'now', proration_behavior: 'none', 'metadata[trial_ended]': 'credits_used' });
     console.log(JSON.stringify({ audit: 'trial_converted', user: user_id, subscription: sub.id, status: updated.status }));

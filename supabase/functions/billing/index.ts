@@ -166,7 +166,10 @@ Deno.serve(async (req) => {
         await stripe(`subscriptions/${sub.id}`, { 'items[0][id]': sub.items.data[0].id, 'items[0][price]': price, proration_behavior: 'none', 'metadata[product]': target });
       }
       // then end the trial: Stripe bills the new period at the plan's full price
-      const updated = await stripe(`subscriptions/${sub.id}`, { trial_end: 'now', proration_behavior: 'none', 'expand[]': 'latest_invoice' });
+      // choosing to pay now also undoes a cancellation made during the trial (otherwise the paid plan would stop at
+      // the old trial end)
+      const undo: Record<string, string> = sub.cancel_at ? { cancel_at: '' } : sub.cancel_at_period_end ? { cancel_at_period_end: 'false' } : {};
+      const updated = await stripe(`subscriptions/${sub.id}`, { trial_end: 'now', proration_behavior: 'none', 'expand[]': 'latest_invoice', ...undo });
       const inv = updated?.latest_invoice;
       const paid = inv?.status === 'paid';
       return json({ ok: true, status: updated.status, paid, product: target, invoice_url: paid ? null : inv?.hosted_invoice_url ?? null });

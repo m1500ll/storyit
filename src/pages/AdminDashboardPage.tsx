@@ -41,10 +41,12 @@ function Kpi({ icon, label, value, hint }: { icon: ReactNode; label: string; val
 
 function StatusBadge({ m }: { m: AdminMember }) {
   const s = STATUS[m.status];
-  return <span className={cn('whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium', s.cls)}>{s.label}{m.status === 'paying' && m.cancelAtPeriodEnd ? ' · résiliation prévue' : ''}</span>;
+  return <span className={cn('whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium', s.cls)}>{s.label}{(m.status === 'paying' || m.status === 'trial') && m.cancelAtPeriodEnd ? ' · a résilié' : ''}</span>;
 }
 
 function payLine(m: AdminMember) {
+  if (m.cancelAtPeriodEnd && (m.status === 'trial' || m.status === 'paying'))
+    return `Résilié${m.canceledAt ? ` le ${day(m.canceledAt)}` : ''} · accès jusqu’au ${day(m.cancelAt ?? m.trialEndsAt ?? m.renewsAt)}, ne sera pas prélevé`;
   if (m.status === 'trial') return m.trialEndsAt ? `Essai jusqu’au ${day(m.trialEndsAt)}` : 'Essai en cours';
   if (m.status === 'paying') return `${PLAN[m.plan] ?? m.plan}${m.interval === 'year' ? ' annuel' : ' mensuel'} · renouvellement ${day(m.renewsAt)}`;
   return m.paidCents ? `Dernier paiement ${day(m.lastPaymentAt)}` : 'N’a jamais payé';
@@ -93,9 +95,9 @@ export default function AdminDashboardPage() {
         <>
           {!data.stripeConnected && <p className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">Stripe n’est pas connecté : les paiements ne peuvent pas être lus.</p>}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Kpi icon={<BadgeDollarSign className="h-3.5 w-3.5" aria-hidden />} label="Revenu mensuel (MRR)" value={usd(k.mrrCents)} hint={`${k.paying} abonné${k.paying > 1 ? 's' : ''} actif${k.paying > 1 ? 's' : ''}`} />
+            <Kpi icon={<BadgeDollarSign className="h-3.5 w-3.5" aria-hidden />} label="Revenu mensuel (MRR)" value={usd(k.mrrCents)} hint={`${k.paying} abonné${k.paying > 1 ? 's' : ''} actif${k.paying > 1 ? 's' : ''}, sans ceux qui ont résilié`} />
             <Kpi icon={<CreditCard className="h-3.5 w-3.5" aria-hidden />} label="Encaissé au total" value={usd(k.revenueCents)} hint={`${usd(k.revenue30Cents)} sur 30 jours`} />
-            <Kpi icon={<Users className="h-3.5 w-3.5" aria-hidden />} label="Membres" value={String(k.members)} hint={`${k.paying} payants · ${k.trials} en essai · ${k.free} gratuits`} />
+            <Kpi icon={<Users className="h-3.5 w-3.5" aria-hidden />} label="Membres" value={String(k.members)} hint={`${k.paying} payants · ${k.trials} en essai · ${k.free} gratuits${k.cancelling ? ` · ${k.cancelling} ont résilié (accès jusqu’à la fin)` : ''}`} />
             <Kpi icon={<UserPlus className="h-3.5 w-3.5" aria-hidden />} label="Inscrits aujourd’hui" value={String(k.signupsToday)} hint={`${k.signups7d} sur 7 jours · ${k.signups30d} sur 30 jours`} />
             <Kpi icon={<Sparkles className="h-3.5 w-3.5" aria-hidden />} label="Ont fini une vidéo" value={`${k.activated}`} hint={`${k.members ? Math.round((k.activated / k.members) * 100) : 0} % des membres`} />
             <Kpi icon={<BadgeDollarSign className="h-3.5 w-3.5" aria-hidden />} label="Taux de conversion" value={`${k.members ? Math.round(((k.paying + k.churned) / k.members) * 100) : 0} %`} hint="membres qui ont déjà payé" />

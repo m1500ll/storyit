@@ -205,11 +205,16 @@ Deno.serve(async (req) => {
   }
   const cust = url.searchParams.get('stripe_customer'); // operator: a customer's subscriptions and last invoices
   if (cust && /^cus_[A-Za-z0-9]{6,40}$/.test(cust)) {
-    const H = { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` };
-    const subs = await (await fetch(`https://api.stripe.com/v1/subscriptions?customer=${cust}&status=all&limit=5`, { headers: H })).json();
+    // the customer lives on one of the two accounts: try the new one first, then the abandoned one
+    let H = { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY_NEW') ?? Deno.env.get('STRIPE_SECRET_KEY')}` };
+    let subs = await (await fetch(`https://api.stripe.com/v1/subscriptions?customer=${cust}&status=all&limit=5`, { headers: H })).json();
+    if (subs.error && Deno.env.get('STRIPE_SECRET_KEY_NEW')) {
+      H = { Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}` };
+      subs = await (await fetch(`https://api.stripe.com/v1/subscriptions?customer=${cust}&status=all&limit=5`, { headers: H })).json();
+    }
     const inv = await (await fetch(`https://api.stripe.com/v1/invoices?customer=${cust}&limit=6`, { headers: H })).json();
     return json({
-      subscriptions: (subs.data ?? []).map((x: any) => ({ id: x.id, status: x.status, trial_end: x.trial_end && new Date(x.trial_end * 1000).toISOString(), cancel_at_period_end: x.cancel_at_period_end, price: x.items?.data?.[0]?.price?.id, created: new Date(x.created * 1000).toISOString() })),
+      subscriptions: (subs.data ?? []).map((x: any) => ({ id: x.id, status: x.status, trial_end: x.trial_end && new Date(x.trial_end * 1000).toISOString(), cancel_at_period_end: x.cancel_at_period_end, cancel_at: x.cancel_at && new Date(x.cancel_at * 1000).toISOString(), canceled_at: x.canceled_at && new Date(x.canceled_at * 1000).toISOString(), cancel_reason: x.cancellation_details?.reason ?? null, cancel_feedback: x.cancellation_details?.feedback ?? null, price: x.items?.data?.[0]?.price?.id, created: new Date(x.created * 1000).toISOString() })),
       invoices: (inv.data ?? []).map((x: any) => ({ id: x.id, status: x.status, amount_due: x.amount_due, amount_paid: x.amount_paid, reason: x.billing_reason, created: new Date(x.created * 1000).toISOString(), attempts: x.attempt_count, url: x.hosted_invoice_url, next_attempt_unix: x.next_payment_attempt, next_attempt: x.next_payment_attempt && new Date(x.next_payment_attempt * 1000).toISOString(), error: x.last_finalization_error?.message })),
     });
   }

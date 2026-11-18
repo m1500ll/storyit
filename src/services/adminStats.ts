@@ -4,14 +4,14 @@ import { supabase } from '@/lib/supabase';
 export type MemberStatus = 'paying' | 'trial' | 'past_due' | 'churned' | 'free';
 export interface AdminMember {
   id: string; email: string; signedUpAt: string; lastSignInAt: string | null; confirmed: boolean;
-  plan: string; status: MemberStatus; interval: 'month' | 'year' | null; renewsAt: number | null; cancelAtPeriodEnd: boolean; trialEndsAt: number | null;
+  plan: string; status: MemberStatus; interval: 'month' | 'year' | null; renewsAt: number | null; cancelAtPeriodEnd: boolean; cancelAt?: number | null; canceledAt?: number | null; trialEndsAt: number | null;
   paidCents: number; lastPaymentAt: number | null; credits: number; spent: number; videos: number; lastActivityAt: number | null;
   partner: string | null; isAdmin: boolean; unsubscribed: boolean;
 }
 export interface AdminStats {
   generatedAt: number; stripeConnected: boolean;
   kpis: {
-    members: number; paying: number; trials: number; churned: number; free: number; mrrCents: number; revenueCents: number; revenue30Cents: number;
+    members: number; paying: number; trials: number; churned: number; cancelling?: number; free: number; mrrCents: number; revenueCents: number; revenue30Cents: number;
     signupsToday: number; signups7d: number; signups30d: number; activated: number; creditsOutstanding: number; viaPartner: number;
   };
   members: AdminMember[];
