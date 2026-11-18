@@ -68,6 +68,8 @@ export function WelcomeIntro() {
   const [open, setOpen] = useState(false);
   const [stage, setStage] = useState<'welcome' | 'quiz' | 'thinking' | 'plan'>('welcome');
   const [q, setQ] = useState(0);
+  // a screen with no question after "how much time": whatever they picked, Storyit makes a video in minutes
+  const [interlude, setInterlude] = useState(false);
   const [answers, setAnswers] = useState<Answers>({});
   const [thought, setThought] = useState(0);
   const [pending, setPending] = useState(false);
@@ -111,7 +113,10 @@ export function WelcomeIntro() {
     }
     const next = { ...answers, [question.id]: id };
     setAnswers(next);
-    setTimeout(() => (q < QUESTIONS.length - 1 ? setQ(q + 1) : finish(next)), still ? 0 : 220);
+    setTimeout(() => {
+      if (question.id === 'time') { setInterlude(true); setQ(q + 1); return; }
+      if (q < QUESTIONS.length - 1) setQ(q + 1); else finish(next);
+    }, still ? 0 : 220);
   };
   const plan = planFor(answers);
   const canTrial = TRIAL_ENABLED && billingPlan(profile).plan === 'free' && !billingPlan(profile).trialUsed;
@@ -158,10 +163,35 @@ export function WelcomeIntro() {
         </div>
       )}
 
-      {stage === 'quiz' && (
+      {stage === 'quiz' && interlude && (
+        <div className={cn('relative w-full max-w-lg text-center', !still && 'anim-fadein')}>
+          <span className={cn('mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 text-white shadow-[0_0_40px_-6px_rgba(16,185,129,0.8)]', !still && 'anim-popin')}><Clock className="h-8 w-8" aria-hidden /></span>
+          <p className="mt-5 text-[11px] font-bold uppercase tracking-[0.25em] text-emerald-300">Bonne nouvelle</p>
+          <h2 id="welcome-title" className="mt-2 text-balance font-display text-3xl leading-tight text-white sm:text-4xl">Peu importe le temps que tu as : Storyit fait tout en quelques minutes</h2>
+          <div className="mt-7 grid grid-cols-2 gap-3 text-left">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/50">Sans Storyit</p>
+              <p className="mt-2 font-display text-2xl text-white/60 line-through decoration-coral-400/80">Des heures</p>
+              <p className="mt-1 text-xs text-white/50">écrire, dessiner, doubler les voix, monter…</p>
+            </div>
+            <div className="rounded-2xl border border-emerald-400/40 bg-emerald-500/10 p-4 shadow-[0_0_30px_-12px_rgba(16,185,129,0.9)]">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">Avec Storyit</p>
+              <p className="mt-2 font-display text-2xl text-white">Quelques minutes</p>
+              <p className="mt-1 text-xs text-white/70">tu écris ton idée, l’IA fait tout le reste</p>
+            </div>
+          </div>
+          <p className="mt-5 text-sm text-white/65">Même avec 15 minutes par jour, tu peux poster comme les plus gros comptes.</p>
+          <button type="button" onClick={() => setInterlude(false)}
+            className="touch-hit mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-base font-semibold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+            Continuer <ArrowRight className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
+      )}
+
+      {stage === 'quiz' && !interlude && (
         <div key={q} className={cn('relative w-full max-w-lg', !still && 'anim-fadein')}>
           <div className="flex items-center gap-3">
-            {q > 0 ? <button type="button" onClick={() => setQ(q - 1)} aria-label="Question précédente" className="touch-hit rounded-full p-2 text-white/60 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"><ArrowLeft className="h-5 w-5" /></button> : <span className="w-9" />}
+            {q > 0 ? <button type="button" onClick={() => (QUESTIONS[q - 1]!.id === 'time' ? setInterlude(true) : setQ(q - 1))} aria-label="Question précédente" className="touch-hit rounded-full p-2 text-white/60 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"><ArrowLeft className="h-5 w-5" /></button> : <span className="w-9" />}
             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-valuemin={1} aria-valuemax={QUESTIONS.length} aria-valuenow={q + 1} aria-label="Progression">
               <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 transition-[width] duration-500" style={{ width: `${((q + 1) / QUESTIONS.length) * 100}%` }} />
             </div>
