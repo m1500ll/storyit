@@ -1,8 +1,8 @@
 import { AlertTriangle, Check, Clapperboard, Download, Loader2, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { usePaywall } from '@/components/billing/Paywall';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, useToast } from '@/components/ui';
 import { InsufficientCreditsError } from '@/services/errors';
 import { promptVideos, type PromptVideo, type VideoQuality } from '@/services/promptVideos';
 import { lengthLabel, lengthOf, projectSeconds, VIDEO_PRICES, videoBlocker, videoCost, type VideoLength } from '@shared/promptVideo.ts';
@@ -19,6 +19,16 @@ const active = (v: PromptVideo) => v.status === 'queued' || v.status === 'workin
 /** "Générer la vidéo": the whole project becomes a finished video (images, animation, montage), added to the library */
 export function AutoVideo({ projectId, data }: { projectId: string; data: unknown }) {
   const openPaywall = usePaywall();
+  const toast = useToast();
+  // back from Stripe (the "your video is ready" sheet): say what to do next
+  const [params, setParams] = useSearchParams();
+  useEffect(() => {
+    const c = params.get('checkout');
+    if (!c) return;
+    if (c === 'success') toast('Paiement confirmé ! Tes crédits arrivent : clique sur « Générer la vidéo » pour la lancer.');
+    setParams((p) => { p.delete('checkout'); return p; }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const quality: VideoQuality = 'eco'; // the only quality on offer (see AVAILABLE_QUALITIES)
   const [videos, setVideos] = useState<PromptVideo[]>([]);
   const [busy, setBusy] = useState(false);
@@ -62,7 +72,8 @@ export function AutoVideo({ projectId, data }: { projectId: string; data: unknow
     setBusy(true); setError(null);
     try { const v = await promptVideos.create(projectId, quality); setVideos((vs) => [v, ...vs]); }
     catch (e) {
-      if (e instanceof InsufficientCreditsError) openPaywall();
+      // the money moment: "your video is ready" with the $1 trial, and Stripe brings the customer back to this project
+      if (e instanceof InsufficientCreditsError) openPaywall({ reason: 'video', required: e.required ?? videoCost(quality, seconds || 30), returnTo: `/app/prompts/${projectId}` });
       setError(e instanceof Error ? e.message : 'Impossible de lancer la vidéo.');
     } finally { setBusy(false); }
   };

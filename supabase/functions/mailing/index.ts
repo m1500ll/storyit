@@ -306,6 +306,110 @@ ${li('🔁 Sans engagement : vous pouvez résilier quand vous voulez.')}
   return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
 }
 
+/** Automatic reminders for free accounts that stopped before their first video (hourly cron, migration 0051), each
+ *  sent once per person (email_sends):
+ *  - nudge_video_1: ~2 h after their first story was written without a video  → "your story is ready, only the video is missing"
+ *  - nudge_video_2: ~24 h after nudge_video_1, still no video                 → short last reminder
+ *  - nudge_start_1: ~24 h after sign-up, nothing created                       → "your first video in 2 minutes"
+ *  Sends only when the secret NUDGES_LIVE is "on"; otherwise (or with dry) it returns who would get what.
+ *  `preview_to`: sends the three e-mails to that address with "[APERÇU]" and a sample story title (nothing logged). */
+const NUDGE = {
+  video1: (title: string, link: string) => ({
+    subject: `🎬 « ${title} » est prête : il ne manque que la vidéo`,
+    inner: `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Ton histoire est prête 🎬</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Storyit a écrit ton histoire <strong>« ${title} »</strong> : les dialogues et les scènes sont prêts. Il ne manque plus que la vidéo finie, avec les personnages animés, les voix, les sous-titres et la musique.</td></tr>
+<tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.7">
+<tr><td>🎁 <strong>Essai 3 jours à 1 $</strong> : 7 000 crédits, assez pour cette vidéo</td></tr>
+<tr><td>⚡ La vidéo se crée toute seule, en quelques minutes</td></tr>
+<tr><td>🔁 Résiliable en 1 clic avant la fin des 3 jours</td></tr></table></td></tr>
+<tr><td align="center" style="padding:14px 0 8px"><a href="${link}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma vidéo pour 1 $</a></td></tr>`,
+    text: `Ton histoire est prête\n\nBonjour,\n\nStoryit a écrit ton histoire « ${title} » : les dialogues et les scènes sont prêts. Il ne manque plus que la vidéo finie, avec les personnages animés, les voix, les sous-titres et la musique.\n\n- Essai 3 jours à 1 $ : 7 000 crédits, assez pour cette vidéo\n- La vidéo se crée toute seule, en quelques minutes\n- Résiliable en 1 clic avant la fin des 3 jours\n\nCréer ma vidéo pour 1 $ : ${link}`,
+  }),
+  video2: (title: string, link: string) => ({
+    subject: `⏳ Ta vidéo « ${title} » t’attend toujours`,
+    inner: `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Ta vidéo t’attend</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Ton histoire <strong>« ${title} »</strong> est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.<br><br>L’essai à <strong>1 $</strong> te donne 7 000 crédits pendant 3 jours : de quoi la créer, et tu peux arrêter quand tu veux.</td></tr>
+<tr><td align="center" style="padding:20px 0 8px"><a href="${link}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Voir ma vidéo pour 1 $</a></td></tr>`,
+    text: `Ta vidéo t'attend\n\nBonjour,\n\nTon histoire « ${title} » est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.\n\nL'essai à 1 $ te donne 7 000 crédits pendant 3 jours : de quoi la créer, et tu peux arrêter quand tu veux.\n\nVoir ma vidéo pour 1 $ : ${link}`,
+  }),
+  start1: (link: string) => ({
+    subject: '✨ Ta première vidéo IA en 2 minutes',
+    inner: `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Ta première vidéo en 2 minutes</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Tu as 3 000 crédits offerts sur Storyit. Écris une idée en une ligne (ou demande-en une à l’IA), choisis tes personnages, et Storyit écrit toute l’histoire avec les dialogues.</td></tr>
+<tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.7">
+<tr><td>🍌 <strong>Fruit Dramas</strong>, mini-séries, histoires : le format qui cartonne sur TikTok</td></tr>
+<tr><td>🎙️ Personnages 3D, vraies voix, sous-titres et musique</td></tr>
+<tr><td>📱 Une vidéo verticale prête à poster</td></tr></table></td></tr>
+<tr><td align="center" style="padding:14px 0 8px"><a href="${link}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma première vidéo</a></td></tr>`,
+    text: `Ta première vidéo en 2 minutes\n\nBonjour,\n\nTu as 3 000 crédits offerts sur Storyit. Écris une idée en une ligne (ou demande-en une à l'IA), choisis tes personnages, et Storyit écrit toute l'histoire avec les dialogues.\n\n- Fruit Dramas, mini-séries, histoires : le format qui cartonne sur TikTok\n- Personnages 3D, vraies voix, sous-titres et musique\n- Une vidéo verticale prête à poster\n\nCréer ma première vidéo : ${link}`,
+  }),
+};
+const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+
+async function nudges(opts: { dry?: boolean; preview_to?: string }) {
+  const send = async (to: string, uid: string, m: { subject: string; inner: string; text: string }) => {
+    const unsub = await unsubUrl(uid);
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [to], subject: m.subject, html: shell(m.inner, unsub), text: `${m.text}\n\nÀ très vite,\nL'équipe Storyit\n\nSe désinscrire : ${unsub}`,
+        headers: { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' } }),
+    });
+    const d = await res.json().catch(() => ({}));
+    return res.ok ? (d.id as string) : null;
+  };
+  if (opts.preview_to) {
+    const sample = 'La banane qui ment à sa mère';
+    const out = [];
+    for (const m of [NUDGE.video1(sample, `${APP}/app/prompts`), NUDGE.video2(sample, `${APP}/app/prompts`), NUDGE.start1(`${APP}/app/prompts`)]) {
+      out.push(await send(opts.preview_to, '00000000-0000-0000-0000-000000000000', { ...m, subject: `[APERÇU] ${m.subject}` }));
+    }
+    return Response.json({ preview: out });
+  }
+  const live = Deno.env.get('NUDGES_LIVE') === 'on' && !opts.dry;
+  const H = 3_600_000, now = Date.now();
+  const [{ data: profiles }, { data: projects }, { data: videos }, { data: sent }, usersRes] = await Promise.all([
+    admin.from('profiles').select('id, plan, trial_used, is_admin, marketing_opt_out').eq('plan', 'free'),
+    admin.from('prompt_projects').select('id, user_id, title, created_at').order('created_at', { ascending: true }),
+    admin.from('prompt_videos').select('user_id'),
+    admin.from('email_sends').select('user_id, campaign, sent_at').in('campaign', ['nudge_video_1', 'nudge_video_2', 'nudge_start_1']),
+    admin.auth.admin.listUsers({ perPage: 1000 }),
+  ]);
+  const users = new Map((usersRes.data?.users ?? []).map((u) => [u.id, u]));
+  const withVideo = new Set((videos ?? []).map((v: any) => v.user_id));
+  const firstProject = new Map<string, any>();
+  for (const p of projects ?? []) if (!firstProject.has(p.user_id)) firstProject.set(p.user_id, p);
+  const got = new Map<string, number>();
+  for (const e of sent ?? []) got.set(`${e.user_id}:${e.campaign}`, Date.parse(e.sent_at));
+  const plan: { uid: string; to: string; campaign: string; title?: string; project?: string }[] = [];
+  for (const p of profiles ?? []) {
+    const u = users.get(p.id);
+    if (!u?.email || !u.email_confirmed_at || p.trial_used || p.is_admin || p.marketing_opt_out || withVideo.has(p.id)) continue;
+    const fp = firstProject.get(p.id);
+    if (fp) {
+      const age = now - Date.parse(fp.created_at);
+      const title = String(fp.title || 'Ton histoire').slice(0, 60);
+      const v1 = got.get(`${p.id}:nudge_video_1`);
+      if (!v1 && age >= 2 * H && age <= 48 * H) plan.push({ uid: p.id, to: u.email, campaign: 'nudge_video_1', title, project: fp.id });
+      else if (v1 && !got.has(`${p.id}:nudge_video_2`) && now - v1 >= 22 * H && now - v1 <= 72 * H) plan.push({ uid: p.id, to: u.email, campaign: 'nudge_video_2', title, project: fp.id });
+    } else {
+      const age = now - Date.parse(u.created_at);
+      if (!got.has(`${p.id}:nudge_start_1`) && age >= 24 * H && age <= 72 * H) plan.push({ uid: p.id, to: u.email, campaign: 'nudge_start_1' });
+    }
+  }
+  if (!live) return Response.json({ live: false, would_send: plan.map(({ campaign, title }) => ({ campaign, title })) });
+  let ok = 0;
+  for (const n of plan) {
+    const link = n.project ? `${APP}/app/prompts/${n.project}` : `${APP}/app/prompts`;
+    const m = n.campaign === 'nudge_video_1' ? NUDGE.video1(esc(n.title!), link) : n.campaign === 'nudge_video_2' ? NUDGE.video2(esc(n.title!), link) : NUDGE.start1(link);
+    // logged first: a crash mid-way never sends the same reminder twice
+    await admin.from('email_sends').insert({ user_id: n.uid, campaign: n.campaign, sent_at: new Date().toISOString() });
+    const id = await send(n.to, n.uid, m);
+    if (id) { ok++; await admin.from('email_sends').update({ resend_id: id }).eq('user_id', n.uid).eq('campaign', n.campaign); }
+  }
+  console.log(JSON.stringify({ audit: 'nudges', planned: plan.length, sent: ok }));
+  return Response.json({ live: true, sent: ok, planned: plan.length });
+}
+
 /** a subscription payment failed (stripe-webhook, invoice.payment_failed): the link to pay or change the card */
 async function paymentFailedEmail(uid: string, invoiceUrl: string, amountCents: number, nextAttempt: number | null, preview = false) {
   const [{ data: u }, { data: p }] = await Promise.all([admin.auth.admin.getUserById(uid), admin.from('profiles').select('plan').eq('id', uid).single()]);
@@ -362,7 +466,7 @@ Deno.serve(async (req) => {
   // campaigns can also be started with the cron token (from any session, through the database); everything else below
   const isCampaign = byCron && 'campaign' in ((await req.clone().json().catch(() => ({}))) as Record<string, unknown>);
   if (byCron && !isCampaign) {
-    const sys = await req.clone().json().catch(() => ({})) as { low_credits?: string; trial_welcome?: string; trial_reminder?: string;
+    const sys = await req.clone().json().catch(() => ({})) as { low_credits?: string; trial_welcome?: string; trial_reminder?: string; nudges?: { dry?: boolean; preview_to?: string };
       payment_failed?: { user_id: string; invoice_url: string; amount: number; next_attempt: number | null; preview?: boolean };
       branded?: { to: string; subject: string; inner: string; text: string; reply_to?: string } };
     // one business e-mail in the Storyit look (black banner, white card, signature): any session sends it through the
@@ -380,6 +484,7 @@ Deno.serve(async (req) => {
       return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
     }
     if (sys.payment_failed?.user_id) { const f = sys.payment_failed; return paymentFailedEmail(f.user_id, f.invoice_url, Number(f.amount) || 0, f.next_attempt ?? null, !!f.preview); }
+    if (sys.nudges) return nudges(sys.nudges);
     if (sys.trial_welcome || sys.trial_reminder) return trialEmail(sys.trial_welcome ? 'welcome' : 'reminder', (sys.trial_welcome ?? sys.trial_reminder)!);
     const { low_credits } = sys;
     if (!low_credits) return Response.json({ error: 'low_credits required' }, { status: 400 });

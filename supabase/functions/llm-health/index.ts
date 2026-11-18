@@ -39,7 +39,23 @@ Deno.serve(async (req) => {
     if (!r.ok) return json({ error: d?.error?.message ?? r.status }, 502);
     return json({ b64: d.data?.[0]?.b64_json, usage: d.usage });
   }
-  const methodOff = url.searchParams.get('stripe_method_off'); // turns one payment method off in every Stripe Checkout configuration
+  // operator: turns one payment method off (stripe_method_off) or on (stripe_method_on) in every Stripe Checkout
+  // configuration of the account customers pay on now
+  const methodOn = url.searchParams.get('stripe_method_on');
+  if (methodOn && /^[a-z_]{3,30}$/.test(methodOn)) {
+    const key = Deno.env.get('STRIPE_SECRET_KEY_NEW') ?? Deno.env.get('STRIPE_SECRET_KEY');
+    const list = await (await fetch('https://api.stripe.com/v1/payment_method_configurations?limit=20', { headers: { Authorization: `Bearer ${key}` } })).json();
+    const out: unknown[] = [];
+    for (const c of list.data ?? []) {
+      const r = await fetch(`https://api.stripe.com/v1/payment_method_configurations/${c.id}`, { method: 'POST',
+        headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ [`${methodOn}[display_preference][preference]`]: 'on' }) });
+      const d = await r.json();
+      out.push({ config: c.name, ok: r.ok, now: d?.[methodOn]?.display_preference?.value, available: d?.[methodOn]?.available, error: d?.error?.message });
+    }
+    return json({ method: methodOn, changed: out, error: list.error?.message });
+  }
+  const methodOff = url.searchParams.get('stripe_method_off');
   if (methodOff && /^[a-z_]{3,30}$/.test(methodOff)) {
     const key = Deno.env.get('STRIPE_SECRET_KEY');
     const list = await (await fetch('https://api.stripe.com/v1/payment_method_configurations?limit=20', { headers: { Authorization: `Bearer ${key}` } })).json();
