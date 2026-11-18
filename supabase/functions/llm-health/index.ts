@@ -65,6 +65,39 @@ Deno.serve(async (req) => {
     return json({ seconds: Math.round((Date.now() - t0) / 1000), effort, usage: W.lastUsage, ok: !!script, invalid, title: script?.title, paradox: script?.paradox,
       clips: script?.clips?.map((c: any) => ({ s: c.seconds, lines: c.lines.map((l: any) => `${l.character}${l.tone ? ` [${l.tone}]` : ''}: ${l.text}`) })) });
   }
+  if (url.searchParams.get('stripe_legacy_cancel') === '1') {
+    // operator: winds down every subscription of the abandoned (legacy) Stripe account. Unpaid ones (past_due, unpaid,
+    // incomplete, or an open invoice) are cancelled now; paid ones stop at the end of the paid period (no renewal).
+    // Dry run unless &apply=1.
+    const key = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!key) return json({ error: 'no legacy key' }, 503);
+    const apply = url.searchParams.get('apply') === '1';
+    const call = async (p: string, params?: Record<string, string>, method?: string) => {
+      const r = await fetch(`https://api.stripe.com/v1/${p}`, { method: method ?? (params ? 'POST' : 'GET'), headers: { Authorization: `Bearer ${key}`, ...(params ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}) }, body: params ? new URLSearchParams(params) : undefined });
+      return r.json();
+    };
+    const subs = ((await call('subscriptions?status=all&limit=100&expand[]=data.latest_invoice'))?.data ?? []).filter((s: any) => !['canceled', 'incomplete_expired'].includes(s.status));
+    const out = [];
+    for (const s of subs) {
+      const inv = s.latest_invoice;
+      const end = s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? null;
+      // a period that is already over (e.g. a $1 trial that just ended) was not paid either
+      const unpaid = ['past_due', 'unpaid', 'incomplete'].includes(s.status) || (inv && inv.status === 'open' && inv.amount_due > 0) || (end && end * 1000 <= Date.now());
+      const action = unpaid ? 'cancel_now' : (s.cancel_at_period_end ? 'already_stopping' : 'stop_at_period_end');
+      let result: unknown = null;
+      if (apply && action === 'cancel_now') {
+        const r = await call(`subscriptions/${s.id}`, { invoice_now: 'false', prorate: 'false' }, 'DELETE');
+        result = r.error ? r.error.message : r.status;
+        // the unpaid invoice would otherwise stay open on the old account
+        if (!r.error && inv?.id && inv.status === 'open') { const v = await call(`invoices/${inv.id}/void`, {}); if (v.error) result = `${result} (invoice: ${v.error.message})`; }
+      } else if (apply && action === 'stop_at_period_end') {
+        const r = await call(`subscriptions/${s.id}`, { cancel_at_period_end: 'true' });
+        result = r.error ? r.error.message : `ends ${new Date((r.cancel_at ?? end) * 1000).toISOString().slice(0, 10)}`;
+      }
+      out.push({ id: s.id, customer: s.customer, status: s.status, invoice: inv?.status ?? null, period_end: end ? new Date(end * 1000).toISOString().slice(0, 10) : null, action, result });
+    }
+    return json({ apply, count: out.length, subscriptions: out });
+  }
   if (url.searchParams.get('stripe_recent') === '1') { // operator: the last checkouts, payments and subscriptions of each account
     const days = Math.min(30, Math.max(1, Number(url.searchParams.get('days') ?? 7)));
     const since = Math.floor(Date.now() / 1000) - days * 86_400;

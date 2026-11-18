@@ -166,7 +166,18 @@ Deno.serve(async (req) => {
       }
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted': {
-        const userId = (await userIdForCustomer(obj.customer)) ?? obj.metadata?.user_id;
+        // only the customer the profile is billed through now: when a customer re-subscribes on the new Stripe account,
+        // the end of the old subscription (same user_id in its metadata) must not reset the new plan
+        let userId = await userIdForCustomer(obj.customer);
+        if (!userId && event.type === 'customer.subscription.deleted' && obj.metadata?.user_id) {
+          // the profile now points at another Stripe customer: reset it only if that customer has no live subscription
+          const { data: p } = await admin.from('profiles').select('stripe_customer_id, stripe_account').eq('id', obj.metadata.user_id).maybeSingle();
+          if (p?.stripe_customer_id && p.stripe_customer_id !== obj.customer) {
+            const live = await stripeApi(accountOf(p), `subscriptions?customer=${p.stripe_customer_id}&status=all&limit=10`).catch(() => null);
+            const any = (live?.data ?? []).some((x: any) => ['active', 'trialing', 'past_due'].includes(x.status));
+            if (live && !any) userId = obj.metadata.user_id;
+          }
+        }
         const plan = event.type === 'customer.subscription.deleted' ? 'free' : planForSubscription(obj, env);
         if (userId && plan) await admin.from('profiles').update({ plan, ...(plan === 'free' ? { trial_ends_at: null } : {}) }).eq('id', userId);
         break;
