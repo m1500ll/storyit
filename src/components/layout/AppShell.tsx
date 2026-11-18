@@ -4,6 +4,7 @@ import { LowCreditsBanner } from '../billing/LowCreditsBanner';
 import { PaywallProvider } from '../billing/Paywall';
 import { MobileNav } from './MobileNav';
 import { WizardNotifier } from './WizardNotifier';
+import { WelcomeIntro } from '../onboarding/WelcomeIntro';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 
@@ -29,6 +30,7 @@ export function AppShell() {
         </div>
         <MobileNav />
         <WizardNotifier />
+        <WelcomeIntro />
       </div>
     </PaywallProvider>
   );

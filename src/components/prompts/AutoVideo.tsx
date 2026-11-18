@@ -1,5 +1,5 @@
 import { AlertTriangle, Check, Clapperboard, Download, Loader2, Sparkles } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { usePaywall } from '@/components/billing/Paywall';
 import { Button, Card, useToast } from '@/components/ui';
@@ -8,6 +8,10 @@ import { promptVideos, type PromptVideo, type VideoQuality } from '@/services/pr
 import { lengthLabel, lengthOf, projectSeconds, VIDEO_PRICES, videoBlocker, videoCost, type VideoLength } from '@shared/promptVideo.ts';
 import { promptStudio } from '@/services/promptStudio';
 import { LengthPicker } from './LengthPicker';
+import { StoryTrailer, type TrailerLine } from './StoryTrailer';
+import { characters } from '@/services/characters';
+import { useLiveQuery } from '@/hooks/useStore';
+import { librarySheet, UNIVERSES, type Universe } from '@shared/characters.ts';
 import { formatCredits } from '@/services/credits';
 
 const STEPS: Record<string, string> = {
@@ -53,6 +57,13 @@ export function AutoVideo({ projectId, data }: { projectId: string; data: unknow
     finally { setRewriting(null); }
   };
   const blocker = videoBlocker(data);
+  // the trailer of their story (the "wow" before the paid video): their lines, their characters, their universe
+  const { data: mine = [] } = useLiveQuery(() => characters.list(), 'user-characters');
+  const d = (data ?? {}) as { script?: { title?: string; clips?: { lines?: TrailerLine[] }[] }; universe?: string; cast_chars?: { id?: string; name?: string }[]; cast?: string[]; options?: { music?: string | null } };
+  const trailerLines = (d.script?.clips ?? []).flatMap((c) => c.lines ?? []);
+  const universe = (d.universe && d.universe in UNIVERSES ? d.universe : 'fruits') as Universe;
+  const trailerCast = (d.cast_chars ?? []).map((c) => ({ name: c.name ?? '', image: c.id?.startsWith('lib:') ? librarySheet(c.id.slice(4)) : mine.find((m) => m.id === c.id)?.sheet_url ?? null }));
+  const genButton = useRef<HTMLDivElement>(null);
   const last = videos[0];
   const running = videos.some(active);
 
@@ -125,6 +136,14 @@ export function AutoVideo({ projectId, data }: { projectId: string; data: unknow
             </p>
           )}
 
+          {!blocker && !last && trailerLines.length > 0 && (
+            <div className="mt-5">
+              <StoryTrailer title={d.script?.title ?? 'Ton histoire'} universe={universe} lines={trailerLines} cast={trailerCast} music={d.options?.music ?? null}
+                createLabel={`Créer la vraie vidéo · ${formatCredits(videoCost('eco', seconds))} crédits`}
+                onCreate={() => { genButton.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); void start(); }} />
+              <p className="mt-2 text-center text-[11px] text-zinc-500">Aperçu fait avec ton histoire. La vraie vidéo anime chaque scène avec les voix.</p>
+            </div>
+          )}
           {!blocker && (
             <div className="mt-4">
               <p className="text-xs text-zinc-400">Durée de la vidéo · votre histoire fait {Math.round(seconds)} s</p>
@@ -160,7 +179,7 @@ export function AutoVideo({ projectId, data }: { projectId: string; data: unknow
                 </div>
               </div>
               {error && <p role="alert" className="mt-3 text-sm text-coral-300">{error}</p>}
-              <div className="mt-3 flex flex-wrap items-center gap-3">
+              <div ref={genButton} className="mt-3 flex flex-wrap items-center gap-3">
                 <Button size="lg" onClick={() => void start()} disabled={busy || running}>
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {last?.status === 'done' ? 'Refaire la vidéo' : 'Générer la vidéo'} · {formatCredits(videoCost('eco', seconds))} crédits
                 </Button>

@@ -71,6 +71,8 @@
 .anim-eq { animation: eq 0.9s ease-in-out infinite; transform-origin: bottom; }
 .anim-popin { animation: popin 0.4s cubic-bezier(.2,.8,.2,1) both; }
 .anim-fadein { animation: fadein 0.6s ease-out both; }
+/* welcome intro: the showcase videos fly in from below, keeping their fan position (transform set inline) */
+@keyframes welcomefly { from { opacity: 0; translate: 0 120px; scale: 0.7; } to { translate: 0 0; scale: 1; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
 
 @layer utilities {
