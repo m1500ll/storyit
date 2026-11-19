@@ -12,6 +12,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { GRANTS, isTopupAmount, TOPUP, TRIAL } from '../_shared/stripe.ts';
 import { accountEnv, accountOf, newCustomersAccount, stripeOn, type StripeAccount } from '../_shared/stripeAccount.ts';
 import { whopCheckout, whopEnabled } from '../_shared/whop.ts';
+import { dodoCheckout, dodoEnabled, dodoPortal } from '../_shared/dodo.ts';
 import { paddleCheckout, paddleEnabled, paddlePortal, setting as integrationSetting } from '../_shared/paddle.ts';
 
 const cors = {
@@ -142,6 +143,33 @@ Deno.serve(async (req) => {
         amount: s.amount_total, currency: s.currency, methods: s.payment_method_types, locale: s.locale,
         recovered: Boolean(s.recovered_from), user: s.client_reference_id ?? null,
       })) });
+    }
+
+    // Dodo Payments (secret BILLING_PROVIDER=dodo, merchant of record): hosted checkout, customer portal
+    const { data: dd } = await admin.from('profiles').select('plan, billing_provider, dodo_customer_id').eq('id', user.id).single();
+    const onDodo = dd?.billing_provider === 'dodo';
+    if (onDodo && action === 'status') return json({ trialing: false, trial_end: null, product: null });
+    if (onDodo && action === 'end_trial') return json({ error: 'Pour changer d’offre, utilise « Gérer la facturation ».' }, 409);
+    if (onDodo && action === 'portal') {
+      if (!dd?.dodo_customer_id) return json({ error: 'Abonnement introuvable. Écris-nous à etook0.pro@gmail.com.' }, 409);
+      try { return json({ url: await dodoPortal(dd.dodo_customer_id) }); }
+      catch (e) { console.error('dodo portal', e instanceof Error ? e.message : e); return json({ error: 'La page de facturation n’a pas pu s’ouvrir. Réessayez.' }, 502); }
+    }
+    if (action === 'checkout' && dodoEnabled()) {
+      if (!product || !(product in GRANTS)) return json({ error: 'Unknown product' }, 400);
+      // a running Dodo plan is managed from Dodo's portal (no second subscription)
+      if (onDodo && dd?.plan && dd.plan !== 'free' && GRANTS[product].plan && dd.dodo_customer_id) {
+        try { return json({ url: await dodoPortal(dd.dodo_customer_id) }); } catch { /* falls through to a new checkout */ }
+      }
+      try {
+        const back = typeof body.return_to === 'string' && /^\/app\/[A-Za-z0-9/_-]*(\?[A-Za-z0-9=&_-]*)?$/.test(body.return_to) ? body.return_to : '/app/billing';
+        const url = await dodoCheckout(admin, { userId: user.id, email: user.email, customerId: dd?.dodo_customer_id ?? null, product,
+          returnUrl: `${appUrl}${back}${back.includes('?') ? '&' : '?'}checkout=success` });
+        return json({ url });
+      } catch (e) {
+        console.error('dodo checkout', e instanceof Error ? e.message : e);
+        return json({ error: 'Le paiement n’a pas pu démarrer. Réessayez dans un instant.' }, 502);
+      }
     }
 
     // Paddle (secret BILLING_PROVIDER=paddle, merchant of record): /pay opens Paddle's checkout for a transaction made here

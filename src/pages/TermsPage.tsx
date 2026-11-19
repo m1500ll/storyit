@@ -45,7 +45,7 @@ export default function TermsPage() {
         </S>
         <S title="5. Plans, credits and payment">
           <p>Paid plans and credit packs are described on the <Link to="/pricing">pricing page</Link>. Subscriptions renew automatically each month or year until cancelled; they can be cancelled at any time from Billing and stop at the end of the paid period.</p>
-          <p>Our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of Record for all our orders. Paddle provides all customer service inquiries and handles returns. Some payments may also be processed by our other payment providers (Whop and Stripe).</p>
+          <p>Payments are processed by our payment partners: Dodo Payments, which acts as the Merchant of Record for the orders it processes (it handles payment, sales tax and invoices), and Whop. Card details are never stored by Storyit.</p>
           <p>Refunds: see our <Link to="/refunds">Refund Policy</Link> (14-day money-back guarantee).</p>
         </S>
         <S title="6. Availability and liability">

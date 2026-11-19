@@ -30,7 +30,7 @@ const PROCESSORS = [
   ['Resend', 'Account and product emails', 'resend.com/legal/privacy-policy'],
   ['Google (Sign-In)', 'Only if you choose “Continue with Google”', 'policies.google.com/privacy'],
   ['Whop', 'Payments, invoices and subscriptions', 'whop.com/privacy'],
-  ['Paddle', 'Payments, invoices, subscriptions and sales tax (merchant of record)', 'paddle.com/legal/privacy'],
+  ['Dodo Payments', 'Payments, invoices, subscriptions and sales tax (merchant of record)', 'dodopayments.com/privacy-policy'],
   ['Stripe', 'Payments, invoices and subscriptions', 'stripe.com/privacy'],
   ['TikTok', 'Only if you connect a TikTok account: login and publishing of the videos you approve', 'www.tiktok.com/legal/privacy-policy'],
   ['Meta (Instagram)', 'Only if you connect an Instagram account: login and publishing of the Reels you approve', 'privacycenter.instagram.com/policy'],

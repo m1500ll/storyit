@@ -40,7 +40,7 @@ export default function RefundPage() {
           <p>Once a payment is refunded, the plan or the credits bought with it are removed from your account. The free credits given at sign-up stay yours. Videos you already downloaded remain yours.</p>
         </S>
         <S title="5. Who processes payments">
-          <p>Our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of Record for all our orders and handles refunds and billing questions together with us. Your statutory consumer rights are not affected. See also our <Link to="/terms">Terms of Service</Link>.</p>
+          <p>Payments are processed by our payment partners (Dodo Payments, as Merchant of Record, and Whop), who send the refund back to your payment method. Your statutory consumer rights are not affected. See also our <Link to="/terms">Terms of Service</Link>.</p>
         </S>
       </main>
       <SeoFooter lang="en" />

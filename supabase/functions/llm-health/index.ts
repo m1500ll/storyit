@@ -114,6 +114,13 @@ Deno.serve(async (req) => {
     }
     return json({ apply, count: out.length, subscriptions: out });
   }
+  if (url.searchParams.get('dodo_setup') === '1') { // operator: finds or creates the Dodo products and webhook
+    const { createClient } = await import('npm:@supabase/supabase-js@2');
+    const { setupDodo } = await import('../_shared/dodo.ts');
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    try { return json({ ok: true, ...(await setupDodo(admin, `${Deno.env.get('SUPABASE_URL')}/functions/v1/dodo-webhook`)), provider: Deno.env.get('BILLING_PROVIDER') ?? 'stripe' }); }
+    catch (e) { return json({ ok: false, error: e instanceof Error ? e.message : String(e) }); }
+  }
   if (url.searchParams.get('paddle_setup') === '1') { // operator: finds or creates the Paddle products/prices/webhook/client token
     const { createClient } = await import('npm:@supabase/supabase-js@2');
     const { setupPaddle } = await import('../_shared/paddle.ts');
@@ -172,6 +179,20 @@ Deno.serve(async (req) => {
       out.test_event = await W.whopApi(`/webhooks/${hook}/test`, { body: { event: 'payment.succeeded' } });
     } catch (e) { out.test_error = e instanceof Error ? e.message : String(e); }
     return json(out);
+  }
+  const dp = url.searchParams.get('dodo_api'); // operator: one Dodo Payments API call (live; &dodo_env=test for test mode)
+  if (dp && /^\/[\w\-/?=&.,%]*$/.test(dp)) {
+    const method = url.searchParams.get('dodo_method') ?? 'GET';
+    const body = method === 'GET' ? undefined : await req.text();
+    const host = url.searchParams.get('dodo_env') === 'test' ? 'https://test.dodopayments.com' : 'https://live.dodopayments.com';
+    const r = await fetch(`${host}${dp}`, { method, body: body || undefined, signal: AbortSignal.timeout(20_000),
+      headers: { Authorization: `Bearer ${Deno.env.get('DODO_API_KEY')}`, 'Content-Type': 'application/json' } });
+    return new Response(await r.text(), { status: r.status, headers: { 'Content-Type': 'application/json' } });
+  }
+  const ddoc = url.searchParams.get('dodo_doc'); // operator: a page of Dodo's public docs (blocked by the session's network)
+  if (ddoc && /^https:\/\/docs\.dodopayments\.com\/[\w./-]*$/.test(ddoc)) {
+    const r = await fetch(ddoc, { signal: AbortSignal.timeout(20_000) });
+    return new Response((await r.text()).slice(0, 2_000_000), { status: r.status, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }
   const pp = url.searchParams.get('paddle_api'); // operator: one Paddle API call (the session's network blocks api.paddle.com)
   if (pp && /^\/[\w\-/?=&.,%]*$/.test(pp)) {
