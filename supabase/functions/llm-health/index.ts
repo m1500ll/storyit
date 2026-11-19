@@ -121,6 +121,17 @@ Deno.serve(async (req) => {
     try { return json({ ok: true, ...(await setupWhop(admin, `${Deno.env.get('SUPABASE_URL')}/functions/v1/whop-webhook`)), provider: Deno.env.get('BILLING_PROVIDER') ?? 'stripe' }); }
     catch (e) { return json({ ok: false, error: e instanceof Error ? e.message : String(e), has_key: !!Deno.env.get('WHOP_API_KEY') }); }
   }
+  if (url.searchParams.get('whop_fix_profile') === '1') { // operator: aligns the Whop profile with the business licence
+    const W = await import('../_shared/whop.ts');
+    try {
+      const me = await W.whopApi('/accounts/me');
+      const aid = me.id ?? (await W.setting((await import("npm:@supabase/supabase-js@2")).createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!), "whop_account_id"));
+      return json(await W.whopApi(`/accounts/${aid}`, { method: "PATCH", body: {
+        title: 'ETO Core - F.Z.E', business_name: 'ETO Core - F.Z.E', country: 'ae',
+        business_address: { line1: 'Office C1 - 1F - SF20258', line2: 'Ajman Free Zone C1 Building', city: 'Ajman', state: 'AJ', postal_code: '00000', country: 'AE' },
+      } }));
+    } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
+  }
   if (url.searchParams.get('whop_account') === '1') { // operator: the Whop account as Whop sees it (names, verification state)
     const W = await import('../_shared/whop.ts');
     try { return json(await W.whopApi('/accounts/me')); } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
