@@ -29,6 +29,7 @@ const PROCESSORS = [
   ['Modal', 'Video rendering, editing and translation servers', 'modal.com/legal/privacy-policy'],
   ['Resend', 'Account and product emails', 'resend.com/legal/privacy-policy'],
   ['Google (Sign-In)', 'Only if you choose “Continue with Google”', 'policies.google.com/privacy'],
+  ['Whop', 'Payments, invoices and subscriptions', 'whop.com/privacy'],
   ['Stripe', 'Payments, invoices and subscriptions', 'stripe.com/privacy'],
   ['TikTok', 'Only if you connect a TikTok account: login and publishing of the videos you approve', 'www.tiktok.com/legal/privacy-policy'],
   ['Meta (Instagram)', 'Only if you connect an Instagram account: login and publishing of the Reels you approve', 'privacycenter.instagram.com/policy'],
@@ -66,7 +67,7 @@ export default function PrivacyPage() {
           <ul>
             <li><strong>Account data</strong> — your email address, a display name, and your password (stored only as a secure hash by our authentication provider). If you sign in with Google, we receive your name, email address and profile picture from Google.</li>
             <li><strong>Content you create</strong> — your story ideas, selected concepts, characters, scenes, prompts, edits and approvals.</li>
-            <li><strong>Credits & billing</strong> — your plan, Story Credit balance and transaction history. Payments are handled by Stripe: <strong>we never see or store your card number</strong>. We keep the Stripe customer identifier linked to your account.</li>
+            <li><strong>Credits & billing</strong> — your plan, Story Credit balance and transaction history. Payments are handled by Whop and Stripe: <strong>we never see or store your card number</strong>. We keep their customer and subscription identifiers linked to your account.</li>
             <li><strong>Videos you import</strong> — the video files you upload to your library, their title, notes and tags, and the captions and schedule you set for each post.</li>
             <li><strong>Connected social accounts</strong> — see section 6.</li>
             <li><strong>Technical data</strong> — standard server logs (IP address, browser, timestamps, errors) kept by our hosting providers for security and debugging.</li>
@@ -117,7 +118,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section id="storage" title="7. Cookies & local storage">
-          <p>We use only what is strictly necessary for the service to work: your browser stores a login session token (local storage) so you stay signed in. Stripe sets its own cookies on its payment pages to prevent fraud.</p>
+          <p>We use only what is strictly necessary for the service to work: your browser stores a login session token (local storage) so you stay signed in. Our payment providers (Whop, Stripe) set their own cookies on their payment pages to prevent fraud.</p>
           <p>We do not use advertising or cross-site tracking cookies. If we add analytics in the future, we will ask for your consent first where the law requires it.</p>
         </Section>
 

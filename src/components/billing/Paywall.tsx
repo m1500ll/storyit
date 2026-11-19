@@ -111,7 +111,7 @@ function VideoTrialSheet({ need, returnTo, onClose, onMore }: { need: number; re
           Créer ma vidéo pour {TRIAL.price} $ <ArrowRight className="h-4 w-4" aria-hidden />
         </Button>
         {error && <p className="relative mt-2 text-xs text-coral-300" aria-live="polite">{error}</p>}
-        <p className="relative mt-2 text-[11px] text-zinc-500">Paiement sécurisé par Stripe · carte, Apple Pay</p>
+        <p className="relative mt-2 text-[11px] text-zinc-500">Paiement sécurisé · carte, Apple Pay, Google Pay</p>
         <div className="relative mt-4 flex items-center justify-center gap-4 text-xs">
           <button type="button" onClick={onMore} className="touch-hit rounded text-violet-300 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">Voir toutes les offres</button>
           <button type="button" onClick={onClose} className="touch-hit rounded text-zinc-500 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">Plus tard</button>

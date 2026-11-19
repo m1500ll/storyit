@@ -153,7 +153,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
       )}
       {error && <p role="alert" className="mt-3 text-xs text-coral-300">{error}</p>}
       <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-zinc-500">
-        <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" aria-hidden />Paiement sécurisé par Stripe</span>
+        <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" aria-hidden />Paiement sécurisé</span>
         <span>Carte, Apple Pay ou Google Pay</span>
         <span>Résiliable en 1 clic</span>
         <span>Crédits disponibles tout de suite</span>

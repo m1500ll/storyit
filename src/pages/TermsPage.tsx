@@ -44,7 +44,7 @@ export default function TermsPage() {
           </ul>
         </S>
         <S title="5. Plans, credits and payment">
-          <p>Paid plans and credit packs are described on the pricing page. Payments are processed by Stripe. Subscriptions can be cancelled at any time and stop at the end of the paid period.</p>
+          <p>Paid plans and credit packs are described on the pricing page. Payments are processed by our payment providers (Whop and Stripe). Subscriptions can be cancelled at any time and stop at the end of the paid period.</p>
         </S>
         <S title="6. Availability and liability">
           <p>We do our best to keep the service available and your data safe, but the service is provided “as is”. To the extent permitted by law, we are not liable for indirect losses (such as lost revenue or audience), or for decisions made by third-party platforms. Nothing here limits your statutory consumer rights.</p>
