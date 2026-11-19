@@ -26,7 +26,7 @@ async function callJson<T>(body: Record<string, unknown>): Promise<T> {
 
 /** New payments are paused (no payment provider can pay out right now): every payment button opens the maintenance
  *  notice instead of a checkout. The billing function also refuses checkouts while the secret BILLING_PAUSED=true. */
-export const PAYMENTS_PAUSED = true;
+export const PAYMENTS_PAUSED = false;
 export const PAYMENTS_PAUSED_EVENT = 'storyit:payments-paused';
 
 export type TrialStatus = { trialing: boolean; trial_end: number | null; product: 'creator' | 'pro' | 'studio' | null };
