@@ -114,6 +114,18 @@ Deno.serve(async (req) => {
     }
     return json({ apply, count: out.length, subscriptions: out });
   }
+  if (url.searchParams.get('whop_setup') === '1') { // operator: finds or creates the Whop account/product/webhook (needs WHOP_API_KEY)
+    const { createClient } = await import('npm:@supabase/supabase-js@2');
+    const { setupWhop } = await import('../_shared/whop.ts');
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    try { return json({ ok: true, ...(await setupWhop(admin, `${Deno.env.get('SUPABASE_URL')}/functions/v1/whop-webhook`)), provider: Deno.env.get('BILLING_PROVIDER') ?? 'stripe' }); }
+    catch (e) { return json({ ok: false, error: e instanceof Error ? e.message : String(e), has_key: !!Deno.env.get('WHOP_API_KEY') }); }
+  }
+  const doc = url.searchParams.get('doc'); // operator: reads a page of Whop's public developer docs (the session's network blocks it)
+  if (doc && (/^https:\/\/docs\.whop\.com\/[\w./-]*$/.test(doc) || doc === "https://api.whop.com/api/v1/openapi.json")) {
+    const r = await fetch(doc, { signal: AbortSignal.timeout(20_000) });
+    return new Response((await r.text()).slice(0, 12_000_000), { status: r.status, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  }
   if (url.searchParams.get('stripe_risk') === '1') { // operator: charges (with Radar outcome), fraud warnings and disputes of the new account
     const key = Deno.env.get('STRIPE_SECRET_KEY_NEW') ?? Deno.env.get('STRIPE_SECRET_KEY');
     const get = async (p: string) => (await (await fetch(`https://api.stripe.com/v1/${p}`, { headers: { Authorization: `Bearer ${key}` } })).json());

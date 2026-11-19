@@ -11,6 +11,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { GRANTS, isTopupAmount, TOPUP, TRIAL } from '../_shared/stripe.ts';
 import { accountEnv, accountOf, newCustomersAccount, stripeOn, type StripeAccount } from '../_shared/stripeAccount.ts';
+import { whopCheckout, whopEnabled } from '../_shared/whop.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -137,6 +138,35 @@ Deno.serve(async (req) => {
         amount: s.amount_total, currency: s.currency, methods: s.payment_method_types, locale: s.locale,
         recovered: Boolean(s.recovered_from), user: s.client_reference_id ?? null,
       })) });
+    }
+
+    // Whop (secret BILLING_PROVIDER=whop): checkout pages, "manage" link and trial status come from Whop
+    const { data: wp } = await admin.from('profiles').select('plan, trial_used, trial_ends_at, billing_provider, whop_manage_url, whop_product').eq('id', user.id).single();
+    const onWhop = wp?.billing_provider === 'whop';
+    if (onWhop && action === 'status') {
+      const trialing = !!wp?.trial_ends_at && Date.parse(wp.trial_ends_at) > Date.now();
+      return json({ trialing, trial_end: trialing ? Math.floor(Date.parse(wp!.trial_ends_at!) / 1000) : null, product: trialing ? (wp?.whop_product ?? 'creator') : null });
+    }
+    if (onWhop && action === 'portal') {
+      if (!wp?.whop_manage_url) return json({ error: 'Gère ton abonnement depuis ton compte Whop (whop.com, rubrique « Mes achats »).' }, 409);
+      return json({ url: wp.whop_manage_url });
+    }
+    if (onWhop && action === 'end_trial') return json({ error: 'Ton essai passe automatiquement à l’offre complète à la fin des 3 jours. Pour changer d’offre, utilise « Gérer la facturation ».' }, 409);
+    if (action === 'checkout' && whopEnabled()) {
+      if (!product || !(product in GRANTS)) return json({ error: 'Unknown product' }, 400);
+      // a running Whop plan is changed from Whop's own page (no second subscription)
+      if (onWhop && wp?.plan && wp.plan !== 'free' && GRANTS[product].plan && wp.whop_manage_url) return json({ url: wp.whop_manage_url });
+      try {
+        const back = typeof body.return_to === 'string' && /^\/app\/[A-Za-z0-9/_-]*(\?[A-Za-z0-9=&_-]*)?$/.test(body.return_to) ? body.return_to : '/app/billing';
+        const url = await whopCheckout(admin, {
+          userId: user.id, email: user.email, product, trial: trial === true && !wp?.trial_used && (wp?.plan ?? 'free') === 'free',
+          redirect: `${appUrl}${back}${back.includes('?') ? '&' : '?'}checkout=success`, trialDays: TRIAL.days, trialFee: TRIAL.feeCents / 100,
+        });
+        return json({ url });
+      } catch (e) {
+        console.error('whop checkout', e instanceof Error ? e.message : e);
+        return json({ error: 'Le paiement n’a pas pu démarrer. Réessayez dans un instant.' }, 502);
+      }
     }
 
     // Get or create the Stripe customer for this user.
