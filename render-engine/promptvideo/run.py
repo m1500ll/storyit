@@ -93,6 +93,16 @@ def keep(uid, key, ext, data, mime):
         print("cache write skipped", e, flush=True)
 
 
+def remove(bucket, paths):
+    """deletes storage files (best effort: storage space is a saving, never a reason to fail)"""
+    paths = [p for p in paths if p]
+    for i in range(0, len(paths), 100):
+        try:
+            sb("DELETE", f"/storage/v1/object/{bucket}", {"prefixes": paths[i:i + 100]})
+        except Exception as e:
+            print("cleanup skipped", e, flush=True)
+
+
 def signed(bucket, path, seconds=3 * 3600):
     out = sb("POST", f"/storage/v1/object/sign/{bucket}/{path}", {"expiresIn": seconds})
     return SB + "/storage/v1" + out["signedURL"]
@@ -515,6 +525,11 @@ def produce(job):
         setjob(jid, status="done", step="done", progress=100, video_path=path, asset_id=aid,
                cover_path=f"{base}/cover.png" if cover else None, finished_at=now())
         log(jid, f"done in {(time.time() - t0) / 60:.1f} min")
+        # the video is in the library: its frames and clips (and their cache copies, only useful for a relaunch after a
+        # failure) are no longer needed. The character sheet stays cached: the next video of the same cast reuses it.
+        clip_keys = [key_of("clip", plan["video_model"], plan["resolution"], int(c["seconds"]), c["grok_prompt"], frame_keys[i])
+                     for i, c in enumerate(plan["clips"])]
+        remove("renders", [f"{uid}/pvcache/{k}.png" for k in frame_keys] + [f"{uid}/pvcache/{k}.mp4" for k in clip_keys])
     except Exception as e:
         detail = (traceback.format_exc() + (getattr(e, "stderr", b"") or b"").decode(errors="replace")[-1500:])[-4000:]
         log(jid, "FAILED", detail)
@@ -528,6 +543,8 @@ def produce(job):
             except Exception as e2:
                 log(jid, "REFUND FAILED", e2)
     finally:
+        remove("renders", [f"{base}/sheet.png"] + [f"{base}/img{i}.png" for i in range(len(plan.get("clips") or []))]
+               + [f"{base}/clip{i}.mp4" for i in range(len(plan.get("clips") or []))])
         shutil.rmtree(tmp, ignore_errors=True)
 
 
