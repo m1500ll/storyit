@@ -8,13 +8,15 @@ import { ThemeProvider } from '@/lib/theme';
 import LandingPage from '@/pages/LandingPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import TermsPage from '@/pages/TermsPage';
+import RefundPage from '@/pages/RefundPage';
+import PricingPage from '@/pages/PricingPage';
 import SeoPage from '@/pages/SeoPage';
 import { SEO_PAGES } from '@/data/seoPages';
 import { faqs as FAQS, faqsFr } from '@/components/landing/FAQ';
 import { SHOWCASE, SHOWCASE_FRUIT, posterSrc, videoSrc } from '@/data/showcase';
 
 const PAGES: Record<string, (props: Record<string, never>) => JSX.Element> = {
-  '/': () => <LandingPage lang="fr" />, '/en': () => <LandingPage lang="en" />, '/privacy': PrivacyPage, '/terms': TermsPage,
+  '/': () => <LandingPage lang="fr" />, '/en': () => <LandingPage lang="en" />, '/privacy': PrivacyPage, '/terms': TermsPage, '/refunds': RefundPage, '/pricing': PricingPage,
   ...Object.fromEntries(SEO_PAGES.map((p) => [p.path, () => <SeoPage page={p} />])),
 };
 export const ROUTES = Object.keys(PAGES);
@@ -42,6 +44,8 @@ export function pageMeta(route: string, site: string): { title: string; descript
   if (route === '/') return { ...HOME_META_FR, lang: 'fr', alternates: homeAlts, jsonLd: homeJsonLd(site, 'fr') };
   if (route === '/en') return { ...HOME_META, lang: 'en', alternates: homeAlts, jsonLd: homeJsonLd(site, 'en') };
   if (route === '/privacy') return { title: 'Privacy Policy — Storyit', description: 'How Storyit collects, uses and protects your data.', lang: 'en', alternates: [], jsonLd: [] };
+  if (route === '/refunds') return { title: 'Refund Policy — Storyit', description: 'How to cancel a Storyit plan and get a refund (14-day money-back guarantee).', lang: 'en', alternates: [], jsonLd: [] };
+  if (route === '/pricing') return { title: 'Pricing — Storyit', description: 'Storyit plans and credit packs. Start free with 3,000 credits.', lang: 'en', alternates: [], jsonLd: [] };
   if (route === '/terms') return { title: 'Terms of Service — Storyit', description: 'The terms that apply when you use Storyit.', lang: 'en', alternates: [], jsonLd: [] };
   const p = SEO_PAGES.find((x) => x.path === route)!;
   const alternates = p.alt ? [{ lang: p.lang, href: site + p.path }, { lang: p.lang === 'fr' ? 'en' : 'fr', href: site + p.alt }, { lang: 'x-default', href: site + (p.lang === 'en' ? p.path : p.alt) }] : [];

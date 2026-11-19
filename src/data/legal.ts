@@ -4,11 +4,11 @@
  */
 export const LEGAL = {
   product: 'Storyit',
-  controller: 'Hamza Boudouaia',
-  address: 'Four Tower, Business Bay, Dubai, United Arab Emirates',
+  controller: 'ETO Core - F.Z.E',
+  address: 'Office C1 - 1F - SF20258, Ajman Free Zone C1 Building, Ajman, United Arab Emirates',
   contactEmail: 'etook0.pro@gmail.com',
   supervisoryAuthority: { name: 'CNIL', url: 'https://www.cnil.fr' },
-  lastUpdated: '2026-11-13',
+  lastUpdated: '2026-11-19',
   website: 'https://storyit.fun',
   /** Set to true once the Gemini API key is on a paid (billing-enabled) Google project. */
   geminiPaidTier: false,

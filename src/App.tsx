@@ -16,6 +16,8 @@ const AuthPage = lazy(() => import('@/pages/AuthPage'));
 const SeoPage = lazy(() => import('@/pages/SeoPage'));
 const PrivacyPage = lazy(() => import('@/pages/PrivacyPage'));
 const TermsPage = lazy(() => import('@/pages/TermsPage'));
+const RefundPage = lazy(() => import('@/pages/RefundPage'));
+const PricingPage = lazy(() => import('@/pages/PricingPage'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'));
 const PromptStudioPage = lazy(() => import('@/pages/PromptStudioPage'));
@@ -55,6 +57,8 @@ export default function App() {
             {SEO_PAGES.map((p) => <Route key={p.path} path={p.path} element={<SeoPage page={p} />} />)}
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
+            <Route path="/refunds" element={<RefundPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/partner/:secret" element={<PartnerPage />} />
             <Route path="/app" element={<RequireAuth><AppShell /></RequireAuth>}>

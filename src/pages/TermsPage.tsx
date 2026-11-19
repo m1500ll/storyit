@@ -24,7 +24,7 @@ export default function TermsPage() {
         <h1 className="mt-3 font-display text-5xl text-zinc-50">Terms of Service</h1>
         <p className="mt-3 text-sm text-zinc-500">Last updated: {new Date(LEGAL.lastUpdated).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
         <S title="1. The service">
-          <p>{LEGAL.product} ({LEGAL.website}) is operated by <strong><F v={LEGAL.controller} /></strong>, <F v={LEGAL.address} />. It lets you store your videos, prepare captions, and schedule and publish them to the TikTok and Instagram accounts you connect. An AI episode studio is offered in beta.</p>
+          <p>{LEGAL.product} ({LEGAL.website}) is operated by <strong><F v={LEGAL.controller} /></strong>, <F v={LEGAL.address} />. It is an online service that creates short vertical videos with AI (story, characters, voices, subtitles and music), turns long videos into short clips, translates videos, and lets you schedule and publish them to the TikTok and Instagram accounts you connect.</p>
         </S>
         <S title="2. Your account">
           <p>You must provide accurate information and keep your password safe. You are responsible for the activity on your account and on the social accounts you connect.</p>
@@ -44,7 +44,9 @@ export default function TermsPage() {
           </ul>
         </S>
         <S title="5. Plans, credits and payment">
-          <p>Paid plans and credit packs are described on the pricing page. Payments are processed by our payment providers (Whop and Stripe). Subscriptions can be cancelled at any time and stop at the end of the paid period.</p>
+          <p>Paid plans and credit packs are described on the <Link to="/pricing">pricing page</Link>. Subscriptions renew automatically each month or year until cancelled; they can be cancelled at any time from Billing and stop at the end of the paid period.</p>
+          <p>Our order process is conducted by our online reseller Paddle.com. Paddle.com is the Merchant of Record for all our orders. Paddle provides all customer service inquiries and handles returns. Some payments may also be processed by our other payment providers (Whop and Stripe).</p>
+          <p>Refunds: see our <Link to="/refunds">Refund Policy</Link> (14-day money-back guarantee).</p>
         </S>
         <S title="6. Availability and liability">
           <p>We do our best to keep the service available and your data safe, but the service is provided “as is”. To the extent permitted by law, we are not liable for indirect losses (such as lost revenue or audience), or for decisions made by third-party platforms. Nothing here limits your statutory consumer rights.</p>
