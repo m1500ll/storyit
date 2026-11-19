@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { Button, Card, LoadState, PageHeader } from '@/components/ui';
 import { useProfile } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
+import { MemberHistory } from '@/components/admin/MemberHistory';
 import { adminStats, type AdminMember, type AdminStats, type MemberStatus } from '@/services/adminStats';
 import { formatCredits } from '@/services/credits';
 
@@ -70,6 +71,7 @@ export default function AdminDashboardPage() {
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState<'all' | MemberStatus>('all');
   const [q, setQ] = useState('');
+  const [open, setOpen] = useState<AdminMember | null>(null);
   const [, tick] = useState(0);
 
   const load = useCallback(async () => {
@@ -139,12 +141,13 @@ export default function AdminDashboardPage() {
                 <ul className="mt-4 divide-y divide-line/5 md:hidden">
                   {members.map((m) => (
                     <li key={m.id} className="py-3">
-                      <div className="flex items-start justify-between gap-2"><p className="min-w-0 break-all text-sm font-medium text-zinc-100">{m.email}</p><StatusBadge m={m} /></div>
+                      <div className="flex items-start justify-between gap-2"><button type="button" onClick={() => setOpen(m)} className="min-w-0 break-all rounded text-left text-sm font-medium text-zinc-100 underline decoration-zinc-600 underline-offset-2 hover:text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">{m.email}</button><StatusBadge m={m} /></div>
                       <p className="mt-1 text-xs text-zinc-500">{payLine(m)}</p>
                       {m.onboarding && <p className="mt-0.5 text-[11px] text-violet-300/80">{onboardingLine(m)}</p>}
-                      <p className="mt-1.5 grid grid-cols-3 gap-2 text-xs text-zinc-400">
+                      <p className="mt-1.5 grid grid-cols-4 gap-2 text-xs text-zinc-400">
                         <span><span className="block text-[10px] text-zinc-500">Payé</span><span className="tabular-nums text-zinc-200">{m.paidCents ? usd(m.paidCents) : '—'}</span></span>
                         <span><span className="block text-[10px] text-zinc-500">Crédits</span><span className="tabular-nums text-zinc-200">{formatCredits(m.credits)}</span></span>
+                        <span><span className="block text-[10px] text-zinc-500">Utilisés</span><span className="tabular-nums text-zinc-200">{formatCredits(m.spent)}</span></span>
                         <span><span className="block text-[10px] text-zinc-500">Vidéos</span><span className="tabular-nums text-zinc-200">{m.videos}</span></span>
                       </p>
                       <p className="mt-1.5 text-[11px] text-zinc-500">Inscrit le {day(m.signedUpAt)} · actif {ago(m.lastActivityAt)}{m.partner ? ` · partenaire ${m.partner}` : ''}</p>
@@ -156,17 +159,17 @@ export default function AdminDashboardPage() {
                   <table className="w-full min-w-[880px] text-left text-sm">
                     <thead className="label"><tr>
                       <th className="pb-3 pr-3 font-medium">Membre</th><th className="pb-3 pr-3 font-medium">Statut</th><th className="pb-3 pr-3 text-right font-medium">Payé</th>
-                      <th className="pb-3 pr-3 text-right font-medium">Crédits</th><th className="pb-3 pr-3 text-right font-medium">Dépensés</th><th className="pb-3 pr-3 text-right font-medium">Vidéos</th>
+                      <th className="pb-3 pr-3 text-right font-medium">Crédits</th><th className="pb-3 pr-3 text-right font-medium" title="Débités moins rendus après une vidéo ratée">Utilisés</th><th className="pb-3 pr-3 text-right font-medium">Vidéos</th>
                       <th className="pb-3 pr-3 font-medium">Inscrit</th><th className="pb-3 font-medium">Dernière activité</th>
                     </tr></thead>
                     <tbody className="divide-y divide-line/5">
                       {members.map((m) => (
                         <tr key={m.id} className="align-top">
-                          <td className="max-w-[260px] py-2.5 pr-3"><p className="truncate text-zinc-100" title={m.email}>{m.email}</p><p className="text-[11px] text-zinc-500">{payLine(m)}{m.partner ? ` · via ${m.partner}` : ''}</p>{m.onboarding && <p className="text-[11px] text-violet-300/80">{onboardingLine(m)}</p>}</td>
+                          <td className="max-w-[260px] py-2.5 pr-3"><button type="button" onClick={() => setOpen(m)} title={`Voir l’historique des crédits de ${m.email}`} className="block max-w-full truncate rounded text-left text-zinc-100 underline decoration-zinc-600 underline-offset-2 hover:text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50">{m.email}</button><p className="text-[11px] text-zinc-500">{payLine(m)}{m.partner ? ` · via ${m.partner}` : ''}</p>{m.onboarding && <p className="text-[11px] text-violet-300/80">{onboardingLine(m)}</p>}</td>
                           <td className="py-2.5 pr-3"><StatusBadge m={m} /></td>
                           <td className="py-2.5 pr-3 text-right tabular-nums text-zinc-200">{m.paidCents ? usd(m.paidCents) : '—'}</td>
                           <td className="py-2.5 pr-3 text-right tabular-nums text-zinc-200">{formatCredits(m.credits)}</td>
-                          <td className="py-2.5 pr-3 text-right tabular-nums text-zinc-400">{formatCredits(m.spent)}</td>
+                          <td className="py-2.5 pr-3 text-right tabular-nums"><button type="button" onClick={() => setOpen(m)} className="rounded tabular-nums text-zinc-400 underline decoration-zinc-700 underline-offset-2 hover:text-violet-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50" aria-label={`Historique des crédits de ${m.email}`}>{formatCredits(m.spent)}</button></td>
                           <td className="py-2.5 pr-3 text-right tabular-nums text-zinc-400">{m.videos}</td>
                           <td className="py-2.5 pr-3 text-zinc-400">{day(m.signedUpAt)}</td>
                           <td className="py-2.5 text-zinc-400">{ago(m.lastActivityAt)}</td>
@@ -207,6 +210,7 @@ export default function AdminDashboardPage() {
           </div>
         </>
       )}
+      {open && <MemberHistory member={open} onClose={() => setOpen(null)} />}
     </>
   );
 }

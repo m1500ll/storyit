@@ -51,6 +51,26 @@ Deno.serve(async (req) => {
     if (!me?.is_admin) return json({ error: 'Réservé à l’administrateur.' }, 403);
   }
 
+  // one member's full credit history (the dashboard's member sheet)
+  const body = await req.json().catch(() => ({}));
+  if (typeof body?.history === 'string' && /^[0-9a-f-]{36}$/.test(body.history)) {
+    const [{ data: rows, error }, { data: prof }] = await Promise.all([
+      admin.from('credit_transactions').select('created_at, type, amount, balance_after, description').eq('user_id', body.history).order('created_at', { ascending: false }).limit(2000),
+      admin.from('profiles').select('credit_balance').eq('id', body.history).maybeSingle(),
+    ]);
+    if (error) return json({ error: error.message }, 500);
+    const tx = (rows ?? []).map((r: any) => ({ at: Date.parse(r.created_at), type: r.type, amount: r.amount, balanceAfter: r.balance_after ?? null, description: r.description ?? '' }));
+    const sum = (f: (t: any) => boolean) => tx.filter(f).reduce((s: number, t: any) => s + t.amount, 0);
+    const taken = -sum((t) => t.type === 'consumption');
+    const refunded = sum((t) => t.type === 'refund');
+    return json({
+      balance: prof?.credit_balance ?? 0,
+      received: sum((t) => t.amount > 0 && t.type !== 'refund'),
+      taken, refunded, used: taken - refunded,
+      transactions: tx,
+    });
+  }
+
   const [usersRes, profilesRes, txRes, animRes, pvRes, dubRes, affRes, invOld, invNew, subOld, subNew] = await Promise.all([
     admin.auth.admin.listUsers({ perPage: 1000 }),
     admin.from('profiles').select('id, plan, credit_balance, trial_used, trial_ends_at, affiliate_id, stripe_customer_id, marketing_opt_out, is_admin, onboarding'),
@@ -108,7 +128,9 @@ Deno.serve(async (req) => {
   const spent = new Map<string, number>(); const lastAct = new Map<string, number>();
   for (const t of txRes.data ?? []) {
     const at = Date.parse(t.created_at);
+    // credits really used: what was taken, minus what came back when a video failed (refund)
     if (t.type === 'consumption') spent.set(t.user_id, (spent.get(t.user_id) ?? 0) - t.amount);
+    if (t.type === 'refund') spent.set(t.user_id, (spent.get(t.user_id) ?? 0) - t.amount);
     if (t.type === 'consumption') lastAct.set(t.user_id, Math.max(lastAct.get(t.user_id) ?? 0, at));
   }
   const videos = new Map<string, number>();
