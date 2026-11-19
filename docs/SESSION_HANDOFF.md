@@ -160,3 +160,10 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 - Reminder e-mails (`mailing` → `nudges`, hourly cron `storyit-nudges`, migration 0051): nudge_video_1 (2 h after a story without video), nudge_video_2 (+24 h), nudge_start_1 (24 h after sign-up, nothing made). LIVE since Nov 18 (secret NUDGES_LIVE=on); first run sent 13. Dry run: `{"nudges":{"dry":true}}`.
 - Google Pay on (new Stripe account). Wow moments: WelcomeIntro (once, accounts < 3 days) and StoryTrailer on the project page (no AI cost).
 - Owner refused: free first video (cost), landing page changes for partner traffic.
+
+## Payments, Nov 19 2026
+- **$1 trial removed** everywhere (front `TRIAL_ENABLED=false`; billing ignores `trial` unless the secret `TRIAL_ENABLED=true`; old $1 campaigns refused by mailing). New users: 3,000 free credits, then plans at full price.
+- Stripe (new account) paused for review; Whop live for card payments (`BILLING_PROVIDER=whop`) but payouts blocked: its business verification form fails with "Failed to submit" (bug reported to Whop support).
+- **Paddle** (merchant of record) integrated and waiting for Paddle's account verification: `_shared/paddle.ts`, `paddle-webhook`, migration 0054, page `/pay` (Paddle.js overlay). Products/prices/webhook/client token created (`llm-health?paddle_setup=1`, ids in integration_settings). Operator passthrough: `llm-health?paddle_api=/path` (POST with `&paddle_method=POST` and a JSON body). Webhook tested with a Paddle simulation (signature OK). **To switch once Paddle approves: secret `BILLING_PROVIDER=paddle`**, then a real test purchase.
+- Legal: `/refunds` (14-day money-back), `/pricing`, terms with Paddle reseller wording, operator = ETO Core - F.Z.E (Ajman Free Zone address).
+- Storage cleanup: worker deletes its working frames/clips after each job (renders bucket 1.7 GB → 0.18 GB). Library (customers' final videos, ~1.5 GB) kept; Supabase Pro needed to go over 1 GB.
