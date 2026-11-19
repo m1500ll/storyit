@@ -105,7 +105,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 <tr><td>🧑‍🎤 vos <strong>propres personnages</strong>, réutilisables dans toute votre série,</td></tr>
 <tr><td>🎵 sous-titres, musique et montage automatiques,</td></tr>
 <tr><td>💸 <span style="text-decoration:line-through;color:#7a7390">45 $</span> <strong>29 $/mois</strong>, sans engagement.</td></tr></table></td></tr>
-<tr><td style="font-size:15px;line-height:1.6">Vous ne l’avez pas encore essayé ? Commencez par <strong>3 jours pour 1 $</strong> avec 7 000 crédits, résiliable en 1 clic.</td></tr>
+<tr><td style="font-size:15px;line-height:1.6">Sans engagement : vous arrêtez en 1 clic quand vous voulez.</td></tr>
 <tr><td align="center" style="padding:24px 0 8px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Passer à Creator</a></td></tr>`, unsub),
     text: (unsub) => `Bonjour,
 
@@ -116,7 +116,7 @@ Vous avez déjà commencé à créer avec Storyit, merci ! Pour aller au bout de
 - sous-titres, musique et montage automatiques,
 - 29 $/mois au lieu de 45 $, sans engagement.
 
-Vous ne l'avez pas encore essayé ? Commencez par 3 jours pour 1 $ avec 7 000 crédits, résiliable en 1 clic.
+Sans engagement : vous arrêtez en 1 clic quand vous voulez.
 
 Passer à Creator : ${APP}/app/billing?interval=month
 
@@ -154,6 +154,7 @@ L'équipe Storyit
 
 Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${unsub}`,
   },
+  // retired with the $1 trial (Nov 2026): kept for history, refused by the sender
   trial_launch: {
     subject: '🎉 Testez Storyit Creator pendant 3 jours pour 1 $',
     audience: 'free_no_trial',
@@ -319,18 +320,18 @@ const NUDGE = {
     inner: `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Ton histoire est prête 🎬</td></tr>
 <tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Storyit a écrit ton histoire <strong>« ${title} »</strong> : les dialogues et les scènes sont prêts. Il ne manque plus que la vidéo finie, avec les personnages animés, les voix, les sous-titres et la musique.</td></tr>
 <tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.7">
-<tr><td>🎁 <strong>Essai 3 jours à 1 $</strong> : 7 000 crédits, assez pour cette vidéo</td></tr>
+<tr><td>🎁 <strong>Offre Creator</strong> : 43 000 crédits par mois, de quoi créer cette vidéo et plein d’autres</td></tr>
 <tr><td>⚡ La vidéo se crée toute seule, en quelques minutes</td></tr>
-<tr><td>🔁 Résiliable en 1 clic avant la fin des 3 jours</td></tr></table></td></tr>
-<tr><td align="center" style="padding:14px 0 8px"><a href="${link}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma vidéo pour 1 $</a></td></tr>`,
-    text: `Ton histoire est prête\n\nBonjour,\n\nStoryit a écrit ton histoire « ${title} » : les dialogues et les scènes sont prêts. Il ne manque plus que la vidéo finie, avec les personnages animés, les voix, les sous-titres et la musique.\n\n- Essai 3 jours à 1 $ : 7 000 crédits, assez pour cette vidéo\n- La vidéo se crée toute seule, en quelques minutes\n- Résiliable en 1 clic avant la fin des 3 jours\n\nCréer ma vidéo pour 1 $ : ${link}`,
+<tr><td>🔁 29 $/mois, sans engagement, résiliable en 1 clic</td></tr></table></td></tr>
+<tr><td align="center" style="padding:14px 0 8px"><a href="${link}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma vidéo</a></td></tr>`,
+    text: `Ton histoire est prête\n\nBonjour,\n\nStoryit a écrit ton histoire « ${title} » : les dialogues et les scènes sont prêts. Il ne manque plus que la vidéo finie, avec les personnages animés, les voix, les sous-titres et la musique.\n\n- Offre Creator : 43 000 crédits par mois, de quoi créer cette vidéo et plein d'autres\n- La vidéo se crée toute seule, en quelques minutes\n- 29 $/mois, sans engagement, résiliable en 1 clic\n\nCréer ma vidéo : ${link}`,
   }),
   video2: (title: string, link: string) => ({
     subject: `⏳ Ta vidéo « ${title} » t’attend toujours`,
     inner: `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Ta vidéo t’attend</td></tr>
-<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Ton histoire <strong>« ${title} »</strong> est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.<br><br>L’essai à <strong>1 $</strong> te donne 7 000 crédits pendant 3 jours : de quoi la créer, et tu peux arrêter quand tu veux.</td></tr>
-<tr><td align="center" style="padding:20px 0 8px"><a href="${link}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Voir ma vidéo pour 1 $</a></td></tr>`,
-    text: `Ta vidéo t'attend\n\nBonjour,\n\nTon histoire « ${title} » est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.\n\nL'essai à 1 $ te donne 7 000 crédits pendant 3 jours : de quoi la créer, et tu peux arrêter quand tu veux.\n\nVoir ma vidéo pour 1 $ : ${link}`,
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Ton histoire <strong>« ${title} »</strong> est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.<br><br>Avec l’offre Creator (<strong>29 $/mois</strong>, 43 000 crédits), tu la crées en 1 clic, et tu peux arrêter quand tu veux.</td></tr>
+<tr><td align="center" style="padding:20px 0 8px"><a href="${link}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma vidéo</a></td></tr>`,
+    text: `Ta vidéo t'attend\n\nBonjour,\n\nTon histoire « ${title} » est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.\n\nAvec l'offre Creator (29 $/mois, 43 000 crédits), tu la crées en 1 clic, et tu peux arrêter quand tu veux.\n\nCréer ma vidéo : ${link}`,
   }),
   start1: (link: string) => ({
     subject: '✨ Ta première vidéo IA en 2 minutes',
@@ -554,6 +555,7 @@ Deno.serve(async (req) => {
   if (scheduled_at && !(Date.parse(scheduled_at) > Date.now())) return Response.json({ error: 'scheduled_at must be in the future' }, { status: 400 });
   const c = campaign ? CAMPAIGNS[campaign] : undefined;
   if (!c) return Response.json({ error: 'unknown campaign' }, { status: 400 });
+  if ((campaign === 'trial_launch' || campaign === 'trial_1dollar') && Deno.env.get('TRIAL_ENABLED') !== 'true') return Response.json({ error: 'the $1 trial is closed' }, { status: 400 });
 
   if (test_to) { // a test to one address (not logged, sent with the owner's account id for a working unsubscribe link)
     const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });

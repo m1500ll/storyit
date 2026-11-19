@@ -52,8 +52,8 @@ export function ClipFeature() {
                 </span>
               </StartLink>
               <span className="text-xs text-zinc-400 tabular-nums">
-                {fr ? `Dans tous les abonnements · ${CREDIT_COSTS.clipMinute} crédits par minute de vidéo · essai à 1 $ : 1 vidéo`
-                  : `In every plan · ${CREDIT_COSTS.clipMinute} credits per minute of video · $1 trial: 1 video`}
+                {fr ? `Dans tous les abonnements · ${CREDIT_COSTS.clipMinute} crédits par minute de vidéo`
+                  : `In every plan · ${CREDIT_COSTS.clipMinute} credits per minute of video`}
               </span>
             </div>
           </div>

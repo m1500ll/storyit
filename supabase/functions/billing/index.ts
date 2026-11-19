@@ -72,7 +72,10 @@ Deno.serve(async (req) => {
 
   try {
     const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices' | 'auto_topup' | 'customer_payments' | 'recent_payments'; product?: ProductKey; trial?: boolean; user_id?: string; enabled?: boolean; threshold?: number; credits?: number; return_to?: string };
-    const { action, product, trial } = body;
+    const { action, product } = body;
+    // the $1 trial is closed (Nov 19 2026: many $1 charges look like card testing to payment providers); set the
+    // secret TRIAL_ENABLED=true to open it again
+    const trial = body.trial === true && Deno.env.get('TRIAL_ENABLED') === 'true';
 
     // Admin: the latest checkout pages (what was picked, at what price, did it end in a payment) to study drop-off.
     if (action === 'customer_subscriptions') { // admin: a customer's Stripe subscriptions (status, plan, cancellation)

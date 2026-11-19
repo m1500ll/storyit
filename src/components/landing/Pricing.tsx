@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Gift } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { num, useLang } from '@/lib/lang';
@@ -23,10 +23,10 @@ export function Pricing() {
 
       <div className="relative mx-auto mt-8 flex max-w-3xl flex-col items-center gap-4 overflow-hidden rounded-2xl border border-violet-500/40 bg-violet-600/[0.12] px-5 py-5 text-center sm:flex-row sm:text-left">
         <div className="min-w-0 flex-1">
-          <p className="font-display text-2xl text-zinc-50">{fr ? 'Essayez tout Storyit 3 jours pour 1 $' : 'Try all of Storyit for 3 days for $1'}</p>
-          <p className="mt-1 text-sm text-zinc-300">{fr ? '7 000 crédits pour créer une vidéo complète de 30 s avec le Creative Studio. Puis l’offre mensuelle choisie, résiliable en 1 clic avant la fin de l’essai.' : '7,000 credits to make a full 30-second video with the Creative Studio. Then the monthly plan you picked, cancel in one click before the trial ends.'}</p>
+          <p className="font-display text-2xl text-zinc-50">{fr ? 'Commencez gratuitement : 3 000 crédits offerts' : 'Start free: 3,000 credits on us'}</p>
+          <p className="mt-1 text-sm text-zinc-300">{fr ? 'Sans carte bancaire : écris ta première histoire avec le Creative Studio. Passe à une offre quand tu veux créer tes vidéos, sans engagement.' : 'No card needed: write your first story with the Creative Studio. Pick a plan when you want to make your videos, cancel anytime.'}</p>
         </div>
-        <StartLink to="/app/billing?interval=month" className="shrink-0"><Button size="lg">{fr ? 'Commencer l’essai à 1 $' : 'Start the $1 trial'}</Button></StartLink>
+        <StartLink to="/app/prompts" className="shrink-0"><Button size="lg">{fr ? 'Commencer gratuitement' : 'Start free'}</Button></StartLink>
       </div>
 
       <div className="mt-8 flex justify-center">
@@ -85,13 +85,13 @@ export function Pricing() {
               </ul>
               {p.price > 0 && interval === 'month' ? (
                 <>
-                  {/* monthly plans: the $1 trial is the main action (the yearly plans have no trial) */}
+                  {/* monthly plans: the main action buys the plan directly (no trial) */}
                   <StartLink to={`/app/billing?plan=${p.id}&interval=month`} className="mt-8">
                     <Button className="h-12 w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 text-[15px] shadow-[0_10px_30px_-10px_rgba(139,92,246,0.9)] hover:brightness-110">
-                      <Gift className="h-4 w-4" aria-hidden /> {fr ? 'Essayer 3 jours pour 1 $' : 'Try 3 days for $1'} <ArrowRight className="h-4 w-4" aria-hidden />
+                      {fr ? `Choisir ${p.name}` : `Choose ${p.name}`} <ArrowRight className="h-4 w-4" aria-hidden />
                     </Button>
                   </StartLink>
-                  <p className="mt-2 text-center text-[11px] text-zinc-500">{fr ? `Puis ${usd(p.price)}/mois · résiliable en 1 clic` : `Then ${usd(p.price)}/mo · cancel in one click`}</p>
+                  <p className="mt-2 text-center text-[11px] text-zinc-500">{fr ? `${usd(p.price)}/mois · sans engagement, résiliable en 1 clic` : `${usd(p.price)}/mo · cancel anytime in one click`}</p>
                 </>
               ) : (
                 <StartLink to={p.price === 0 ? '/app' : `/app/billing?plan=${p.id}&interval=${interval}`} className="mt-8">

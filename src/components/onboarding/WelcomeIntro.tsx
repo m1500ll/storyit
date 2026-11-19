@@ -120,9 +120,10 @@ export function WelcomeIntro() {
   };
   const plan = planFor(answers);
   const canTrial = TRIAL_ENABLED && billingPlan(profile).plan === 'free' && !billingPlan(profile).trialUsed;
+  // the plan the answers point to (with the $1 trial when it is open)
   const startTrial = async () => {
     setPending(true); setError(null);
-    try { await billingService.checkout('creator', { trial: true, returnTo: '/app/prompts' }); close(); }
+    try { await billingService.checkout(canTrial ? 'creator' : plan.plan.id as 'creator' | 'pro' | 'studio', { trial: canTrial, returnTo: '/app/prompts' }); close(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Le paiement n’a pas pu démarrer.'); setPending(false); }
   };
   const toStudio = () => { close(); navigate('/app/prompts'); };
@@ -273,6 +274,16 @@ export function WelcomeIntro() {
               <p className="mt-2 text-center text-[11px] text-white/50">3 jours, {formatCredits(TRIAL.credits)} crédits (ta première vidéo complète). Résiliable en 1 clic.</p>
               {error && <p className="mt-2 text-center text-xs text-coral-300" aria-live="polite">{error}</p>}
               <button type="button" onClick={toStudio} className="touch-hit mx-auto mt-3 block rounded text-xs text-white/50 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Commencer avec mes crédits gratuits</button>
+            </>
+          ) : billingPlan(profile).plan === 'free' ? (
+            <>
+              <button type="button" onClick={() => void startTrial()} disabled={pending}
+                className="touch-hit mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-base font-semibold text-white shadow-[0_0_40px_-6px_rgba(217,70,239,0.9)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-60">
+                {pending ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Sparkles className="h-5 w-5" aria-hidden />} Commencer mon plan · {plan.plan.name} {plan.plan.price}&nbsp;$/mois
+              </button>
+              <p className="mt-2 text-center text-[11px] text-white/50">{formatCredits(plan.plan.credits)} crédits chaque mois. Sans engagement, résiliable en 1 clic.</p>
+              {error && <p className="mt-2 text-center text-xs text-coral-300" aria-live="polite">{error}</p>}
+              <button type="button" onClick={toStudio} className="touch-hit mx-auto mt-3 block rounded text-xs text-white/50 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Commencer avec mes 3 000 crédits gratuits</button>
             </>
           ) : (
             <button type="button" onClick={toStudio}

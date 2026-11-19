@@ -30,8 +30,8 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
   return (
     <PaywallContext.Provider value={open}>
       {children}
-      {state && state.reason === 'video' && TRIAL_ENABLED && billingPlan(profile).plan === 'free' && !billingPlan(profile).trialUsed && !showAll ? (
-        <VideoTrialSheet need={Math.max(0, (state.required ?? 0) - (profile?.credit_balance ?? 0))} returnTo={state.returnTo} onClose={() => setState(null)} onMore={() => setShowAll(true)} />
+      {state && state.reason === 'video' && billingPlan(profile).plan === 'free' && !showAll ? (
+        <VideoTrialSheet trial={TRIAL_ENABLED && !billingPlan(profile).trialUsed} need={Math.max(0, (state.required ?? 0) - (profile?.credit_balance ?? 0))} returnTo={state.returnTo} onClose={() => setState(null)} onMore={() => setShowAll(true)} />
       ) : state && (
         <div className="fixed inset-0 z-50 flex overscroll-contain items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Acheter des crédits ou changer d’offre">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setState(null)} />
@@ -74,7 +74,7 @@ const SUB: Record<PaywallReason, string> = {
   accounts: 'Creator connecte jusqu’à 10 comptes TikTok et Instagram, Studio n’a pas de limite.',
   library: 'Creator stocke jusqu’à 500 vidéos, Studio n’a pas de limite.',
   publications: 'Creator programme jusqu’à 2 000 publications à l’avance, Studio n’a pas de limite.',
-  clips: 'Prends une formule (ou l’essai à 1 $) pour transformer tes longues vidéos en clips.',
+  clips: 'Prends une formule pour transformer tes longues vidéos en clips.',
   clipsTrial: 'Pendant l’essai, tu peux découper 1 vidéo. Passe à l’abonnement complet pour en faire autant que tu veux.',
   video: 'Ton histoire et tes réglages sont gardés : choisis une offre et ta vidéo se lance.',
 };
@@ -83,13 +83,13 @@ export const usePaywall = () => useContext(PaywallContext);
 
 /** The money moment: the customer built a video in the wizard but lacks credits. One offer, one button (the $1
  *  trial covers a 30 s video), and Stripe brings them back to their video. The full offers stay one click away. */
-function VideoTrialSheet({ need, returnTo, onClose, onMore }: { need: number; returnTo?: string; onClose: () => void; onMore: () => void }) {
+function VideoTrialSheet({ trial, need, returnTo, onClose, onMore }: { trial: boolean; need: number; returnTo?: string; onClose: () => void; onMore: () => void }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const creator = PLANS.find((p) => p.id === 'creator');
   const start = async () => {
     setPending(true); setError(null);
-    try { await billingService.checkout('creator', { trial: true, returnTo }); }
+    try { await billingService.checkout('creator', { trial, returnTo }); }
     catch (e) { setError(e instanceof Error ? e.message : 'Le paiement n’a pas pu démarrer.'); setPending(false); }
   };
   return (
@@ -100,15 +100,22 @@ function VideoTrialSheet({ need, returnTo, onClose, onMore }: { need: number; re
         <span className="relative mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-[0_0_30px_-6px_rgba(217,70,239,0.8)]"><Clapperboard className="h-7 w-7" aria-hidden /></span>
         <h2 id="vt-title" className="relative mt-4 text-balance font-display text-3xl leading-tight text-zinc-50">Ta vidéo est prête à être créée</h2>
         <p className="relative mt-2 text-sm text-zinc-300">
-          Il te manque {formatCredits(need)} crédits. Avec l’essai 3 jours à {TRIAL.price} $, tu reçois <strong className="text-zinc-50">{formatCredits(TRIAL.credits)} crédits</strong> : assez pour cette vidéo.
+          {trial
+            ? <>Il te manque {formatCredits(need)} crédits. Avec l’essai 3 jours à {TRIAL.price} $, tu reçois <strong className="text-zinc-50">{formatCredits(TRIAL.credits)} crédits</strong> : assez pour cette vidéo.</>
+            : <>Il te manque {formatCredits(need)} crédits. Avec Creator, tu reçois <strong className="text-zinc-50">{formatCredits(creator?.credits ?? 43000)} crédits chaque mois</strong> : de quoi créer cette vidéo et plein d’autres.</>}
         </p>
         <ul className="relative mx-auto mt-5 max-w-xs space-y-2 text-left text-sm text-zinc-200">
           <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />Ton histoire est gardée : tu reviens direct sur ta vidéo</li>
-          <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />Résiliable en 1 clic avant la fin des 3 jours</li>
-          <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />Ensuite Creator à {creator?.price ?? 29} $/mois ({formatCredits(creator?.credits ?? 43000)} crédits), seulement si tu continues</li>
+          {trial ? <>
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />Résiliable en 1 clic avant la fin des 3 jours</li>
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />Ensuite Creator à {creator?.price ?? 29} $/mois ({formatCredits(creator?.credits ?? 43000)} crédits), seulement si tu continues</li>
+          </> : <>
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />{creator?.price ?? 29} $/mois, sans engagement, résiliable en 1 clic</li>
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />Clipping IA, traduction et Creative Studio inclus</li>
+          </>}
         </ul>
         <Button size="lg" className="relative mt-6 w-full" loading={pending} onClick={() => void start()}>
-          Créer ma vidéo pour {TRIAL.price} $ <ArrowRight className="h-4 w-4" aria-hidden />
+          {trial ? <>Créer ma vidéo pour {TRIAL.price} $</> : <>Créer ma vidéo · Creator {creator?.price ?? 29} $/mois</>} <ArrowRight className="h-4 w-4" aria-hidden />
         </Button>
         {error && <p className="relative mt-2 text-xs text-coral-300" aria-live="polite">{error}</p>}
         <p className="relative mt-2 text-[11px] text-zinc-500">Paiement sécurisé · carte, Apple Pay, Google Pay</p>

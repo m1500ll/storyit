@@ -32,7 +32,7 @@ export const YEARLY_DISCOUNT = 20;
  *  supabase/functions/_shared/stripe.ts (TRIAL). */
 export const TRIAL = { price: 1, days: 3, credits: 7000, switchAt: 1500 } as const;
 /** The $1 trial is closed to new customers (trials already running can still be ended early with TrialUpgrade). */
-export const TRIAL_ENABLED = true;
+export const TRIAL_ENABLED = false;
 
 export const estimateEpisodeCost = (sceneCount: number) => sceneCount * CREDIT_COSTS.sceneRender;
 
