@@ -85,7 +85,7 @@ export async function whopCheckout(admin: Admin, o: { userId: string; email?: st
   const recurring = !!p.days;
   const trial = o.trial && recurring && o.product === 'creator';
   const variant: Record<string, unknown> = {
-    account_id: accountId, product_id: productId, currency: 'usd', title: trial ? `${p.title} — essai ${o.trialDays} jours` : p.title,
+    account_id: accountId, product_id: productId, currency: 'usd', title: (trial ? `${p.title.replace('Storyit ', '')} · essai ${o.trialDays} jours` : p.title).slice(0, 30),
     visibility: 'hidden', unlimited_stock: true,
     ...(recurring
       ? { billing_type: 'renewal', billing_period: p.days, renewal_price: p.price,

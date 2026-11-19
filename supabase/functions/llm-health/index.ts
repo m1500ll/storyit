@@ -121,6 +121,21 @@ Deno.serve(async (req) => {
     try { return json({ ok: true, ...(await setupWhop(admin, `${Deno.env.get('SUPABASE_URL')}/functions/v1/whop-webhook`)), provider: Deno.env.get('BILLING_PROVIDER') ?? 'stripe' }); }
     catch (e) { return json({ ok: false, error: e instanceof Error ? e.message : String(e), has_key: !!Deno.env.get('WHOP_API_KEY') }); }
   }
+  if (url.searchParams.get('whop_test') === '1') { // operator: a test checkout link (not paid) + a signed test event to whop-webhook
+    const { createClient } = await import('npm:@supabase/supabase-js@2');
+    const W = await import('../_shared/whop.ts');
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const out: Record<string, unknown> = {};
+    try {
+      out.trial_url = await W.whopCheckout(admin, { userId: '00000000-0000-0000-0000-000000000000', product: 'creator', trial: true, redirect: 'https://www.storyit.fun/app/prompts?checkout=success', trialDays: 3, trialFee: 1 });
+      out.pack_url = await W.whopCheckout(admin, { userId: '00000000-0000-0000-0000-000000000000', product: 'pack_100', trial: false, redirect: 'https://www.storyit.fun/app/billing?checkout=success', trialDays: 3, trialFee: 1 });
+    } catch (e) { out.checkout_error = e instanceof Error ? e.message : String(e); }
+    try {
+      const hook = await W.setting(admin, 'whop_webhook_id');
+      out.test_event = await W.whopApi(`/webhooks/${hook}/test`, { body: { event: 'payment.succeeded' } });
+    } catch (e) { out.test_error = e instanceof Error ? e.message : String(e); }
+    return json(out);
+  }
   const doc = url.searchParams.get('doc'); // operator: reads a page of Whop's public developer docs (the session's network blocks it)
   if (doc && (/^https:\/\/docs\.whop\.com\/[\w./-]*$/.test(doc) || doc === "https://api.whop.com/api/v1/openapi.json")) {
     const r = await fetch(doc, { signal: AbortSignal.timeout(20_000) });
