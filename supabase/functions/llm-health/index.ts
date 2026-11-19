@@ -132,6 +132,21 @@ Deno.serve(async (req) => {
       } }));
     } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
   }
+  if (url.searchParams.get('whop_payments') === '1') { // operator: the account's latest Whop payments
+    const { createClient } = await import('npm:@supabase/supabase-js@2');
+    const W = await import('../_shared/whop.ts');
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    try {
+      const r = await W.whopApi(`/payments?account_id=${await W.setting(admin, 'whop_account_id')}&first=10`);
+      return json((r?.data ?? []).map((p: any) => ({ id: p.id, created: p.created_at, status: p.status, substatus: p.substatus, total: p.total, reason: p.billing_reason, meta: p.metadata, email: p.customer_email, failure: p.failure_message, decline: p.decline_code, membership: p.membership_id })));
+    } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
+  }
+  if (url.searchParams.get('whop_deliveries') === '1') { // operator: the last webhook deliveries (payload + our answer)
+    const { createClient } = await import('npm:@supabase/supabase-js@2');
+    const W = await import('../_shared/whop.ts');
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    try { return json(await W.whopApi(`/webhooks/${await W.setting(admin, 'whop_webhook_id')}/deliveries?first=6`)); } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
+  }
   if (url.searchParams.get('whop_account') === '1') { // operator: the Whop account as Whop sees it (names, verification state)
     const W = await import('../_shared/whop.ts');
     try { return json(await W.whopApi('/accounts/me')); } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
