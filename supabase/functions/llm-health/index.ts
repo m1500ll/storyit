@@ -121,6 +121,10 @@ Deno.serve(async (req) => {
     try { return json({ ok: true, ...(await setupWhop(admin, `${Deno.env.get('SUPABASE_URL')}/functions/v1/whop-webhook`)), provider: Deno.env.get('BILLING_PROVIDER') ?? 'stripe' }); }
     catch (e) { return json({ ok: false, error: e instanceof Error ? e.message : String(e), has_key: !!Deno.env.get('WHOP_API_KEY') }); }
   }
+  if (url.searchParams.get('whop_account') === '1') { // operator: the Whop account as Whop sees it (names, verification state)
+    const W = await import('../_shared/whop.ts');
+    try { return json(await W.whopApi('/accounts/me')); } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
+  }
   if (url.searchParams.get('whop_test') === '1') { // operator: a test checkout link (not paid) + a signed test event to whop-webhook
     const { createClient } = await import('npm:@supabase/supabase-js@2');
     const W = await import('../_shared/whop.ts');
