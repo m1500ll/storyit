@@ -1,6 +1,6 @@
 import { CheckCircle2, CreditCard as CardIcon, X } from 'lucide-react';
 import { useState } from 'react';
-import { billingPlan } from '@/services/billing';
+import { billingPlan, PAYMENTS_PAUSED } from '@/services/billing';
 import { useSearchParams } from 'react-router-dom';
 import { PlanPicker } from '@/components/billing/PlanPicker';
 import { Button, Card, CardHeader, PageHeader } from '@/components/ui';
@@ -64,7 +64,7 @@ export default function BillingPage() {
       <Card className="mt-6">
         {billingPlan(profile).legacyPaid && (
           <p role="status" className="mb-4 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-            <strong>Storyit change de prestataire de paiement.</strong> Votre abonnement actuel ne se renouvellera pas : choisissez votre offre ci-dessous pour le réactiver. Vos crédits restent sur votre compte.
+            <strong>Storyit change de prestataire de paiement.</strong> Votre abonnement actuel ne se renouvellera pas{PAYMENTS_PAUSED ? ' : vous pourrez le reprendre ici dès la fin de la maintenance, dans quelques jours.' : ' : choisissez votre offre ci-dessous pour le réactiver.'} Vos crédits restent sur votre compte.
           </p>
         )}
         {billingPlan(profile).plan === 'studio'

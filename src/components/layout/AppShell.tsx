@@ -5,6 +5,7 @@ import { PaywallProvider } from '../billing/Paywall';
 import { MobileNav } from './MobileNav';
 import { WizardNotifier } from './WizardNotifier';
 import { WelcomeIntro } from '../onboarding/WelcomeIntro';
+import { PaymentsPausedNotice } from '../billing/PaymentsPaused';
 import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 
@@ -31,6 +32,7 @@ export function AppShell() {
         <MobileNav />
         <WizardNotifier />
         <WelcomeIntro />
+        <PaymentsPausedNotice />
       </div>
     </PaywallProvider>
   );

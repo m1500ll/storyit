@@ -89,7 +89,7 @@ function VideoTrialSheet({ trial, need, returnTo, onClose, onMore }: { trial: bo
   const creator = PLANS.find((p) => p.id === 'creator');
   const start = async () => {
     setPending(true); setError(null);
-    try { await billingService.checkout('creator', { trial, returnTo }); }
+    try { const r = await billingService.checkout('creator', { trial, returnTo }); if (r.paused) setPending(false); }
     catch (e) { setError(e instanceof Error ? e.message : 'Le paiement n’a pas pu démarrer.'); setPending(false); }
   };
   return (

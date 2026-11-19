@@ -145,6 +145,10 @@ Deno.serve(async (req) => {
       })) });
     }
 
+    // new payments paused (secret BILLING_PAUSED=true): no checkout, a calm maintenance message instead of an error
+    if (action === 'checkout' && Deno.env.get('BILLING_PAUSED') === 'true') {
+      return json({ error: 'Paiements en maintenance : les abonnements et les packs sont indisponibles pendant quelques jours. Tes crédits ne changent pas.' }, 503);
+    }
     // Dodo Payments (secret BILLING_PROVIDER=dodo, merchant of record): hosted checkout, customer portal
     const { data: dd } = await admin.from('profiles').select('plan, billing_provider, dodo_customer_id').eq('id', user.id).single();
     const onDodo = dd?.billing_provider === 'dodo';

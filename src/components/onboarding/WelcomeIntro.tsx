@@ -123,7 +123,7 @@ export function WelcomeIntro() {
   // the plan the answers point to (with the $1 trial when it is open)
   const startTrial = async () => {
     setPending(true); setError(null);
-    try { await billingService.checkout(canTrial ? 'creator' : plan.plan.id as 'creator' | 'pro' | 'studio', { trial: canTrial, returnTo: '/app/prompts' }); close(); }
+    try { await billingService.checkout(canTrial ? 'creator' : plan.plan.id as 'creator' | 'pro' | 'studio', { trial: canTrial, returnTo: '/app/prompts' }); setPending(false); close(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Le paiement n’a pas pu démarrer.'); setPending(false); }
   };
   const toStudio = () => { close(); navigate('/app/prompts'); };

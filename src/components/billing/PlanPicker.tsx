@@ -1,7 +1,8 @@
 import { ArrowRight, Check, Coins, Gift, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
-import { billingService } from '@/services/billing';
+import { billingService, PAYMENTS_PAUSED } from '@/services/billing';
+import { PaymentsPausedBanner } from './PaymentsPaused';
 import { CREDIT_PACKS, PLANS, TRIAL, TRIAL_ENABLED, YEARLY_DISCOUNT, projectsFor, type ProductKey, formatCredits } from '@/services/credits';
 import { store } from '@/services/store';
 import { Button, useToast } from '../ui';
@@ -26,6 +27,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
     setError(null);
     try {
       const r = await billingService.checkout(product, { trial });
+      if (r.paused) { setPending(null); return; }
       if (r.upgraded && r.paid) {
         toast(`Offre ${PLANS.find((p) => p.id === product.replace('_year', ''))?.name ?? ''}${product.endsWith('_year') ? ' annuelle' : ''} activée : vos crédits arrivent dans quelques secondes.`);
         setTimeout(() => store.notify(), 4000);
@@ -39,6 +41,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
 
   return (
     <div>
+      {PAYMENTS_PAUSED && <PaymentsPausedBanner className="mb-5" />}
       {canTrial && (
         <div className="relative mb-5 overflow-hidden rounded-2xl border border-violet-500/40 bg-violet-600/[0.12] p-5">
           <div aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full bg-violet-500/25 blur-3xl" />

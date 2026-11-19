@@ -24,13 +24,19 @@ async function callJson<T>(body: Record<string, unknown>): Promise<T> {
   return data as T;
 }
 
+/** New payments are paused (no payment provider can pay out right now): every payment button opens the maintenance
+ *  notice instead of a checkout. The billing function also refuses checkouts while the secret BILLING_PAUSED=true. */
+export const PAYMENTS_PAUSED = true;
+export const PAYMENTS_PAUSED_EVENT = 'storyit:payments-paused';
+
 export type TrialStatus = { trialing: boolean; trial_end: number | null; product: 'creator' | 'pro' | 'studio' | null };
 
 /** Stripe-hosted pages: card data never touches our app. */
 export const billingService = {
   /** trial: the $1 three-day trial of a plan (one per account), then the plan at full price */
   /** returnTo: an /app/… path Stripe sends the customer back to (with ?checkout=success|cancelled) */
-  async checkout(product: ProductKey, opts: { trial?: boolean; returnTo?: string } = {}): Promise<{ upgraded: boolean; paid: boolean }> {
+  async checkout(product: ProductKey, opts: { trial?: boolean; returnTo?: string } = {}): Promise<{ upgraded: boolean; paid: boolean; paused?: boolean }> {
+    if (PAYMENTS_PAUSED) { window.dispatchEvent(new Event(PAYMENTS_PAUSED_EVENT)); return { upgraded: false, paid: false, paused: true }; }
     const r = await callJson<{ url?: string; upgraded?: boolean; ok?: boolean; paid?: boolean; invoice_url?: string | null }>({ action: 'checkout', product, trial: opts.trial === true, ...(opts.returnTo ? { return_to: opts.returnTo } : {}) });
     if (r.url) { window.location.assign(r.url); return { upgraded: false, paid: false }; }
     // already on a plan: upgraded in place (only the price difference is billed), or the running trial was ended
