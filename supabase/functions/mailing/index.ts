@@ -162,7 +162,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 <tr><td style="font-size:16px;line-height:1.6">Avec Storyit, une vidéo te prend 1 minute :</td></tr>
 <tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.8">
 <tr><td>🍓 <strong>Fruit Drama</strong> : une idée, et la vidéo est prête (voix, sous-titres, musique)</td></tr>
-<tr><td>✂️ <strong>Clipping IA</strong> : une longue vidéo devient 10 clips prêts à poster</td></tr></table></td></tr>
+<tr><td>✂️ <strong>Clipping IA</strong> : une longue vidéo devient jusqu’à 10 clips prêts à poster</td></tr></table></td></tr>
 <tr><td style="font-size:16px;line-height:1.6">Plus tu publies, plus tu as de chances de monétiser ton compte ou d’être payé à la vue pour tes clips. Ça commence par la première vidéo.</td></tr>
 <tr><td align="center" style="padding:22px 0 6px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Je lance ma chaîne · 29 $/mois</a></td></tr>
 <tr><td style="font-size:13px;line-height:1.6;color:#4b4560;text-align:center">43 000 crédits par mois · sans engagement · résiliable en 1 clic</td></tr>`, unsub),
@@ -170,7 +170,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 
 Avec Storyit, une vidéo te prend 1 minute :
 - Fruit Drama : une idée, et la vidéo est prête (voix, sous-titres, musique)
-- Clipping IA : une longue vidéo devient 10 clips prêts à poster
+- Clipping IA : une longue vidéo devient jusqu’à 10 clips prêts à poster
 
 Plus tu publies, plus tu as de chances de monétiser ton compte ou d'être payé à la vue pour tes clips. Ça commence par la première vidéo.
 
