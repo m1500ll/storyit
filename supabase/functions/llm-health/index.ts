@@ -114,6 +114,13 @@ Deno.serve(async (req) => {
     }
     return json({ apply, count: out.length, subscriptions: out });
   }
+  if (url.searchParams.get('paddle_setup') === '1') { // operator: finds or creates the Paddle products/prices/webhook/client token
+    const { createClient } = await import('npm:@supabase/supabase-js@2');
+    const { setupPaddle } = await import('../_shared/paddle.ts');
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    try { return json({ ok: true, ...(await setupPaddle(admin, `${Deno.env.get('SUPABASE_URL')}/functions/v1/paddle-webhook`)), provider: Deno.env.get('BILLING_PROVIDER') ?? 'stripe' }); }
+    catch (e) { return json({ ok: false, error: e instanceof Error ? e.message : String(e) }); }
+  }
   if (url.searchParams.get('whop_setup') === '1') { // operator: finds or creates the Whop account/product/webhook (needs WHOP_API_KEY)
     const { createClient } = await import('npm:@supabase/supabase-js@2');
     const { setupWhop } = await import('../_shared/whop.ts');
@@ -166,8 +173,16 @@ Deno.serve(async (req) => {
     } catch (e) { out.test_error = e instanceof Error ? e.message : String(e); }
     return json(out);
   }
+  const pp = url.searchParams.get('paddle_api'); // operator: one Paddle API call (the session's network blocks api.paddle.com)
+  if (pp && /^\/[\w\-/?=&.,%]*$/.test(pp)) {
+    const method = url.searchParams.get('paddle_method') ?? 'GET';
+    const body = method === 'GET' ? undefined : await req.text();
+    const r = await fetch(`https://api.paddle.com${pp}`, { method, body: body || undefined, signal: AbortSignal.timeout(20_000),
+      headers: { Authorization: `Bearer ${Deno.env.get('PADDLE_API_KEY')}`, 'Content-Type': 'application/json' } });
+    return new Response(await r.text(), { status: r.status, headers: { 'Content-Type': 'application/json' } });
+  }
   const doc = url.searchParams.get('doc'); // operator: reads a page of Whop's public developer docs (the session's network blocks it)
-  if (doc && (/^https:\/\/docs\.whop\.com\/[\w./-]*$/.test(doc) || doc === "https://api.whop.com/api/v1/openapi.json")) {
+  if (doc && (/^https:\/\/docs\.whop\.com\/[\w./-]*$/.test(doc) || /^https:\/\/developer\.paddle\.com\/[\w./-]*$/.test(doc) || doc === "https://api.whop.com/api/v1/openapi.json")) {
     const r = await fetch(doc, { signal: AbortSignal.timeout(20_000) });
     return new Response((await r.text()).slice(0, 12_000_000), { status: r.status, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   }

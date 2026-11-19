@@ -54,6 +54,10 @@ export const billingService = {
   async setAutoTopup(settings: { enabled: boolean; threshold: number; credits: number }) {
     return callJson<{ ok: boolean }>({ action: 'auto_topup', ...settings });
   },
+  /** the public client-side token Paddle.js needs on /pay */
+  async paddleToken(): Promise<string | null> {
+    return (await callJson<{ token: string | null }>({ action: 'paddle_config' })).token;
+  },
   async openPortal() {
     window.location.assign(await call({ action: 'portal' }));
   },

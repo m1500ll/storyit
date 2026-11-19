@@ -12,6 +12,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { GRANTS, isTopupAmount, TOPUP, TRIAL } from '../_shared/stripe.ts';
 import { accountEnv, accountOf, newCustomersAccount, stripeOn, type StripeAccount } from '../_shared/stripeAccount.ts';
 import { whopCheckout, whopEnabled } from '../_shared/whop.ts';
+import { paddleCheckout, paddleEnabled, paddlePortal, setting as integrationSetting } from '../_shared/paddle.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -141,6 +142,34 @@ Deno.serve(async (req) => {
         amount: s.amount_total, currency: s.currency, methods: s.payment_method_types, locale: s.locale,
         recovered: Boolean(s.recovered_from), user: s.client_reference_id ?? null,
       })) });
+    }
+
+    // Paddle (secret BILLING_PROVIDER=paddle, merchant of record): /pay opens Paddle's checkout for a transaction made here
+    if (action === 'paddle_config') return json({ token: await integrationSetting(admin, 'paddle_client_token') });
+    const { data: pd } = await admin.from('profiles').select('plan, billing_provider, paddle_customer_id, paddle_subscription_id').eq('id', user.id).single();
+    const onPaddle = pd?.billing_provider === 'paddle';
+    if (onPaddle && action === 'status') return json({ trialing: false, trial_end: null, product: null });
+    if (onPaddle && action === 'end_trial') return json({ error: 'Pour changer d’offre, utilise « Gérer la facturation ».' }, 409);
+    if (onPaddle && action === 'portal') {
+      if (!pd?.paddle_customer_id) return json({ error: 'Abonnement introuvable. Écris-nous à etook0.pro@gmail.com.' }, 409);
+      try { return json({ url: await paddlePortal(pd.paddle_customer_id, pd.paddle_subscription_id) }); }
+      catch (e) { console.error('paddle portal', e instanceof Error ? e.message : e); return json({ error: 'La page de facturation n’a pas pu s’ouvrir. Réessayez.' }, 502); }
+    }
+    if (action === 'checkout' && paddleEnabled()) {
+      if (!product || !(product in GRANTS)) return json({ error: 'Unknown product' }, 400);
+      // a running Paddle plan is managed from Paddle's portal (no second subscription)
+      if (onPaddle && pd?.plan && pd.plan !== 'free' && GRANTS[product].plan && pd.paddle_customer_id) {
+        try { return json({ url: await paddlePortal(pd.paddle_customer_id, pd.paddle_subscription_id) }); } catch { /* falls through to a new checkout */ }
+      }
+      try {
+        const back = typeof body.return_to === 'string' && /^\/app\/[A-Za-z0-9/_-]*(\?[A-Za-z0-9=&_-]*)?$/.test(body.return_to) ? body.return_to : '/app/billing';
+        const r = await paddleCheckout(admin, { userId: user.id, email: user.email, customerId: pd?.paddle_customer_id ?? null, product, appUrl, back });
+        if (r.customerId && r.customerId !== pd?.paddle_customer_id) await admin.from('profiles').update({ paddle_customer_id: r.customerId }).eq('id', user.id);
+        return json({ url: r.url });
+      } catch (e) {
+        console.error('paddle checkout', e instanceof Error ? e.message : e);
+        return json({ error: 'Le paiement n’a pas pu démarrer. Réessayez dans un instant.' }, 502);
+      }
     }
 
     // Whop (secret BILLING_PROVIDER=whop): checkout pages, "manage" link and trial status come from Whop
