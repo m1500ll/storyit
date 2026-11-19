@@ -29,7 +29,7 @@ const page = (title: string, text: string) => new Response(
   <p><a href="${APP}" style="color:#a78bfa">Retour sur Storyit</a></p></main></body></html>`,
   { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 
-type Campaign = { subject: string; html: (unsub: string) => string; text: (unsub: string) => string; /** who gets it (default: everyone) */ audience?: 'free_no_trial' | 'free_active' };
+type Campaign = { subject: string; html: (unsub: string) => string; text: (unsub: string) => string; /** who gets it (default: everyone) */ audience?: 'free_no_trial' | 'free_active' | 'free' };
 const shell = (inner: string, unsub: string) => `<!doctype html><html lang="fr"><body style="margin:0;background:#f4f2fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1f1b2e">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:32px 28px">
@@ -148,6 +148,48 @@ On vient d'ouvrir le Discord officiel de Storyit : un endroit pour échanger ent
 Rejoindre le Discord : https://discord.gg/S3A9Jg5xe
 
 C'est gratuit et ça prend 10 secondes.
+
+À très vite,
+L'équipe Storyit
+
+Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${unsub}`,
+  },
+  first_step_nov: {
+    subject: '🍓 Ta première vidéo qui peut rapporter, c’est maintenant',
+    audience: 'free',
+    html: (unsub) => shell(`<tr><td style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#ffffff">Fruit Drama et clips TikTok : Storyit fait le travail, tu publies.</td></tr>
+<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Le premier pas vers tes premiers revenus TikTok</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Tu as créé ton compte Storyit, et c’est déjà le plus dur. Il ne manque qu’une chose : <strong>publier régulièrement</strong>. Sur TikTok, ce sont les comptes qui postent souvent qui finissent par percer, et c’est exactement ce que Storyit rend facile.</td></tr>
+<tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.8">
+<tr><td>🍓 <strong>Fruit Drama</strong> : une idée en une phrase, et Storyit écrit l’histoire, anime les personnages, fait les voix, les sous-titres et la musique.</td></tr>
+<tr><td>✂️ <strong>Clipping IA</strong> : envoie une longue vidéo (stream, podcast), Storyit en sort les meilleurs moments en clips verticaux, avec titres et sous-titres.</td></tr>
+<tr><td>📅 <strong>Publication</strong> : programme tes vidéos sur tes comptes TikTok et Instagram.</td></tr></table></td></tr>
+<tr><td style="font-size:16px;line-height:1.6"><strong>Comment ça rapporte ?</strong> Une fois les conditions de TikTok remplies (abonnés, vues), un compte peut être rémunéré pour ses vidéos. Et beaucoup de créateurs et de marques paient des clippeurs à la vue pour diffuser leurs meilleurs passages. Rien n’est garanti, mais une chose est sûre : sans vidéos publiées, il n’y a aucune chance. Avec Storyit, tu en publies plusieurs par semaine.</td></tr>
+<tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.8">
+<tr><td>🎬 <strong>Offre Creator : 29 $/mois</strong></td></tr>
+<tr><td>43 000 crédits chaque mois, soit jusqu’à 7 vidéos Fruit Drama de 30 s</td></tr>
+<tr><td>Clipping IA, traduction et publication inclus</td></tr>
+<tr><td>Sans engagement, résiliable en 1 clic</td></tr></table></td></tr>
+<tr><td align="center" style="padding:22px 0 8px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Je passe à Creator</a></td></tr>
+<tr><td style="font-size:13px;line-height:1.6;color:#4b4560;text-align:center">Pas encore prêt ? Tes crédits gratuits t’attendent : <a href="${APP}/app/prompts" style="color:#7c3aed">écris ta première histoire</a>.</td></tr>`, unsub),
+    text: (unsub) => `Bonjour,
+
+Tu as créé ton compte Storyit, et c'est déjà le plus dur. Il ne manque qu'une chose : publier régulièrement. Sur TikTok, ce sont les comptes qui postent souvent qui finissent par percer, et c'est exactement ce que Storyit rend facile.
+
+- Fruit Drama : une idée en une phrase, et Storyit écrit l'histoire, anime les personnages, fait les voix, les sous-titres et la musique.
+- Clipping IA : envoie une longue vidéo (stream, podcast), Storyit en sort les meilleurs moments en clips verticaux, avec titres et sous-titres.
+- Publication : programme tes vidéos sur tes comptes TikTok et Instagram.
+
+Comment ça rapporte ? Une fois les conditions de TikTok remplies (abonnés, vues), un compte peut être rémunéré pour ses vidéos. Et beaucoup de créateurs et de marques paient des clippeurs à la vue pour diffuser leurs meilleurs passages. Rien n'est garanti, mais sans vidéos publiées, il n'y a aucune chance. Avec Storyit, tu en publies plusieurs par semaine.
+
+Offre Creator : 29 $/mois
+- 43 000 crédits chaque mois, soit jusqu'à 7 vidéos Fruit Drama de 30 s
+- Clipping IA, traduction et publication inclus
+- Sans engagement, résiliable en 1 clic
+
+Je passe à Creator : ${APP}/app/billing?interval=month
+
+Pas encore prêt ? Tes crédits gratuits t'attendent : ${APP}/app/prompts
 
 À très vite,
 L'équipe Storyit
@@ -575,6 +617,10 @@ Deno.serve(async (req) => {
     for (const t of (tx ?? []) as { user_id: string; amount: number; description: string }[]) if (!/^Crédits de bienvenue retirés/.test(t.description ?? '')) spent.set(t.user_id, (spent.get(t.user_id) ?? 0) - t.amount);
     const keep = new Set([...spent].filter(([, v]) => v >= 1500).map(([k]) => k));
     (done ?? []).push(...(prof ?? []).filter((r: { id: string }) => !keep.has(r.id)).map((r: { id: string }) => ({ user_id: r.id })));
+    const { data: paid } = await admin.from('profiles').select('id').neq('plan', 'free');
+    (done ?? []).push(...(paid ?? []).map((r: { id: string }) => ({ user_id: r.id })));
+  }
+  if (c.audience === 'free') { // every account without a plan
     const { data: paid } = await admin.from('profiles').select('id').neq('plan', 'free');
     (done ?? []).push(...(paid ?? []).map((r: { id: string }) => ({ user_id: r.id })));
   }
