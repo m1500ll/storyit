@@ -583,7 +583,7 @@ Deno.serve(async (req) => {
   if (scheduled_at && !(Date.parse(scheduled_at) > Date.now())) return Response.json({ error: 'scheduled_at must be in the future' }, { status: 400 });
   const c = campaign ? CAMPAIGNS[campaign] : undefined;
   if (!c) return Response.json({ error: 'unknown campaign' }, { status: 400 });
-  if ((campaign === 'trial_launch' || campaign === 'trial_1dollar') && Deno.env.get('TRIAL_ENABLED') !== 'true') return Response.json({ error: 'the $1 trial is closed' }, { status: 400 });
+  if (campaign === 'trial_launch' || campaign === 'trial_1dollar') return Response.json({ error: 'the $1 trial is closed' }, { status: 400 });
 
   if (test_to) { // a test to one address (not logged, sent with the owner's account id for a working unsubscribe link)
     const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 });

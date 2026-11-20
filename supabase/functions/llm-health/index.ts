@@ -161,6 +161,11 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     try { return json(await W.whopApi(`/webhooks/${await W.setting(admin, 'whop_webhook_id')}/deliveries?first=6`)); } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
   }
+  const wg = url.searchParams.get('whop_get'); // operator: one read-only Whop API call
+  if (wg && /^\/[\w\-/?=&.,%]*$/.test(wg)) {
+    const W = await import('../_shared/whop.ts');
+    try { return json(await W.whopApi(wg)); } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
+  }
   if (url.searchParams.get('whop_account') === '1') { // operator: the Whop account as Whop sees it (names, verification state)
     const W = await import('../_shared/whop.ts');
     try { return json(await W.whopApi('/accounts/me')); } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
@@ -171,7 +176,7 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     const out: Record<string, unknown> = {};
     try {
-      out.trial_url = await W.whopCheckout(admin, { userId: '00000000-0000-0000-0000-000000000000', product: 'creator', trial: true, redirect: 'https://www.storyit.fun/app/prompts?checkout=success', trialDays: 3, trialFee: 1 });
+      out.trial_url = await W.whopCheckout(admin, { userId: '00000000-0000-0000-0000-000000000000', product: 'creator', trial: true, redirect: 'https://www.storyit.fun/app/prompts?checkout=success', trialDays: 3, trialFee: 0 });
       out.pack_url = await W.whopCheckout(admin, { userId: '00000000-0000-0000-0000-000000000000', product: 'pack_100', trial: false, redirect: 'https://www.storyit.fun/app/billing?checkout=success', trialDays: 3, trialFee: 1 });
     } catch (e) { out.checkout_error = e instanceof Error ? e.message : String(e); }
     try {

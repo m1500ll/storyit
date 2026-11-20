@@ -46,17 +46,17 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
         <div className="relative mb-5 overflow-hidden rounded-2xl border border-violet-500/40 bg-violet-600/[0.12] p-5">
           <div aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full bg-violet-500/25 blur-3xl" />
           <p className="relative inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Offre d’essai</p>
-          <p className="relative mt-3 text-balance font-display text-3xl leading-tight text-zinc-50">Essayez tout Storyit 3 jours pour {TRIAL.price} $</p>
+          <p className="relative mt-3 text-balance font-display text-3xl leading-tight text-zinc-50">Essayez tout Storyit gratuitement pendant {TRIAL.days} jours</p>
           <ul className="relative mt-3 space-y-1.5 text-sm text-zinc-300">
             <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span><strong className="text-zinc-100">{formatCredits(TRIAL.credits)} crédits</strong> : une vidéo complète de 30 s avec le Creative Studio</span></li>
             <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>Tout Storyit : Creative Studio, clips IA (1 vidéo), traduction</span></li>
-            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>Résiliable en 1 clic avant la fin de l’essai</span></li>
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" aria-hidden /><span>0 $ aujourd’hui (carte demandée), résiliable en 1 clic avant la fin de l’essai</span></li>
           </ul>
           <Button size="lg" className="relative mt-4 w-full sm:w-auto" loading={pending === 'creator:trial'} disabled={pending !== null} onClick={() => buy('creator', true)}>
-            Commencer l’essai à {TRIAL.price} $
+            Commencer l’essai gratuit
           </Button>
           <p className="relative mt-2 text-[11px] leading-snug text-zinc-400">
-            Puis Creator à {PLANS.find((x) => x.id === 'creator')?.price} $/mois, au bout de {TRIAL.days} jours ou dès qu’il vous reste {formatCredits(TRIAL.switchAt)} crédits d’essai ou moins. Vous préférez Pro ou Studio ? Choisissez l’essai sous l’offre voulue ci-dessous.
+            Puis Creator à {PLANS.find((x) => x.id === 'creator')?.price} $/mois au bout de {TRIAL.days} jours, seulement si vous n’annulez pas avant. Un rappel vous est envoyé la veille. Vous préférez Pro ou Studio ? Choisissez l’essai sous l’offre voulue ci-dessous.
           </p>
         </div>
       )}
@@ -68,11 +68,11 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
                 interval === iv ? 'bg-violet-600 text-white' : 'text-zinc-400 hover:text-zinc-100')}>
               {iv === 'year' ? 'Annuel' : 'Mensuel'}
               {iv === 'year' && <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-bold', interval === iv ? 'bg-white text-violet-700' : 'bg-emerald-500/15 text-emerald-300')}>−{YEARLY_DISCOUNT} %</span>}
-              {iv === 'month' && canTrial && <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-bold', interval === iv ? 'bg-white text-violet-700' : 'bg-emerald-500/15 text-emerald-300')}>essai {TRIAL.price} $</span>}
+              {iv === 'month' && canTrial && <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-bold', interval === iv ? 'bg-white text-violet-700' : 'bg-emerald-500/15 text-emerald-300')}>essai gratuit</span>}
             </button>
           ))}
         </div>
-        <p className="text-xs font-medium text-emerald-300">{interval === 'year' ? `🎁 −${YEARLY_DISCOUNT} % et tous les crédits de l’année d’un coup` : trialHere ? `🎁 Essai ${TRIAL.days} jours pour ${TRIAL.price} $ · ${formatCredits(TRIAL.credits)} crédits pour tester` : `Passez à l’annuel pour économiser ${YEARLY_DISCOUNT} %`}</p>
+        <p className="text-xs font-medium text-emerald-300">{interval === 'year' ? `🎁 −${YEARLY_DISCOUNT} % et tous les crédits de l’année d’un coup` : trialHere ? `🎁 Essai gratuit ${TRIAL.days} jours · ${formatCredits(TRIAL.credits)} crédits pour tester` : `Passez à l’annuel pour économiser ${YEARLY_DISCOUNT} %`}</p>
       </div>
       <div className={cn('grid gap-3', compact ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 xl:grid-cols-4')}>
         {/* In the compact paywall, only show plans above the current one (Studio customers just see the top-up packs). */}
@@ -109,10 +109,10 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
                 <>
                   <Button className="mt-4 h-11 w-full whitespace-nowrap bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 text-sm shadow-[0_10px_30px_-10px_rgba(139,92,246,0.9)] hover:brightness-110" loading={pending === `${p.id}:trial`}
                     disabled={pending !== null} onClick={() => buy(p.id as ProductKey, true)}>
-                    <Gift className="h-4 w-4 shrink-0" aria-hidden /> Essayer pour {TRIAL.price} $ <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+                    <Gift className="h-4 w-4 shrink-0" aria-hidden /> Essayer gratuitement <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
                   </Button>
                   <p className="mt-1.5 text-[11px] leading-snug text-zinc-500">
-                    {TRIAL.days} jours d’essai : {TRIAL.price} $ aujourd’hui et {formatCredits(TRIAL.credits)} crédits pour tester. Passage automatique à {p.name} ({p.price} $/mois) au bout de {TRIAL.days} jours, ou plus tôt dès qu’il vous reste {formatCredits(TRIAL.switchAt)} crédits d’essai ou moins. Résiliable à tout moment avant.
+                    {TRIAL.days} jours gratuits avec {formatCredits(TRIAL.credits)} crédits pour tester (carte demandée, 0 $ aujourd’hui). Passage automatique à {p.name} ({p.price} $/mois) au bout de {TRIAL.days} jours. Résiliable à tout moment avant.
                   </p>
                   <button type="button" onClick={() => buy(p.id as ProductKey)} disabled={pending !== null}
                     className="touch-hit mt-2 block w-full text-center text-xs text-violet-300 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50">

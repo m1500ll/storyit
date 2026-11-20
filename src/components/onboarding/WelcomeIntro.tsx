@@ -269,9 +269,9 @@ export function WelcomeIntro() {
             <>
               <button type="button" onClick={() => void startTrial()} disabled={pending}
                 className="touch-hit mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-base font-semibold text-white shadow-[0_0_40px_-6px_rgba(217,70,239,0.9)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-60">
-                {pending ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Sparkles className="h-5 w-5" aria-hidden />} Commencer mon plan pour {TRIAL.price}&nbsp;$
+                {pending ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Sparkles className="h-5 w-5" aria-hidden />} Essayer gratuitement 3 jours
               </button>
-              <p className="mt-2 text-center text-[11px] text-white/50">3 jours, {formatCredits(TRIAL.credits)} crédits (ta première vidéo complète). Résiliable en 1 clic.</p>
+              <p className="mt-2 text-center text-[11px] text-white/50">{formatCredits(TRIAL.credits)} crédits (ta première vidéo complète). Carte demandée, 0 $ aujourd’hui, résiliable en 1 clic.</p>
               {error && <p className="mt-2 text-center text-xs text-coral-300" aria-live="polite">{error}</p>}
               <button type="button" onClick={toStudio} className="touch-hit mx-auto mt-3 block rounded text-xs text-white/50 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Commencer avec mes crédits gratuits</button>
             </>
