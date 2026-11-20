@@ -28,7 +28,7 @@ async function profileOf(meta: any, membershipId: string | null) {
 async function startTrial(userId: string, product: ProductKey, membershipId: string | null) {
   const g = GRANTS[product];
   // claim the trial once (payment.succeeded and membership.activated can arrive together)
-  const { data: claimed } = await admin.from('profiles').update({ trial_used: true }).eq('id', userId).eq('trial_used', false).select('id');
+  const { data: claimed } = await admin.from('profiles').update({ trial_used: true, trial_ends_at: new Date(Date.now() + TRIAL.days * 86_400_000).toISOString() }).eq('id', userId).eq('trial_used', false).select('id');
   if (!claimed?.length) return;
   await admin.from('profiles').update({ billing_provider: 'whop', whop_product: product, ...(membershipId ? { whop_membership_id: membershipId } : {}) }).eq('id', userId);
   const { error } = await admin.rpc('grant_credits', { p_user_id: userId, p_amount: TRIAL.credits, p_type: 'subscription_grant',

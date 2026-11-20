@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
 
   const [usersRes, profilesRes, txRes, animRes, pvRes, dubRes, affRes, invOld, invNew, subOld, subNew] = await Promise.all([
     admin.auth.admin.listUsers({ perPage: 1000 }),
-    admin.from('profiles').select('id, plan, credit_balance, trial_used, trial_ends_at, affiliate_id, stripe_customer_id, marketing_opt_out, is_admin, onboarding'),
+    admin.from('profiles').select('id, plan, credit_balance, trial_used, trial_ends_at, billing_provider, affiliate_id, stripe_customer_id, marketing_opt_out, is_admin, onboarding'),
     admin.from('credit_transactions').select('user_id, amount, type, description, created_at').order('created_at', { ascending: false }).limit(20000),
     admin.from('animated_projects').select('user_id, status'),
     admin.from('prompt_videos').select('user_id, status'),
@@ -141,14 +141,18 @@ Deno.serve(async (req) => {
     const p: any = profiles.get(u.id) ?? {};
     const s = subOf.get(u.id);
     const money = paid.get(u.id);
-    const status = s?.status === 'active' ? 'paying' : s?.status === 'trialing' ? 'trial' : s?.status === 'past_due' ? 'past_due' : money ? 'churned' : 'free';
+    // Whop (and other non-Stripe) plans are read from the profile: a running trial, else a paid plan
+    const ext = !s && p.billing_provider && p.billing_provider !== 'stripe' && p.plan && p.plan !== 'free';
+    const extTrial = ext && !!p.trial_ends_at && Date.parse(p.trial_ends_at) > Date.now();
+    const status = s?.status === 'active' ? 'paying' : s?.status === 'trialing' ? 'trial' : s?.status === 'past_due' ? 'past_due'
+      : extTrial ? 'trial' : ext ? 'paying' : money ? 'churned' : 'free';
     const price = s?.items?.data?.[0]?.price;
     return {
       id: u.id, email: u.email ?? '', signedUpAt: u.created_at, lastSignInAt: u.last_sign_in_at ?? null, confirmed: !!u.email_confirmed_at,
       plan: p.plan ?? 'free', status, interval: price?.recurring?.interval ?? null,
       renewsAt: s && (s.status === 'active' || s.status === 'trialing') ? ((s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? 0) * 1000 || null) : null,
       cancelAtPeriodEnd: cancelling(s), cancelAt: cancelling(s) ? ((s.cancel_at ?? s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? 0) * 1000 || null) : null,
-      canceledAt: s?.canceled_at ? s.canceled_at * 1000 : null, trialEndsAt: s?.status === 'trialing' && s.trial_end ? s.trial_end * 1000 : null,
+      canceledAt: s?.canceled_at ? s.canceled_at * 1000 : null, trialEndsAt: s?.status === 'trialing' && s.trial_end ? s.trial_end * 1000 : extTrial ? Date.parse(p.trial_ends_at) : null,
       paidCents: money?.total ?? 0, lastPaymentAt: money?.last ?? null,
       credits: p.credit_balance ?? 0, spent: spent.get(u.id) ?? 0, videos: videos.get(u.id) ?? 0, lastActivityAt: lastAct.get(u.id) ?? null,
       partner: p.affiliate_id ? (affiliates.get(p.affiliate_id)?.code ?? 'partenaire') : null, isAdmin: !!p.is_admin, unsubscribed: !!p.marketing_opt_out,
