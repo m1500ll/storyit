@@ -182,6 +182,34 @@ L'équipe Storyit
 
 Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${unsub}`,
   },
+  free_trial_nov: {
+    subject: '🎁 3 jours gratuits sur tout Storyit',
+    audience: 'free_no_trial',
+    html: (unsub) => shell(`<tr><td style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#ffffff">7 000 crédits, Fruit Drama et clipping IA. 0 $ aujourd’hui.</td></tr>
+<tr><td style="font-size:26px;line-height:1.25;font-weight:800;color:#1f1b2e;padding-bottom:12px">Tout Storyit, <span style="color:#7c3aed">gratuit pendant 3 jours</span>.</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Ta première vraie vidéo t’attend. On t’ouvre tout :</td></tr>
+<tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.8">
+<tr><td>🎬 <strong>7 000 crédits</strong> : de quoi créer ta première vidéo complète</td></tr>
+<tr><td>🍓 <strong>Fruit Drama</strong> : une idée, et la vidéo est prête (voix, sous-titres, musique)</td></tr>
+<tr><td>✂️ <strong>Clipping IA</strong> : une longue vidéo devient des clips prêts à poster</td></tr></table></td></tr>
+<tr><td align="center" style="padding:22px 0 6px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Activer mes 3 jours gratuits</a></td></tr>
+<tr><td style="font-size:13px;line-height:1.6;color:#4b4560;text-align:center">0 $ aujourd’hui, carte demandée. Ensuite Creator à 29 $/mois, seulement si tu continues : un rappel t’est envoyé la veille, et tu résilies en 1 clic.</td></tr>`, unsub),
+    text: (unsub) => `Tout Storyit, gratuit pendant 3 jours.
+
+Ta première vraie vidéo t'attend. On t'ouvre tout :
+- 7 000 crédits : de quoi créer ta première vidéo complète
+- Fruit Drama : une idée, et la vidéo est prête (voix, sous-titres, musique)
+- Clipping IA : une longue vidéo devient des clips prêts à poster
+
+Activer mes 3 jours gratuits : ${APP}/app/billing?interval=month
+
+0 $ aujourd'hui, carte demandée. Ensuite Creator à 29 $/mois, seulement si tu continues : un rappel t'est envoyé la veille, et tu résilies en 1 clic.
+
+À très vite,
+L'équipe Storyit
+
+Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${unsub}`,
+  },
   // retired with the $1 trial (Nov 2026): kept for history, refused by the sender
   trial_launch: {
     subject: '🎉 Testez Storyit Creator pendant 3 jours pour 1 $',
