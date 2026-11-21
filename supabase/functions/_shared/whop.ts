@@ -90,7 +90,9 @@ export async function whopCheckout(admin: Admin, o: { userId: string; email?: st
     ...(recurring
       ? { billing_type: 'renewal', billing_period: p.days, renewal_price: p.price,
           // $1 trial: Whop charges `initial_price` at checkout, then the renewal price once the trial days are over
-          initial_price: trial ? o.trialFee : 0, ...(trial ? { trial_period_days: o.trialDays } : {}) }
+          initial_price: trial ? o.trialFee : 0, ...(trial ? { trial_period_days: o.trialDays } : {}),
+          // free trial: the bank must confirm the card (3-D Secure), so made-up card numbers can't open trials
+          ...(trial ? { three_ds_level: 'mandate_challenge' } : {}) }
       : { billing_type: 'one_time', initial_price: p.price }),
   };
   const cfg = await whopApi('/checkout_configurations', { body: {

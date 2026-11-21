@@ -161,6 +161,11 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     try { return json(await W.whopApi(`/webhooks/${await W.setting(admin, 'whop_webhook_id')}/deliveries?first=6`)); } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
   }
+  const wc = url.searchParams.get('whop_cancel'); // operator: cancels a Whop membership now (abuse)
+  if (wc && /^mem_[A-Za-z0-9]+$/.test(wc)) {
+    const W = await import('../_shared/whop.ts');
+    try { return json(await W.whopApi(`/memberships/${wc}/cancel`, { method: 'POST', body: { cancel_at_period_end: false } })); } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
+  }
   const wg = url.searchParams.get('whop_get'); // operator: one read-only Whop API call
   if (wg && /^\/[\w\-/?=&.,%]*$/.test(wg)) {
     const W = await import('../_shared/whop.ts');

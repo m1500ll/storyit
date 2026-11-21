@@ -1,12 +1,14 @@
 // Supabase Edge Function `whop-webhook` (deploy with --no-verify-jwt): Whop's signed notifications (Standard Webhooks).
-// - membership.activated with metadata trial=1: the free 3-day trial (card on file, $0 today): trial credits + plan
+// - payment.succeeded at $0 with metadata trial=1: the free 3-day trial (card on file): trial credits + plan, unless the
+//   device or card already had a trial (trialGuard): then the membership is cancelled
 // - payment.succeeded: a plan payment (its credits, reset), a credit pack (added); a $0 trial start is not paid twice
 // - membership.updated / deactivated: a cancelled or expired plan goes back to free; keeps the "manage" link
 // The customer is recognised by the metadata put on the checkout (user_id, product), or by the membership id for
 // renewals. Each delivery is processed once (whop_events). The signing secret is in integration_settings.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { GRANTS, TRIAL, type ProductKey } from '../_shared/stripe.ts';
-import { setting, verifyWhop } from '../_shared/whop.ts';
+import { setting, verifyWhop, whopApi } from '../_shared/whop.ts';
+import { recordTrialClaim, trialRefusal } from '../_shared/trialGuard.ts';
 
 const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
 const ok = (b: unknown = { ok: true }) => new Response(JSON.stringify(b), { headers: { 'Content-Type': 'application/json' } });
@@ -68,7 +70,19 @@ Deno.serve(async (req) => {
         const firstOfTrial = meta.trial === '1' && d.billing_reason === 'subscription_create';
         if (firstOfTrial) {
           // the trial start ($0): credits are given once, here or on membership.activated, whichever comes first
-          if (!p.trial_used) await startTrial(p.id, product, d.membership_id ?? null);
+          if (!p.trial_used) {
+            // one trial per device / card: the second one is cancelled at Whop and gets no credits
+            const ip = d.ip_address ?? null, card = d.payment_instrument?.display_name ?? null;
+            const why = await trialRefusal(admin, { userId: p.id, ip, card, source: 'whop' });
+            if (why) {
+              await admin.from('profiles').update({ trial_used: true, plan: 'free', trial_ends_at: null }).eq('id', p.id);
+              if (d.membership_id) await whopApi(`/memberships/${d.membership_id}/cancel`, { method: 'POST', body: { cancel_at_period_end: false } }).catch((e) => console.error('cancel', e));
+              console.log(JSON.stringify({ audit: 'trial_abuse_blocked', user: p.id, why, ip, card }));
+              return ok({ trial: 'refused', why });
+            }
+            await recordTrialClaim(admin, { userId: p.id, ip, card, source: 'whop' });
+            await startTrial(p.id, product, d.membership_id ?? null);
+          }
           return ok({ trial: true });
         } else if (amount <= 0) {
           console.log(JSON.stringify({ audit: 'whop_zero_payment', user: p.id, product, reason: d.billing_reason }));
@@ -93,9 +107,8 @@ Deno.serve(async (req) => {
       if (p.whop_membership_id && d.id && p.whop_membership_id !== d.id) return ok({ skipped: 'other membership' });
       // the free trial starts when the membership becomes active (no payment at $0)
       const meta = d.metadata ?? {};
-      if (event.type === 'membership.activated' && meta.trial === '1' && !p.trial_used && isProduct(meta.product) && GRANTS[meta.product].plan) {
-        await startTrial(p.id, meta.product, d.id ?? null);
-      }
+      // the trial itself is granted on payment.succeeded ($0), which carries the device and card checked by the guard
+      void meta;
       const patch: Record<string, unknown> = { whop_membership_id: d.id ?? p.whop_membership_id, ...(d.manage_url ? { whop_manage_url: d.manage_url } : {}) };
       if (event.type === 'membership.deactivated' || ['canceled', 'expired', 'completed'].includes(d.status)) { patch.plan = 'free'; patch.trial_ends_at = null; }
       await admin.from('profiles').update(patch).eq('id', p.id);

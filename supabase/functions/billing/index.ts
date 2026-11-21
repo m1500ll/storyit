@@ -12,6 +12,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { GRANTS, isTopupAmount, TOPUP, TRIAL } from '../_shared/stripe.ts';
 import { accountEnv, accountOf, newCustomersAccount, stripeOn, type StripeAccount } from '../_shared/stripeAccount.ts';
 import { whopCheckout, whopEnabled } from '../_shared/whop.ts';
+import { clientIp, recordTrialClaim, TRIAL_REFUSED, trialRefusal } from '../_shared/trialGuard.ts';
 import { dodoCheckout, dodoEnabled, dodoPortal } from '../_shared/dodo.ts';
 import { paddleCheckout, paddleEnabled, paddlePortal, setting as integrationSetting } from '../_shared/paddle.ts';
 
@@ -222,8 +223,15 @@ Deno.serve(async (req) => {
       if (onWhop && wp?.plan && wp.plan !== 'free' && GRANTS[product].plan && wp.whop_manage_url) return json({ url: wp.whop_manage_url });
       try {
         const back = typeof body.return_to === 'string' && /^\/app\/[A-Za-z0-9/_-]*(\?[A-Za-z0-9=&_-]*)?$/.test(body.return_to) ? body.return_to : '/app/billing';
+        const wantsTrial = trial === true && !wp?.trial_used && (wp?.plan ?? 'free') === 'free';
+        if (wantsTrial) {
+          const ip = clientIp(req);
+          const why = await trialRefusal(admin, { userId: user.id, email: user.email ?? '', ip, source: 'checkout' });
+          if (why) { console.log(JSON.stringify({ audit: 'trial_refused', user: user.id, why, ip })); return json({ error: TRIAL_REFUSED[why] }, 409); }
+          await recordTrialClaim(admin, { userId: user.id, ip, source: 'checkout' });
+        }
         const url = await whopCheckout(admin, {
-          userId: user.id, email: user.email, product, trial: trial === true && !wp?.trial_used && (wp?.plan ?? 'free') === 'free',
+          userId: user.id, email: user.email, product, trial: wantsTrial,
           redirect: `${appUrl}${back}${back.includes('?') ? '&' : '?'}checkout=success`, trialDays: TRIAL.days, trialFee: TRIAL.feeCents / 100,
         });
         return json({ url });
