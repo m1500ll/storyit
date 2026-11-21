@@ -33,8 +33,8 @@ export default function ResetPasswordPage() {
         <h1 className="mt-8 font-display text-3xl text-zinc-50">Choisissez un nouveau mot de passe</h1>
         <form onSubmit={submit} className="mt-6 space-y-3">
           <label className="sr-only" htmlFor="new-password">Nouveau mot de passe</label>
-          <input id="new-password" className="input" type="password" name="new-password" autoComplete="new-password" required minLength={6}
-            placeholder="Nouveau mot de passe (6 caractères minimum)…" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <input id="new-password" className="input" type="password" name="new-password" autoComplete="new-password" required minLength={8}
+            placeholder="Nouveau mot de passe (8 caractères minimum)…" value={password} onChange={(e) => setPassword(e.target.value)} />
           <div aria-live="polite">{error && <p className="text-xs text-coral-300">{error}</p>}</div>
           <Button type="submit" className="w-full" loading={loading}>Enregistrer le mot de passe</Button>
         </form>

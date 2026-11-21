@@ -14,6 +14,7 @@ import { decrypt, encrypt } from '../_shared/social.ts';
 import { backups, backupText, openaiModels } from '../_shared/backupLlm.ts';
 import { claudeJson, claudeWriterReady } from '../_shared/claudeWriter.ts';
 import { reserveAi } from '../_shared/aiBudget.ts';
+import { RATE_MESSAGE, withinRate } from '../_shared/rateLimit.ts';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta';
 const TEXT_MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
@@ -132,6 +133,10 @@ Deno.serve(async (req) => {
     uid = auth.user.id;
   }
   const attempt = Math.max(0, Math.min(3, Number(body.attempt) || 0));
+  // AI actions of a customer (not the automatic pipeline): at most 60 an hour, 300 a day
+  if (!internal && ['story_idea', 'phase', 'fix', 'review', 'create', 'concepts'].includes(String(action))) {
+    if (!(await withinRate(uid, 'prompts', 60, 3600)) || !(await withinRate(uid, 'prompts_day', 300, 86400))) return json({ error: RATE_MESSAGE, code: 'rate_limited' }, 429);
+  }
 
   /** automatic pipeline: after `done`, queue the next step (or order the video), and record where the project is */
   const STEPS = ['images', 'videos', 'pack', 'order'] as const;

@@ -30,7 +30,7 @@ const L_FR = {
   noGoogle: 'La connexion Google n’est pas encore activée.', confirm: 'Confirmez d’abord votre e-mail : regardez votre boîte de réception.',
   resetSent: 'Si un compte existe pour cet e-mail, un lien de réinitialisation est en route.', checkInbox: 'C’est presque fini : on vient de vous envoyer un e-mail. Cliquez sur « Confirmer mon e-mail » pour activer votre compte (pensez à regarder dans les spams).', resend: 'Renvoyer l’e-mail', resent: 'E-mail renvoyé. Il peut mettre une minute à arriver.',
   perks: ['3 000 crédits offerts pour essayer les studios', 'Des vidéos IA prêtes pour TikTok, Reels et Shorts', 'Offre gratuite, sans carte, sans engagement'],
-  redirect: 'Redirection vers Google…', google: 'Continuer avec Google', orEmail: 'ou avec un e-mail', password: 'Mot de passe', passNew: 'Mot de passe (6 caractères minimum)…', pass: 'Mot de passe…',
+  redirect: 'Redirection vers Google…', google: 'Continuer avec Google', orEmail: 'ou avec un e-mail', password: 'Mot de passe', passNew: 'Mot de passe (8 caractères minimum)…', pass: 'Mot de passe…',
   forgotQ: 'Mot de passe oublié ?', back: 'Retour à la connexion', noAccount: 'Pas de compte ? Créez-en un', haveAccount: 'Déjà un compte ? Connectez-vous',
   privacy1: 'En continuant, vous acceptez la façon dont nous traitons vos données, décrite dans notre', privacy2: 'politique de confidentialité', email: 'vous@studio.com…', seo: 'Connexion',
 };
@@ -172,7 +172,7 @@ export default function AuthPage() {
           {mode !== 'forgot' && (
             <>
               <label className="sr-only" htmlFor="password">{L.password}</label>
-              <input id="password" className="input" type="password" name="password" required minLength={6}
+              <input id="password" className="input" type="password" name="password" required minLength={mode === 'signup' ? 8 : 6}
                 autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                 placeholder={mode === 'signup' ? L.passNew : L.pass} value={password} onChange={(e) => setPassword(e.target.value)} />
             </>

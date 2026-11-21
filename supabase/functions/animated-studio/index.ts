@@ -9,6 +9,7 @@
 //             The worker refunds the credits if the render fails.
 // - list / get: the customer's projects (also readable directly through RLS + Realtime for live progress).
 // Secrets: ANTHROPIC_API_KEY (Edge Function secret, never a VITE_ variable).
+import { RATE_MESSAGE, withinRate } from '../_shared/rateLimit.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import Anthropic from 'npm:@anthropic-ai/sdk@1.6.0';
 import { CHAT_SYSTEM, LENGTH_COST, CHAT_TOOLS, DECOR_KEYS, CHAT_MODEL, MODEL, seedNote, type Brief, type Choices } from '../_shared/animatedStudio.ts';
@@ -130,6 +131,7 @@ Deno.serve(async (req) => {
   }
 
   if (action === 'chat') {
+    if (!(await withinRate(uid, 'anim_chat', 40, 3600)) || !(await withinRate(uid, 'anim_chat_day', 150, 86400))) return json({ error: RATE_MESSAGE, code: 'rate_limited' }, 429);
     const text = (body.message ?? '').trim();
     if (!text) return json({ error: 'Écrivez un message.' }, 400);
     if (text.length > 4000) return json({ error: 'Message trop long (4 000 caractères maximum).' }, 400);

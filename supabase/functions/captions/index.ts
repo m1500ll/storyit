@@ -2,6 +2,7 @@
 // Manual edits are never overwritten unless the user explicitly forces a regeneration of that one post.
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { generateVariant } from '../_shared/captions.ts';
+import { withinRate } from '../_shared/rateLimit.ts';
 import { reserveAi } from '../_shared/aiBudget.ts';
 
 const cors = {
@@ -21,6 +22,7 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
   const ids = (body.publication_ids ?? []).slice(0, 50);
   if (!ids.length) return json({ error: 'No publication selected' }, 400);
+  if (!(await withinRate(auth.user.id, 'captions', 20, 3600))) return json({ error: 'Too many caption requests. Please wait a few minutes.' }, 429);
   const key = Deno.env.get('GEMINI_API_KEY');
   if (!key) return json({ error: 'AI captions are not configured: write the captions manually.' }, 503);
 
