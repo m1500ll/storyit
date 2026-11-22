@@ -12,8 +12,8 @@ const MODEL = Deno.env.get('GEMINI_CLIPS_MODEL') ?? 'gemini-3.8-flash';
 const FALLBACK_MODELS = (Deno.env.get('GEMINI_CLIPS_FALLBACK_MODEL') ?? 'gemini-3.7-flash,gemini-3.5-flash').split(',').map((m) => m.trim()).filter(Boolean);
 const RETRYABLE = new Set([429, 500, 503, 504]);
 // Supabase stops a function after ~150 s (free plan): stay below it.
-const TOTAL_BUDGET_MS = 70_000; // the audio analysis; the fallbacks below get the rest of the ~140 s a request may last
-const REQUEST_TIMEOUT_MS = 60_000;
+const TOTAL_BUDGET_MS = 80_000; // the audio analysis; the fallbacks below get the rest of the ~140 s a request may last
+const REQUEST_TIMEOUT_MS = 75_000;
 const MAX_SECONDS = 30 * 60 + 30; // keep in sync with MAX_SOURCE_SECONDS in src/types/domain.ts
 const AUDIO_BITRATE = 24_000; // bits/s, set by the browser when extracting audio
 const LENGTHS = { short: [15, 30], medium: [30, 60], long: [60, 90] } as const;
@@ -425,15 +425,19 @@ Rules:
     const b64 = encodeBase64(bytes);
     const reasons: string[] = [];
     let blocked = false;
+    // The captions come from the speech-to-text (word timings): Gemini only picks the moments. Asking it for a verbatim
+    // transcript made long videos time out (huge answers) and got answers blocked when the audio has song lyrics.
+    const withWhisper = !!Deno.env.get('OPENAI_API_KEY');
+    const askPrompt = withWhisper ? prompt.replace(/^- captions:.*$/m, '- The audio may contain songs, a film or a game trailer: never quote lyrics or copyrighted text; describe moments in your own words. keywords are words said by the people talking.') : prompt;
     const analyse = async (): Promise<{ clips: RawClip[] } | null> => {
-      try { return await callGemini(prompt, b64); }
+      try { return await callGemini(askPrompt, b64, withWhisper ? lightSchema : schema); }
       catch (e) {
         blocked = e instanceof BlockedAnswerError;
         reasons.push(e instanceof BlockedAnswerError ? e.reason : e instanceof Error ? e.message.slice(0, 120) : String(e));
         return null;
       }
     };
-    const [heard, words] = await Promise.all([analyse(), transcribeWords(bytes)]);
+    const [heard, words] = await Promise.all([analyse(), transcribeWords(bytes, 95_000)]);
     let out = heard;
     if (!out?.clips?.length && words?.length) {
       console.warn(JSON.stringify({ audit: 'clips_transcript_fallback', reasons }));
