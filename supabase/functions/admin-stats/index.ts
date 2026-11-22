@@ -36,6 +36,25 @@ async function stripeAll(path: string, acct: Acct, cap = 1000) {
 
 const DAY = 86_400_000;
 
+/** Whop: every page of a list (memberships, payments), read-only */
+async function whopAll(path: string, cap = 2000) {
+  const key = Deno.env.get('WHOP_API_KEY');
+  if (!key) return [];
+  const out: any[] = [];
+  let after = '';
+  while (out.length < cap) {
+    const res = await fetch(`https://api.whop.com/api/v1${path}${path.includes('?') ? '&' : '?'}first=100${after ? `&after=${encodeURIComponent(after)}` : ''}`,
+      { headers: { Authorization: `Bearer ${key}`, 'Api-Version-Date': '2026-11-17' } });
+    if (!res.ok) { console.error('whop', path, res.status); break; }
+    const page = await res.json();
+    out.push(...(page.data ?? []));
+    if (!page.page_info?.has_next_page || !page.page_info?.end_cursor) break;
+    after = page.page_info.end_cursor;
+  }
+  return out;
+}
+const money = (m: any) => Math.round(Number(m?.amount ?? 0) * 100);
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
@@ -82,6 +101,10 @@ Deno.serve(async (req) => {
     stripeAll('invoices?status=paid', 'legacy'), stripeAll('invoices?status=paid', 'new'),
     stripeAll('subscriptions?status=all', 'legacy'), stripeAll('subscriptions?status=all', 'new'),
   ]);
+  const { data: whopAcct } = await admin.from('integration_settings').select('value').eq('key', 'whop_account_id').maybeSingle();
+  const [whopMembers, whopPays] = whopAcct?.value
+    ? await Promise.all([whopAll(`/memberships?account_id=${whopAcct.value}`), whopAll(`/payments?account_id=${whopAcct.value}`)])
+    : [[], []];
   const invoices = [...invOld, ...invNew];
   const subs = [...subOld, ...subNew];
   const users = usersRes.data?.users ?? [];
@@ -98,6 +121,10 @@ Deno.serve(async (req) => {
 
   // Stripe: money actually collected per member, and their current subscription
   const paid = new Map<string, { total: number; last: number; currency: string }>();
+  let mrr0 = 0;
+  /** every real payment of a member (Stripe and Whop), to check that the current period was actually paid */
+  const payList = new Map<string, { at: number; amount: number }[]>();
+  const addPay = (uid: string, at: number, amount: number) => { const l = payList.get(uid) ?? []; l.push({ at, amount }); payList.set(uid, l); };
   const payments: any[] = [];
   for (const i of invoices) {
     const uid = uidOf(i);
@@ -105,9 +132,37 @@ Deno.serve(async (req) => {
     if (uid && i.amount_paid > 0) {
       const cur = paid.get(uid) ?? { total: 0, last: 0, currency: i.currency };
       cur.total += i.amount_paid; cur.last = Math.max(cur.last, at); paid.set(uid, cur);
+      addPay(uid, at, i.amount_paid);
     }
     if (i.amount_paid > 0) payments.push({ at, amount: i.amount_paid, currency: i.currency, email: uid ? emailOf.get(uid) : null, reason: i.billing_reason, label: (i.lines?.data?.[0]?.description ?? '').slice(0, 70) });
   }
+  // Whop: real payments (succeeded, more than $0, minus refunds) and the real state of each membership
+  const userOfMembership = new Map([...profiles.values()].filter((p: any) => p.whop_membership_id).map((p: any) => [p.whop_membership_id, p.id]));
+  const whopUid = (o: any): string | undefined => (o.metadata?.user_id && profiles.has(o.metadata.user_id) ? o.metadata.user_id : undefined)
+    ?? userOfMembership.get(o.membership_id ?? o.id) ?? (o.customer_email ? userOfEmail.get(String(o.customer_email).toLowerCase()) : undefined);
+  for (const p of whopPays) {
+    if (p.substatus !== 'succeeded' && p.status !== 'paid') continue;
+    const amount = money(p.usd_total ?? p.total) - money(p.refunded_amount);
+    if (amount <= 0) continue;
+    const uid = whopUid(p);
+    const at = Date.parse(p.paid_at ?? p.created_at);
+    if (uid) { const cur = paid.get(uid) ?? { total: 0, last: 0, currency: 'usd' }; cur.total += amount; cur.last = Math.max(cur.last, at); paid.set(uid, cur); addPay(uid, at, amount); }
+    payments.push({ at, amount, currency: 'usd', email: uid ? emailOf.get(uid) : (p.customer_email ?? null), reason: p.billing_reason, label: `Whop · ${p.billing_reason === 'subscription_cycle' ? 'renouvellement' : p.billing_reason === 'one_time' ? 'pack de crédits' : 'abonnement'}` });
+  }
+  const whopOf = new Map<string, any>();
+  const wrank = (m: any) => (m.status === 'active' ? 3 : m.status === 'trialing' ? 2 : m.status === 'past_due' ? 1 : 0);
+  for (const m of whopMembers) {
+    const uid = whopUid(m);
+    if (!uid) continue;
+    const prev = whopOf.get(uid);
+    if (!prev || wrank(m) > wrank(prev) || (wrank(m) === wrank(prev) && Date.parse(m.created_at) > Date.parse(prev.created_at))) whopOf.set(uid, m);
+  }
+  for (const m of whopOf.values()) {
+    if (m.status !== 'active' || m.cancel_at_period_end) continue;
+    const price = money(m.renewal_price);
+    mrr0 += (m.billing_period_days ?? 30) >= 300 ? price / 12 : price;
+  }
+
   const subOf = new Map<string, any>();
   for (const s of subs) {
     const uid = uidOf(s);
@@ -116,9 +171,12 @@ Deno.serve(async (req) => {
     const rank = (x: any) => (x.status === 'active' ? 3 : x.status === 'trialing' ? 2 : x.status === 'past_due' ? 1 : 0);
     if (!prev || rank(s) > rank(prev) || (rank(s) === rank(prev) && s.created > prev.created)) subOf.set(uid, s);
   }
-  let mrr = 0;
-  for (const s of subOf.values()) {
-    if (s.status !== 'active' || cancelling(s)) continue; // a cancelled plan will not renew
+  /** a Stripe subscription is really paid when a payment of $5 or more came in for its current period */
+  const periodStart = (s: any) => (s.current_period_start ?? s.items?.data?.[0]?.current_period_start ?? 0) * 1000;
+  const stripePaid = (uid: string, s: any) => (payList.get(uid) ?? []).some((x) => x.amount >= 500 && x.at >= periodStart(s) - DAY);
+  let mrr = mrr0;
+  for (const [uid, s] of subOf) {
+    if (s.status !== 'active' || cancelling(s) || !stripePaid(uid, s)) continue; // a cancelled or unpaid plan will not renew
     const price = s.items?.data?.[0]?.price;
     if (!price?.unit_amount) continue;
     mrr += price.recurring?.interval === 'year' ? price.unit_amount / 12 : price.unit_amount;
@@ -141,18 +199,26 @@ Deno.serve(async (req) => {
     const p: any = profiles.get(u.id) ?? {};
     const s = subOf.get(u.id);
     const money = paid.get(u.id);
-    // Whop (and other non-Stripe) plans are read from the profile: a running trial, else a paid plan
-    const ext = !s && p.billing_provider && p.billing_provider !== 'stripe' && p.plan && p.plan !== 'free';
-    const extTrial = ext && !!p.trial_ends_at && Date.parse(p.trial_ends_at) > Date.now();
-    const status = s?.status === 'active' ? 'paying' : s?.status === 'trialing' ? 'trial' : s?.status === 'past_due' ? 'past_due'
-      : extTrial ? 'trial' : ext ? 'paying' : money ? 'churned' : 'free';
+    // Whop memberships are read from Whop itself (trialing / active / past_due / canceled), never guessed from the profile
+    const w = whopOf.get(u.id);
+    const useWhop = !!w && (!s || wrank(w) >= (s.status === 'active' ? 3 : s.status === 'trialing' ? 2 : s.status === 'past_due' ? 1 : 0));
+    const extTrial = useWhop && w.status === 'trialing';
+    const wLive = useWhop && (w.status === 'active' || w.status === 'trialing');
+    const status = useWhop
+      ? (w.status === 'active' ? 'paying' : w.status === 'trialing' ? 'trial' : w.status === 'past_due' ? 'past_due' : money ? 'churned' : 'free')
+      : s?.status === 'active' ? (stripePaid(u.id, s) ? 'paying' : 'past_due') : s?.status === 'trialing' ? 'trial' : s?.status === 'past_due' ? 'past_due' : money ? 'churned' : 'free';
     const price = s?.items?.data?.[0]?.price;
     return {
       id: u.id, email: u.email ?? '', signedUpAt: u.created_at, lastSignInAt: u.last_sign_in_at ?? null, confirmed: !!u.email_confirmed_at,
-      plan: p.plan ?? 'free', status, interval: price?.recurring?.interval ?? null,
-      renewsAt: s && (s.status === 'active' || s.status === 'trialing') ? ((s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? 0) * 1000 || null) : null,
-      cancelAtPeriodEnd: cancelling(s), cancelAt: cancelling(s) ? ((s.cancel_at ?? s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? 0) * 1000 || null) : null,
-      canceledAt: s?.canceled_at ? s.canceled_at * 1000 : null, trialEndsAt: s?.status === 'trialing' && s.trial_end ? s.trial_end * 1000 : extTrial ? Date.parse(p.trial_ends_at) : null,
+      plan: p.plan ?? 'free', status, provider: useWhop ? 'whop' : s ? 'stripe' : null,
+      interval: useWhop ? ((w.billing_period_days ?? 30) >= 300 ? 'year' : 'month') : price?.recurring?.interval ?? null,
+      renewsAt: useWhop ? (wLive ? Date.parse(w.current_period_end) || null : null)
+        : s && (s.status === 'active' || s.status === 'trialing') ? ((s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? 0) * 1000 || null) : null,
+      cancelAtPeriodEnd: useWhop ? wLive && !!w.cancel_at_period_end : cancelling(s),
+      cancelAt: useWhop ? (wLive && w.cancel_at_period_end ? Date.parse(w.current_period_end) || null : null)
+        : cancelling(s) ? ((s.cancel_at ?? s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? 0) * 1000 || null) : null,
+      canceledAt: useWhop ? (w.canceled_at ? Date.parse(w.canceled_at) : null) : s?.canceled_at ? s.canceled_at * 1000 : null,
+      trialEndsAt: extTrial ? Date.parse(w.current_period_end) || null : !useWhop && s?.status === 'trialing' && s.trial_end ? s.trial_end * 1000 : null,
       paidCents: money?.total ?? 0, lastPaymentAt: money?.last ?? null,
       credits: p.credit_balance ?? 0, spent: spent.get(u.id) ?? 0, videos: videos.get(u.id) ?? 0, lastActivityAt: lastAct.get(u.id) ?? null,
       partner: p.affiliate_id ? (affiliates.get(p.affiliate_id)?.code ?? 'partenaire') : null, isAdmin: !!p.is_admin, unsubscribed: !!p.marketing_opt_out,

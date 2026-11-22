@@ -22,7 +22,7 @@ const PLAN: Record<string, string> = { free: 'Gratuit', creator: 'Creator', pro:
 const STATUS: Record<MemberStatus, { label: string; cls: string }> = {
   paying: { label: 'Abonné', cls: 'bg-emerald-500/15 text-emerald-300' },
   trial: { label: 'Essai', cls: 'bg-amber-500/15 text-amber-300' },
-  past_due: { label: 'Paiement en échec', cls: 'bg-coral-500/15 text-coral-300' },
+  past_due: { label: 'Impayé', cls: 'bg-coral-500/15 text-coral-300' },
   churned: { label: 'A résilié', cls: 'bg-line/[0.08] text-zinc-300' },
   free: { label: 'Gratuit', cls: 'bg-line/[0.06] text-zinc-500' },
 };
