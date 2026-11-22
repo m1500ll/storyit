@@ -161,6 +161,11 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     try { return json(await W.whopApi(`/webhooks/${await W.setting(admin, 'whop_webhook_id')}/deliveries?first=6`)); } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
   }
+  if (url.searchParams.get('gemini_models') === '1') { // operator: the Gemini models this key can call
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': Deno.env.get('GEMINI_API_KEY') ?? '' } });
+    const d = await r.json();
+    return json((d.models ?? []).filter((m: any) => (m.supportedGenerationMethods ?? []).includes('generateContent')).map((m: any) => ({ name: m.name, in: m.inputTokenLimit, out: m.outputTokenLimit })));
+  }
   const wc = url.searchParams.get('whop_cancel'); // operator: cancels a Whop membership now (abuse)
   if (wc && /^mem_[A-Za-z0-9]+$/.test(wc)) {
     const W = await import('../_shared/whop.ts');

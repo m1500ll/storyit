@@ -8,7 +8,8 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import { encodeBase64 } from 'jsr:@std/encoding@1/base64';
 
 const MODEL = Deno.env.get('GEMINI_CLIPS_MODEL') ?? 'gemini-3.8-flash';
-const FALLBACK_MODEL = Deno.env.get('GEMINI_CLIPS_FALLBACK_MODEL') ?? 'gemini-3.8-flash-lite';
+// models that exist on this key (checked Nov 22 2026 with llm-health?gemini_models=1): tried in this order
+const FALLBACK_MODELS = (Deno.env.get('GEMINI_CLIPS_FALLBACK_MODEL') ?? 'gemini-3.5-flash,gemini-2.5-flash').split(',').map((m) => m.trim()).filter(Boolean);
 const RETRYABLE = new Set([429, 500, 503, 504]);
 // Supabase stops a function after ~150 s (free plan): stay below it.
 const TOTAL_BUDGET_MS = 120_000;
@@ -88,7 +89,7 @@ async function requestGemini(model: string, prompt: string, audioB64: string, ke
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ inline_data: { mime_type: 'audio/mp3', data: audioB64 } }, { text: prompt }] }],
-      generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.4, maxOutputTokens: 16384 },
+      generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.4, maxOutputTokens: 65536 },
       safetySettings: SAFETY,
     }),
   });
@@ -107,7 +108,7 @@ async function requestGemini(model: string, prompt: string, audioB64: string, ke
 async function callGemini(prompt: string, audioB64: string): Promise<{ clips: RawClip[] }> {
   const key = Deno.env.get('GEMINI_API_KEY');
   if (!key) throw new Error('GEMINI_API_KEY secret is not set');
-  const models = FALLBACK_MODEL && FALLBACK_MODEL !== 'none' && FALLBACK_MODEL !== MODEL ? [MODEL, FALLBACK_MODEL] : [MODEL];
+  const models = [MODEL, ...FALLBACK_MODELS.filter((m) => m !== 'none' && m !== MODEL)];
   const deadline = Date.now() + TOTAL_BUDGET_MS;
   let lastError: unknown;
   for (const model of models) {
@@ -121,10 +122,11 @@ async function callGemini(prompt: string, audioB64: string): Promise<{ clips: Ra
         const timedOut = e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError');
         const retryable = timedOut || e instanceof EmptyAnswerError || (e instanceof GeminiHttpError ? RETRYABLE.has(e.status) : e instanceof SyntaxError);
         if (!retryable) {
-          if (model !== MODEL && e instanceof GeminiHttpError && e.status === 404) break;
+          if (e instanceof GeminiHttpError && e.status === 404) break; // a model that does not exist: next one
           throw e;
         }
         console.warn(`Gemini ${model} attempt ${attempt + 1} failed:`, e instanceof Error ? e.message : e);
+        if (e instanceof EmptyAnswerError && /SAFETY|PROHIBITED|BLOCK|RECITATION/i.test(e.reason)) break; // same answer again: next model
         await sleep(1500 * 2 ** attempt);
       }
     }
@@ -134,8 +136,8 @@ async function callGemini(prompt: string, audioB64: string): Promise<{ clips: Ra
   if (transient) throw new Error('L’IA est très demandée en ce moment. Réessayez dans une minute.');
   if (lastError instanceof EmptyAnswerError) {
     throw new Error(/SAFETY|PROHIBITED|BLOCK|RECITATION/i.test(lastError.reason)
-      ? 'L’IA n’a pas pu analyser cette vidéo (son contenu a été bloqué par le filtre de sécurité de Google). Essaie avec une autre vidéo.'
-      : 'L’IA n’a pas réussi à analyser cette vidéo. Réessaie dans un instant.');
+      ? `L’IA n’a pas pu analyser cette vidéo : son contenu a été bloqué par le filtre de Google (${lastError.reason}). Essaie avec une autre vidéo.`
+      : `L’IA n’a pas réussi à analyser cette vidéo (${lastError.reason}). Réessaie dans un instant.`);
   }
   if (lastError instanceof GeminiHttpError && [401, 402, 403].includes(lastError.status)) {
     console.error('clips-analyze billing/key', lastError.message);
