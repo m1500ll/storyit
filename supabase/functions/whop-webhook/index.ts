@@ -72,15 +72,15 @@ Deno.serve(async (req) => {
           // the trial start ($0): credits are given once, here or on membership.activated, whichever comes first
           if (!p.trial_used) {
             // one trial per device / card: the second one is cancelled at Whop and gets no credits
-            const ip = d.ip_address ?? null, card = d.payment_instrument?.display_name ?? null;
-            const why = await trialRefusal(admin, { userId: p.id, ip, card, source: 'whop' });
+            const ip = d.ip_address ?? null, card = d.payment_instrument?.display_name ?? null, ua = typeof d.user_agent === 'string' ? d.user_agent.slice(0, 300) : null;
+            const why = await trialRefusal(admin, { userId: p.id, ip, card, ua, source: 'whop' });
             if (why) {
               await admin.from('profiles').update({ trial_used: true, plan: 'free', trial_ends_at: null }).eq('id', p.id);
               if (d.membership_id) await whopApi(`/memberships/${d.membership_id}/cancel`, { method: 'POST', body: { cancel_at_period_end: false } }).catch((e) => console.error('cancel', e));
               console.log(JSON.stringify({ audit: 'trial_abuse_blocked', user: p.id, why, ip, card }));
               return ok({ trial: 'refused', why });
             }
-            await recordTrialClaim(admin, { userId: p.id, ip, card, source: 'whop' });
+            await recordTrialClaim(admin, { userId: p.id, ip, card, ua, source: 'whop' });
             await startTrial(p.id, product, d.membership_id ?? null);
           }
           return ok({ trial: true });
