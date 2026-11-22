@@ -62,20 +62,90 @@ Deno.serve(async (req) => {
   const cron = Deno.env.get('PUBLISHER_CRON_TOKEN');
   const header = req.headers.get('Authorization') ?? '';
   const operator = !!cron && cron.length >= 32 && header.length === cron.length + 7 && [...header].every((c, i) => c === `Bearer ${cron}`[i]);
+  let adminId: string | null = null;
   if (!operator) {
     const userClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: header } } });
     const { data: auth } = await userClient.auth.getUser();
     if (!auth.user) return json({ error: 'Veuillez vous reconnecter.' }, 401);
     const { data: me } = await admin.from('profiles').select('is_admin').eq('id', auth.user.id).single();
     if (!me?.is_admin) return json({ error: 'Réservé à l’administrateur.' }, 403);
+    adminId = auth.user.id;
   }
 
   // one member's full credit history (the dashboard's member sheet)
   const body = await req.json().catch(() => ({}));
+
+  // owner actions on one member: credits, offered plan, ban (each logged in admin_actions)
+  if (typeof body?.act === 'string' && typeof body.user_id === 'string' && /^[0-9a-f-]{36}$/.test(body.user_id)) {
+    const uid = body.user_id as string;
+    const reason = String(body.reason ?? '').trim().slice(0, 200);
+    const { data: target } = await admin.from('profiles').select('id, plan, credit_balance, is_admin, whop_membership_id, billing_provider').eq('id', uid).maybeSingle();
+    if (!target) return json({ error: 'Compte introuvable.' }, 404);
+    const log = (action: string, detail: Record<string, unknown>) => admin.from('admin_actions').insert({ admin_id: adminId, user_id: uid, action, detail: { ...detail, reason } });
+
+    if (body.act === 'credits') {
+      const amount = Math.trunc(Number(body.amount));
+      if (!amount || Math.abs(amount) > 2_000_000) return json({ error: 'Montant invalide.' }, 400);
+      const label = reason ? `Ajustement : ${reason}` : amount > 0 ? 'Crédits offerts' : 'Crédits retirés';
+      if (amount > 0) {
+        const { error } = await admin.rpc('grant_credits', { p_user_id: uid, p_amount: amount, p_type: 'bonus', p_description: label });
+        if (error) return json({ error: error.message }, 500);
+      } else {
+        const take = Math.min(-amount, target.credit_balance ?? 0);
+        const { data: row, error } = await admin.from('profiles').update({ credit_balance: (target.credit_balance ?? 0) - take }).eq('id', uid).eq('credit_balance', target.credit_balance).select('credit_balance').maybeSingle();
+        if (error || !row) return json({ error: 'Le solde a changé entre-temps, réessaie.' }, 409);
+        await admin.from('credit_transactions').insert({ user_id: uid, type: 'consumption', amount: -take, balance_after: row.credit_balance, description: label });
+      }
+      await log('credits', { amount });
+      return json({ ok: true });
+    }
+
+    if (body.act === 'plan') {
+      const plan = String(body.plan);
+      const days = Math.trunc(Number(body.days));
+      if (!['free', 'creator', 'pro', 'studio'].includes(plan)) return json({ error: 'Offre inconnue.' }, 400);
+      if (plan === 'free') {
+        await admin.from('profiles').update({ plan: 'free', plan_renews_at: null, trial_ends_at: null, ...(target.billing_provider === 'manual' ? { billing_provider: null } : {}) }).eq('id', uid);
+      } else {
+        if (!(days >= 1 && days <= 400)) return json({ error: 'Durée invalide (1 à 400 jours).' }, 400);
+        const credits = Math.max(0, Math.trunc(Number(body.credits) || 0));
+        if (credits > 0) {
+          const { error } = await admin.rpc('grant_credits', { p_user_id: uid, p_amount: credits, p_type: 'subscription_grant', p_description: `Offre ${plan} offerte (${days} j)${reason ? ` : ${reason}` : ''}`, p_plan: plan, p_reset: false });
+          if (error) return json({ error: error.message }, 500);
+        }
+        await admin.from('profiles').update({ plan, billing_provider: 'manual', plan_renews_at: new Date(Date.now() + days * DAY).toISOString(), trial_ends_at: null }).eq('id', uid);
+      }
+      await log('plan', { plan, days, credits: body.credits ?? 0 });
+      return json({ ok: true });
+    }
+
+    if (body.act === 'ban' || body.act === 'unban') {
+      if (target.is_admin) return json({ error: 'Impossible de bannir un administrateur.' }, 400);
+      const ban = body.act === 'ban';
+      const { error: authErr } = await admin.auth.admin.updateUserById(uid, { ban_duration: ban ? '876000h' : 'none' });
+      if (authErr) return json({ error: authErr.message }, 500);
+      if (ban) {
+        // no more access: signed out everywhere, plan and credits removed, Whop membership cancelled
+        if (target.whop_membership_id) {
+          await fetch(`https://api.whop.com/api/v1/memberships/${target.whop_membership_id}/cancel`, { method: 'POST',
+            headers: { Authorization: `Bearer ${Deno.env.get('WHOP_API_KEY')}`, 'Api-Version-Date': '2026-11-17', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cancel_at_period_end: false }) }).catch(() => undefined);
+        }
+        const bal = target.credit_balance ?? 0;
+        await admin.from('profiles').update({ banned_at: new Date().toISOString(), ban_reason: reason || null, plan: 'free', credit_balance: 0, trial_used: true, trial_ends_at: null, plan_renews_at: null }).eq('id', uid);
+        if (bal > 0) await admin.from('credit_transactions').insert({ user_id: uid, type: 'consumption', amount: -bal, balance_after: 0, description: `Compte banni${reason ? ` : ${reason}` : ''}` });
+      } else {
+        await admin.from('profiles').update({ banned_at: null, ban_reason: null }).eq('id', uid);
+      }
+      await log(body.act, {});
+      return json({ ok: true });
+    }
+    return json({ error: 'Action inconnue.' }, 400);
+  }
   if (typeof body?.history === 'string' && /^[0-9a-f-]{36}$/.test(body.history)) {
     const [{ data: rows, error }, { data: prof }] = await Promise.all([
       admin.from('credit_transactions').select('created_at, type, amount, balance_after, description').eq('user_id', body.history).order('created_at', { ascending: false }).limit(2000),
-      admin.from('profiles').select('credit_balance').eq('id', body.history).maybeSingle(),
+      admin.from('profiles').select('credit_balance, plan, plan_renews_at, billing_provider, banned_at, ban_reason').eq('id', body.history).maybeSingle(),
     ]);
     if (error) return json({ error: error.message }, 500);
     const tx = (rows ?? []).map((r: any) => ({ at: Date.parse(r.created_at), type: r.type, amount: r.amount, balanceAfter: r.balance_after ?? null, description: r.description ?? '' }));
@@ -83,7 +153,8 @@ Deno.serve(async (req) => {
     const taken = -sum((t) => t.type === 'consumption');
     const refunded = sum((t) => t.type === 'refund');
     return json({
-      balance: prof?.credit_balance ?? 0,
+      balance: prof?.credit_balance ?? 0, plan: prof?.plan ?? 'free', planUntil: prof?.billing_provider === 'manual' ? prof?.plan_renews_at ?? null : null,
+      bannedAt: prof?.banned_at ?? null, banReason: prof?.ban_reason ?? null,
       received: sum((t) => t.amount > 0 && t.type !== 'refund'),
       taken, refunded, used: taken - refunded,
       transactions: tx,
@@ -92,7 +163,7 @@ Deno.serve(async (req) => {
 
   const [usersRes, profilesRes, txRes, animRes, pvRes, dubRes, affRes, invOld, invNew, subOld, subNew] = await Promise.all([
     admin.auth.admin.listUsers({ perPage: 1000 }),
-    admin.from('profiles').select('id, plan, credit_balance, trial_used, trial_ends_at, billing_provider, plan_renews_at, affiliate_id, stripe_customer_id, marketing_opt_out, is_admin, onboarding'),
+    admin.from('profiles').select('id, plan, credit_balance, trial_used, trial_ends_at, billing_provider, plan_renews_at, banned_at, affiliate_id, stripe_customer_id, marketing_opt_out, is_admin, onboarding'),
     admin.from('credit_transactions').select('user_id, amount, type, description, created_at').order('created_at', { ascending: false }).limit(20000),
     admin.from('animated_projects').select('user_id, status'),
     admin.from('prompt_videos').select('user_id, status'),
@@ -230,7 +301,7 @@ Deno.serve(async (req) => {
       trialEndsAt: extTrial ? Date.parse(w.current_period_end) || null : !useWhop && s?.status === 'trialing' && s.trial_end ? s.trial_end * 1000 : null,
       paidCents: money?.total ?? 0, lastPaymentAt: money?.last ?? null,
       credits: p.credit_balance ?? 0, spent: spent.get(u.id) ?? 0, videos: videos.get(u.id) ?? 0, lastActivityAt: lastAct.get(u.id) ?? null,
-      partner: p.affiliate_id ? (affiliates.get(p.affiliate_id)?.code ?? 'partenaire') : null, isAdmin: !!p.is_admin, unsubscribed: !!p.marketing_opt_out,
+      partner: p.affiliate_id ? (affiliates.get(p.affiliate_id)?.code ?? 'partenaire') : null, isAdmin: !!p.is_admin, banned: !!p.banned_at, unsubscribed: !!p.marketing_opt_out,
       onboarding: p.onboarding ? { goal: p.onboarding.goal ?? null, target: p.onboarding.target ?? null, time: p.onboarding.time ?? null, level: p.onboarding.level ?? null } : null,
     };
   }).sort((a, b) => Date.parse(b.signedUpAt) - Date.parse(a.signedUpAt));

@@ -42,6 +42,7 @@ function Kpi({ icon, label, value, hint }: { icon: ReactNode; label: string; val
 
 function StatusBadge({ m }: { m: AdminMember }) {
   const s = STATUS[m.status];
+  if (m.banned) return <span className="whitespace-nowrap rounded-full bg-coral-500/20 px-2 py-0.5 text-[11px] font-semibold text-coral-300">Banni</span>;
   return <span className={cn('whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium', s.cls)}>{s.label}{(m.status === 'paying' || m.status === 'trial') && m.cancelAtPeriodEnd ? ' · a résilié' : ''}</span>;
 }
 
@@ -210,7 +211,7 @@ export default function AdminDashboardPage() {
           </div>
         </>
       )}
-      {open && <MemberHistory member={open} onClose={() => setOpen(null)} />}
+      {open && <MemberHistory member={open} onClose={() => setOpen(null)} onChanged={() => void load()} />}
     </>
   );
 }

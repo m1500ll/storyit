@@ -6,7 +6,7 @@ export interface AdminMember {
   id: string; email: string; signedUpAt: string; lastSignInAt: string | null; confirmed: boolean;
   plan: string; status: MemberStatus; interval: 'month' | 'year' | null; renewsAt: number | null; cancelAtPeriodEnd: boolean; cancelAt?: number | null; canceledAt?: number | null; trialEndsAt: number | null;
   paidCents: number; lastPaymentAt: number | null; credits: number; spent: number; videos: number; lastActivityAt: number | null;
-  partner: string | null; isAdmin: boolean; unsubscribed: boolean;
+  partner: string | null; isAdmin: boolean; unsubscribed: boolean; banned?: boolean;
   onboarding?: { goal: string | null; target: string | null; time: string | null; level: string | null } | null;
 }
 export interface AdminStats {
@@ -22,6 +22,7 @@ export interface AdminStats {
 
 export interface CreditHistory {
   balance: number; received: number; taken: number; refunded: number; used: number;
+  plan: string; planUntil: string | null; bannedAt: string | null; banReason: string | null;
   transactions: { at: number; type: string; amount: number; balanceAfter: number | null; description: string }[];
 }
 
@@ -39,6 +40,10 @@ async function call<T>(body: Record<string, unknown>): Promise<T> {
 export const adminStats = {
   /** one member's credit history, newest first */
   history: (userId: string) => call<CreditHistory>({ history: userId }),
+  /** owner actions on one member (logged on the server) */
+  adjustCredits: (userId: string, amount: number, reason: string) => call<{ ok: boolean }>({ act: 'credits', user_id: userId, amount, reason }),
+  setPlan: (userId: string, plan: 'free' | 'creator' | 'pro' | 'studio', days: number, credits: number, reason: string) => call<{ ok: boolean }>({ act: 'plan', user_id: userId, plan, days, credits, reason }),
+  setBan: (userId: string, banned: boolean, reason: string) => call<{ ok: boolean }>({ act: banned ? 'ban' : 'unban', user_id: userId, reason }),
   async load(): Promise<AdminStats> {
     if (!supabase) throw new Error('Le tableau de bord a besoin du serveur Storyit.');
     const { data, error } = await supabase.functions.invoke<AdminStats>('admin-stats', { body: {} });
