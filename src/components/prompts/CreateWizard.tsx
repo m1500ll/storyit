@@ -328,7 +328,7 @@ export function CreateWizard() {
           : <Button disabled={!promptStudio.available || !story.trim()} onClick={() => void generate()}><Sparkles className="h-4 w-4" /> Générer · {formatCredits(due)} crédits</Button>}
       </div>
       {step === 4 && known && balance < due && (
-        <p className="mt-2 text-right text-xs text-zinc-400">Tu as {formatCredits(balance)} crédits. Pas assez ? Choisis une offre (dès 29 $/mois, 43 000 crédits) : ta vidéo se lance juste après.</p>
+        <p className="mt-2 text-right text-xs text-zinc-400">Tu as {formatCredits(balance)} crédits. Pas assez ? Choisis une offre (dès 29 $/mois, 50 000 crédits, jusqu’à 14 vidéos) : ta vidéo se lance juste après.</p>
       )}
      </div>
      <aside className="hidden lg:block" aria-label="Aperçu de la vidéo">

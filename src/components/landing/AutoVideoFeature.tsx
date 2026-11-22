@@ -4,7 +4,8 @@ import type { ShowcaseVideo } from '@/data/showcase';
 import { StartLink } from './StartLink';
 import { VideoCard } from './VideoCard';
 import { VideoLightbox } from './VideoLightbox';
-import { useLang } from '@/lib/lang';
+import { num, useLang } from '@/lib/lang';
+import { PLANS, VIDEO_30S_TOTAL, videosFor } from '@/services/credits';
 
 const EXAMPLE: ShowcaseVideo = { slug: 'treize-gemmes', title: 'Les Treize Gemmes', hook: 'Made automatically: ChatGPT images, Grok animation, automatic edit', hookFr: 'Créée automatiquement : images ChatGPT, animation Grok, montage auto', format: 'Story', seconds: 26 };
 const STEPS = [
@@ -23,7 +24,7 @@ const STEPS_FR = [
 /** New: the Creative Studio makes the finished video (images, animation, editing). */
 export function AutoVideoFeature() {
   const [open, setOpen] = useState<ShowcaseVideo | null>(null);
-  const fr = useLang() === 'fr';
+  const lang = useLang(); const fr = lang === 'fr';
   return (
     <section id="auto" aria-labelledby="auto-title" className="mx-auto max-w-6xl px-4 py-16 md:px-6">
       <div className="grid items-center gap-10 md:grid-cols-[auto_1fr]">
@@ -43,7 +44,7 @@ export function AutoVideoFeature() {
               </li>
             ))}
           </ol>
-          <p className="mt-4 text-xs text-zinc-500">{fr ? 'À partir de 4 500 crédits la vidéo de 30 s. Le prix s’affiche avant de lancer, et tes crédits sont rendus si la génération échoue.' : 'From 4,500 credits for a 30-second video. The price shows before you start, and your credits come back if the generation fails.'}</p>
+          <p className="mt-4 text-xs text-zinc-500">{fr ? `${num(VIDEO_30S_TOTAL, lang)} crédits la vidéo de 30 s, histoire comprise (jusqu’à ${videosFor(PLANS.find((p) => p.id === 'creator')!.credits)} vidéos par mois avec Creator). Le prix s’affiche avant de lancer, et tes crédits sont rendus si la génération échoue.` : `${num(VIDEO_30S_TOTAL, lang)} credits for a 30-second video, story included (up to ${videosFor(PLANS.find((p) => p.id === 'creator')!.credits)} videos a month with Creator). The price shows before you start, and your credits come back if the generation fails.`}</p>
           <StartLink to="/app/prompts" className="mt-6 inline-block">
             <span className="inline-flex h-11 items-center gap-2 rounded-xl bg-violet-600 px-5 text-sm font-semibold text-white hover:bg-violet-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
               {fr ? 'Créer ma vidéo' : 'Create my video'} <ArrowRight className="h-4 w-4" aria-hidden />

@@ -101,7 +101,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
     html: (unsub) => shell(`<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Passez à la vitesse supérieure sur Storyit</td></tr>
 <tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Vous avez déjà commencé à créer avec Storyit, merci ! Pour aller au bout de vos histoires et en faire des vidéos sans vous soucier des crédits, l’offre <strong>Creator</strong> est faite pour vous :</td></tr>
 <tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.9">
-<tr><td>🎬 <strong>43 000 crédits chaque mois</strong> : environ 7 vidéos complètes de 30 s,</td></tr>
+<tr><td>🎬 <strong>50 000 crédits chaque mois</strong> : jusqu’à 14 vidéos complètes,</td></tr>
 <tr><td>🧑‍🎤 vos <strong>propres personnages</strong>, réutilisables dans toute votre série,</td></tr>
 <tr><td>🎵 sous-titres, musique et montage automatiques,</td></tr>
 <tr><td>💸 <span style="text-decoration:line-through;color:#7a7390">45 $</span> <strong>29 $/mois</strong>, sans engagement.</td></tr></table></td></tr>
@@ -111,7 +111,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 
 Vous avez déjà commencé à créer avec Storyit, merci ! Pour aller au bout de vos histoires et en faire des vidéos sans vous soucier des crédits, l'offre Creator est faite pour vous :
 
-- 43 000 crédits chaque mois : environ 7 vidéos complètes de 30 s,
+- 50 000 crédits chaque mois : jusqu'à 14 vidéos complètes,
 - vos propres personnages, réutilisables dans toute votre série,
 - sous-titres, musique et montage automatiques,
 - 29 $/mois au lieu de 45 $, sans engagement.
@@ -165,7 +165,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 <tr><td>✂️ <strong>Clipping IA</strong> : une longue vidéo devient jusqu’à 10 clips prêts à poster</td></tr></table></td></tr>
 <tr><td style="font-size:16px;line-height:1.6">Plus tu publies, plus tu as de chances de monétiser ton compte ou d’être payé à la vue pour tes clips. Ça commence par la première vidéo.</td></tr>
 <tr><td align="center" style="padding:22px 0 6px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Je lance ma chaîne · 29 $/mois</a></td></tr>
-<tr><td style="font-size:13px;line-height:1.6;color:#4b4560;text-align:center">43 000 crédits par mois · sans engagement · résiliable en 1 clic</td></tr>`, unsub),
+<tr><td style="font-size:13px;line-height:1.6;color:#4b4560;text-align:center">50 000 crédits par mois · jusqu’à 14 vidéos · sans engagement · résiliable en 1 clic</td></tr>`, unsub),
     text: (unsub) => `Ceux qui percent sur TikTok ont un point commun : ils publient tous les jours.
 
 Avec Storyit, une vidéo te prend 1 minute :
@@ -175,7 +175,7 @@ Avec Storyit, une vidéo te prend 1 minute :
 Plus tu publies, plus tu as de chances de monétiser ton compte ou d'être payé à la vue pour tes clips. Ça commence par la première vidéo.
 
 Je lance ma chaîne (29 $/mois) : ${APP}/app/billing?interval=month
-43 000 crédits par mois, sans engagement, résiliable en 1 clic.
+50 000 crédits par mois (jusqu'à 14 vidéos), sans engagement, résiliable en 1 clic.
 
 À très vite,
 L'équipe Storyit
@@ -314,7 +314,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 };
 
 const PLAN_INFO: Record<string, { name: string; price: number; credits: number }> = {
-  creator: { name: 'Creator', price: 29, credits: 43000 }, pro: { name: 'Pro', price: 59, credits: 105000 }, studio: { name: 'Studio', price: 99, credits: 160000 },
+  creator: { name: 'Creator', price: 29, credits: 50000 }, pro: { name: 'Pro', price: 59, credits: 120000 }, studio: { name: 'Studio', price: 99, credits: 220000 },
 };
 const fr = (n: number) => Number(n).toLocaleString('fr-FR').replace(/\u202f/g, ' ');
 const frDate = (iso: string) => new Date(iso).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
@@ -335,12 +335,12 @@ async function trialEmail(kind: 'welcome' | 'reminder', uid: string) {
 <tr><td style="font-size:16px;line-height:1.6">Votre essai de 3 jours est activé, avec <strong>${left} crédits</strong>. Voici comment créer votre première vidéo :</td></tr>
 <tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.6">
 ${li('<strong>1. Ouvrez le Creative Studio</strong> : écrivez votre idée en une ligne (ou prenez une idée du moment) et choisissez un style de personnages.')}
-${li('<strong>2. Générez la vidéo</strong> : choisissez 30 s, puis cliquez sur « Générer la vidéo ». Storyit écrit l’histoire, dessine les personnages, anime chaque plan avec les voix et fait le montage (30 s = 6 000 crédits au total).')}
+${li('<strong>2. Générez la vidéo</strong> : choisissez 30 s, puis cliquez sur « Générer la vidéo ». Storyit écrit l’histoire, dessine les personnages, anime chaque plan avec les voix et fait le montage (30 s = 3 500 crédits au total).')}
 ${li('<strong>3. Publiez</strong> : téléchargez la vidéo depuis votre bibliothèque et postez-la sur TikTok, Reels ou Shorts.')}
 </table></td></tr>
 <tr><td align="center" style="padding:14px 0 8px"><a href="${APP}/app/prompts" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Ouvrir le Creative Studio</a></td></tr>
 <tr><td style="font-size:13px;line-height:1.6;color:#4b4560;padding-top:10px">Votre essai dure jusqu’au <strong>${end}</strong>. Ensuite, l’offre ${plan.name} (${plan.price} $/mois, ${fr(plan.credits)} crédits par mois) démarre automatiquement, ou plus tôt si vous utilisez presque tous vos crédits d’essai. Résiliable à tout moment avant, depuis « Offre et crédits ».</td></tr>`;
-    text = `Bienvenue sur Storyit !\n\nVotre essai de 3 jours est activé, avec ${left} crédits. Pour créer votre première vidéo :\n1. Ouvrez le Creative Studio : écrivez votre idée en une ligne et choisissez un style de personnages.\n2. Générez la vidéo : choisissez 30 s puis « Générer la vidéo » (30 s = 6 000 crédits au total).\n3. Publiez : téléchargez la vidéo depuis votre bibliothèque et postez-la.\n\nOuvrir le Creative Studio : ${APP}/app/prompts\n\nVotre essai dure jusqu'au ${end}. Ensuite, l'offre ${plan.name} (${plan.price} $/mois, ${fr(plan.credits)} crédits par mois) démarre automatiquement, ou plus tôt si vous utilisez presque tous vos crédits d'essai. Résiliable à tout moment avant, depuis « Offre et crédits ».\n\nÀ très vite,\nL'équipe Storyit`;
+    text = `Bienvenue sur Storyit !\n\nVotre essai de 3 jours est activé, avec ${left} crédits. Pour créer votre première vidéo :\n1. Ouvrez le Creative Studio : écrivez votre idée en une ligne et choisissez un style de personnages.\n2. Générez la vidéo : choisissez 30 s puis « Générer la vidéo » (30 s = 3 500 crédits au total).\n3. Publiez : téléchargez la vidéo depuis votre bibliothèque et postez-la.\n\nOuvrir le Creative Studio : ${APP}/app/prompts\n\nVotre essai dure jusqu'au ${end}. Ensuite, l'offre ${plan.name} (${plan.price} $/mois, ${fr(plan.credits)} crédits par mois) démarre automatiquement, ou plus tôt si vous utilisez presque tous vos crédits d'essai. Résiliable à tout moment avant, depuis « Offre et crédits ».\n\nÀ très vite,\nL'équipe Storyit`;
   } else {
     subject = `⏰ Votre essai Storyit se termine demain`;
     inner = `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Votre essai se termine demain</td></tr>
@@ -376,18 +376,18 @@ const NUDGE = {
     inner: `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Ton histoire est prête 🎬</td></tr>
 <tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Storyit a écrit ton histoire <strong>« ${title} »</strong> : les dialogues et les scènes sont prêts. Il ne manque plus que la vidéo finie, avec les personnages animés, les voix, les sous-titres et la musique.</td></tr>
 <tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.7">
-<tr><td>🎁 <strong>Offre Creator</strong> : 43 000 crédits par mois, de quoi créer cette vidéo et plein d’autres</td></tr>
+<tr><td>🎁 <strong>Offre Creator</strong> : 50 000 crédits par mois, jusqu’à 14 vidéos</td></tr>
 <tr><td>⚡ La vidéo se crée toute seule, en quelques minutes</td></tr>
 <tr><td>🔁 29 $/mois, sans engagement, résiliable en 1 clic</td></tr></table></td></tr>
 <tr><td align="center" style="padding:14px 0 8px"><a href="${link}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma vidéo</a></td></tr>`,
-    text: `Ton histoire est prête\n\nBonjour,\n\nStoryit a écrit ton histoire « ${title} » : les dialogues et les scènes sont prêts. Il ne manque plus que la vidéo finie, avec les personnages animés, les voix, les sous-titres et la musique.\n\n- Offre Creator : 43 000 crédits par mois, de quoi créer cette vidéo et plein d'autres\n- La vidéo se crée toute seule, en quelques minutes\n- 29 $/mois, sans engagement, résiliable en 1 clic\n\nCréer ma vidéo : ${link}`,
+    text: `Ton histoire est prête\n\nBonjour,\n\nStoryit a écrit ton histoire « ${title} » : les dialogues et les scènes sont prêts. Il ne manque plus que la vidéo finie, avec les personnages animés, les voix, les sous-titres et la musique.\n\n- Offre Creator : 50 000 crédits par mois, jusqu'à 14 vidéos\n- La vidéo se crée toute seule, en quelques minutes\n- 29 $/mois, sans engagement, résiliable en 1 clic\n\nCréer ma vidéo : ${link}`,
   }),
   video2: (title: string, link: string) => ({
     subject: `⏳ Ta vidéo « ${title} » t’attend toujours`,
     inner: `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Ta vidéo t’attend</td></tr>
-<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Ton histoire <strong>« ${title} »</strong> est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.<br><br>Avec l’offre Creator (<strong>29 $/mois</strong>, 43 000 crédits), tu la crées en 1 clic, et tu peux arrêter quand tu veux.</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Ton histoire <strong>« ${title} »</strong> est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.<br><br>Avec l’offre Creator (<strong>29 $/mois</strong>, 50 000 crédits), tu la crées en 1 clic, et tu peux arrêter quand tu veux.</td></tr>
 <tr><td align="center" style="padding:20px 0 8px"><a href="${link}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma vidéo</a></td></tr>`,
-    text: `Ta vidéo t'attend\n\nBonjour,\n\nTon histoire « ${title} » est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.\n\nAvec l'offre Creator (29 $/mois, 43 000 crédits), tu la crées en 1 clic, et tu peux arrêter quand tu veux.\n\nCréer ma vidéo : ${link}`,
+    text: `Ta vidéo t'attend\n\nBonjour,\n\nTon histoire « ${title} » est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.\n\nAvec l'offre Creator (29 $/mois, 50 000 crédits), tu la crées en 1 clic, et tu peux arrêter quand tu veux.\n\nCréer ma vidéo : ${link}`,
   }),
   start1: (link: string) => ({
     subject: '✨ Ta première vidéo IA en 2 minutes',

@@ -82,7 +82,8 @@ Deno.serve(async (req) => {
     }
     const seconds = projectSeconds(data);
     const cost = videoCost(body.quality, seconds);
-    const plan = buildVideoPlan(data, body.quality);
+    const { data: acct } = await admin.from('profiles').select('plan').eq('id', uid).maybeSingle();
+    const plan = buildVideoPlan(data, body.quality, acct?.plan ?? 'free');
     // the picked characters' sheets: links the worker can download (library sheets are public files of the site)
     const refs = plan.sheet_refs ?? [];
     const own = refs.filter((r) => r.startsWith('storage:')).map((r) => r.slice(8));

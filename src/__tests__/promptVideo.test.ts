@@ -22,12 +22,12 @@ const project = () => {
 };
 
 describe('Creative Studio → video', () => {
-  it('prices are fixed per length: 45 s costs what a minute used to, a minute a bit more', () => {
-    expect(videoCost('eco', 46)).toBe(7000);
+  it('prices are fixed per length (Éco halved on Nov 22 2026)', () => {
+    expect(videoCost('eco', 46)).toBe(3800);
     expect(videoCost('standard', 45)).toBe(15000);
     expect(videoCost('premium', 48)).toBe(30000);
-    expect(videoCost('eco', 31)).toBe(4500);
-    expect(videoCost('eco', 61)).toBe(9000);
+    expect(videoCost('eco', 31)).toBe(2500);
+    expect(videoCost('eco', 61)).toBe(5000);
     expect(videoCost('premium', 72)).toBe(39000); // older 66-75 s scripts are a minute
     expect([30, 45, 60].map((n) => lengthOf(LENGTH_RANGE[n as 30 | 45 | 60][0]))).toEqual([30, 45, 60]);
     expect([30, 45, 60].map((n) => lengthOf(LENGTH_RANGE[n as 30 | 45 | 60][1]))).toEqual([30, 45, 60]);
@@ -68,5 +68,15 @@ describe('Storyit watermark discount', () => {
   it('freezes the choice in the video plan', () => {
     expect(buildVideoPlan({ ...project(), options: { subtitles: 'none', music: null, watermark: true } }, 'eco').watermark).toBe(true);
     expect(buildVideoPlan(project(), 'eco').watermark).toBe(false);
+  });
+});
+
+describe('Creative Studio → video plan by account', () => {
+  it('Éco frames are drawn in low quality, Pro and Studio get 720p', () => {
+    const d = project();
+    expect(buildVideoPlan(d, 'eco', 'free')).toMatchObject({ resolution: '480p', frame_quality: 'low', image_quality: 'medium' });
+    expect(buildVideoPlan(d, 'eco', 'creator').resolution).toBe('480p');
+    expect(buildVideoPlan(d, 'eco', 'pro').resolution).toBe('720p');
+    expect(buildVideoPlan(d, 'eco', 'studio').resolution).toBe('720p');
   });
 });

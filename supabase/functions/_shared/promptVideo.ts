@@ -17,7 +17,7 @@ export const isQuality = (q: unknown): q is VideoQuality => typeof q === 'string
 export const AVAILABLE_QUALITIES: VideoQuality[] = ['eco'];
 /** fixed price per length and quality: 45 s costs what a minute used to, a minute a bit more */
 export const VIDEO_PRICES: Record<VideoQuality, Record<VideoLength, number>> = {
-  eco: { 30: 4500, 45: 7000, 60: 9000 },
+  eco: { 30: 2500, 45: 3800, 60: 5000 }, // Nov 22 2026: about half the old price (frames drawn in low quality, see run.py)
   standard: { 30: 10000, 45: 15000, 60: 19500 },
   premium: { 30: 20000, 45: 30000, 60: 39000 },
 };
@@ -72,7 +72,7 @@ export const MUSIC_TRACKS: { id: string; title: string; mood: string }[] = [
 export const musicById = (id: unknown) => MUSIC_TRACKS.find((m) => m.id === id);
 
 export type VideoPlan = {
-  quality: VideoQuality; image_model: string; image_quality: string; video_model: string; resolution: string;
+  quality: VideoQuality; image_model: string; image_quality: string; frame_quality?: string; video_model: string; resolution: string;
   title: string; sheet_prompt: string; cover_prompt: string;
   /** reference sheets of the picked characters ('storage:<path>' or '/characters/<slug>.webp'), turned into links at order time */
   sheet_refs?: string[];
@@ -84,10 +84,13 @@ export type VideoPlan = {
 };
 
 /** every prompt the worker needs, frozen at order time (later edits of the project do not change a running video) */
-export function buildVideoPlan(d: any, quality: VideoQuality): VideoPlan {
-  const t = VIDEO_TIERS[quality];
+/** Pro and Studio subscribers get their Éco videos in 720p (Grok Lite: +$0.01/s), everyone else 480p */
+export const HD_PLANS = ['pro', 'studio'];
+export function buildVideoPlan(d: any, quality: VideoQuality, accountPlan = 'free'): VideoPlan {
+  const t = { ...VIDEO_TIERS[quality], ...(quality === 'eco' && HD_PLANS.includes(accountPlan) ? { resolution: '720p' as const } : {}) };
   return {
-    quality, image_model: t.image_model, image_quality: t.image_quality, video_model: t.video_model, resolution: t.resolution,
+    // the clip start frames only feed the animation: low quality is enough (4x cheaper); the character sheet and the cover stay sharp
+    quality, image_model: t.image_model, image_quality: t.image_quality, frame_quality: quality === 'eco' ? 'low' : t.image_quality, video_model: t.video_model, resolution: t.resolution,
     title: String(d?.script?.title ?? 'Vidéo Creative Studio').slice(0, 160),
     sheet_prompt: sheetPrompt(d),
     sheet_refs: castOf(d).map((c) => c.sheet).filter((x): x is string => !!x),

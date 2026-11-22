@@ -153,16 +153,16 @@ def soften(prompt):
     return out + SAFE
 
 
-def draw(okey, plan, prompt, ref=None):
+def draw(okey, plan, prompt, ref=None, quality=None):
     """one portrait PNG; with `ref` (the sheet PNG, or a list of reference images) the characters are drawn from it.
     A scene refused by the safety check is softened automatically and drawn again: the customer never has to edit it."""
     def call(p):
         if ref is None:
             out = http("POST", f"{OPENAI}/images/generations", {"model": plan["image_model"], "prompt": p, "size": f"{IMG_W}x{IMG_H}",
-                                                               "quality": plan["image_quality"], "n": 1, "moderation": "low"},
+                                                               "quality": quality or plan["image_quality"], "n": 1, "moderation": "low"},
                        {"Authorization": f"Bearer {okey}"}, timeout=360)
         else:
-            body, ctype = multipart({"model": plan["image_model"], "prompt": p, "size": f"{IMG_W}x{IMG_H}", "quality": plan["image_quality"], "n": "1", "moderation": "low"},
+            body, ctype = multipart({"model": plan["image_model"], "prompt": p, "size": f"{IMG_W}x{IMG_H}", "quality": quality or plan["image_quality"], "n": "1", "moderation": "low"},
                                     [("image[]", (f"ref{k}.{mime_of(r).split('/')[1]}", r, mime_of(r))) for k, r in enumerate(ref if isinstance(ref, list) else [ref])])
             out = http("POST", f"{OPENAI}/images/edits", body, {"Authorization": f"Bearer {okey}", "Content-Type": ctype}, timeout=360)
         return base64.b64decode(out["data"][0]["b64_json"])
@@ -464,7 +464,7 @@ def produce(job):
         else:
             log(jid, "sheet reused")
         upload("renders", f"{base}/sheet.png", sheet, "image/png")
-        frame_keys = [key_of("frame", *img_q, sheet_key, c["image_prompt"]) for c in plan["clips"]]
+        frame_keys = [key_of("frame", *img_q, plan.get("frame_quality"), sheet_key, c["image_prompt"]) for c in plan["clips"]]
 
         step("images", 10)
         done = [0]
@@ -472,7 +472,7 @@ def produce(job):
         def frame(i):
             png = cached(uid, frame_keys[i], "png")
             if png is None:
-                png = to_916(draw(okey, plan, plan["clips"][i]["image_prompt"], ref=sheet), os.path.join(tmp, f"img{i}.png"))
+                png = to_916(draw(okey, plan, plan["clips"][i]["image_prompt"], ref=sheet, quality=plan.get("frame_quality")), os.path.join(tmp, f"img{i}.png"))
                 keep(uid, frame_keys[i], "png", png, "image/png")
             upload("renders", f"{base}/img{i}.png", png, "image/png")
             done[0] += 1

@@ -1,6 +1,6 @@
 import { ArrowRight, Clapperboard, Languages, Plus, Scissors, Sparkles } from 'lucide-react';
 import { ClipVisual } from '@/components/clips/ClipPromo';
-import { CREDIT_COSTS, DUB_CREDITS_PER_MIN, formatCredits } from '@/services/credits';
+import { CREDIT_COSTS, DUB_CREDITS_PER_MIN, formatCredits, VIDEO_30S_TOTAL } from '@/services/credits';
 import { useNavigate } from 'react-router-dom';
 import { DistributionOverview } from '@/components/dashboard/DistributionOverview';
 import { PromptStudioHero } from '@/components/dashboard/PromptStudioHero';
@@ -25,7 +25,7 @@ export default function DashboardPage() {
           <span aria-hidden className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-coral-500/15 text-coral-300"><Sparkles className="h-5 w-5" /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-sm font-semibold text-zinc-100">Launch offer: Creator at $29/mo instead of $45</span>
-            <span className="block text-xs text-zinc-400">43,000 credits every month, posting to all your accounts. Cancel anytime.</span>
+            <span className="block text-xs text-zinc-400">50,000 credits every month (up to 14 videos), posting to all your accounts. Cancel anytime.</span>
           </span>
           <ArrowRight className="h-4 w-4 shrink-0 text-coral-300" aria-hidden />
         </button>
@@ -57,7 +57,7 @@ export default function DashboardPage() {
             <p className="mt-2 text-sm text-zinc-400">ChatGPT dessine les personnages et les scènes, Grok anime chaque plan avec les voix, et le montage est fait pour vous. La vidéo arrive dans votre bibliothèque.</p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <Button onClick={() => navigate('/app/prompts')}><Clapperboard className="h-4 w-4" /> Créer ma vidéo</Button>
-              <span className="text-xs text-zinc-500">Dès 4 500 crédits · prix affiché avant de lancer · crédits rendus en cas d’échec</span>
+              <span className="text-xs text-zinc-500">{formatCredits(VIDEO_30S_TOTAL)} crédits la vidéo de 30 s · prix affiché avant de lancer · crédits rendus en cas d’échec</span>
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@ export default function DashboardPage() {
               <p className="mt-2 text-sm text-zinc-400">Choisissez un style de personnages et une durée (30 s, 45 s ou 1 min). Storyit écrit l’histoire avec ses dialogues, dessine les personnages, anime chaque plan avec les voix et fait le montage.</p>
               <div className="mt-4 flex flex-wrap items-center gap-3">
                 <Button variant="secondary" onClick={() => navigate('/app/prompts')}><Clapperboard className="h-4 w-4" /> Ouvrir le Creative Studio</Button>
-                <span className="text-xs text-zinc-500 tabular-nums">Dès 4 500 crédits · remboursés si le rendu échoue</span>
+                <span className="text-xs text-zinc-500 tabular-nums">Dès {formatCredits(VIDEO_30S_TOTAL)} crédits · remboursés si le rendu échoue</span>
               </div>
             </div>
             <div aria-hidden className="flex justify-center gap-2">

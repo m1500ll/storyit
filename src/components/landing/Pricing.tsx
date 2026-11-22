@@ -2,7 +2,7 @@ import { ArrowRight, Check } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import { num, useLang } from '@/lib/lang';
-import { CREDIT_PACKS, PLANS, YEARLY_DISCOUNT, videosFor } from '@/services/credits';
+import { CREDIT_PACKS, minuteVideosFor, PLANS, YEARLY_DISCOUNT, videosFor } from '@/services/credits';
 import { Button } from '../ui';
 import { StartLink } from './StartLink';
 
@@ -74,7 +74,7 @@ export function Pricing() {
               {p.price > 0 && (
                 <p className="mt-4 rounded-xl bg-violet-500/10 px-3 py-2 text-sm text-violet-200">
                   <strong className="font-display text-2xl tabular-nums text-zinc-50">{fr ? 'Jusqu’à ' : 'Up to '}{videosFor(p.credits)}</strong> {fr ? 'vidéos IA par mois' : 'AI videos a month'}
-                  <span className="block text-[11px] text-violet-300/80">{fr ? 'vidéos de 30 s · ou moitié moins en 1 min' : '30-second videos · or half as many at 1 min'}</span>
+                  <span className="block text-[11px] text-violet-300/80">{fr ? `vidéos de 30 s · ou ${minuteVideosFor(p.credits)} vidéos d’1 min` : `30-second videos · or ${minuteVideosFor(p.credits)} one-minute videos`}</span>
                 </p>
               )}
               <ul className="mt-6 flex-1 space-y-2.5">

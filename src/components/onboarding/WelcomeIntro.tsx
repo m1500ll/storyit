@@ -45,8 +45,8 @@ const QUESTIONS: Question[] = [
 ];
 type Answers = Partial<Record<Question['id'], string | string[]>>;
 
-/** videos a month at their pace, kept within what the plans really pay for (a 30 s video = 6,000 credits) */
-const PACE: Record<string, number> = { '15': 7, '30': 14, '60': 26, '120': 30 };
+/** videos a month at their pace, kept within what the plans really pay for (a 30 s video = 3,500 credits) */
+const PACE: Record<string, number> = { '15': 10, '30': 20, '60': 40, '120': 60 };
 const VIDEO_30S = PROMPT_PROJECT_COST + VIDEO_PRICES.eco[30];
 
 export function planFor(a: Answers) {

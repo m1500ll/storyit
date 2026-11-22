@@ -21,7 +21,7 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: str
 
 const field = 'h-10 rounded-lg border border-line/10 bg-transparent px-3 text-base text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 md:text-sm';
 const btn = 'touch-hit inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50';
-const PLAN_CREDITS: Record<string, number> = { creator: 43000, pro: 105000, studio: 160000 };
+const PLAN_CREDITS: Record<string, number> = { creator: 50000, pro: 120000, studio: 220000 };
 
 /** The owner's actions on a member: add or remove credits, offer a plan for some days, ban or unban. */
 function Actions({ member, data, onDone }: { member: AdminMember; data: CreditHistory; onDone: (msg: string) => void }) {

@@ -102,13 +102,13 @@ function VideoTrialSheet({ trial, need, returnTo, onClose, onMore }: { trial: bo
         <p className="relative mt-2 text-sm text-zinc-300">
           {trial
             ? <>Il te manque {formatCredits(need)} crédits. Avec l’essai gratuit de 3 jours, tu reçois <strong className="text-zinc-50">{formatCredits(TRIAL.credits)} crédits</strong> : assez pour cette vidéo.</>
-            : <>Il te manque {formatCredits(need)} crédits. Avec Creator, tu reçois <strong className="text-zinc-50">{formatCredits(creator?.credits ?? 43000)} crédits chaque mois</strong> : de quoi créer cette vidéo et plein d’autres.</>}
+            : <>Il te manque {formatCredits(need)} crédits. Avec Creator, tu reçois <strong className="text-zinc-50">{formatCredits(creator?.credits ?? 50000)} crédits chaque mois</strong> : de quoi créer cette vidéo et plein d’autres.</>}
         </p>
         <ul className="relative mx-auto mt-5 max-w-xs space-y-2 text-left text-sm text-zinc-200">
           <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />Ton histoire est gardée : tu reviens direct sur ta vidéo</li>
           {trial ? <>
             <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />0 $ aujourd’hui (carte demandée), résiliable en 1 clic avant la fin des 3 jours</li>
-            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />Ensuite Creator à {creator?.price ?? 29} $/mois ({formatCredits(creator?.credits ?? 43000)} crédits), seulement si tu continues</li>
+            <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />Ensuite Creator à {creator?.price ?? 29} $/mois ({formatCredits(creator?.credits ?? 50000)} crédits), seulement si tu continues</li>
           </> : <>
             <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />{creator?.price ?? 29} $/mois, sans engagement, résiliable en 1 clic</li>
             <li className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" aria-hidden />Clipping IA, traduction et Creative Studio inclus</li>
