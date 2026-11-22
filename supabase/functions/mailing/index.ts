@@ -314,7 +314,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 };
 
 const PLAN_INFO: Record<string, { name: string; price: number; credits: number }> = {
-  creator: { name: 'Creator', price: 29, credits: 50000 }, pro: { name: 'Pro', price: 59, credits: 120000 }, studio: { name: 'Studio', price: 99, credits: 220000 },
+  creator: { name: 'Creator', price: 29, credits: 50000 }, pro: { name: 'Pro', price: 59, credits: 90000 }, studio: { name: 'Studio', price: 99, credits: 175000 },
 };
 const fr = (n: number) => Number(n).toLocaleString('fr-FR').replace(/\u202f/g, ' ');
 const frDate = (iso: string) => new Date(iso).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });

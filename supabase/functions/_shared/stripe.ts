@@ -10,12 +10,12 @@ export const PRICE_ENV: Record<ProductKey, string> = {
 /** What each product grants. Keep in sync with src/services/credits.ts (PLANS / CREDIT_PACKS). */
 export const GRANTS: Record<ProductKey, { credits: number; plan?: 'creator' | 'pro' | 'studio'; label: string }> = {
   creator: { credits: 50000, plan: 'creator', label: 'Creator plan — monthly credits' },
-  pro: { credits: 120000, plan: 'pro', label: 'Pro plan — monthly credits' },
-  studio: { credits: 220000, plan: 'studio', label: 'Studio plan — monthly credits' },
+  pro: { credits: 90000, plan: 'pro', label: 'Pro plan — monthly credits' },
+  studio: { credits: 175000, plan: 'studio', label: 'Studio plan — monthly credits' },
   // yearly plans (−20 %): the 12 months of credits at once, on each yearly invoice
   creator_year: { credits: 50000 * 12, plan: 'creator', label: 'Creator plan (yearly) — 12 months of credits' },
-  pro_year: { credits: 120000 * 12, plan: 'pro', label: 'Pro plan (yearly) — 12 months of credits' },
-  studio_year: { credits: 220000 * 12, plan: 'studio', label: 'Studio plan (yearly) — 12 months of credits' },
+  pro_year: { credits: 90000 * 12, plan: 'pro', label: 'Pro plan (yearly) — 12 months of credits' },
+  studio_year: { credits: 175000 * 12, plan: 'studio', label: 'Studio plan (yearly) — 12 months of credits' },
   pack_100: { credits: 10000, label: 'Top-up pack — 10,000 credits' },
   pack_500: { credits: 50000, label: 'Top-up pack — 50,000 credits' },
 };

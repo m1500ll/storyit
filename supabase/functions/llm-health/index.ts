@@ -161,6 +161,25 @@ Deno.serve(async (req) => {
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
     try { return json(await W.whopApi(`/webhooks/${await W.setting(admin, 'whop_webhook_id')}/deliveries?first=6`)); } catch (e) { return json({ error: e instanceof Error ? e.message : String(e) }); }
   }
+  const probe = url.searchParams.get('gemini_audio_probe'); // operator: one Gemini call on an audio of the clip-audio bucket (debug)
+  if (probe && /^[\w\-/]+\.mp3$/.test(probe)) {
+    const { createClient } = await import('npm:@supabase/supabase-js@2');
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const { data: f, error } = await admin.storage.from('clip-audio').download(probe);
+    if (error || !f) return json({ error: error?.message ?? 'no file' });
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    const model = url.searchParams.get('model') ?? 'gemini-3.8-flash';
+    const t = Date.now();
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, { method: 'POST', signal: AbortSignal.timeout(140_000),
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': Deno.env.get('GEMINI_API_KEY') ?? '' },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ inline_data: { mime_type: 'audio/mp3', data: btoa(bin) } }, { text: 'List the 3 most interesting moments of this audio as JSON {"clips":[{"start":number,"end":number,"title":string}]}.' }] }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.4, maxOutputTokens: 65536, ...(req.method === 'POST' ? { responseSchema: (await req.json().catch(() => ({}))).schema } : {}) } }) });
+    const d = await r.json().catch(() => ({}));
+    const c = d?.candidates?.[0];
+    return json({ status: r.status, ms: Date.now() - t, bytes: bytes.length, finish: c?.finishReason ?? null, block: d?.promptFeedback ?? null,
+      text_len: (c?.content?.parts ?? []).map((x: any) => x.text ?? '').join('').length, usage: d?.usageMetadata ?? null, err: d?.error?.message?.slice(0, 300) ?? null });
+  }
   if (url.searchParams.get('gemini_models') === '1') { // operator: the Gemini models this key can call
     const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': Deno.env.get('GEMINI_API_KEY') ?? '' } });
     const d = await r.json();

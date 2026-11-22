@@ -9,7 +9,7 @@ import { encodeBase64 } from 'jsr:@std/encoding@1/base64';
 
 const MODEL = Deno.env.get('GEMINI_CLIPS_MODEL') ?? 'gemini-3.8-flash';
 // models that exist on this key (checked Nov 22 2026 with llm-health?gemini_models=1): tried in this order
-const FALLBACK_MODELS = (Deno.env.get('GEMINI_CLIPS_FALLBACK_MODEL') ?? 'gemini-3.5-flash,gemini-2.5-flash').split(',').map((m) => m.trim()).filter(Boolean);
+const FALLBACK_MODELS = (Deno.env.get('GEMINI_CLIPS_FALLBACK_MODEL') ?? 'gemini-3.7-flash,gemini-3.5-flash').split(',').map((m) => m.trim()).filter(Boolean);
 const RETRYABLE = new Set([429, 500, 503, 504]);
 // Supabase stops a function after ~150 s (free plan): stay below it.
 const TOTAL_BUDGET_MS = 120_000;
@@ -70,6 +70,21 @@ const schema = {
   required: ['clips'],
 };
 
+/** Second try when Google blocks the answer (RECITATION: the audio contains a song or a copyrighted trailer and the
+ *  verbatim transcript quotes its lyrics): the same moments without any transcript. Captions come from Whisper anyway. */
+const lightSchema = (() => {
+  const items = structuredClone((schema.properties.clips as any).items);
+  delete items.properties.captions;
+  items.properties.hook = { type: 'STRING', description: 'What happens at the start of the clip, in your own words (never quote lyrics)' };
+  items.properties.keywords = { type: 'ARRAY', description: '3 to 8 punchy words spoken by the people in the clip (never song lyrics)', items: { type: 'STRING' } };
+  items.required = ['start', 'end', 'title', 'hook', 'reason', 'score', 'keywords', 'reactions'];
+  return { type: 'OBJECT', properties: { clips: { type: 'ARRAY', items } }, required: ['clips'] };
+})();
+/** the answer was blocked by Google's filters (not a temporary failure): switch to the light request */
+class BlockedAnswerError extends Error {
+  constructor(public reason: string) { super(`Gemini blocked the answer (${reason})`); }
+}
+
 class GeminiHttpError extends Error {
   constructor(public status: number, body: string) { super(`Gemini error ${status}: ${body.slice(0, 300)}`); }
 }
@@ -82,14 +97,14 @@ class EmptyAnswerError extends Error {
 const SAFETY = ['HARM_CATEGORY_HARASSMENT', 'HARM_CATEGORY_HATE_SPEECH', 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'HARM_CATEGORY_DANGEROUS_CONTENT']
   .map((category) => ({ category, threshold: 'BLOCK_ONLY_HIGH' }));
 
-async function requestGemini(model: string, prompt: string, audioB64: string, key: string, timeoutMs: number): Promise<{ clips: RawClip[] }> {
+async function requestGemini(model: string, prompt: string, audioB64: string, key: string, timeoutMs: number, responseSchema: unknown = schema): Promise<{ clips: RawClip[] }> {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     signal: AbortSignal.timeout(timeoutMs),
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ inline_data: { mime_type: 'audio/mp3', data: audioB64 } }, { text: prompt }] }],
-      generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.4, maxOutputTokens: 65536 },
+      generationConfig: { responseMimeType: 'application/json', responseSchema, temperature: 0.4, maxOutputTokens: 65536 },
       safetySettings: SAFETY,
     }),
   });
@@ -105,7 +120,7 @@ async function requestGemini(model: string, prompt: string, audioB64: string, ke
 }
 
 /** Retries transient errors with backoff, then tries the fallback model. */
-async function callGemini(prompt: string, audioB64: string): Promise<{ clips: RawClip[] }> {
+async function callGemini(prompt: string, audioB64: string, responseSchema: unknown = schema): Promise<{ clips: RawClip[] }> {
   const key = Deno.env.get('GEMINI_API_KEY');
   if (!key) throw new Error('GEMINI_API_KEY secret is not set');
   const models = [MODEL, ...FALLBACK_MODELS.filter((m) => m !== 'none' && m !== MODEL)];
@@ -116,7 +131,7 @@ async function callGemini(prompt: string, audioB64: string): Promise<{ clips: Ra
       const remaining = deadline - Date.now();
       if (remaining < 15_000) break;
       try {
-        return await requestGemini(model, prompt, audioB64, key, Math.min(REQUEST_TIMEOUT_MS, remaining));
+        return await requestGemini(model, prompt, audioB64, key, Math.min(REQUEST_TIMEOUT_MS, remaining), responseSchema);
       } catch (e) {
         lastError = e;
         const timedOut = e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError');
@@ -126,7 +141,7 @@ async function callGemini(prompt: string, audioB64: string): Promise<{ clips: Ra
           throw e;
         }
         console.warn(`Gemini ${model} attempt ${attempt + 1} failed:`, e instanceof Error ? e.message : e);
-        if (e instanceof EmptyAnswerError && /SAFETY|PROHIBITED|BLOCK|RECITATION/i.test(e.reason)) break; // same answer again: next model
+        if (e instanceof EmptyAnswerError && /SAFETY|PROHIBITED|BLOCK|RECITATION/i.test(e.reason)) throw new BlockedAnswerError(e.reason);
         await sleep(1500 * 2 ** attempt);
       }
     }
@@ -138,6 +153,10 @@ async function callGemini(prompt: string, audioB64: string): Promise<{ clips: Ra
     throw new Error(/SAFETY|PROHIBITED|BLOCK|RECITATION/i.test(lastError.reason)
       ? `L’IA n’a pas pu analyser cette vidéo : son contenu a été bloqué par le filtre de Google (${lastError.reason}). Essaie avec une autre vidéo.`
       : `L’IA n’a pas réussi à analyser cette vidéo (${lastError.reason}). Réessaie dans un instant.`);
+  }
+  if (lastError instanceof GeminiHttpError && lastError.status === 404) {
+    console.error('clips-analyze: no model available', lastError.message);
+    throw new Error('L’analyse est momentanément indisponible. Réessaie dans quelques minutes.');
   }
   if (lastError instanceof GeminiHttpError && [401, 402, 403].includes(lastError.status)) {
     console.error('clips-analyze billing/key', lastError.message);
@@ -362,7 +381,21 @@ Rules:
 
     const startedAt = Date.now();
     // the AI picks the moments; the captions come from a speech-to-text with real word timings (in parallel)
-    const [out, words] = await Promise.all([callGemini(prompt, encodeBase64(bytes)), transcribeWords(bytes)]);
+    const b64 = encodeBase64(bytes);
+    const analyse = async () => {
+      try { return await callGemini(prompt, b64); }
+      catch (e) {
+        if (!(e instanceof BlockedAnswerError)) throw e;
+        console.warn(JSON.stringify({ audit: 'clips_blocked_retry_light', reason: e.reason }));
+        const light = prompt.replace(/^- captions:.*$/m, '- The audio may contain songs, a film or a game trailer: NEVER transcribe or quote lyrics, music or any copyrighted text. Describe moments in your own words; keywords are only words said by the people talking.');
+        try { return await callGemini(light, b64, lightSchema); }
+        catch (e2) {
+          if (e2 instanceof BlockedAnswerError) throw new Error(`L’IA n’a pas pu analyser cette vidéo : Google bloque son contenu (${e2.reason}, souvent une musique ou une bande-annonce protégée). Essaie avec un passage sans musique.`);
+          throw e2;
+        }
+      }
+    };
+    const [out, words] = await Promise.all([analyse(), transcribeWords(bytes)]);
     let clips = cleanClips(Array.isArray(out?.clips) ? out.clips : [], duration, [min, max]);
     // Whisper drifts on long audio: each clip is transcribed again on its own short piece (a few seconds of margin),
     // which gives word timings accurate to a few hundredths of a second. Falls back on the whole-file words.

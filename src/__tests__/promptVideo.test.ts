@@ -72,11 +72,11 @@ describe('Storyit watermark discount', () => {
 });
 
 describe('Creative Studio → video plan by account', () => {
-  it('Éco frames are drawn in low quality, Pro and Studio get 720p', () => {
+  it('Éco frames are drawn in low quality, every plan in 480p', () => {
     const d = project();
     expect(buildVideoPlan(d, 'eco', 'free')).toMatchObject({ resolution: '480p', frame_quality: 'low', image_quality: 'medium' });
     expect(buildVideoPlan(d, 'eco', 'creator').resolution).toBe('480p');
-    expect(buildVideoPlan(d, 'eco', 'pro').resolution).toBe('720p');
-    expect(buildVideoPlan(d, 'eco', 'studio').resolution).toBe('720p');
+    expect(buildVideoPlan(d, 'eco', 'pro').resolution).toBe('480p');
+    expect(buildVideoPlan(d, 'eco', 'studio').resolution).toBe('480p');
   });
 });

@@ -28,11 +28,11 @@ const save = (admin: Admin, key: string, value: string) => admin.from('integrati
 
 const DESCRIPTIONS: Partial<Record<ProductKey, string>> = {
   creator: 'AI short videos, AI clips and translation: 50,000 credits every month.',
-  pro: 'Everything in Creator, 30 social accounts: 120,000 credits every month, 720p videos.',
-  studio: 'Unlimited accounts and videos: 220,000 credits every month, 720p videos.',
+  pro: 'Everything in Creator, 30 social accounts: 90,000 credits every month.',
+  studio: 'Unlimited accounts and videos: 175,000 credits every month.',
   creator_year: 'Creator, billed yearly: 12 months of credits at once (600,000).',
-  pro_year: 'Pro, billed yearly: 12 months of credits at once (1,440,000).',
-  studio_year: 'Studio, billed yearly: 12 months of credits at once (2,640,000).',
+  pro_year: 'Pro, billed yearly: 12 months of credits at once (1,080,000).',
+  studio_year: 'Studio, billed yearly: 12 months of credits at once (2,100,000).',
   pack_100: 'One-time pack of 10,000 Storyit credits.',
   pack_500: 'One-time pack of 50,000 Storyit credits.',
 };

@@ -84,8 +84,9 @@ export type VideoPlan = {
 };
 
 /** every prompt the worker needs, frozen at order time (later edits of the project do not change a running video) */
-/** Pro and Studio subscribers get their Éco videos in 720p (Grok Lite: +$0.01/s), everyone else 480p */
-export const HD_PLANS = ['pro', 'studio'];
+/** plans whose Éco videos are made in 720p (Grok Lite: +$0.01/s). Empty since Nov 22 2026: 480p for everyone keeps every
+ *  plan above 50 % margin even when all its credits are used (an HD option may come back as a paid extra) */
+export const HD_PLANS: string[] = [];
 export function buildVideoPlan(d: any, quality: VideoQuality, accountPlan = 'free'): VideoPlan {
   const t = { ...VIDEO_TIERS[quality], ...(quality === 'eco' && HD_PLANS.includes(accountPlan) ? { resolution: '720p' as const } : {}) };
   return {
