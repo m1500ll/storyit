@@ -12,8 +12,8 @@ const MODEL = Deno.env.get('GEMINI_CLIPS_MODEL') ?? 'gemini-3.8-flash';
 const FALLBACK_MODELS = (Deno.env.get('GEMINI_CLIPS_FALLBACK_MODEL') ?? 'gemini-3.7-flash,gemini-3.5-flash').split(',').map((m) => m.trim()).filter(Boolean);
 const RETRYABLE = new Set([429, 500, 503, 504]);
 // Supabase stops a function after ~150 s (free plan): stay below it.
-const TOTAL_BUDGET_MS = 120_000;
-const REQUEST_TIMEOUT_MS = 90_000;
+const TOTAL_BUDGET_MS = 70_000; // the audio analysis; the fallbacks below get the rest of the ~140 s a request may last
+const REQUEST_TIMEOUT_MS = 60_000;
 const MAX_SECONDS = 30 * 60 + 30; // keep in sync with MAX_SOURCE_SECONDS in src/types/domain.ts
 const AUDIO_BITRATE = 24_000; // bits/s, set by the browser when extracting audio
 const LENGTHS = { short: [15, 30], medium: [30, 60], long: [60, 90] } as const;
@@ -103,7 +103,7 @@ async function requestGemini(model: string, prompt: string, audioB64: string, ke
     signal: AbortSignal.timeout(timeoutMs),
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ inline_data: { mime_type: 'audio/mp3', data: audioB64 } }, { text: prompt }] }],
+      contents: [{ role: 'user', parts: [...(audioB64 ? [{ inline_data: { mime_type: 'audio/mp3', data: audioB64 } }] : []), { text: prompt }] }],
       generationConfig: { responseMimeType: 'application/json', responseSchema, temperature: 0.4, maxOutputTokens: 65536 },
       safetySettings: SAFETY,
     }),
@@ -120,11 +120,11 @@ async function requestGemini(model: string, prompt: string, audioB64: string, ke
 }
 
 /** Retries transient errors with backoff, then tries the fallback model. */
-async function callGemini(prompt: string, audioB64: string, responseSchema: unknown = schema): Promise<{ clips: RawClip[] }> {
+async function callGemini(prompt: string, audioB64: string, responseSchema: unknown = schema, budgetMs = TOTAL_BUDGET_MS): Promise<{ clips: RawClip[] }> {
   const key = Deno.env.get('GEMINI_API_KEY');
   if (!key) throw new Error('GEMINI_API_KEY secret is not set');
   const models = [MODEL, ...FALLBACK_MODELS.filter((m) => m !== 'none' && m !== MODEL)];
-  const deadline = Date.now() + TOTAL_BUDGET_MS;
+  const deadline = Date.now() + budgetMs;
   let lastError: unknown;
   for (const model of models) {
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -246,6 +246,47 @@ async function transcribeWords(bytes: Uint8Array, timeoutMs = 110_000): Promise<
   } catch (e) { console.error('transcribe', e instanceof Error ? e.message : e); return null; }
 }
 
+/** the speech-to-text words as timestamped lines ("[123.4] text"), about one line per sentence or pause */
+function transcriptLines(words: Word[]) {
+  const lines: string[] = [];
+  let cur: Word[] = [];
+  const flush = () => { if (cur.length) { lines.push(`[${cur[0].s.toFixed(1)}] ${cur.map((w) => w.w).join(' ')}`); cur = []; } };
+  for (const w of words) {
+    if (cur.length && (w.s - cur[cur.length - 1].e > 0.8 || cur.length >= 18 || /[.!?…]$/.test(cur[cur.length - 1].w))) flush();
+    cur.push(w);
+  }
+  flush();
+  return lines.join('\n').slice(0, 120_000);
+}
+
+/** Last resort when Google refuses to analyse the audio (filters, songs, trailers): the moments are picked from the
+ *  written transcript, by Gemini (text only), then by OpenAI. No audio, no lyrics quoted. */
+async function pickFromTranscript(words: Word[], rules: string, duration: number): Promise<{ clips: RawClip[] } | null> {
+  const prompt = `${rules.replace(/^The audio track[^\n]*\n/m, `Here is the timestamped transcript of a ${Math.round(duration)}-second video (each line starts with its time in seconds). Find the best self-contained moments to post as vertical shorts.\n`)}
+- Use the line times to set start and end. Never quote song lyrics or copyrighted text; describe in your own words.
+
+TRANSCRIPT:
+${transcriptLines(words)}`;
+  try { return await callGemini(prompt, '', lightSchema, 30_000); }
+  catch (e) { console.warn(JSON.stringify({ audit: 'clips_transcript_gemini_failed', error: e instanceof Error ? e.message.slice(0, 160) : String(e) })); }
+  const key = Deno.env.get('OPENAI_API_KEY');
+  if (!key) return null;
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST', signal: AbortSignal.timeout(45_000),
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gpt-5-mini', reasoning_effort: 'low',
+        messages: [{ role: 'user', content: prompt + '\n\nAnswer with JSON: {"clips":[{"start":number,"end":number,"title":string,"hook":string,"reason":string,"score":integer,"keywords":[string],"reactions":[]}]}' }],
+        response_format: { type: 'json_object' },
+      }),
+    });
+    if (!res.ok) { console.error('clips openai', res.status, (await res.text()).slice(0, 200)); return null; }
+    const d = await res.json();
+    return JSON.parse(d.choices?.[0]?.message?.content ?? '{}');
+  } catch (e) { console.error('clips openai', e instanceof Error ? e.message : e); return null; }
+}
+
 /** caption chunks (1 to 3 words, cut on punctuation and pauses) built from the real word timings, each with its words */
 function chunksFromWords(words: Word[], start: number, end: number) {
   const inside = words.filter((w) => w.e > start - 0.05 && w.s < end + 0.05);
@@ -342,7 +383,7 @@ Deno.serve(async (req) => {
   const audioPath = `${user.id}/${projectId}.mp3`;
   const fail = async (message: string, status = 502) => {
     await admin.from('clip_projects').update({ status: 'failed', error_message: message }).eq('id', projectId);
-    await admin.storage.from('clip-audio').remove([audioPath]); // a retry uploads it again
+    // the audio is kept after a failure (a retry overwrites it): the operator can replay the exact file to find the cause
     return json({ error: message }, status);
   };
 
@@ -382,20 +423,29 @@ Rules:
     const startedAt = Date.now();
     // the AI picks the moments; the captions come from a speech-to-text with real word timings (in parallel)
     const b64 = encodeBase64(bytes);
-    const analyse = async () => {
+    const reasons: string[] = [];
+    const analyse = async (): Promise<{ clips: RawClip[] } | null> => {
       try { return await callGemini(prompt, b64); }
       catch (e) {
-        if (!(e instanceof BlockedAnswerError)) throw e;
+        reasons.push(e instanceof BlockedAnswerError ? e.reason : e instanceof Error ? e.message.slice(0, 120) : String(e));
+        if (!(e instanceof BlockedAnswerError)) return null;
         console.warn(JSON.stringify({ audit: 'clips_blocked_retry_light', reason: e.reason }));
         const light = prompt.replace(/^- captions:.*$/m, '- The audio may contain songs, a film or a game trailer: NEVER transcribe or quote lyrics, music or any copyrighted text. Describe moments in your own words; keywords are only words said by the people talking.');
-        try { return await callGemini(light, b64, lightSchema); }
-        catch (e2) {
-          if (e2 instanceof BlockedAnswerError) throw new Error(`L’IA n’a pas pu analyser cette vidéo : Google bloque son contenu (${e2.reason}, souvent une musique ou une bande-annonce protégée). Essaie avec un passage sans musique.`);
-          throw e2;
-        }
+        try { return await callGemini(light, b64, lightSchema, 35_000); }
+        catch (e2) { reasons.push(e2 instanceof BlockedAnswerError ? e2.reason : e2 instanceof Error ? e2.message.slice(0, 120) : String(e2)); return null; }
       }
     };
-    const [out, words] = await Promise.all([analyse(), transcribeWords(bytes)]);
+    const [heard, words] = await Promise.all([analyse(), transcribeWords(bytes)]);
+    let out = heard;
+    if (!out?.clips?.length && words?.length) {
+      console.warn(JSON.stringify({ audit: 'clips_transcript_fallback', reasons }));
+      out = await pickFromTranscript(words, prompt, duration);
+    }
+    if (!out) {
+      console.error(JSON.stringify({ audit: 'clips_all_failed', reasons, words: words?.length ?? 0 }));
+      throw new Error(words?.length ? 'L’IA n’a pas réussi à analyser cette vidéo. Réessaie dans quelques minutes.' : 'L’IA n’a pas entendu de parole claire dans cette vidéo (y a-t-il quelqu’un qui parle ?).');
+    }
+
     let clips = cleanClips(Array.isArray(out?.clips) ? out.clips : [], duration, [min, max]);
     // Whisper drifts on long audio: each clip is transcribed again on its own short piece (a few seconds of margin),
     // which gives word timings accurate to a few hundredths of a second. Falls back on the whole-file words.
