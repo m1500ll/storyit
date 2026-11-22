@@ -1,3 +1,4 @@
+import { asDownload } from '@/lib/download';
 import { Archive, CalendarPlus, Download, Search, Upload } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -167,7 +168,7 @@ export default function LibraryPage() {
                       Historique · {its.filter((p) => p.status !== 'cancelled').length}
                     </button>
                     {m.preview_url && m.status === 'available' && (
-                      <a href={m.preview_url} download target="_blank" rel="noreferrer" aria-label={`Télécharger ${m.title}`} title="Télécharger"
+                      <a href={asDownload(m.preview_url, `${m.title || 'video'}.mp4`)} download={`${m.title || 'video'}.mp4`} aria-label={`Télécharger ${m.title}`} title="Télécharger"
                         className="rounded p-1 text-zinc-400 hover:bg-line/5 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"><Download className="h-3.5 w-3.5" /></a>
                     )}
                     {m.status === 'available' && state !== 'archived' && (

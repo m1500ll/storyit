@@ -1,3 +1,4 @@
+import { asDownload } from '@/lib/download';
 import { ImagePlus, Lightbulb, Plus, Sparkles, Trash2, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -159,7 +160,7 @@ export default function CharactersPage() {
               <div><dt className="inline text-zinc-500">Voix : </dt><dd className="inline">{open.voice}</dd></div>
               <div><dt className="inline text-zinc-500">Univers : </dt><dd className="inline">{UNIVERSES[open.universe]?.label}</dd></div>
             </dl>
-            {open.sheet_url && <a href={open.sheet_url} download={`${open.name}.jpg`} target="_blank" rel="noreferrer" className="touch-hit mt-3 inline-block text-xs text-violet-300 hover:underline">Télécharger la planche</a>}
+            {open.sheet_url && <a href={asDownload(open.sheet_url, `${open.name}.jpg`)} download={`${open.name}.jpg`} target="_blank" rel="noreferrer" className="touch-hit mt-3 inline-block text-xs text-violet-300 hover:underline">Télécharger la planche</a>}
           </div>
         )}
       </Modal>
