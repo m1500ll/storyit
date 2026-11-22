@@ -261,13 +261,13 @@ function transcriptLines(words: Word[]) {
 
 /** Last resort when Google refuses to analyse the audio (filters, songs, trailers): the moments are picked from the
  *  written transcript, by Gemini (text only), then by OpenAI. No audio, no lyrics quoted. */
-async function pickFromTranscript(words: Word[], rules: string, duration: number): Promise<{ clips: RawClip[] } | null> {
+async function pickFromTranscript(words: Word[], rules: string, duration: number, skipGemini = false): Promise<{ clips: RawClip[] } | null> {
   const prompt = `${rules.replace(/^The audio track[^\n]*\n/m, `Here is the timestamped transcript of a ${Math.round(duration)}-second video (each line starts with its time in seconds). Find the best self-contained moments to post as vertical shorts.\n`)}
 - Use the line times to set start and end. Never quote song lyrics or copyrighted text; describe in your own words.
 
 TRANSCRIPT:
 ${transcriptLines(words)}`;
-  try { return await callGemini(prompt, '', lightSchema, 30_000); }
+  if (!skipGemini) try { return await callGemini(prompt, '', lightSchema, 25_000); }
   catch (e) { console.warn(JSON.stringify({ audit: 'clips_transcript_gemini_failed', error: e instanceof Error ? e.message.slice(0, 160) : String(e) })); }
   const key = Deno.env.get('OPENAI_API_KEY');
   if (!key) return null;
@@ -424,22 +424,21 @@ Rules:
     // the AI picks the moments; the captions come from a speech-to-text with real word timings (in parallel)
     const b64 = encodeBase64(bytes);
     const reasons: string[] = [];
+    let blocked = false;
     const analyse = async (): Promise<{ clips: RawClip[] } | null> => {
       try { return await callGemini(prompt, b64); }
       catch (e) {
+        blocked = e instanceof BlockedAnswerError;
         reasons.push(e instanceof BlockedAnswerError ? e.reason : e instanceof Error ? e.message.slice(0, 120) : String(e));
-        if (!(e instanceof BlockedAnswerError)) return null;
-        console.warn(JSON.stringify({ audit: 'clips_blocked_retry_light', reason: e.reason }));
-        const light = prompt.replace(/^- captions:.*$/m, '- The audio may contain songs, a film or a game trailer: NEVER transcribe or quote lyrics, music or any copyrighted text. Describe moments in your own words; keywords are only words said by the people talking.');
-        try { return await callGemini(light, b64, lightSchema, 35_000); }
-        catch (e2) { reasons.push(e2 instanceof BlockedAnswerError ? e2.reason : e2 instanceof Error ? e2.message.slice(0, 120) : String(e2)); return null; }
+        return null;
       }
     };
     const [heard, words] = await Promise.all([analyse(), transcribeWords(bytes)]);
     let out = heard;
     if (!out?.clips?.length && words?.length) {
       console.warn(JSON.stringify({ audit: 'clips_transcript_fallback', reasons }));
-      out = await pickFromTranscript(words, prompt, duration);
+      // Google refused this audio (song, trailer…): OpenAI picks from the transcript right away (time limit on long videos)
+      out = await pickFromTranscript(words, prompt, duration, blocked || Date.now() - startedAt > 80_000);
     }
     if (!out) {
       console.error(JSON.stringify({ audit: 'clips_all_failed', reasons, words: words?.length ?? 0 }));
