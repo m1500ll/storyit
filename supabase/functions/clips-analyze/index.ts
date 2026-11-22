@@ -73,6 +73,14 @@ class GeminiHttpError extends Error {
   constructor(public status: number, body: string) { super(`Gemini error ${status}: ${body.slice(0, 300)}`); }
 }
 
+/** Gemini answered without text (safety filter, recitation, token limit…): worth another try / the fallback model */
+class EmptyAnswerError extends Error {
+  constructor(public reason: string) { super(`Gemini returned an empty response (${reason})`); }
+}
+// commentary of games, films or streams talks about weapons, fights and insults: only block what is really harmful
+const SAFETY = ['HARM_CATEGORY_HARASSMENT', 'HARM_CATEGORY_HATE_SPEECH', 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'HARM_CATEGORY_DANGEROUS_CONTENT']
+  .map((category) => ({ category, threshold: 'BLOCK_ONLY_HIGH' }));
+
 async function requestGemini(model: string, prompt: string, audioB64: string, key: string, timeoutMs: number): Promise<{ clips: RawClip[] }> {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: 'POST',
@@ -80,13 +88,18 @@ async function requestGemini(model: string, prompt: string, audioB64: string, ke
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ inline_data: { mime_type: 'audio/mp3', data: audioB64 } }, { text: prompt }] }],
-      generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.4 },
+      generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0.4, maxOutputTokens: 16384 },
+      safetySettings: SAFETY,
     }),
   });
   if (!res.ok) throw new GeminiHttpError(res.status, await res.text());
   const data = await res.json();
   const text = data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? '').join('');
-  if (!text) throw new Error('Gemini returned an empty response');
+  if (!text) {
+    const reason = String(data?.promptFeedback?.blockReason ?? data?.candidates?.[0]?.finishReason ?? 'no candidate');
+    console.warn(JSON.stringify({ audit: 'gemini_empty', model, reason }));
+    throw new EmptyAnswerError(reason);
+  }
   return JSON.parse(text);
 }
 
@@ -106,7 +119,7 @@ async function callGemini(prompt: string, audioB64: string): Promise<{ clips: Ra
       } catch (e) {
         lastError = e;
         const timedOut = e instanceof DOMException && (e.name === 'TimeoutError' || e.name === 'AbortError');
-        const retryable = timedOut || (e instanceof GeminiHttpError ? RETRYABLE.has(e.status) : e instanceof SyntaxError);
+        const retryable = timedOut || e instanceof EmptyAnswerError || (e instanceof GeminiHttpError ? RETRYABLE.has(e.status) : e instanceof SyntaxError);
         if (!retryable) {
           if (model !== MODEL && e instanceof GeminiHttpError && e.status === 404) break;
           throw e;
@@ -119,6 +132,11 @@ async function callGemini(prompt: string, audioB64: string): Promise<{ clips: Ra
   const transient = lastError === undefined || lastError instanceof DOMException
     || (lastError instanceof GeminiHttpError && RETRYABLE.has(lastError.status));
   if (transient) throw new Error('L’IA est très demandée en ce moment. Réessayez dans une minute.');
+  if (lastError instanceof EmptyAnswerError) {
+    throw new Error(/SAFETY|PROHIBITED|BLOCK|RECITATION/i.test(lastError.reason)
+      ? 'L’IA n’a pas pu analyser cette vidéo (son contenu a été bloqué par le filtre de sécurité de Google). Essaie avec une autre vidéo.'
+      : 'L’IA n’a pas réussi à analyser cette vidéo. Réessaie dans un instant.');
+  }
   if (lastError instanceof GeminiHttpError && [401, 402, 403].includes(lastError.status)) {
     console.error('clips-analyze billing/key', lastError.message);
     throw new Error('L’analyse est momentanément indisponible. Réessayez un peu plus tard.');
