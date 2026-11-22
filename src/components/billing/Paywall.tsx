@@ -2,7 +2,7 @@ import { ArrowRight, Check, Clapperboard, Sparkles } from 'lucide-react';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { billingPlan, billingService } from '@/services/billing';
 import { useProfile } from '@/hooks/useStore';
-import { PLANS, PROMPT_PROJECT_COST, TRIAL, TRIAL_ENABLED, projectsFor, formatCredits } from '@/services/credits';
+import { PLANS, TRIAL, TRIAL_ENABLED, projectsFor, formatCredits } from '@/services/credits';
 import { Button } from '../ui';
 import { PlanPicker } from './PlanPicker';
 import { TrialUpgrade } from './TrialUpgrade';
@@ -47,8 +47,8 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
             </p>
             {/* hidden on phones so the first offer and its button show without scrolling */}
             <ul className="relative mt-4 hidden gap-1.5 text-xs text-zinc-300 sm:grid sm:grid-cols-3">
-              <li className="rounded-lg bg-line/[0.04] px-3 py-2">1 projet Creative Studio = {formatCredits(PROMPT_PROJECT_COST)} crédits</li>
-              <li className="rounded-lg bg-line/[0.04] px-3 py-2">10 000 crédits ≈ {projectsFor(10000)} projets complets</li>
+              <li className="rounded-lg bg-line/[0.04] px-3 py-2">L’histoire est offerte, tu paies seulement la vidéo</li>
+              <li className="rounded-lg bg-line/[0.04] px-3 py-2">10 000 crédits ≈ {projectsFor(10000)} vidéos de 30 s</li>
               <li className="rounded-lg bg-line/[0.04] px-3 py-2">Les crédits rechargés n’expirent jamais</li>
             </ul>
             <div className="relative mt-6"><TrialUpgrade /><PlanPicker currentPlan={billingPlan(profile).plan} trialUsed={billingPlan(profile).trialUsed} compact /></div>

@@ -97,7 +97,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
               {yearly ? <p className="text-[11px] text-zinc-400">{yearly} $ réglés une fois pour l’année · <span className="font-semibold text-emerald-300">vous économisez {p.price * 12 - yearly} $</span></p>
                 : p.price > 0 && <p className="text-[11px] text-zinc-500">Facturé chaque mois</p>}
               <p className="mt-2 text-sm font-semibold text-violet-300">{yearly ? `${formatCredits(p.credits * 12)} crédits d’un coup (12 mois)` : `${formatCredits(p.credits)} crédits ${p.period === 'month' ? '/ mois' : 'pour commencer'}`}</p>
-              <p className="text-[11px] text-zinc-500">≈ {projectsFor(p.credits)} projets Creative Studio / mois</p>
+              <p className="text-[11px] text-zinc-500">≈ {projectsFor(p.credits)} vidéos de 30 s / mois</p>
               </>); })()}
               {!compact && (
                 <ul className="mt-3 space-y-1.5">
@@ -147,7 +147,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
               <span className="flex items-center gap-2 whitespace-nowrap"><Coins className="h-4 w-4 shrink-0 text-violet-300" />{formatCredits(pack.credits)} crédits</span>
               {'badge' in pack && <span className="whitespace-nowrap rounded-full bg-coral-500/15 px-2 py-0.5 text-[11px] text-coral-300">Meilleur prix</span>}
             </span>
-            <span className="shrink-0 text-right"><span className="block whitespace-nowrap text-sm font-semibold text-zinc-100">{pending === pack.id ? '…' : `${pack.price} $`}</span><span className="block whitespace-nowrap text-[11px] text-zinc-500">≈ {projectsFor(pack.credits)} projets</span></span>
+            <span className="shrink-0 text-right"><span className="block whitespace-nowrap text-sm font-semibold text-zinc-100">{pending === pack.id ? '…' : `${pack.price} $`}</span><span className="block whitespace-nowrap text-[11px] text-zinc-500">≈ {projectsFor(pack.credits)} vidéos</span></span>
           </button>
         ))}
       </div>

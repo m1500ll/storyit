@@ -19,7 +19,9 @@ import { RATE_MESSAGE, withinRate } from '../_shared/rateLimit.ts';
 const API = 'https://generativelanguage.googleapis.com/v1beta';
 const TEXT_MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
 const TEXT_FALLBACK = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? 'gemini-3.5-flash-lite';
-const PROJECT_COST = 1000;
+const PROJECT_COST = 0; // the story is free since Nov 22 2026: the video price includes it (see VIDEO_PRICES)
+/** new stories a day without a video being ordered (they cost Storyit a few cents of AI each) */
+const FREE_STORIES_PER_DAY: Record<string, number> = { free: 5, creator: 20, pro: 40, studio: 60 };
 
 
 const cors = {
@@ -319,8 +321,13 @@ Deno.serve(async (req) => {
   // the Storyit watermark: 10 % off the whole (story + video), taken off the video (a refund gives back what was paid)
   const autoVideo = autoPrice && body.auto?.watermark === true ? autoPrice - watermarkSaving(PROJECT_COST + autoPrice) : autoPrice;
   if (billable) {
-    const { data: profile } = await user.from('profiles').select('credit_balance').eq('id', uid).single();
+    const { data: profile } = await user.from('profiles').select('credit_balance, plan').eq('id', uid).single();
     if (!profile || profile.credit_balance < PROJECT_COST + autoVideo) return json({ error: 'Crédits insuffisants : rechargez votre solde pour continuer.' }, 402);
+    // free stories, within a daily allowance (a story that orders its video right away does not count)
+    if (!autoVideo && !internal) {
+      const cap = FREE_STORIES_PER_DAY[profile.plan ?? 'free'] ?? FREE_STORIES_PER_DAY.free;
+      if (!(await withinRate(uid, 'free_story', cap, 86400))) return json({ error: `Tu as écrit ${cap} histoires aujourd’hui sans lancer de vidéo. Lance la vidéo d’une de tes histoires, ou reviens demain.`, code: 'rate_limited' }, 429);
+    }
   }
 
   const data: Record<string, any> = { ...(project?.data ?? {}) };
@@ -400,7 +407,7 @@ Deno.serve(async (req) => {
     if (saved.error) throw new Error('Impossible d’enregistrer le projet');
 
     // Text works on Google's free tier too, so a text success says nothing about image billing: status unchanged.
-    if (billable) await user.rpc('consume_credits', { p_amount: PROJECT_COST, p_story_id: null, p_description: 'Creative Studio — new project' });
+    if (billable && PROJECT_COST > 0) await user.rpc('consume_credits', { p_amount: PROJECT_COST, p_story_id: null, p_description: 'Creative Studio — new project' });
     let out = saved.data;
     if (autoVideo && data.auto?.status === 'running') { // paid once, at the start: the video of the wizard
       const { error: payErr } = await user.rpc('consume_credits', { p_amount: autoVideo, p_story_id: null, p_description: `Vidéo automatique Creative Studio (${data.length} s)` });

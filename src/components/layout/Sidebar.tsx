@@ -100,7 +100,7 @@ export function Sidebar() {
           <p className="label flex items-center gap-1.5 text-[11px]"><Coins className="h-3 w-3" /> Crédits</p>
           <p className={cn('mt-1 font-display text-3xl tabular-nums', level === 'ok' ? 'text-zinc-50' : level === 'low' ? 'text-amber-300' : 'text-coral-300')}>{known ? formatCredits(balance) : '…'}</p>
           <p className="text-[11px] text-zinc-500">
-            {level === 'empty' ? 'Plus de crédits : rechargez pour continuer à créer.' : level === 'low' ? 'Bientôt à court.' : `≈ ${projectsFor(balance)} projets Creative Studio`}
+            {level === 'empty' ? 'Plus de crédits : rechargez pour continuer à créer.' : level === 'low' ? 'Bientôt à court.' : `≈ ${projectsFor(balance)} vidéo${projectsFor(balance) > 1 ? 's' : ''} de 30 s`}
           </p>
           <button onClick={() => openPaywall()}
             className="touch-hit mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#c2410c] to-[#b45309] py-2 text-xs font-semibold text-white transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral-400/60">

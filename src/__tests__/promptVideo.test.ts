@@ -22,12 +22,12 @@ const project = () => {
 };
 
 describe('Creative Studio → video', () => {
-  it('prices are fixed per length (Éco halved on Nov 22 2026)', () => {
-    expect(videoCost('eco', 46)).toBe(3800);
+  it('prices are fixed per length (story included since Nov 22 2026)', () => {
+    expect(videoCost('eco', 46)).toBe(4600);
     expect(videoCost('standard', 45)).toBe(15000);
     expect(videoCost('premium', 48)).toBe(30000);
-    expect(videoCost('eco', 31)).toBe(2500);
-    expect(videoCost('eco', 61)).toBe(5000);
+    expect(videoCost('eco', 31)).toBe(3400);
+    expect(videoCost('eco', 61)).toBe(5900);
     expect(videoCost('premium', 72)).toBe(39000); // older 66-75 s scripts are a minute
     expect([30, 45, 60].map((n) => lengthOf(LENGTH_RANGE[n as 30 | 45 | 60][0]))).toEqual([30, 45, 60]);
     expect([30, 45, 60].map((n) => lengthOf(LENGTH_RANGE[n as 30 | 45 | 60][1]))).toEqual([30, 45, 60]);

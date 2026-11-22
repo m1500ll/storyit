@@ -26,9 +26,9 @@ const STEPS: { key: PhaseKey; label: string; waiting: string }[] = [
   { key: 'pack', label: 'Miniature & SEO', waiting: 'Écriture de la miniature, des titres et des hashtags…' },
 ];
 const pretty = (o: unknown) => JSON.stringify(o, null, 2);
-/** A project costs PROMPT_PROJECT_COST credits once, at the start. */
+/** The story is free (the video price includes it). */
 function useCost() {
-  return { label: `${formatCredits(PROMPT_PROJECT_COST)} crédits` };
+  return { label: PROMPT_PROJECT_COST > 0 ? `${formatCredits(PROMPT_PROJECT_COST)} crédits` : 'Offert' };
 }
 
 function CopyBtn({ text, label = 'Copier' }: { text: string; label?: string }) {
@@ -233,7 +233,7 @@ function AdvancedStart() {
             <Button disabled={!promptStudio.available || !story.trim()} onClick={() => void start('script')}><Wand2 className="h-4 w-4" /> Créer mon mini-drama · {cost.label}</Button>
             <Button variant="secondary" disabled={!promptStudio.available} onClick={() => void start('concepts')}><Sparkles className="h-4 w-4" /> Propose-moi 3 histoires</Button>
           </div>
-          <p className="mt-2 text-xs text-zinc-500">{`${formatCredits(PROMPT_PROJECT_COST)} crédits pour le projet complet, débités une seule fois au démarrage. Les 5 étapes, les régénérations et les dépannages sont inclus.`}</p>
+          <p className="mt-2 text-xs text-zinc-500">{'L’histoire est offerte : les 5 étapes, les régénérations et les dépannages sont gratuits. Tu ne paies que la vidéo finie, si tu la lances.'}</p>
           {error && <p role="alert" className="mt-3 text-xs text-coral-300">{error}</p>}
         </Card>
       )}

@@ -301,7 +301,7 @@ export function CreateWizard() {
               <Lightbulb className="h-4 w-4" aria-hidden /> {ideaBusy ? 'Idée en cours…' : 'Propose-moi une idée'}
             </button>
             <dl className="surface mt-5 space-y-2 p-4 text-sm">
-              <div className="flex justify-between gap-3"><dt className="text-zinc-400">Histoire, dialogues et scènes</dt><dd className="tabular-nums text-zinc-100">{formatCredits(PROMPT_PROJECT_COST)}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-zinc-400">Histoire, dialogues et scènes</dt><dd className="text-emerald-300">Offert</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-zinc-400">Vidéo finie · {lengthLabel(length)} · {UNIVERSES[universe].label}</dt><dd className="tabular-nums text-zinc-100">{formatCredits(VIDEO_PRICES.eco[length])}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-zinc-400">Sous-titres · {SUBTITLE_STYLES.find((x) => x.id === subtitles)?.label}</dt><dd className="text-emerald-300">Inclus</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-zinc-400">Musique · {upload && music === upload.value ? upload.name : MUSIC_TRACKS.find((x) => x.id === music)?.title ?? 'aucune'}</dt><dd className="text-emerald-300">Inclus</dd></div>

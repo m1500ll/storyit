@@ -17,7 +17,9 @@ export const isQuality = (q: unknown): q is VideoQuality => typeof q === 'string
 export const AVAILABLE_QUALITIES: VideoQuality[] = ['eco'];
 /** fixed price per length and quality: 45 s costs what a minute used to, a minute a bit more */
 export const VIDEO_PRICES: Record<VideoQuality, Record<VideoLength, number>> = {
-  eco: { 30: 2500, 45: 3800, 60: 5000 }, // Nov 22 2026: about half the old price (frames drawn in low quality, see run.py)
+  // Nov 22 2026: the story is free, the video price includes it (was 1,000 for the story + 2,500 / 3,800 / 5,000);
+  // set so every plan keeps ≥ 50 % margin when all its credits go to videos
+  eco: { 30: 3400, 45: 4600, 60: 5900 },
   standard: { 30: 10000, 45: 15000, 60: 19500 },
   premium: { 30: 20000, 45: 30000, 60: 39000 },
 };
