@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
 
   const [usersRes, profilesRes, txRes, animRes, pvRes, dubRes, affRes, invOld, invNew, subOld, subNew] = await Promise.all([
     admin.auth.admin.listUsers({ perPage: 1000 }),
-    admin.from('profiles').select('id, plan, credit_balance, trial_used, trial_ends_at, billing_provider, affiliate_id, stripe_customer_id, marketing_opt_out, is_admin, onboarding'),
+    admin.from('profiles').select('id, plan, credit_balance, trial_used, trial_ends_at, billing_provider, plan_renews_at, affiliate_id, stripe_customer_id, marketing_opt_out, is_admin, onboarding'),
     admin.from('credit_transactions').select('user_id, amount, type, description, created_at').order('created_at', { ascending: false }).limit(20000),
     admin.from('animated_projects').select('user_id, status'),
     admin.from('prompt_videos').select('user_id, status'),
@@ -138,8 +138,15 @@ Deno.serve(async (req) => {
   }
   // Whop: real payments (succeeded, more than $0, minus refunds) and the real state of each membership
   const userOfMembership = new Map([...profiles.values()].filter((p: any) => p.whop_membership_id).map((p: any) => [p.whop_membership_id, p.id]));
+  // a payment made by hand at Whop has no metadata: the e-mail typed at checkout links it to the account of that
+  // customer's other (metadata) payments
+  const uidOfWhopEmail = new Map<string, string>();
+  for (const p of [...whopPays].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at))) {
+    if (p.customer_email && p.metadata?.user_id && profiles.has(p.metadata.user_id)) uidOfWhopEmail.set(String(p.customer_email).toLowerCase(), p.metadata.user_id);
+  }
   const whopUid = (o: any): string | undefined => (o.metadata?.user_id && profiles.has(o.metadata.user_id) ? o.metadata.user_id : undefined)
-    ?? userOfMembership.get(o.membership_id ?? o.id) ?? (o.customer_email ? userOfEmail.get(String(o.customer_email).toLowerCase()) : undefined);
+    ?? userOfMembership.get(o.membership_id ?? o.id)
+    ?? (o.customer_email ? uidOfWhopEmail.get(String(o.customer_email).toLowerCase()) ?? userOfEmail.get(String(o.customer_email).toLowerCase()) : undefined);
   for (const p of whopPays) {
     if (p.substatus !== 'succeeded' && p.status !== 'paid') continue;
     const amount = money(p.usd_total ?? p.total) - money(p.refunded_amount);
@@ -200,11 +207,13 @@ Deno.serve(async (req) => {
     const s = subOf.get(u.id);
     const money = paid.get(u.id);
     // Whop memberships are read from Whop itself (trialing / active / past_due / canceled), never guessed from the profile
-    const w = whopOf.get(u.id);
+    // a plan sold by hand (one-off payment, migration 0061) runs until plan_renews_at
+    const manual = p.billing_provider === 'manual' && p.plan && p.plan !== 'free' && !!p.plan_renews_at && Date.parse(p.plan_renews_at) > Date.now();
+    const w = manual ? undefined : whopOf.get(u.id);
     const useWhop = !!w && (!s || wrank(w) >= (s.status === 'active' ? 3 : s.status === 'trialing' ? 2 : s.status === 'past_due' ? 1 : 0));
     const extTrial = useWhop && w.status === 'trialing';
     const wLive = useWhop && (w.status === 'active' || w.status === 'trialing');
-    const status = useWhop
+    const status = manual ? 'paying' : useWhop
       ? (w.status === 'active' ? 'paying' : w.status === 'trialing' ? 'trial' : w.status === 'past_due' ? 'past_due' : money ? 'churned' : 'free')
       : s?.status === 'active' ? (stripePaid(u.id, s) ? 'paying' : 'past_due') : s?.status === 'trialing' ? 'trial' : s?.status === 'past_due' ? 'past_due' : money ? 'churned' : 'free';
     const price = s?.items?.data?.[0]?.price;
@@ -212,10 +221,10 @@ Deno.serve(async (req) => {
       id: u.id, email: u.email ?? '', signedUpAt: u.created_at, lastSignInAt: u.last_sign_in_at ?? null, confirmed: !!u.email_confirmed_at,
       plan: p.plan ?? 'free', status, provider: useWhop ? 'whop' : s ? 'stripe' : null,
       interval: useWhop ? ((w.billing_period_days ?? 30) >= 300 ? 'year' : 'month') : price?.recurring?.interval ?? null,
-      renewsAt: useWhop ? (wLive ? Date.parse(w.current_period_end) || null : null)
+      renewsAt: manual ? Date.parse(p.plan_renews_at) : useWhop ? (wLive ? Date.parse(w.current_period_end) || null : null)
         : s && (s.status === 'active' || s.status === 'trialing') ? ((s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? 0) * 1000 || null) : null,
-      cancelAtPeriodEnd: useWhop ? wLive && !!w.cancel_at_period_end : cancelling(s),
-      cancelAt: useWhop ? (wLive && w.cancel_at_period_end ? Date.parse(w.current_period_end) || null : null)
+      cancelAtPeriodEnd: manual ? true : useWhop ? wLive && !!w.cancel_at_period_end : cancelling(s),
+      cancelAt: manual ? Date.parse(p.plan_renews_at) : useWhop ? (wLive && w.cancel_at_period_end ? Date.parse(w.current_period_end) || null : null)
         : cancelling(s) ? ((s.cancel_at ?? s.current_period_end ?? s.items?.data?.[0]?.current_period_end ?? 0) * 1000 || null) : null,
       canceledAt: useWhop ? (w.canceled_at ? Date.parse(w.canceled_at) : null) : s?.canceled_at ? s.canceled_at * 1000 : null,
       trialEndsAt: extTrial ? Date.parse(w.current_period_end) || null : !useWhop && s?.status === 'trialing' && s.trial_end ? s.trial_end * 1000 : null,
