@@ -78,7 +78,7 @@ export function Sidebar() {
         { to: '/app/billing', label: 'Offre et crédits', icon: CreditCard },
         { to: '/app/settings', label: 'Réglages', icon: Settings },
         { to: '/app/help', label: 'Aide', icon: LifeBuoy },
-        ...(isAdmin ? [{ to: '/app/admin', label: 'Tableau de bord', icon: BarChart3 }, { to: '/app/studio', label: 'Animated Studio (caché)', icon: Clapperboard }, { to: '/app/partners', label: 'Partenaires', icon: Handshake }, { to: '/app/trends', label: 'Tendances', icon: TrendingUp }] : []),
+        ...(isAdmin ? [{ to: '/app/admin', label: 'Tableau de bord', icon: BarChart3 }, { to: '/app/studio', label: 'Animated Studio (caché)', icon: Clapperboard }, { to: '/app/partners', label: 'Partenaires', icon: Handshake }, { to: '/app/outreach', label: 'Prospection', icon: Send }, { to: '/app/trends', label: 'Tendances', icon: TrendingUp }] : []),
       ],
     },
   ];

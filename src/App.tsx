@@ -28,6 +28,7 @@ const TranslatePage = lazy(() => import('@/pages/TranslatePage'));
 const PartnerPage = lazy(() => import('@/pages/PartnerPage'));
 const PartnersAdminPage = lazy(() => import('@/pages/PartnersAdminPage'));
 const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'));
+const OutreachPage = lazy(() => import('@/pages/OutreachPage'));
 const TrendsAdminPage = lazy(() => import('@/pages/TrendsAdminPage'));
 const AccountsPage = lazy(() => import('@/pages/AccountsPage'));
 const LibraryPage = lazy(() => import('@/pages/LibraryPage'));
@@ -70,6 +71,7 @@ export default function App() {
               <Route path="translate" element={<TranslatePage />} />
               <Route path="partners" element={<PartnersAdminPage />} />
               <Route path="admin" element={<AdminDashboardPage />} />
+              <Route path="outreach" element={<OutreachPage />} />
               <Route path="trends" element={<TrendsAdminPage />} />
               <Route path="studio/:projectId" element={<AnimatedPause><AnimatedStudioPage /></AnimatedPause>} />
               {/* old studio paths: the Animated Studio is paused (admins only), so they open the Creative Studio */}
