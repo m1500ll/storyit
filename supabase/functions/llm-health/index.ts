@@ -180,6 +180,17 @@ Deno.serve(async (req) => {
     return json({ status: r.status, ms: Date.now() - t, bytes: bytes.length, finish: c?.finishReason ?? null, block: d?.promptFeedback ?? null,
       text_len: (c?.content?.parts ?? []).map((x: any) => x.text ?? '').join('').length, usage: d?.usageMetadata ?? null, err: d?.error?.message?.slice(0, 300) ?? null });
   }
+  if (url.searchParams.get('qa_tts') === '1' && req.method === 'POST') { // operator: spoken test audio (OpenAI TTS), mp3 base64
+    const { text, voice = 'onyx' } = await req.json().catch(() => ({}));
+    if (typeof text !== 'string' || text.length > 4000) return json({ error: 'text required (≤ 4000)' }, 400);
+    const r = await fetch('https://api.openai.com/v1/audio/speech', { method: 'POST', signal: AbortSignal.timeout(120_000),
+      headers: { Authorization: `Bearer ${Deno.env.get('OPENAI_API_KEY')}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'gpt-4o-mini-tts', voice, input: text, response_format: 'mp3' }) });
+    if (!r.ok) return json({ error: (await r.text()).slice(0, 300) }, 502);
+    const bytes = new Uint8Array(await r.arrayBuffer());
+    let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return json({ b64: btoa(bin) });
+  }
   if (url.searchParams.get('gemini_models') === '1') { // operator: the Gemini models this key can call
     const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': Deno.env.get('GEMINI_API_KEY') ?? '' } });
     const d = await r.json();
