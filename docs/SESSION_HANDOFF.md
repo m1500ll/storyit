@@ -188,3 +188,7 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 ## 2026-11-23 — Welcome bonus 1,000
 - `grant_welcome_bonus` now grants 1,000 (migration 0064, applied). All site/email texts say 1 000 / 1,000.
 - Trial (Whop): `grant_credits(p_reset: true)` sets the balance to greatest(balance, 3,500) — never additive. A new free account (1,000) taking the trial ends at 3,500.
+
+## 2026-11-23 — Dashboard: free-trial panel
+- `admin-stats` returns `trials` (Whop memberships with metadata trial=1): ongoing / cancelled (still running) / converted (paid on the membership or the member paid after the trial start) / lost (ended unpaid, e.g. past_due) / blocked (banned, never granted, or cut before its end date by Storyit; left out of rates).
+- `TrialsPanel` (src/components/admin): conversion rate = converted / (converted + lost + cancelled), "si tous les essais en cours paient", revenue from trials, list.

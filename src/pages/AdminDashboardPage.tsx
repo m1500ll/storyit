@@ -4,6 +4,7 @@ import { Button, Card, LoadState, PageHeader } from '@/components/ui';
 import { useProfile } from '@/hooks/useStore';
 import { cn } from '@/lib/cn';
 import { MemberHistory } from '@/components/admin/MemberHistory';
+import { TrialsPanel } from '@/components/admin/TrialsPanel';
 import { adminStats, type AdminMember, type AdminStats, type MemberStatus } from '@/services/adminStats';
 import { formatCredits } from '@/services/credits';
 
@@ -116,6 +117,8 @@ export default function AdminDashboardPage() {
             <Kpi icon={<Users className="h-3.5 w-3.5" aria-hidden />} label="Venus d’un partenaire" value={String(k.viaPartner)} hint={`${k.members ? Math.round((k.viaPartner / k.members) * 100) : 0} % des membres`} />
             <Kpi icon={<Activity className="h-3.5 w-3.5" aria-hidden />} label="Crédits en circulation" value={formatCredits(k.creditsOutstanding)} hint="soldes des membres" />
           </div>
+
+          {data.trials && <TrialsPanel t={data.trials} />}
 
           <Card className="mt-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

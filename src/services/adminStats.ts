@@ -15,9 +15,19 @@ export interface AdminStats {
     members: number; paying: number; trials: number; churned: number; cancelling?: number; free: number; mrrCents: number; revenueCents: number; revenue30Cents: number;
     signupsToday: number; signups7d: number; signups30d: number; activated: number; creditsOutstanding: number; viaPartner: number;
   };
+  trials?: TrialStats;
   members: AdminMember[];
   payments: { at: number; amount: number; currency: string; email: string | null; reason: string; label: string }[];
   activity: { at: number; email: string; amount: number; type: string; description: string }[];
+}
+
+export type TrialState = 'ongoing' | 'cancelled' | 'converted' | 'lost' | 'blocked';
+/** free trials: ongoing (will be charged), cancelled (still running, will not be charged), converted (paid),
+ *  lost (ended without paying), blocked (refused or fraud, left out of the rates) */
+export interface TrialStats {
+  total: number; ongoing: number; cancelled: number; converted: number; lost: number; blocked: number;
+  ifAllPayCents: number; ifNotCancelledPayCents: number; ifAllEverPaidCents: number; convertedCents: number;
+  list: { email: string; state: TrialState; startedAt: number; endsAt: number | null; priceCents: number; paidCents: number; used: number }[];
 }
 
 export interface CreditHistory {

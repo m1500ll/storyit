@@ -306,6 +306,44 @@ Deno.serve(async (req) => {
     };
   }).sort((a, b) => Date.parse(b.signedUpAt) - Date.parse(a.signedUpAt));
 
+  // free trials (Whop, $0 with a card): what became of each one, and what they would bring if they all paid
+  const trialGranted = new Set((txRes.data ?? []).filter((t: any) => t.type === 'subscription_grant' && String(t.description ?? '').startsWith('Essai gratuit')).map((t: any) => t.user_id));
+  const paidOnMembership = new Map<string, number>();
+  for (const p of whopPays) {
+    if ((p.substatus !== 'succeeded' && p.status !== 'paid') || !p.membership_id) continue;
+    const amount = money(p.usd_total ?? p.total) - money(p.refunded_amount);
+    if (amount > 0) paidOnMembership.set(p.membership_id, (paidOnMembership.get(p.membership_id) ?? 0) + amount);
+  }
+  const trialList: { email: string; state: 'ongoing' | 'cancelled' | 'converted' | 'lost' | 'blocked'; startedAt: number; whop: string; endsAt: number | null; priceCents: number; paidCents: number; used: number }[] = [];
+  for (const m of whopMembers) {
+    if (m.metadata?.trial !== '1') continue;
+    const uid = whopUid(m);
+    const p: any = uid ? profiles.get(uid) : null;
+    const start = Date.parse(m.created_at);
+    // converted: paid on this membership, or the same member paid Storyit after starting the trial (e.g. a new checkout)
+    const paidC = (paidOnMembership.get(m.id) ?? 0) || (uid ? (payList.get(uid) ?? []).filter((x) => x.at >= start).reduce((s, x) => s + x.amount, 0) : 0);
+    const state = paidC > 0 || m.status === 'active' ? 'converted'
+      : m.status === 'trialing' ? (m.cancel_at_period_end ? 'cancelled' : 'ongoing')
+      // a trial stopped before its end date was cut by Storyit (fraud, guard refusal): a customer who cancels keeps it to the end
+      : (p?.banned_at || !uid || !trialGranted.has(uid) || (m.canceled_at && Date.parse(m.canceled_at) < Date.parse(m.current_period_end) - 3_600_000)) ? 'blocked' : 'lost';
+    trialList.push({ email: uid ? emailOf.get(uid) ?? '' : '', state, startedAt: start, whop: String(m.status), endsAt: Date.parse(m.current_period_end) || null,
+      priceCents: money(m.renewal_price), paidCents: paidC, used: uid ? spent.get(uid) ?? 0 : 0 });
+  }
+  const tCount = (s: string) => trialList.filter((t) => t.state === s).length;
+  const tSum = (f: (t: (typeof trialList)[number]) => boolean) => trialList.filter(f).reduce((s, t) => s + t.priceCents, 0);
+  const trials = {
+    total: trialList.filter((t) => t.state !== 'blocked').length,
+    ongoing: tCount('ongoing'), cancelled: tCount('cancelled'), converted: tCount('converted'), lost: tCount('lost'), blocked: tCount('blocked'),
+    /** every trial still running pays (those who already cancelled included) */
+    ifAllPayCents: tSum((t) => t.state === 'ongoing' || t.state === 'cancelled'),
+    /** the running trials that have not cancelled pay */
+    ifNotCancelledPayCents: tSum((t) => t.state === 'ongoing'),
+    /** every real trial ever taken had paid its first month */
+    ifAllEverPaidCents: tSum((t) => t.state !== 'blocked'),
+    convertedCents: trialList.reduce((s, t) => s + t.paidCents, 0),
+    list: trialList.filter((t) => t.state !== 'blocked').sort((a, b) => b.startedAt - a.startedAt).slice(0, 50),
+  };
+
   const customers = members.filter((m) => !m.isAdmin);
   const since = (ms: number) => customers.filter((m) => now - Date.parse(m.signedUpAt) < ms).length;
   const activity = (txRes.data ?? []).slice(0, 30).map((t: any) => ({ at: Date.parse(t.created_at), email: emailOf.get(t.user_id) ?? '', amount: t.amount, type: t.type, description: t.description }));
@@ -329,6 +367,7 @@ Deno.serve(async (req) => {
       creditsOutstanding: customers.reduce((s, m) => s + m.credits, 0),
       viaPartner: customers.filter((m) => m.partner).length,
     },
+    trials,
     members,
     payments: payments.sort((a, b) => b.at - a.at).slice(0, 20),
     activity,
