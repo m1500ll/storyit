@@ -185,11 +185,11 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
   free_trial_nov: {
     subject: '🎁 3 jours gratuits sur tout Storyit',
     audience: 'free_no_trial',
-    html: (unsub) => shell(`<tr><td style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#ffffff">7 000 crédits, Fruit Drama et clipping IA. 0 $ aujourd’hui.</td></tr>
+    html: (unsub) => shell(`<tr><td style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#ffffff">3 500 crédits, Fruit Drama et clipping IA. 0 $ aujourd’hui.</td></tr>
 <tr><td style="font-size:26px;line-height:1.25;font-weight:800;color:#1f1b2e;padding-bottom:12px">Tout Storyit, <span style="color:#7c3aed">gratuit pendant 3 jours</span>.</td></tr>
 <tr><td style="font-size:16px;line-height:1.6">Ta première vraie vidéo t’attend. On t’ouvre tout :</td></tr>
 <tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.8">
-<tr><td>🎬 <strong>7 000 crédits</strong> : de quoi créer ta première vidéo complète</td></tr>
+<tr><td>🎬 <strong>3 500 crédits</strong> : de quoi créer ta première vidéo complète</td></tr>
 <tr><td>🍓 <strong>Fruit Drama</strong> : une idée, et la vidéo est prête (voix, sous-titres, musique)</td></tr>
 <tr><td>✂️ <strong>Clipping IA</strong> : une longue vidéo devient des clips prêts à poster</td></tr></table></td></tr>
 <tr><td align="center" style="padding:22px 0 6px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Activer mes 3 jours gratuits</a></td></tr>
@@ -197,7 +197,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
     text: (unsub) => `Tout Storyit, gratuit pendant 3 jours.
 
 Ta première vraie vidéo t'attend. On t'ouvre tout :
-- 7 000 crédits : de quoi créer ta première vidéo complète
+- 3 500 crédits : de quoi créer ta première vidéo complète
 - Fruit Drama : une idée, et la vidéo est prête (voix, sous-titres, musique)
 - Clipping IA : une longue vidéo devient des clips prêts à poster
 
@@ -251,7 +251,7 @@ Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${uns
 </tr></table></td></tr>
 <tr><td style="font-size:12px;color:#7a7390;text-align:center;padding-bottom:10px">Des vidéos créées avec Storyit</td></tr>
 <tr><td style="padding:8px 0 4px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:16px 18px;font-size:15px;line-height:1.9">
-<tr><td>🎬 <strong>7 000 crédits</strong> : une vidéo complète de 30 s avec le Creative Studio (histoire, personnages, voix, montage)</td></tr>
+<tr><td>🎬 <strong>3 500 crédits</strong> : une vidéo complète de 30 s avec le Creative Studio (histoire, personnages, voix, montage)</td></tr>
 <tr><td>🍓 Creative Studio, vidéo automatique, traduction : <strong>tout est débloqué</strong></td></tr>
 <tr><td>📲 Une vidéo verticale <strong>prête à publier</strong> sur TikTok, Reels et Shorts</td></tr></table></td></tr>
 <tr><td align="center" style="padding:26px 0 10px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:17px;padding:16px 30px;border-radius:12px">Créer ma vidéo pour 1 $ →</a></td></tr>
@@ -262,7 +262,7 @@ Bonjour,
 
 Vous avez créé votre compte, il ne manque plus que votre première vraie vidéo. Pour vous lancer, on vous ouvre tous les studios pendant 3 jours pour seulement 1 $.
 
-- 7 000 crédits : une vidéo complète de 30 s avec le Creative Studio (histoire, personnages, voix, montage)
+- 3 500 crédits : une vidéo complète de 30 s avec le Creative Studio (histoire, personnages, voix, montage)
 - Creative Studio, vidéo automatique, traduction : tout est débloqué
 - Une vidéo verticale prête à publier sur TikTok, Reels et Shorts
 

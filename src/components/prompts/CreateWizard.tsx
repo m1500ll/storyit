@@ -93,7 +93,7 @@ export function CreateWizard() {
   const audio = useRef<HTMLAudioElement | null>(null);
   const top = useRef<HTMLDivElement>(null);
   const { balance, known } = useCredits();
-  // a trial (7,000 credits) pays for 30 s, not 45 s: start on the longest length the balance covers
+  // a trial (3,500 credits) pays for one 30 s video, not 45 s: start on the longest length the balance covers
   const picked = useRef(!!draft);
   useEffect(() => {
     if (!known || picked.current) return;

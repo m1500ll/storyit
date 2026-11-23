@@ -30,7 +30,7 @@ export const YEARLY_DISCOUNT = 20;
 
 /** $1 three-day trial on a paid plan (one per account), then the plan at full price. Keep in sync with
  *  supabase/functions/_shared/stripe.ts (TRIAL). */
-export const TRIAL = { price: 0, days: 3, credits: 7000, switchAt: 1500 } as const;
+export const TRIAL = { price: 0, days: 3, credits: 3500, switchAt: 1500 } as const; // enough for ONE 30 s video (3,400), not two
 /** The $1 trial is closed to new customers (trials already running can still be ended early with TrialUpgrade). */
 export const TRIAL_ENABLED = true;
 

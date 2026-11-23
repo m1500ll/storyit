@@ -31,7 +31,7 @@ export function PaywallProvider({ children }: { children: ReactNode }) {
     <PaywallContext.Provider value={open}>
       {children}
       {state && state.reason === 'video' && billingPlan(profile).plan === 'free' && !showAll ? (
-        <VideoTrialSheet trial={TRIAL_ENABLED && !billingPlan(profile).trialUsed} need={Math.max(0, (state.required ?? 0) - (profile?.credit_balance ?? 0))} returnTo={state.returnTo} onClose={() => setState(null)} onMore={() => setShowAll(true)} />
+        <VideoTrialSheet trial={TRIAL_ENABLED && !billingPlan(profile).trialUsed && Math.max(0, (state.required ?? 0) - (profile?.credit_balance ?? 0)) <= TRIAL.credits} need={Math.max(0, (state.required ?? 0) - (profile?.credit_balance ?? 0))} returnTo={state.returnTo} onClose={() => setState(null)} onMore={() => setShowAll(true)} />
       ) : state && (
         <div className="fixed inset-0 z-50 flex overscroll-contain items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label="Acheter des crédits ou changer d’offre">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setState(null)} />
