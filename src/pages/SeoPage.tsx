@@ -14,8 +14,8 @@ import { LangProvider } from '@/lib/lang';
 const EXTRA: ShowcaseVideo[] = [{ slug: 'fenetres-murees-en', title: 'The bricked-up windows of 1696', hook: 'Translated by Storyit', format: 'Translated · EN', seconds: 61 }];
 const ALL = [...SHOWCASE, ...SHOWCASE_FRUIT, ...EXTRA];
 const T = {
-  fr: { examples: 'Exemples réalisés avec Storyit', how: 'Comment ça marche', faq: 'Questions fréquentes', more: 'À lire aussi', free: '3 000 crédits offerts, sans carte bancaire.', home: 'Accueil', start: 'Commencer gratuitement' },
-  en: { examples: 'Examples made with Storyit', how: 'How it works', faq: 'Frequently asked questions', more: 'Read next', free: '3,000 free credits, no card required.', home: 'Home', start: 'Start for free' },
+  fr: { examples: 'Exemples réalisés avec Storyit', how: 'Comment ça marche', faq: 'Questions fréquentes', more: 'À lire aussi', free: '1 000 crédits offerts, sans carte bancaire.', home: 'Accueil', start: 'Commencer gratuitement' },
+  en: { examples: 'Examples made with Storyit', how: 'How it works', faq: 'Frequently asked questions', more: 'Read next', free: '1,000 free credits, no card required.', home: 'Home', start: 'Start for free' },
 };
 
 /** One search landing page (src/data/seoPages.ts): hero, real example videos, steps, explanations, FAQ, links. */

@@ -23,7 +23,7 @@ export function Pricing() {
 
       <div className="relative mx-auto mt-8 flex max-w-3xl flex-col items-center gap-4 overflow-hidden rounded-2xl border border-violet-500/40 bg-violet-600/[0.12] px-5 py-5 text-center sm:flex-row sm:text-left">
         <div className="min-w-0 flex-1">
-          <p className="font-display text-2xl text-zinc-50">{fr ? 'Commencez gratuitement : 3 000 crédits offerts' : 'Start free: 3,000 credits on us'}</p>
+          <p className="font-display text-2xl text-zinc-50">{fr ? 'Commencez gratuitement : 1 000 crédits offerts' : 'Start free: 1,000 credits on us'}</p>
           <p className="mt-1 text-sm text-zinc-300">{fr ? 'Sans carte bancaire : écris ta première histoire avec le Creative Studio. Passe à une offre quand tu veux créer tes vidéos, sans engagement.' : 'No card needed: write your first story with the Creative Studio. Pick a plan when you want to make your videos, cancel anytime.'}</p>
         </div>
         <StartLink to="/app/prompts" className="shrink-0"><Button size="lg">{fr ? 'Commencer gratuitement' : 'Start free'}</Button></StartLink>

@@ -17,19 +17,19 @@ type Mode = 'signin' | 'signup' | 'forgot';
 /** French for French-speaking browsers (most customers), English otherwise (visitors from the English landing page) */
 const COPY_FR: Record<Mode, { title: string; sub: string; cta: string }> = {
   signin: { title: 'Content de vous revoir', sub: 'Connectez-vous pour continuer vos séries.', cta: 'Se connecter' },
-  signup: { title: 'Créez votre studio', sub: 'Offre gratuite avec 3 000 crédits. Sans carte bancaire.', cta: 'Créer mon compte' },
+  signup: { title: 'Créez votre studio', sub: 'Offre gratuite avec 1 000 crédits. Sans carte bancaire.', cta: 'Créer mon compte' },
   forgot: { title: 'Réinitialiser le mot de passe', sub: 'Nous vous envoyons un lien par e-mail pour en choisir un nouveau.', cta: 'Envoyer le lien' },
 };
 const COPY_EN: Record<Mode, { title: string; sub: string; cta: string }> = {
   signin: { title: 'Welcome back', sub: 'Sign in to continue your series.', cta: 'Sign In' },
-  signup: { title: 'Create your studio', sub: 'Free plan with 3,000 credits. No card required.', cta: 'Create Account' },
+  signup: { title: 'Create your studio', sub: 'Free plan with 1,000 credits. No card required.', cta: 'Create Account' },
   forgot: { title: 'Reset your password', sub: 'We’ll email you a link to choose a new one.', cta: 'Send Reset Link' },
 };
 const L_FR = {
   wrong: 'E-mail ou mot de passe incorrect. Réessayez, ou réinitialisez votre mot de passe.', exists: 'Cet e-mail a déjà un compte : connectez-vous plutôt.',
   noGoogle: 'La connexion Google n’est pas encore activée.', confirm: 'Confirmez d’abord votre e-mail : regardez votre boîte de réception.',
   resetSent: 'Si un compte existe pour cet e-mail, un lien de réinitialisation est en route.', checkInbox: 'C’est presque fini : on vient de vous envoyer un e-mail. Cliquez sur « Confirmer mon e-mail » pour activer votre compte (pensez à regarder dans les spams).', resend: 'Renvoyer l’e-mail', resent: 'E-mail renvoyé. Il peut mettre une minute à arriver.',
-  perks: ['3 000 crédits offerts pour essayer les studios', 'Des vidéos IA prêtes pour TikTok, Reels et Shorts', 'Offre gratuite, sans carte, sans engagement'],
+  perks: ['1 000 crédits offerts pour essayer les studios', 'Des vidéos IA prêtes pour TikTok, Reels et Shorts', 'Offre gratuite, sans carte, sans engagement'],
   redirect: 'Redirection vers Google…', google: 'Continuer avec Google', orEmail: 'ou avec un e-mail', password: 'Mot de passe', passNew: 'Mot de passe (8 caractères minimum)…', pass: 'Mot de passe…',
   forgotQ: 'Mot de passe oublié ?', back: 'Retour à la connexion', noAccount: 'Pas de compte ? Créez-en un', haveAccount: 'Déjà un compte ? Connectez-vous',
   privacy1: 'En continuant, vous acceptez la façon dont nous traitons vos données, décrite dans notre', privacy2: 'politique de confidentialité', email: 'vous@studio.com…', seo: 'Connexion',
@@ -38,7 +38,7 @@ const L_EN = {
   wrong: 'Wrong email or password. Try again, or reset your password.', exists: 'This email already has an account — sign in instead.',
   noGoogle: 'Google sign-in isn’t enabled yet on this project.', confirm: 'Confirm your email first — check your inbox.',
   resetSent: 'If an account exists for this email, a reset link is on its way.', checkInbox: 'Almost done: we just sent you an email. Click “Confirm my email” to activate your account (check your spam folder too).', resend: 'Resend the email', resent: 'Email sent again. It can take a minute to arrive.',
-  perks: ['3,000 free credits to try the studios', 'AI videos ready for TikTok, Reels and Shorts', 'Free plan, no card, cancel anytime'],
+  perks: ['1,000 free credits to try the studios', 'AI videos ready for TikTok, Reels and Shorts', 'Free plan, no card, cancel anytime'],
   redirect: 'Redirecting to Google…', google: 'Continue with Google', orEmail: 'or with email', password: 'Password', passNew: 'Password (6+ characters)…', pass: 'Password…',
   forgotQ: 'Forgot password?', back: 'Back to sign in', noAccount: 'No account? Create one', haveAccount: 'Already have an account? Sign in',
   privacy1: 'By continuing you agree to how we handle your data in our', privacy2: 'Privacy Policy', email: 'you@studio.com…', seo: 'Sign in',

@@ -36,7 +36,7 @@ const HOME_META = {
 };
 const HOME_META_FR = {
   title: 'Storyit — Générateur de vidéos IA virales pour TikTok (3D et Fruit Drama)',
-  description: 'Crée des vidéos IA virales qui rapportent : histoires animées en 3D et mini-séries Fruit Drama, avec voix, musique et sous-titres, prêtes pour TikTok, Reels et Shorts. Traduction vidéo en un clic. 3 000 crédits offerts.',
+  description: 'Crée des vidéos IA virales qui rapportent : histoires animées en 3D et mini-séries Fruit Drama, avec voix, musique et sous-titres, prêtes pour TikTok, Reels et Shorts. Traduction vidéo en un clic. 1 000 crédits offerts.',
 };
 /** title, description, language, hreflang alternates and structured data of each pre-rendered page */
 export function pageMeta(route: string, site: string): { title: string; description: string; lang: string; alternates: { lang: string; href: string }[]; jsonLd: object[] } {
@@ -45,7 +45,7 @@ export function pageMeta(route: string, site: string): { title: string; descript
   if (route === '/en') return { ...HOME_META, lang: 'en', alternates: homeAlts, jsonLd: homeJsonLd(site, 'en') };
   if (route === '/privacy') return { title: 'Privacy Policy — Storyit', description: 'How Storyit collects, uses and protects your data.', lang: 'en', alternates: [], jsonLd: [] };
   if (route === '/refunds') return { title: 'Refund Policy — Storyit', description: 'How to cancel a Storyit plan and get a refund (14-day money-back guarantee).', lang: 'en', alternates: [], jsonLd: [] };
-  if (route === '/pricing') return { title: 'Pricing — Storyit', description: 'Storyit plans and credit packs. Start free with 3,000 credits.', lang: 'en', alternates: [], jsonLd: [] };
+  if (route === '/pricing') return { title: 'Pricing — Storyit', description: 'Storyit plans and credit packs. Start free with 1,000 credits.', lang: 'en', alternates: [], jsonLd: [] };
   if (route === '/terms') return { title: 'Terms of Service — Storyit', description: 'The terms that apply when you use Storyit.', lang: 'en', alternates: [], jsonLd: [] };
   const p = SEO_PAGES.find((x) => x.path === route)!;
   const alternates = p.alt ? [{ lang: p.lang, href: site + p.path }, { lang: p.lang === 'fr' ? 'en' : 'fr', href: site + p.alt }, { lang: 'x-default', href: site + (p.lang === 'en' ? p.path : p.alt) }] : [];

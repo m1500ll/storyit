@@ -45,7 +45,7 @@ export function Hero() {
             <div className="absolute" style={{ left: '40.6%', top: '30.7%', width: '19.4%', height: '4.4%' }}>
               <StartLink to="/app/prompts" className="flex h-full w-full items-center gap-[0.5cqw] rounded-full border border-white/15 bg-[#1b0f33]/90 py-[0.25cqw] justify-between pl-[0.3cqw] pr-[0.7cqw] text-[0.84cqw] font-semibold text-white shadow-[0_0_1.6cqw_-0.4cqw_rgba(168,85,247,0.9)] backdrop-blur transition hover:bg-[#2a1450] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400">
                 <span className="flex h-full items-center gap-[0.2cqw] rounded-full bg-gradient-to-r from-violet-600 to-violet-500 px-[0.6cqw]"><Zap className="h-[0.9cqw] w-[0.9cqw]" aria-hidden fill="currentColor" />Gratuit</span>
-                <span className="whitespace-nowrap">3 000 crédits offerts · sans carte</span><ArrowRight className="h-[0.9cqw] w-[0.9cqw]" aria-hidden />
+                <span className="whitespace-nowrap">1 000 crédits offerts · sans carte</span><ArrowRight className="h-[0.9cqw] w-[0.9cqw]" aria-hidden />
               </StartLink>
             </div>
             {/* the film fills the painted 2:1 frame (cropped a little top and bottom, no dark bands) and covers its border */}
@@ -72,7 +72,7 @@ export function Hero() {
             </h1>
           )}
           <StartLink to="/app/prompts" className="mt-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-[#1b0f33]/85 px-2 py-1.5 pr-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-[#2a0f3d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400">
-            <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-bold text-white">⚡ {fr ? 'Gratuit' : 'Free'}</span>{fr ? '3 000 crédits offerts · sans carte' : '3,000 free credits · no card'} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] font-bold text-white">⚡ {fr ? 'Gratuit' : 'Free'}</span>{fr ? '1 000 crédits offerts · sans carte' : '1,000 free credits · no card'} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
           </StartLink>
           <PromoVideo className="relative mx-auto mt-6 max-w-3xl text-left" poster="/landing/city/promo-frame.webp" neon
             frameClassName="ring-1 ring-white/10" videoClassName="aspect-video w-full object-cover" />
@@ -88,7 +88,7 @@ export function Hero() {
           <a href="#examples"><Button size="lg" variant="secondary"><Play className="h-4 w-4" /> {fr ? 'Voir des exemples' : 'Watch examples'}</Button></a>
         </div>
         {fr ? <p className="mt-4 text-xs text-zinc-400"><strong className="text-zinc-200">Jusqu’à {videosFor(PLANS.find((p) => p.id === 'creator')!.credits)} vidéos par mois</strong> avec Creator, <s className="text-zinc-500">45 $</s> 29 $/mois. Sans engagement. Ou <StartLink to="/app" className="touch-hit text-violet-300 underline-offset-2 hover:underline">commence gratuitement avec {num(3000, lang)} crédits</StartLink>, sans carte.</p>
-          : <p className="mt-4 text-xs text-zinc-400"><strong className="text-zinc-200">Up to {videosFor(PLANS.find((p) => p.id === 'creator')!.credits)} videos a month</strong> with Creator, <s className="text-zinc-500">$45</s> $29/mo. Cancel anytime. Or <StartLink to="/app" className="touch-hit text-violet-300 underline-offset-2 hover:underline">start free with 3,000 credits</StartLink>, no card.</p>}
+          : <p className="mt-4 text-xs text-zinc-400"><strong className="text-zinc-200">Up to {videosFor(PLANS.find((p) => p.id === 'creator')!.credits)} videos a month</strong> with Creator, <s className="text-zinc-500">$45</s> $29/mo. Cancel anytime. Or <StartLink to="/app" className="touch-hit text-violet-300 underline-offset-2 hover:underline">start free with 1,000 credits</StartLink>, no card.</p>}
         <a href="#results" className="group mx-auto mt-6 flex max-w-fit flex-wrap items-center justify-center gap-x-5 gap-y-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] px-5 py-3 transition hover:border-emerald-500/40">
           {RESULT_HIGHLIGHTS.slice(0, 2).map((h) => (
             <span key={h.label} className="text-sm text-zinc-300"><strong className="font-display text-xl tabular-nums text-zinc-50">{fr ? h.valueFr : h.value}</strong> {fr ? h.labelFr : h.label}</span>

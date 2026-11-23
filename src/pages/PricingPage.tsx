@@ -5,7 +5,7 @@ import { SeoFooter } from '@/pages/SeoPage';
 
 /** The plans on their own page (storyit.fun/pricing), for payment providers and people sharing a link */
 export default function PricingPage() {
-  useSeo({ title: 'Pricing', description: 'Storyit plans: Creator, Pro and Studio, monthly or yearly, plus credit packs. Start free with 3,000 credits.', path: '/pricing' });
+  useSeo({ title: 'Pricing', description: 'Storyit plans: Creator, Pro and Studio, monthly or yearly, plus credit packs. Start free with 1,000 credits.', path: '/pricing' });
   return (
     <div className="min-h-screen bg-ink-950">
       <MarketingNavbar />

@@ -147,7 +147,7 @@ const ALL_SEO_PAGES: SeoPageData[] = [
   {
     path: '/en/ai-fruit-video-generator', lang: 'en', alt: '/fr/generateur-video-ia-fruits',
     title: 'AI Fruit Video Generator (Fruit Drama) for TikTok — Storyit',
-    description: 'Make the viral AI fruit videos (Fruit Drama) from TikTok: story, characters, images, animation and editing done for you. Start free with 3,000 credits.',
+    description: 'Make the viral AI fruit videos (Fruit Drama) from TikTok: story, characters, images, animation and editing done for you. Start free with 1,000 credits.',
     eyebrow: 'AI Fruit Drama', h1: 'AI fruit video', highlight: 'generator.',
     intro: 'Fruit mini-dramas are exploding on TikTok: a betrayed strawberry, a jealous lemon, an honest banana. Storyit writes the story, creates the characters, animates every scene and edits the final video for you.',
     cta: EN_CTA,

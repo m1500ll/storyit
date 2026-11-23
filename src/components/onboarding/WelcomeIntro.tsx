@@ -154,7 +154,7 @@ export function WelcomeIntro() {
           </h2>
           <p className="mt-3 max-w-md text-sm text-white/70">Réponds à 5 questions rapides : l’IA construit ton plan pour atteindre ton objectif.</p>
           <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200">
-            <Gift className="h-4 w-4" aria-hidden /> {formatCredits(profile?.credit_balance ?? 3000)} crédits offerts
+            <Gift className="h-4 w-4" aria-hidden /> {formatCredits(profile?.credit_balance ?? 1000)} crédits offerts
           </p>
           <button type="button" onClick={() => setStage('quiz')}
             className="touch-hit mt-6 inline-flex h-14 items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-8 text-base font-semibold text-white shadow-[0_0_40px_-6px_rgba(217,70,239,0.9)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
@@ -283,7 +283,7 @@ export function WelcomeIntro() {
               </button>
               <p className="mt-2 text-center text-[11px] text-white/50">{formatCredits(plan.plan.credits)} crédits chaque mois. Sans engagement, résiliable en 1 clic.</p>
               {error && <p className="mt-2 text-center text-xs text-coral-300" aria-live="polite">{error}</p>}
-              <button type="button" onClick={toStudio} className="touch-hit mx-auto mt-3 block rounded text-xs text-white/50 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Commencer avec mes 3 000 crédits gratuits</button>
+              <button type="button" onClick={toStudio} className="touch-hit mx-auto mt-3 block rounded text-xs text-white/50 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Commencer avec mes 1 000 crédits gratuits</button>
             </>
           ) : (
             <button type="button" onClick={toStudio}

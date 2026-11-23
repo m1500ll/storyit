@@ -392,13 +392,13 @@ const NUDGE = {
   start1: (link: string) => ({
     subject: '✨ Ta première vidéo IA en 2 minutes',
     inner: `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Ta première vidéo en 2 minutes</td></tr>
-<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Tu as 3 000 crédits offerts sur Storyit. Écris une idée en une ligne (ou demande-en une à l’IA), choisis tes personnages, et Storyit écrit toute l’histoire avec les dialogues.</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Tu as 1 000 crédits offerts sur Storyit. Écris une idée en une ligne (ou demande-en une à l’IA), choisis tes personnages, et Storyit écrit toute l’histoire avec les dialogues.</td></tr>
 <tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.7">
 <tr><td>🍌 <strong>Fruit Dramas</strong>, mini-séries, histoires : le format qui cartonne sur TikTok</td></tr>
 <tr><td>🎙️ Personnages 3D, vraies voix, sous-titres et musique</td></tr>
 <tr><td>📱 Une vidéo verticale prête à poster</td></tr></table></td></tr>
 <tr><td align="center" style="padding:14px 0 8px"><a href="${link}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma première vidéo</a></td></tr>`,
-    text: `Ta première vidéo en 2 minutes\n\nBonjour,\n\nTu as 3 000 crédits offerts sur Storyit. Écris une idée en une ligne (ou demande-en une à l'IA), choisis tes personnages, et Storyit écrit toute l'histoire avec les dialogues.\n\n- Fruit Dramas, mini-séries, histoires : le format qui cartonne sur TikTok\n- Personnages 3D, vraies voix, sous-titres et musique\n- Une vidéo verticale prête à poster\n\nCréer ma première vidéo : ${link}`,
+    text: `Ta première vidéo en 2 minutes\n\nBonjour,\n\nTu as 1 000 crédits offerts sur Storyit. Écris une idée en une ligne (ou demande-en une à l'IA), choisis tes personnages, et Storyit écrit toute l'histoire avec les dialogues.\n\n- Fruit Dramas, mini-séries, histoires : le format qui cartonne sur TikTok\n- Personnages 3D, vraies voix, sous-titres et musique\n- Une vidéo verticale prête à poster\n\nCréer ma première vidéo : ${link}`,
   }),
 };
 const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
