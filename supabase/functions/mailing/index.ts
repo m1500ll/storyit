@@ -29,7 +29,7 @@ const page = (title: string, text: string) => new Response(
   <p><a href="${APP}" style="color:#a78bfa">Retour sur Storyit</a></p></main></body></html>`,
   { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 
-type Campaign = { subject: string; html: (unsub: string) => string; text: (unsub: string) => string; /** who gets it (default: everyone) */ audience?: 'free_no_trial' | 'free_active' | 'free' };
+type Campaign = { subject: string; html: (unsub: string) => string; text: (unsub: string) => string; /** who gets it (default: everyone) */ audience?: 'free_no_trial' | 'free_active' | 'free' | 'free_after_trial' };
 const shell = (inner: string, unsub: string) => `<!doctype html><html lang="fr"><body style="margin:0;background:#f4f2fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1f1b2e">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:32px 28px">
@@ -204,6 +204,59 @@ Ta première vraie vidéo t'attend. On t'ouvre tout :
 Activer mes 3 jours gratuits : ${APP}/app/billing?interval=month
 
 0 $ aujourd'hui, carte demandée. Ensuite Creator à 29 $/mois, seulement si tu continues : un rappel t'est envoyé la veille, et tu résilies en 1 clic.
+
+À très vite,
+L'équipe Storyit
+
+Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${unsub}`,
+  },
+  // free accounts that already used their trial and did not stay: the Creator plan
+  upgrade_after_trial: {
+    subject: 'Tes vidéos t’attendent sur Storyit',
+    audience: 'free_after_trial',
+    html: (unsub) => shell(`<tr><td style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#ffffff">Creator : jusqu’à 14 vidéos par mois pour 29 $.</td></tr>
+<tr><td style="font-size:26px;line-height:1.25;font-weight:800;color:#1f1b2e;padding-bottom:12px">Ton essai est fini. <span style="color:#7c3aed">Pas tes vidéos.</span></td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Pour percer sur TikTok, il faut publier souvent. Avec <strong>Creator</strong>, tu reprends là où tu t’es arrêté :</td></tr>
+<tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.8">
+<tr><td>🎬 <strong>50 000 crédits par mois</strong> : jusqu’à 14 vidéos</td></tr>
+<tr><td>🍓 <strong>Fruit Drama</strong> : une idée, la vidéo est prête</td></tr>
+<tr><td>✂️ <strong>Clipping IA</strong> et publication TikTok / Instagram</td></tr></table></td></tr>
+<tr><td align="center" style="padding:22px 0 6px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Passer à Creator, 29 $/mois</a></td></tr>
+<tr><td style="font-size:13px;line-height:1.6;color:#4b4560;text-align:center">Sans engagement : tu résilies en 1 clic, quand tu veux.</td></tr>`, unsub),
+    text: (unsub) => `Ton essai est fini. Pas tes vidéos.
+
+Pour percer sur TikTok, il faut publier souvent. Avec Creator, tu reprends là où tu t'es arrêté :
+- 50 000 crédits par mois : jusqu'à 14 vidéos
+- Fruit Drama : une idée, la vidéo est prête
+- Clipping IA et publication TikTok / Instagram
+
+Passer à Creator, 29 $/mois : ${APP}/app/billing?interval=month
+
+Sans engagement : tu résilies en 1 clic, quand tu veux.
+
+À très vite,
+L'équipe Storyit
+
+Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${unsub}`,
+  },
+  // free accounts that never took the trial: one finished video, free
+  first_video_free: {
+    subject: '🍓 Ta première vidéo TikTok, offerte',
+    audience: 'free_no_trial',
+    html: (unsub) => shell(`<tr><td style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#ffffff">Voix, sous-titres, musique : la vidéo est prête à poster. 0 $ aujourd’hui.</td></tr>
+<tr><td style="font-size:26px;line-height:1.25;font-weight:800;color:#1f1b2e;padding-bottom:12px">Ton histoire est écrite. <span style="color:#7c3aed">Fais-en une vidéo.</span></td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Tu as un compte Storyit, mais pas encore de vidéo finie. C’est la vidéo qui fait les vues.<br><br>Prends l’essai gratuit : <strong>3 jours, 3 500 crédits</strong>, de quoi sortir ta première vidéo complète, avec voix, sous-titres et musique, prête à poster.</td></tr>
+<tr><td align="center" style="padding:22px 0 6px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma première vidéo</a></td></tr>
+<tr><td style="font-size:13px;line-height:1.6;color:#4b4560;text-align:center">0 $ aujourd’hui, carte demandée. Ensuite Creator à 29 $/mois seulement si tu continues. Rappel la veille, résiliation en 1 clic.</td></tr>`, unsub),
+    text: (unsub) => `Ton histoire est écrite. Fais-en une vidéo.
+
+Tu as un compte Storyit, mais pas encore de vidéo finie. C'est la vidéo qui fait les vues.
+
+Prends l'essai gratuit : 3 jours, 3 500 crédits, de quoi sortir ta première vidéo complète, avec voix, sous-titres et musique, prête à poster.
+
+Créer ma première vidéo : ${APP}/app/billing?interval=month
+
+0 $ aujourd'hui, carte demandée. Ensuite Creator à 29 $/mois seulement si tu continues. Rappel la veille, résiliation en 1 clic.
 
 À très vite,
 L'équipe Storyit
@@ -623,6 +676,8 @@ Deno.serve(async (req) => {
   const { data: list, error } = await admin.auth.admin.listUsers({ perPage: 1000 });
   if (error) return Response.json({ error: error.message }, { status: 500 });
   const { data: out } = await admin.from('profiles').select('id').eq('marketing_opt_out', true);
+  const { data: banned } = await admin.from('profiles').select('id').not('banned_at', 'is', null); // never mail a banned account
+  (out ?? []).push(...(banned ?? []));
   const { data: done } = await admin.from('email_sends').select('user_id').eq('campaign', campaign);
   if (c.audience === 'free_active') { // free accounts that already spent 1 500 credits or more (the most active ones)
     const { data: prof } = await admin.from('profiles').select('id').eq('plan', 'free');
@@ -637,6 +692,10 @@ Deno.serve(async (req) => {
   if (c.audience === 'free') { // every account without a plan
     const { data: paid } = await admin.from('profiles').select('id').neq('plan', 'free');
     (done ?? []).push(...(paid ?? []).map((r: { id: string }) => ({ user_id: r.id })));
+  }
+  if (c.audience === 'free_after_trial') { // accounts with no plan that already used their trial
+    const { data: notEligible } = await admin.from('profiles').select('id').or('plan.neq.free,trial_used.eq.false');
+    (done ?? []).push(...(notEligible ?? []).map((r: { id: string }) => ({ user_id: r.id })));
   }
   if (c.audience === 'free_no_trial') { // only accounts with no plan that never used their trial
     const { data: notEligible } = await admin.from('profiles').select('id').or('plan.neq.free,trial_used.eq.true');
