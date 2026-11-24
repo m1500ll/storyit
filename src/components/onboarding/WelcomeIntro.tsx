@@ -74,6 +74,7 @@ export function WelcomeIntro() {
   const [thought, setThought] = useState(0);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [chosen, setChosen] = useState<'creator' | 'pro' | 'studio' | null>(null);
 
   // new accounts only (created in the last 3 days, not answered yet, never shown on this device)
   useEffect(() => {
@@ -119,11 +120,13 @@ export function WelcomeIntro() {
     }, still ? 0 : 220);
   };
   const plan = planFor(answers);
+  const offers = PLANS.filter((p) => p.price > 0).map((p) => ({ ...p, videos: Math.floor(p.credits / VIDEO_30S) }));
+  const pick3 = chosen ?? (plan.plan.id as 'creator' | 'pro' | 'studio');
   const canTrial = TRIAL_ENABLED && billingPlan(profile).plan === 'free' && !billingPlan(profile).trialUsed;
   // the plan the answers point to (with the $1 trial when it is open)
   const startTrial = async () => {
     setPending(true); setError(null);
-    try { await billingService.checkout(canTrial ? 'creator' : plan.plan.id as 'creator' | 'pro' | 'studio', { trial: canTrial, returnTo: '/app/prompts' }); setPending(false); close(); }
+    try { await billingService.checkout(canTrial ? 'creator' : pick3, { trial: canTrial, returnTo: '/app/prompts' }); setPending(false); close(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Le paiement n’a pas pu démarrer.'); setPending(false); }
   };
   const toStudio = () => { close(); navigate('/app/prompts'); };
@@ -277,13 +280,29 @@ export function WelcomeIntro() {
             </>
           ) : billingPlan(profile).plan === 'free' ? (
             <>
+              <div className="mt-6 grid gap-2" role="radiogroup" aria-label="Choisis ton offre">
+                {offers.map((o) => {
+                  const on = pick3 === o.id;
+                  return (
+                    <button key={o.id} type="button" role="radio" aria-checked={on} onClick={() => setChosen(o.id as 'creator' | 'pro' | 'studio')}
+                      className={cn('flex min-h-[56px] items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400',
+                        on ? 'border-fuchsia-400/80 bg-violet-600/25 shadow-[0_0_30px_-10px_rgba(217,70,239,0.9)]' : 'border-white/10 bg-white/[0.04] hover:border-violet-400/50')}>
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-2 text-base font-semibold text-white">{o.name}{o.id === plan.plan.id && <span className="rounded-full bg-fuchsia-500/25 px-2 py-0.5 text-[10px] font-bold text-fuchsia-200">Conseillé pour toi</span>}</span>
+                        <span className="block text-xs text-white/60">{formatCredits(o.credits)} crédits / mois · jusqu’à {o.videos} vidéos</span>
+                      </span>
+                      <span className="shrink-0 text-right"><span className="font-display text-xl text-white">{o.price}&nbsp;$</span><span className="block text-[10px] text-white/50">/mois</span></span>
+                    </button>
+                  );
+                })}
+              </div>
               <button type="button" onClick={() => void startTrial()} disabled={pending}
-                className="touch-hit mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-base font-semibold text-white shadow-[0_0_40px_-6px_rgba(217,70,239,0.9)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-60">
-                {pending ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Sparkles className="h-5 w-5" aria-hidden />} Commencer mon plan · {plan.plan.name} {plan.plan.price}&nbsp;$/mois
+                className="touch-hit mt-4 inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-base font-semibold text-white shadow-[0_0_40px_-6px_rgba(217,70,239,0.9)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-60">
+                {pending ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Sparkles className="h-5 w-5" aria-hidden />} Commencer dès maintenant
               </button>
-              <p className="mt-2 text-center text-[11px] text-white/50">{formatCredits(plan.plan.credits)} crédits chaque mois. Sans engagement, résiliable en 1 clic.</p>
+              <p className="mt-2 text-center text-[11px] text-white/50">Sans engagement, résiliable en 1 clic.</p>
               {error && <p className="mt-2 text-center text-xs text-coral-300" aria-live="polite">{error}</p>}
-              <button type="button" onClick={toStudio} className="touch-hit mx-auto mt-3 block rounded text-xs text-white/50 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Commencer avec mes 1 000 crédits gratuits</button>
+              <button type="button" onClick={toStudio} className="touch-hit mx-auto mt-3 block rounded text-xs text-white/50 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Plus tard</button>
             </>
           ) : (
             <button type="button" onClick={toStudio}

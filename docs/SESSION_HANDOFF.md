@@ -192,3 +192,11 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 ## 2026-11-23 — Dashboard: free-trial panel
 - `admin-stats` returns `trials` (Whop memberships with metadata trial=1): ongoing / cancelled (still running) / converted (paid on the membership or the member paid after the trial start) / lost (ended unpaid, e.g. past_due) / blocked (banned, never granted, or cut before its end date by Storyit; left out of rates).
 - `TrialsPanel` (src/components/admin): conversion rate = converted / (converted + lost + cancelled), "si tous les essais en cours paient", revenue from trials, list.
+
+## 2026-11-24 — Free trial removed
+- Owner: no more free trial. Secret `TRIAL_ENABLED` deleted (billing refuses trial checkouts); front `TRIAL_ENABLED = false` hides every trial UI (PlanPicker, Paywall, LowCreditsBanner, WelcomeIntro).
+- Trials already running continue normally (they convert or end; reminder emails still go out).
+- WelcomeIntro end screen for free accounts: the 3 plans (recommended one pre-selected) + "Commencer dès maintenant" (checkout of the chosen plan), small "Plus tard" link.
+- Navbar "Essai gratuit" → "Commencer"; SEO descriptions no longer say "Essai gratuit".
+- Mailing refuses `first_video_free` and `free_trial_nov` (trial campaigns). `upgrade_after_trial` (Creator) is still valid, not sent yet.
+- Welcome bonus stays 1,000 credits.

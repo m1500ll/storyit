@@ -39,7 +39,7 @@ export function MarketingNavbar({ overlay = false, langTo }: { overlay?: boolean
           ) : (
             <>
               <Link to="/login?mode=signin" className={`${pill} hidden bg-white text-violet-700 hover:bg-white/90 sm:inline-flex`}>{fr ? 'Connexion' : 'Sign in'}</Link>
-              <Link to="/login?mode=signup" className={`${pill} bg-violet-600 text-white shadow-[0_0_24px_-6px_rgba(139,92,246,0.8)] hover:bg-violet-500`}>{fr ? 'Essai gratuit' : 'Try free'}</Link>
+              <Link to="/login?mode=signup" className={`${pill} bg-violet-600 text-white shadow-[0_0_24px_-6px_rgba(139,92,246,0.8)] hover:bg-violet-500`}>{fr ? 'Commencer' : 'Get started'}</Link>
             </>
           )}
         </div>

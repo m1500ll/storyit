@@ -25,7 +25,7 @@ const ALL_SEO_PAGES: SeoPageData[] = [
   {
     path: '/fr/generateur-video-ia-fruits', lang: 'fr', alt: '/en/ai-fruit-video-generator',
     title: 'Générateur de vidéos IA de fruits (Fruit Drama) pour TikTok — Storyit',
-    description: 'Crée des vidéos de fruits IA qui se disputent, les fameux Fruit Drama de TikTok : histoire, personnages, images, animation et montage automatiques. Essai gratuit.',
+    description: 'Crée des vidéos de fruits IA qui se disputent, les fameux Fruit Drama de TikTok : histoire, personnages, images, animation et montage automatiques.',
     eyebrow: 'Fruit Drama IA', h1: 'Générateur de vidéos IA', highlight: 'de fruits.',
     intro: 'Les mini-dramas de fruits explosent sur TikTok : une fraise trahie, un citron jaloux, une banane honnête… Storyit écrit l’histoire, crée les personnages, anime chaque scène et monte la vidéo finale pour toi.',
     cta: FR_CTA,
@@ -57,7 +57,7 @@ const ALL_SEO_PAGES: SeoPageData[] = [
   {
     path: '/fr/video-animee-3d-ia', lang: 'fr', alt: '/en/ai-3d-animated-video-generator',
     title: 'Créer une vidéo animée 3D avec l’IA pour TikTok — Storyit',
-    description: 'Transforme une histoire vraie en vidéo animée 3D : décor, personnages cartoon, narration, musique, titre et sous-titres. 30 s, 1 min ou 2 min. Essai gratuit.',
+    description: 'Transforme une histoire vraie en vidéo animée 3D : décor, personnages cartoon, narration, musique, titre et sous-titres. 30 s, 1 min ou 2 min.',
     eyebrow: 'Animation 3D IA', h1: 'Crée une vidéo animée', highlight: 'en 3D avec l’IA.',
     intro: 'Choisis une histoire vraie, un décor et une voix : l’Animated Studio écrit le script, anime le monde 3D et les personnages, enregistre le narrateur et ajoute le titre accrocheur, les sous-titres et la musique.',
     cta: { label: 'Créer ma vidéo 3D', to: '/app/studio' },
