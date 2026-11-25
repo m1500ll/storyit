@@ -208,3 +208,7 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 - Moving up from Starter on Whop: billing opens a new checkout (not the manage page); whop-webhook cancels the old Starter membership once the new plan is paid.
 - Landing pricing: free card removed, banner "Petit budget ? Starter à 9 $/mois"; Starter card in the monthly view only. Live Whop checkout verified: renewal $9 / 30 days.
 - Proposed, not done: A (one free watermarked first video), C (next-day email).
+
+## 2026-11-25 — No double charge after a trial
+- Whop: a member in a free trial can pay a plan now (billing `checkout` or `end_trial` opens a new checkout). When a plan payment arrives on a NEW membership, whop-webhook `stopPrevious` cancels the previous membership right away (trial or Starter) and stores the new manage link. The trial is never charged at its end.
+- Deployed (billing, whop-webhook). Not yet tested end-to-end with a signed event.

@@ -217,16 +217,20 @@ Deno.serve(async (req) => {
       if (!wp?.whop_manage_url) return json({ error: 'Gère ton abonnement depuis ton compte Whop (whop.com, rubrique « Mes achats »).' }, 409);
       return json({ url: wp.whop_manage_url });
     }
-    if (onWhop && action === 'end_trial') return json({ error: 'Ton essai passe automatiquement à l’offre complète à la fin des 3 jours. Pour changer d’offre, utilise « Gérer la facturation ».' }, 409);
-    if (action === 'checkout' && whopEnabled()) {
+    // "pay the plan now" during a Whop trial: a normal checkout; once it is paid, the webhook cancels the trial
+    // membership, so the trial is never charged on top of it
+    const inWhopTrial = onWhop && !!wp?.trial_ends_at && Date.parse(wp.trial_ends_at) > Date.now();
+    if (onWhop && action === 'end_trial' && !inWhopTrial) return json({ error: 'Ton essai est déjà terminé.' }, 409);
+    if ((action === 'checkout' || (action === 'end_trial' && inWhopTrial)) && whopEnabled()) {
       if (!product || !(product in GRANTS)) return json({ error: 'Unknown product' }, 400);
       // a running Whop plan is changed from Whop's own page (no second subscription)
-      // except moving up from Starter: a new checkout, and the webhook cancels the Starter membership once the new one is paid
+      // except moving up from Starter or buying a plan during the trial: a new checkout, and the webhook cancels the
+      // previous membership (Starter or trial) once the new one is paid
       const upFromStarter = wp?.plan === 'starter' && !!GRANTS[product].plan && GRANTS[product].plan !== 'starter';
-      if (onWhop && wp?.plan && wp.plan !== 'free' && GRANTS[product].plan && wp.whop_manage_url && !upFromStarter) return json({ url: wp.whop_manage_url });
+      if (onWhop && wp?.plan && wp.plan !== 'free' && GRANTS[product].plan && wp.whop_manage_url && !upFromStarter && !inWhopTrial) return json({ url: wp.whop_manage_url });
       try {
         const back = typeof body.return_to === 'string' && /^\/app\/[A-Za-z0-9/_-]*(\?[A-Za-z0-9=&_-]*)?$/.test(body.return_to) ? body.return_to : '/app/billing';
-        const wantsTrial = trial === true && !wp?.trial_used && (wp?.plan ?? 'free') === 'free';
+        const wantsTrial = action === 'checkout' && trial === true && !wp?.trial_used && (wp?.plan ?? 'free') === 'free';
         if (wantsTrial) {
           const ip = clientIp(req), ua = clientUa(req);
           const why = await trialRefusal(admin, { userId: user.id, email: user.email ?? '', ip, ua, source: 'checkout' });
@@ -237,7 +241,8 @@ Deno.serve(async (req) => {
           userId: user.id, email: user.email, product, trial: wantsTrial,
           redirect: `${appUrl}${back}${back.includes('?') ? '&' : '?'}checkout=success`, trialDays: TRIAL.days, trialFee: TRIAL.feeCents / 100,
         });
-        return json({ url });
+        // end_trial answers like Stripe's (the page opens invoice_url to pay)
+        return json(action === 'end_trial' ? { ok: true, paid: false, status: 'checkout', invoice_url: url } : { url });
       } catch (e) {
         console.error('whop checkout', e instanceof Error ? e.message : e);
         return json({ error: 'Le paiement n’a pas pu démarrer. Réessayez dans un instant.' }, 502);

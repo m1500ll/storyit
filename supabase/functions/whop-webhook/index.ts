@@ -26,6 +26,18 @@ async function profileOf(meta: any, membershipId: string | null) {
   return null;
 }
 
+/** cancels the member's previous Whop membership right away (it must never be charged again) and keeps the new
+ *  membership's "manage" link. Retried by Whop if the cancel fails (the delivery is forgotten on error). */
+async function stopPrevious(userId: string, oldId: string, newId: string) {
+  const old = await whopApi(`/memberships/${oldId}`).catch(() => null);
+  if (old && !['canceled', 'expired', 'completed'].includes(old.status)) {
+    await whopApi(`/memberships/${oldId}/cancel`, { method: 'POST', body: { cancel_at_period_end: false } });
+  }
+  const fresh = await whopApi(`/memberships/${newId}`).catch(() => null);
+  if (fresh?.manage_url) await admin.from('profiles').update({ whop_manage_url: fresh.manage_url }).eq('id', userId);
+  console.log(JSON.stringify({ audit: 'whop_previous_membership_cancelled', user: userId, old: oldId, was: old?.status ?? 'unknown' }));
+}
+
 /** the free trial starts: trial credits and the plan now, the plan's full credits with the first real payment */
 async function startTrial(userId: string, product: ProductKey, membershipId: string | null) {
   const g = GRANTS[product];
@@ -92,10 +104,9 @@ Deno.serve(async (req) => {
           const { error } = await admin.rpc('grant_credits', { p_user_id: p.id, p_amount: g.credits, p_type: 'subscription_grant', p_description: `${g.label} (Whop)`, p_plan: g.plan, p_reset: true });
           if (error) throw new Error(error.message);
           await admin.from('profiles').update({ trial_ends_at: null }).eq('id', p.id);
-          // moved up from Starter with a new checkout: the old Starter membership stops now (no double billing)
-          if (p.plan === 'starter' && g.plan !== 'starter' && p.whop_membership_id && d.membership_id && p.whop_membership_id !== d.membership_id) {
-            await whopApi(`/memberships/${p.whop_membership_id}/cancel`, { method: 'POST', body: { cancel_at_period_end: false } }).catch((e) => console.error('cancel starter', e));
-          }
+          // a plan paid on a NEW membership (bought during the free trial, or moving up from Starter): the previous
+          // membership stops now, so the trial is never charged at its end and nobody pays two plans
+          if (p.whop_membership_id && d.membership_id && p.whop_membership_id !== d.membership_id) await stopPrevious(p.id, p.whop_membership_id, d.membership_id);
         }
         // partner commission, as with Stripe (the $1 only for a trial)
         const { error: affErr } = await admin.rpc('record_affiliate_payment', { p_user: p.id, p_invoice: d.id, p_amount: Math.round(amount * 100), p_currency: d.currency ?? 'usd', p_product: product, p_trial: false });
