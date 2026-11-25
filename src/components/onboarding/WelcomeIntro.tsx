@@ -7,6 +7,7 @@ import { billingPlan, billingService } from '@/services/billing';
 import { formatCredits, PLANS, PROMPT_PROJECT_COST, TRIAL, TRIAL_ENABLED } from '@/services/credits';
 import { repository } from '@/services/repository';
 import { VIDEO_PRICES } from '@shared/promptVideo.ts';
+import { SHOWCASE_FRUIT as SHOWCASE } from '@/data/showcase';
 
 /** Right after sign-up, shown once: welcome (real Storyit videos) → 5 quick questions about the customer's goal →
  *  "the AI builds your plan" → their plan, computed honestly from their answers (no earnings promise) → the $1 trial.
@@ -60,13 +61,19 @@ export function planFor(a: Answers) {
 
 const TARGET_LABEL: Record<string, string> = { '100-500': '100 à 500 $ par mois', '500-2000': '500 à 2 000 $ par mois', '2000-5000': '2 000 à 5 000 $ par mois', '5000+': 'plus de 5 000 $ par mois' };
 const PLATFORM_LABEL: Record<string, string> = { tiktok: 'TikTok', reels: 'Reels', shorts: 'Shorts' };
+/** the demo after the quiz: the customer picks one of these ideas and watches the real video Storyit made from it
+ *  (made in advance, so it costs nothing; always presented as an example, never as a video made for them) */
+const DEMO_SLUGS = ['banane-honnete', 'chevelure-sans-fin', 'plaque-de-cuisson'];
+const MAKING = ['Storyit écrit l’histoire et les dialogues', 'Il crée les personnages et les décors', 'Il ajoute les voix et les sous-titres', 'Il monte la vidéo avec la musique'];
 const THINKING = ['J’analyse ton objectif…', 'Je calcule ton rythme de publication…', 'Je choisis le meilleur format…', 'Je prépare ton plan…'];
 
 export function WelcomeIntro() {
   const { data: profile } = useProfile();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [stage, setStage] = useState<'welcome' | 'quiz' | 'thinking' | 'plan'>('welcome');
+  const [stage, setStage] = useState<'welcome' | 'quiz' | 'thinking' | 'demo' | 'making' | 'reveal' | 'plan'>('welcome');
+  const [demo, setDemo] = useState<string | null>(null);
+  const [made, setMade] = useState(0);
   const [q, setQ] = useState(0);
   // a screen with no question after "how much time": whatever they picked, Storyit makes a video in minutes
   const [interlude, setInterlude] = useState(false);
@@ -89,7 +96,15 @@ export function WelcomeIntro() {
     const t = setInterval(() => setThought((n) => n + 1), reduced() ? 250 : 850);
     return () => clearInterval(t);
   }, [stage]);
-  useEffect(() => { if (stage === 'thinking' && thought > THINKING.length) setStage('plan'); }, [stage, thought]);
+  useEffect(() => { if (stage === 'thinking' && thought > THINKING.length) setStage('demo'); }, [stage, thought]);
+  // the making steps of the demo video, then the video itself
+  useEffect(() => {
+    if (stage !== 'making') return;
+    setMade(0);
+    const t = setInterval(() => setMade((n) => n + 1), reduced() ? 300 : 1100);
+    return () => clearInterval(t);
+  }, [stage]);
+  useEffect(() => { if (stage === 'making' && made > MAKING.length) setStage('reveal'); }, [stage, made]);
 
   const close = () => { try { localStorage.setItem(SEEN, '1'); } catch { /* private mode */ } setOpen(false); };
   useEffect(() => {
@@ -238,6 +253,54 @@ export function WelcomeIntro() {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+
+      {stage === 'demo' && (
+        <div className={cn('relative w-full max-w-lg text-center', !still && 'anim-fadein')}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-fuchsia-300">Avant ton plan</p>
+          <h2 id="welcome-title" className="mt-2 text-balance font-display text-3xl leading-tight text-white">Choisis une idée : on te montre la vidéo que Storyit en a fait</h2>
+          <div className="mt-6 grid gap-3" role="radiogroup" aria-label="Idées de vidéo">
+            {SHOWCASE.filter((v) => DEMO_SLUGS.includes(v.slug)).map((v) => (
+              <button key={v.slug} type="button" role="radio" aria-checked={demo === v.slug} onClick={() => { setDemo(v.slug); setStage('making'); }}
+                className="flex min-h-[64px] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-left transition hover:border-violet-400/50 hover:bg-white/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">
+                <img src={`/showcase/${v.slug}.webp`} alt="" className="h-16 w-10 shrink-0 rounded-lg object-cover" />
+                <span className="min-w-0"><span className="block text-base font-semibold text-white">🍓 {v.title}</span><span className="block text-xs text-white/60">{v.hookFr ?? v.hook}</span></span>
+                <ArrowRight className="ml-auto h-5 w-5 shrink-0 text-white/50" aria-hidden />
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={() => setStage('plan')} className="touch-hit mx-auto mt-4 block rounded text-xs text-white/50 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Passer</button>
+        </div>
+      )}
+
+      {stage === 'making' && (
+        <div className="relative w-full max-w-md text-center" role="status" aria-live="polite">
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-[0_0_40px_-6px_rgba(217,70,239,0.9)]"><Sparkles className="h-8 w-8 animate-pulse motion-reduce:animate-none" aria-hidden /></span>
+          <h2 id="welcome-title" className="mt-5 font-display text-3xl text-white">Comment Storyit crée cette vidéo</h2>
+          <ul className="mx-auto mt-6 max-w-xs space-y-3 text-left">
+            {MAKING.map((t, i) => (
+              <li key={t} className={cn('flex items-center gap-3 text-sm transition-opacity duration-300', i <= made ? 'opacity-100' : 'opacity-0')}>
+                {i < made ? <Check className="h-4 w-4 shrink-0 text-emerald-400" aria-hidden /> : <Loader2 className="h-4 w-4 shrink-0 animate-spin text-fuchsia-300 motion-reduce:animate-none" aria-hidden />}
+                <span className={i < made ? 'text-white' : 'text-white/70'}>{t}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {stage === 'reveal' && demo && (
+        <div className={cn('relative flex w-full max-w-md flex-col items-center py-4 text-center', !still && 'anim-fadein')}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-emerald-300">Le résultat</p>
+          <h2 id="welcome-title" className="mt-1 text-balance font-display text-2xl leading-tight text-white">{SHOWCASE.find((v) => v.slug === demo)?.title}</h2>
+          <video src={`/showcase/${demo}.mp4`} poster={`/showcase/${demo}.webp`} controls autoPlay playsInline
+            className="mt-4 aspect-[9/16] max-h-[60vh] w-auto rounded-2xl border border-white/15 bg-black shadow-[0_20px_60px_-15px_rgba(0,0,0,.9)]" />
+          <p className="mt-3 max-w-xs text-xs text-white/55">Exemple réalisé avec Storyit à partir de cette idée : histoire, personnages, voix, sous-titres et musique. Avec une offre, tu crées les tiennes à partir de tes idées.</p>
+          <button type="button" onClick={() => setStage('plan')}
+            className="touch-hit mt-5 inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-base font-semibold text-white shadow-[0_0_40px_-6px_rgba(217,70,239,0.9)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+            Je veux créer les miennes <ArrowRight className="h-5 w-5" aria-hidden />
+          </button>
         </div>
       )}
 

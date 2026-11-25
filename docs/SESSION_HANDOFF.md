@@ -212,3 +212,7 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 ## 2026-11-25 — No double charge after a trial
 - Whop: a member in a free trial can pay a plan now (billing `checkout` or `end_trial` opens a new checkout). When a plan payment arrives on a NEW membership, whop-webhook `stopPrevious` cancels the previous membership right away (trial or Starter) and stores the new manage link. The trial is never charged at its end.
 - Deployed (billing, whop-webhook). Not yet tested end-to-end with a signed event.
+
+## 2026-11-25 — Demo video in the sign-up flow
+- Owner's idea: show a finished video without paying for a render. WelcomeIntro: quiz → thinking → **demo** (pick 1 of 3 Fruit Drama ideas: banane-honnete, chevelure-sans-fin, plaque-de-cuisson) → **making** (4 steps describing how Storyit makes it) → **reveal** (the real /public/showcase/<slug>.mp4 with sound) → plan + offers. "Passer" skips to the plan.
+- Honesty rule (agreed): it is always presented as an example Storyit made from that idea ("Exemple réalisé avec Storyit…"), never as a video generated live for the customer, and there is no free-text idea field in the demo. Zero AI cost.
