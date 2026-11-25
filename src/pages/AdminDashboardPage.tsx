@@ -19,7 +19,7 @@ const ago = (v: string | number | null) => {
   if (m < 1440) return `il y a ${Math.round(m / 60)} h`;
   return `il y a ${Math.round(m / 1440)} j`;
 };
-const PLAN: Record<string, string> = { free: 'Gratuit', creator: 'Creator', pro: 'Pro', studio: 'Studio' };
+const PLAN: Record<string, string> = { free: 'Gratuit', starter: 'Starter', creator: 'Creator', pro: 'Pro', studio: 'Studio' };
 const STATUS: Record<MemberStatus, { label: string; cls: string }> = {
   paying: { label: 'Abonné', cls: 'bg-emerald-500/15 text-emerald-300' },
   trial: { label: 'Essai', cls: 'bg-amber-500/15 text-amber-300' },

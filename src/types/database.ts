@@ -34,9 +34,9 @@ export interface Database {
   public: {
     Tables: {
       profiles: {
-        Row: { id: UUID; display_name: string | null; plan: 'free' | 'creator' | 'pro' | 'studio'; credit_balance: number; created_at: Timestamp; beta_access?: boolean; trial_used?: boolean; trial_ends_at?: string | null; is_admin?: boolean; auto_topup_enabled?: boolean; auto_topup_threshold?: number; auto_topup_pack?: string; auto_topup_credits?: number; auto_topup_failed_at?: string | null; auto_topup_error?: string | null };
-        Insert: { id: UUID; display_name?: string | null; plan?: 'free' | 'creator' | 'pro' | 'studio'; credit_balance?: number };
-        Update: { display_name?: string | null; plan?: 'free' | 'creator' | 'pro' | 'studio'; onboarding?: Record<string, unknown> };
+        Row: { id: UUID; display_name: string | null; plan: 'free' | 'starter' | 'creator' | 'pro' | 'studio'; credit_balance: number; created_at: Timestamp; beta_access?: boolean; trial_used?: boolean; trial_ends_at?: string | null; is_admin?: boolean; auto_topup_enabled?: boolean; auto_topup_threshold?: number; auto_topup_pack?: string; auto_topup_credits?: number; auto_topup_failed_at?: string | null; auto_topup_error?: string | null };
+        Insert: { id: UUID; display_name?: string | null; plan?: 'free' | 'starter' | 'creator' | 'pro' | 'studio'; credit_balance?: number };
+        Update: { display_name?: string | null; plan?: 'free' | 'starter' | 'creator' | 'pro' | 'studio'; onboarding?: Record<string, unknown> };
         Relationships: [];
       };
       stories: {

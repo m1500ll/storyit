@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
     if (body.act === 'plan') {
       const plan = String(body.plan);
       const days = Math.trunc(Number(body.days));
-      if (!['free', 'creator', 'pro', 'studio'].includes(plan)) return json({ error: 'Offre inconnue.' }, 400);
+      if (!['free', 'starter', 'creator', 'pro', 'studio'].includes(plan)) return json({ error: 'Offre inconnue.' }, 400);
       if (plan === 'free') {
         await admin.from('profiles').update({ plan: 'free', plan_renews_at: null, trial_ends_at: null, ...(target.billing_provider === 'manual' ? { billing_provider: null } : {}) }).eq('id', uid);
       } else {

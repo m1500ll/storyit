@@ -74,7 +74,7 @@ export function WelcomeIntro() {
   const [thought, setThought] = useState(0);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [chosen, setChosen] = useState<'creator' | 'pro' | 'studio' | null>(null);
+  const [chosen, setChosen] = useState<'starter' | 'creator' | 'pro' | 'studio' | null>(null);
 
   // new accounts only (created in the last 3 days, not answered yet, never shown on this device)
   useEffect(() => {
@@ -121,7 +121,7 @@ export function WelcomeIntro() {
   };
   const plan = planFor(answers);
   const offers = PLANS.filter((p) => p.price > 0).map((p) => ({ ...p, videos: Math.floor(p.credits / VIDEO_30S) }));
-  const pick3 = chosen ?? (plan.plan.id as 'creator' | 'pro' | 'studio');
+  const pick3 = chosen ?? (plan.plan.id as 'starter' | 'creator' | 'pro' | 'studio');
   const canTrial = TRIAL_ENABLED && billingPlan(profile).plan === 'free' && !billingPlan(profile).trialUsed;
   // the plan the answers point to (with the $1 trial when it is open)
   const startTrial = async () => {
@@ -284,7 +284,7 @@ export function WelcomeIntro() {
                 {offers.map((o) => {
                   const on = pick3 === o.id;
                   return (
-                    <button key={o.id} type="button" role="radio" aria-checked={on} onClick={() => setChosen(o.id as 'creator' | 'pro' | 'studio')}
+                    <button key={o.id} type="button" role="radio" aria-checked={on} onClick={() => setChosen(o.id as 'starter' | 'creator' | 'pro' | 'studio')}
                       className={cn('flex min-h-[56px] items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400',
                         on ? 'border-fuchsia-400/80 bg-violet-600/25 shadow-[0_0_30px_-10px_rgba(217,70,239,0.9)]' : 'border-white/10 bg-white/[0.04] hover:border-violet-400/50')}>
                       <span className="min-w-0">

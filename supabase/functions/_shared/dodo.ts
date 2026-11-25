@@ -27,6 +27,7 @@ type Admin = { from: (t: string) => any };
 const save = (admin: Admin, key: string, value: string) => admin.from('integration_settings').upsert({ key, value, updated_at: new Date().toISOString() });
 
 const DESCRIPTIONS: Partial<Record<ProductKey, string>> = {
+  starter: 'AI short videos: 12,000 credits every month.',
   creator: 'AI short videos, AI clips and translation: 50,000 credits every month.',
   pro: 'Everything in Creator, 30 social accounts: 90,000 credits every month.',
   studio: 'Unlimited accounts and videos: 175,000 credits every month.',

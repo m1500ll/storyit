@@ -200,3 +200,11 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 - Navbar "Essai gratuit" → "Commencer"; SEO descriptions no longer say "Essai gratuit".
 - Mailing refuses `first_video_free` and `free_trial_nov` (trial campaigns). `upgrade_after_trial` (Creator) is still valid, not sent yet.
 - Welcome bonus stays 1,000 credits.
+
+## 2026-11-25 — Starter plan ($9/month)
+- Conversion study (14 days): 312 sign-ups, ~10 payers. Members who got a finished video paid 26 % (8/31) vs 0.7 % (2/304) without. Partner traffic (fruitsia, alva, zizo) = 54 % of sign-ups, pays ~1 % vs 5 % direct. Only 8/312 came back after day 1.
+- Owner chose B: Starter $9/month, 12,000 credits (3 × 30 s or 2 × 1 min), 10 free stories/day, 2 social accounts, 100 library videos, monthly only. Migration 0065 (plan check + plan_limits row, applied).
+- Product key `starter` in GRANTS / WHOP_PRICES / Dodo descriptions / billing PRODUCTS. Free plan display name is now "Gratuit".
+- Moving up from Starter on Whop: billing opens a new checkout (not the manage page); whop-webhook cancels the old Starter membership once the new plan is paid.
+- Landing pricing: free card removed, banner "Petit budget ? Starter à 9 $/mois"; Starter card in the monthly view only. Live Whop checkout verified: renewal $9 / 30 days.
+- Proposed, not done: A (one free watermarked first video), C (next-day email).

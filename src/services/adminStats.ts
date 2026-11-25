@@ -52,7 +52,7 @@ export const adminStats = {
   history: (userId: string) => call<CreditHistory>({ history: userId }),
   /** owner actions on one member (logged on the server) */
   adjustCredits: (userId: string, amount: number, reason: string) => call<{ ok: boolean }>({ act: 'credits', user_id: userId, amount, reason }),
-  setPlan: (userId: string, plan: 'free' | 'creator' | 'pro' | 'studio', days: number, credits: number, reason: string) => call<{ ok: boolean }>({ act: 'plan', user_id: userId, plan, days, credits, reason }),
+  setPlan: (userId: string, plan: 'free' | 'starter' | 'creator' | 'pro' | 'studio', days: number, credits: number, reason: string) => call<{ ok: boolean }>({ act: 'plan', user_id: userId, plan, days, credits, reason }),
   setBan: (userId: string, banned: boolean, reason: string) => call<{ ok: boolean }>({ act: banned ? 'ban' : 'unban', user_id: userId, reason }),
   async load(): Promise<AdminStats> {
     if (!supabase) throw new Error('Le tableau de bord a besoin du serveur Storyit.');

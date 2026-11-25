@@ -18,7 +18,8 @@ export const clipCostFor = (seconds: number) => Math.max(1, Math.ceil(seconds / 
 
 /** Perks must stay true to what the product does. Account/video limits mirror the `plan_limits` table (server-enforced). */
 export const PLANS = [
-  { id: 'free', name: 'Starter', price: 0, credits: 1000, period: 'once', perks: ['Creative Studio: script, image and video prompts', 'Free stories (story, dialogue and scenes) + 1,000 credits to start', 'Posting to TikTok and Instagram: Creator plan'], perksFr: ['Creative Studio : script, prompts d’images et de vidéos', 'Histoires gratuites (histoire, dialogues, scènes) + 1 000 crédits pour démarrer', 'Publication TikTok et Instagram : offre Creator'] },
+  { id: 'free', name: 'Gratuit', price: 0, credits: 1000, period: 'once', perks: ['Creative Studio: script, image and video prompts', 'Free stories (story, dialogue and scenes) + 1,000 credits to start', 'Posting to TikTok and Instagram: Creator plan'], perksFr: ['Creative Studio : script, prompts d’images et de vidéos', 'Histoires gratuites (histoire, dialogues, scènes) + 1 000 crédits pour démarrer', 'Publication TikTok et Instagram : offre Creator'] },
+  { id: 'starter', name: 'Starter', price: 9, credits: 12000, period: 'month', perks: ['Your first finished videos: voices, subtitles, music', 'AI clips', '2 social accounts, 100 videos in your library', '12,000 credits / month: up to 3 videos (2 of 1 minute)'], perksFr: ['Tes premières vidéos finies : voix, sous-titres, musique', 'Clips IA', '2 comptes sociaux, 100 vidéos dans ta bibliothèque', '12 000 crédits / mois : jusqu’à 3 vidéos (2 d’1 minute)'] },
   { id: 'creator', name: 'Creator', price: 29, compareAt: 45, credits: 50000, yearly: 279, period: 'month', perks: ['AI clips: turn long videos into TikTok clips', '10 social accounts, grouped as you like', '500 videos in your library', 'Daily rotation campaigns', '50,000 credits / month: up to 14 videos (8 of 1 minute)'], perksFr: ['Clips IA : tes longues vidéos en clips TikTok', '10 comptes sociaux, regroupés comme vous voulez', '500 vidéos dans votre bibliothèque', 'Campagnes de rotation quotidienne', '50 000 crédits / mois : jusqu’à 14 vidéos (8 d’1 minute)'], featured: true },
   { id: 'pro', name: 'Pro', price: 59, credits: 90000, yearly: 569, period: 'month', badge: 'Best value', perks: ['Everything in Creator', '30 social accounts', '2,000 videos in your library', '90,000 credits / month: up to 26 videos (15 of 1 minute)'], perksFr: ['Tout ce qu’offre Creator', '30 comptes sociaux', '2 000 vidéos dans votre bibliothèque', '90 000 crédits / mois : jusqu’à 26 vidéos (15 d’1 minute)'] },
   { id: 'studio', name: 'Studio', price: 99, compareAt: 180, credits: 175000, yearly: 949, period: 'month', perks: ['Unlimited accounts and videos', 'Everything in Pro', 'Built for agencies and account networks', '175,000 credits / month: up to 51 videos (29 of 1 minute)'], perksFr: ['Comptes et vidéos illimités', 'Tout ce qu’offre Pro', 'Pensé pour les agences et les réseaux de comptes', '175 000 crédits / mois : jusqu’à 51 vidéos (29 d’1 minute)'] },
@@ -41,7 +42,7 @@ export const CREDIT_PACKS = [
   { id: 'pack_500', credits: 50000, price: 49, badge: 'Best value' },
 ] as const;
 
-export type ProductKey = 'creator' | 'pro' | 'studio' | 'creator_year' | 'pro_year' | 'studio_year' | (typeof CREDIT_PACKS)[number]['id'];
+export type ProductKey = 'starter' | 'creator' | 'pro' | 'studio' | 'creator_year' | 'pro_year' | 'studio_year' | (typeof CREDIT_PACKS)[number]['id'];
 
 /** Full episode = concepts + storyboard + render of every scene. */
 export const FULL_EPISODE_COST = CREDIT_COSTS.conceptGeneration + CREDIT_COSTS.sceneBreakdown + 15 * CREDIT_COSTS.sceneRender;

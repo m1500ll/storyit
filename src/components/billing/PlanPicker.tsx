@@ -7,7 +7,7 @@ import { CREDIT_PACKS, PLANS, TRIAL, TRIAL_ENABLED, YEARLY_DISCOUNT, projectsFor
 import { store } from '@/services/store';
 import { Button, useToast } from '../ui';
 
-const RANKS: Record<string, number> = { free: 0, creator: 1, pro: 2, studio: 3 };
+const RANKS: Record<string, number> = { free: 0, starter: 1, creator: 2, pro: 3, studio: 4 };
 const rank = (plan?: string) => RANKS[plan ?? 'free'] ?? 0;
 
 export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 'year' }: { currentPlan?: string; compact?: boolean; trialUsed?: boolean; initialInterval?: 'year' | 'month' }) {
@@ -74,9 +74,9 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
         </div>
         <p className="text-xs font-medium text-emerald-300">{interval === 'year' ? `🎁 −${YEARLY_DISCOUNT} % et tous les crédits de l’année d’un coup` : trialHere ? `🎁 Essai gratuit ${TRIAL.days} jours · ${formatCredits(TRIAL.credits)} crédits pour tester` : `Passez à l’annuel pour économiser ${YEARLY_DISCOUNT} %`}</p>
       </div>
-      <div className={cn('grid gap-3', compact ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 xl:grid-cols-4')}>
+      <div className={cn('grid gap-3', compact ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5')}>
         {/* In the compact paywall, only show plans above the current one (Studio customers just see the top-up packs). */}
-        {PLANS.filter((p) => !compact || (p.id !== 'free' && rank(p.id) > rank(currentPlan))).map((p) => {
+        {PLANS.filter((p) => !compact || (p.id !== 'free' && rank(p.id) > rank(currentPlan))).filter((p) => !(interval === 'year' && p.price > 0 && !('yearly' in p))).map((p) => {
           const current = p.id === currentPlan;
           // Never offer a lower plan as an "upgrade" (a Studio customer must not see "Upgrade to Creator").
           const included = !current && rank(p.id) < rank(currentPlan);

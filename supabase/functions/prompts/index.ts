@@ -21,7 +21,7 @@ const TEXT_MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash';
 const TEXT_FALLBACK = Deno.env.get('GEMINI_FALLBACK_MODEL') ?? 'gemini-3.5-flash-lite';
 const PROJECT_COST = 0; // the story is free since Nov 22 2026: the video price includes it (see VIDEO_PRICES)
 /** new stories a day without a video being ordered (they cost Storyit a few cents of AI each) */
-const FREE_STORIES_PER_DAY: Record<string, number> = { free: 5, creator: 20, pro: 40, studio: 60 };
+const FREE_STORIES_PER_DAY: Record<string, number> = { free: 5, starter: 10, creator: 20, pro: 40, studio: 60 };
 
 
 const cors = {

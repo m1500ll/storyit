@@ -23,10 +23,10 @@ export function Pricing() {
 
       <div className="relative mx-auto mt-8 flex max-w-3xl flex-col items-center gap-4 overflow-hidden rounded-2xl border border-violet-500/40 bg-violet-600/[0.12] px-5 py-5 text-center sm:flex-row sm:text-left">
         <div className="min-w-0 flex-1">
-          <p className="font-display text-2xl text-zinc-50">{fr ? 'Commencez gratuitement : 1 000 crédits offerts' : 'Start free: 1,000 credits on us'}</p>
-          <p className="mt-1 text-sm text-zinc-300">{fr ? 'Sans carte bancaire : écris ta première histoire avec le Creative Studio. Passe à une offre quand tu veux créer tes vidéos, sans engagement.' : 'No card needed: write your first story with the Creative Studio. Pick a plan when you want to make your videos, cancel anytime.'}</p>
+          <p className="font-display text-2xl text-zinc-50">{fr ? 'Petit budget ? Starter à 9 $/mois' : 'Small budget? Starter at $9/mo'}</p>
+          <p className="mt-1 text-sm text-zinc-300">{fr ? 'Tes 3 premières vidéos finies chaque mois : voix, sous-titres et musique. Sans engagement, et tu passes à Creator quand tu veux.' : 'Your first 3 finished videos every month: voices, subtitles and music. Cancel anytime, move up to Creator whenever you like.'}</p>
         </div>
-        <StartLink to="/app/prompts" className="shrink-0"><Button size="lg">{fr ? 'Commencer gratuitement' : 'Start free'}</Button></StartLink>
+        <StartLink to="/app/billing?plan=starter&interval=month" className="shrink-0"><Button size="lg">{fr ? 'Choisir Starter' : 'Choose Starter'}</Button></StartLink>
       </div>
 
       <div className="mt-8 flex justify-center">
@@ -47,8 +47,8 @@ export function Pricing() {
           : (fr ? `Passez à l’annuel pour économiser ${YEARLY_DISCOUNT} %.` : `Switch to yearly to save ${YEARLY_DISCOUNT}%.`)}
       </p>
 
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {PLANS.map((p) => {
+      <div className={cn('mt-10 grid gap-4 sm:grid-cols-2', interval === 'year' ? 'lg:grid-cols-3' : 'lg:grid-cols-4')}>
+        {PLANS.filter((p) => p.price > 0 && (interval === 'month' || 'yearly' in p)).map((p) => {
           const featured = 'featured' in p && p.featured;
           const yearly = interval === 'year' && 'yearly' in p ? p.yearly : null;
           const perMonth = yearly ? Math.round(yearly / 12) : p.price;

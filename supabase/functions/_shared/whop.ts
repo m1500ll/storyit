@@ -9,6 +9,7 @@ const VERSION = '2026-11-17';
 
 /** what each Storyit product costs on Whop (keep in sync with src/services/credits.ts: PLANS, CREDIT_PACKS) */
 export const WHOP_PRICES: Record<ProductKey, { title: string; price: number; days?: number }> = {
+  starter: { title: 'Storyit Starter', price: 9, days: 30 },
   creator: { title: 'Storyit Creator', price: 29, days: 30 },
   pro: { title: 'Storyit Pro', price: 59, days: 30 },
   studio: { title: 'Storyit Studio', price: 99, days: 30 },

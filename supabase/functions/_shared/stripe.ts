@@ -1,14 +1,15 @@
 /** Stripe helpers shared by `stripe-webhook` and tests (pure, no Deno APIs). */
 
-export type ProductKey = 'creator' | 'pro' | 'studio' | 'creator_year' | 'pro_year' | 'studio_year' | 'pack_100' | 'pack_500';
+export type ProductKey = 'starter' | 'creator' | 'pro' | 'studio' | 'creator_year' | 'pro_year' | 'studio_year' | 'pack_100' | 'pack_500';
 export const PRICE_ENV: Record<ProductKey, string> = {
-  creator: 'STRIPE_PRICE_CREATOR', pro: 'STRIPE_PRICE_PRO', studio: 'STRIPE_PRICE_STUDIO',
+  starter: 'STRIPE_PRICE_STARTER', creator: 'STRIPE_PRICE_CREATOR', pro: 'STRIPE_PRICE_PRO', studio: 'STRIPE_PRICE_STUDIO',
   creator_year: 'STRIPE_PRICE_CREATOR_YEAR', pro_year: 'STRIPE_PRICE_PRO_YEAR', studio_year: 'STRIPE_PRICE_STUDIO_YEAR',
   pack_100: 'STRIPE_PRICE_PACK_100', pack_500: 'STRIPE_PRICE_PACK_500',
 };
 
 /** What each product grants. Keep in sync with src/services/credits.ts (PLANS / CREDIT_PACKS). */
-export const GRANTS: Record<ProductKey, { credits: number; plan?: 'creator' | 'pro' | 'studio'; label: string }> = {
+export const GRANTS: Record<ProductKey, { credits: number; plan?: 'starter' | 'creator' | 'pro' | 'studio'; label: string }> = {
+  starter: { credits: 12000, plan: 'starter', label: 'Starter plan — monthly credits' },
   creator: { credits: 50000, plan: 'creator', label: 'Creator plan — monthly credits' },
   pro: { credits: 90000, plan: 'pro', label: 'Pro plan — monthly credits' },
   studio: { credits: 175000, plan: 'studio', label: 'Studio plan — monthly credits' },
@@ -56,7 +57,7 @@ export function planLine(invoice: any, env: (k: string) => string | undefined): 
 export const TRIAL = { feeCents: 0, days: 3, credits: 3500, switchAt: 1500 }; // one 30 s video (3,400) since Nov 23 2026; // free trial (card required) since Nov 20 2026 // switch to the plan once 1,500 trial credits or fewer remain
 
 /** Plan a subscription should give right now. Unpaid/cancelled subscriptions fall back to free. */
-export function planForSubscription(sub: any, env: (k: string) => string | undefined): 'free' | 'creator' | 'pro' | 'studio' | null {
+export function planForSubscription(sub: any, env: (k: string) => string | undefined): 'free' | 'starter' | 'creator' | 'pro' | 'studio' | null {
   if (['canceled', 'unpaid', 'incomplete_expired'].includes(sub?.status)) return 'free';
   if (!['active', 'trialing', 'past_due'].includes(sub?.status)) return null; // incomplete: wait for payment
   const product = productForPrice(sub?.items?.data?.[0]?.price?.id, env);

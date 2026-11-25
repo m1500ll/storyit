@@ -26,6 +26,7 @@ const json = (body: unknown, status = 200) =>
 
 /** Product catalogue. Keys are what the browser may request; price IDs stay server-side. */
 const PRODUCTS = {
+  starter: { env: 'STRIPE_PRICE_STARTER', mode: 'subscription' },
   creator: { env: 'STRIPE_PRICE_CREATOR', mode: 'subscription' },
   pro: { env: 'STRIPE_PRICE_PRO', mode: 'subscription' },
   studio: { env: 'STRIPE_PRICE_STUDIO', mode: 'subscription' },
@@ -220,7 +221,9 @@ Deno.serve(async (req) => {
     if (action === 'checkout' && whopEnabled()) {
       if (!product || !(product in GRANTS)) return json({ error: 'Unknown product' }, 400);
       // a running Whop plan is changed from Whop's own page (no second subscription)
-      if (onWhop && wp?.plan && wp.plan !== 'free' && GRANTS[product].plan && wp.whop_manage_url) return json({ url: wp.whop_manage_url });
+      // except moving up from Starter: a new checkout, and the webhook cancels the Starter membership once the new one is paid
+      const upFromStarter = wp?.plan === 'starter' && !!GRANTS[product].plan && GRANTS[product].plan !== 'starter';
+      if (onWhop && wp?.plan && wp.plan !== 'free' && GRANTS[product].plan && wp.whop_manage_url && !upFromStarter) return json({ url: wp.whop_manage_url });
       try {
         const back = typeof body.return_to === 'string' && /^\/app\/[A-Za-z0-9/_-]*(\?[A-Za-z0-9=&_-]*)?$/.test(body.return_to) ? body.return_to : '/app/billing';
         const wantsTrial = trial === true && !wp?.trial_used && (wp?.plan ?? 'free') === 'free';

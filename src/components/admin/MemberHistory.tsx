@@ -21,13 +21,13 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: str
 
 const field = 'h-10 rounded-lg border border-line/10 bg-transparent px-3 text-base text-zinc-100 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 md:text-sm';
 const btn = 'touch-hit inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:opacity-50';
-const PLAN_CREDITS: Record<string, number> = { creator: 50000, pro: 90000, studio: 175000 };
+const PLAN_CREDITS: Record<string, number> = { starter: 12000, creator: 50000, pro: 90000, studio: 175000 };
 
 /** The owner's actions on a member: add or remove credits, offer a plan for some days, ban or unban. */
 function Actions({ member, data, onDone }: { member: AdminMember; data: CreditHistory; onDone: (msg: string) => void }) {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
-  const [plan, setPlan] = useState<'creator' | 'pro' | 'studio' | 'free'>('creator');
+  const [plan, setPlan] = useState<'starter' | 'creator' | 'pro' | 'studio' | 'free'>('creator');
   const [days, setDays] = useState('30');
   const [withCredits, setWithCredits] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -57,7 +57,7 @@ function Actions({ member, data, onDone }: { member: AdminMember; data: CreditHi
       <p className="text-[11px] text-zinc-500">Offre actuelle : {data.plan}{data.planUntil ? ` jusqu’au ${new Date(data.planUntil).toLocaleDateString('fr-FR')}` : ''}. Une offre donnée ici s’arrête seule à la fin de la durée.</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <select className={cn(field, 'w-32')} value={plan} onChange={(e) => setPlan(e.target.value as typeof plan)} aria-label="Offre">
-          <option value="creator">Creator</option><option value="pro">Pro</option><option value="studio">Studio</option><option value="free">Gratuit (retirer l’offre)</option>
+          <option value="starter">Starter</option><option value="creator">Creator</option><option value="pro">Pro</option><option value="studio">Studio</option><option value="free">Gratuit (retirer l’offre)</option>
         </select>
         {plan !== 'free' && <>
           <input className={cn(field, 'w-20')} inputMode="numeric" value={days} onChange={(e) => setDays(e.target.value.replace(/[^0-9]/g, ''))} aria-label="Durée en jours" />

@@ -92,6 +92,10 @@ Deno.serve(async (req) => {
           const { error } = await admin.rpc('grant_credits', { p_user_id: p.id, p_amount: g.credits, p_type: 'subscription_grant', p_description: `${g.label} (Whop)`, p_plan: g.plan, p_reset: true });
           if (error) throw new Error(error.message);
           await admin.from('profiles').update({ trial_ends_at: null }).eq('id', p.id);
+          // moved up from Starter with a new checkout: the old Starter membership stops now (no double billing)
+          if (p.plan === 'starter' && g.plan !== 'starter' && p.whop_membership_id && d.membership_id && p.whop_membership_id !== d.membership_id) {
+            await whopApi(`/memberships/${p.whop_membership_id}/cancel`, { method: 'POST', body: { cancel_at_period_end: false } }).catch((e) => console.error('cancel starter', e));
+          }
         }
         // partner commission, as with Stripe (the $1 only for a trial)
         const { error: affErr } = await admin.rpc('record_affiliate_payment', { p_user: p.id, p_invoice: d.id, p_amount: Math.round(amount * 100), p_currency: d.currency ?? 'usd', p_product: product, p_trial: false });
