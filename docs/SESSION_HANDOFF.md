@@ -233,3 +233,4 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 - Alfred: the $29 at 10:55 was an off-session one-time charge on his saved card (not his checkout), 2 h before his trial ended; he asked for a refund and deleted his Whop account. Owner told to refund; then remove his 50,000 credits (balance 50,100, plan already free).
 - whop-webhook: a membership event no longer ends a manual plan (billing_provider manual and no linked membership) — it had reset Alfred to free.
 - Trial results (Whop $0 trial, Nov 20–24): 17 real trials (+11 blocked fraud), 6 "converted" (5 real once Alfred is refunded), 10 lost (card declined at the end, past_due). ~31 % of decided trials paid; ~42k credits used by lost trials.
+- Owner: Whop account verified (status active, payouts active). Alfred refunded by the owner; owner chose to LET HIM KEEP the 50,000 credits (balance 50,100, plan free).
