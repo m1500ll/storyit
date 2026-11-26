@@ -216,3 +216,10 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 ## 2026-11-25 — Demo video in the sign-up flow
 - Owner's idea: show a finished video without paying for a render. WelcomeIntro: quiz → thinking → **demo** (pick 1 of 3 Fruit Drama ideas: banane-honnete, chevelure-sans-fin, plaque-de-cuisson) → **making** (4 steps describing how Storyit makes it) → **reveal** (the real /public/showcase/<slug>.mp4 with sound) → plan + offers. "Passer" skips to the plan.
 - Honesty rule (agreed): it is always presented as an example Storyit made from that idea ("Exemple réalisé avec Storyit…"), never as a video generated live for the customer, and there is no free-text idea field in the demo. Zero AI cost.
+
+## 2026-11-26 — Retention: cancel screen, nudges, "why leaving" email
+- `ManageBilling` (Billing page): "Gérer la facturation" now opens a menu: invoices/card → provider portal; "Résilier" → reason (6 choices + note) → offer: Starter $9 for Creator/Pro/Studio (too expensive / not using / no views / other), Discord help for bug/quality → "Non merci, résilier" opens the portal. Answers stored in `cancel_feedback` (migration 0066, billing action `cancel_feedback`).
+- Down to Starter on Whop: billing opens a Starter checkout (`downToStarter`); whop-webhook `stopPrevious` cancels the old plan once Starter is paid; credits kept (grant_credits reset = greatest).
+- `Modal` now renders through a portal on <body> (it was trapped inside cards with a backdrop blur).
+- Nudge emails (video1/video2) now lead with Starter $9 (Creator mentioned second). They were already live (cron storyit-nudges, NUDGES_LIVE).
+- Campaign `why_leaving` (audience 'list': only the user ids passed in `only`). Preview sent to the owner; 14 targets (churned or cancelling, alfred excluded: manual plan). Ids in scratchpad why_ids.json. Not sent yet.

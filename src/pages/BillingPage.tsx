@@ -1,14 +1,13 @@
-import { CheckCircle2, CreditCard as CardIcon, X } from 'lucide-react';
-import { useState } from 'react';
+import { CheckCircle2, X } from 'lucide-react';
 import { billingPlan, PAYMENTS_PAUSED } from '@/services/billing';
 import { useSearchParams } from 'react-router-dom';
 import { PlanPicker } from '@/components/billing/PlanPicker';
-import { Button, Card, CardHeader, PageHeader } from '@/components/ui';
+import { Card, CardHeader, PageHeader } from '@/components/ui';
 import { useCredits, useProfile } from '@/hooks/useStore';
-import { billingService } from '@/services/billing';
 import { PLANS, formatCredits } from '@/services/credits';
 import { TrialUpgrade } from '@/components/billing/TrialUpgrade';
 import { AutoTopup } from '@/components/billing/AutoTopup';
+import { ManageBilling } from '@/components/billing/ManageBilling';
 import { cn } from '@/lib/cn';
 
 function CheckoutBanner() {
@@ -30,7 +29,7 @@ export default function BillingPage() {
   const { balance, known, transactions } = useCredits();
   const { data: profile } = useProfile();
   const plan = PLANS.find((p) => p.id === profile?.plan);
-  const [portalError, setPortalError] = useState<string | null>(null);
+
   const spent = transactions.filter((t) => t.amount < 0).reduce((n, t) => n - t.amount, 0);
 
   return (
@@ -53,12 +52,7 @@ export default function BillingPage() {
         <Card className="flex flex-col">
           <p className="label">Crédits utilisés</p>
           <p className="mt-2 font-display text-4xl tabular-nums text-zinc-50">{formatCredits(spent)}</p>
-          {profile?.plan && profile.plan !== 'free' && (
-            <Button size="sm" variant="secondary" className="mt-auto" onClick={() => billingService.openPortal().catch((e: Error) => setPortalError(e.message))}>
-              <CardIcon className="h-3.5 w-3.5" /> Gérer la facturation et les factures
-            </Button>
-          )}
-          {portalError && <p className="mt-2 text-xs text-coral-300">{portalError}</p>}
+          {profile?.plan && profile.plan !== 'free' && <ManageBilling plan={profile.plan} />}
         </Card>
       </div>
       <Card className="mt-6">

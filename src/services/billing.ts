@@ -29,6 +29,7 @@ async function callJson<T>(body: Record<string, unknown>): Promise<T> {
 export const PAYMENTS_PAUSED = false;
 export const PAYMENTS_PAUSED_EVENT = 'storyit:payments-paused';
 
+export type CancelReason = 'too_expensive' | 'not_using' | 'no_views' | 'quality' | 'bug' | 'other';
 export type TrialStatus = { trialing: boolean; trial_end: number | null; product: 'creator' | 'pro' | 'studio' | null };
 
 /** Stripe-hosted pages: card data never touches our app. */
@@ -63,6 +64,11 @@ export const billingService = {
   /** the public client-side token Paddle.js needs on /pay */
   async paddleToken(): Promise<string | null> {
     return (await callJson<{ token: string | null }>({ action: 'paddle_config' })).token;
+  },
+  /** the "before you cancel" answer (stored for the owner) */
+  async cancelFeedback(reason: CancelReason, details: string, outcome: 'cancel' | 'downgrade' | 'stayed') {
+    if (!isSupabaseConfigured) return { ok: true };
+    return callJson<{ ok: boolean }>({ action: 'cancel_feedback', reason, details, outcome });
   },
   async openPortal() {
     window.location.assign(await call({ action: 'portal' }));

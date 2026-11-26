@@ -29,7 +29,7 @@ const page = (title: string, text: string) => new Response(
   <p><a href="${APP}" style="color:#a78bfa">Retour sur Storyit</a></p></main></body></html>`,
   { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 
-type Campaign = { subject: string; html: (unsub: string) => string; text: (unsub: string) => string; /** who gets it (default: everyone) */ audience?: 'free_no_trial' | 'free_active' | 'free' | 'free_after_trial' };
+type Campaign = { subject: string; html: (unsub: string) => string; text: (unsub: string) => string; /** who gets it (default: everyone) */ audience?: 'free_no_trial' | 'free_active' | 'free' | 'free_after_trial' | 'list' };
 const shell = (inner: string, unsub: string) => `<!doctype html><html lang="fr"><body style="margin:0;background:#f4f2fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#1f1b2e">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 12px"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;padding:32px 28px">
@@ -204,6 +204,28 @@ Ta première vraie vidéo t'attend. On t'ouvre tout :
 Activer mes 3 jours gratuits : ${APP}/app/billing?interval=month
 
 0 $ aujourd'hui, carte demandée. Ensuite Creator à 29 $/mois, seulement si tu continues : un rappel t'est envoyé la veille, et tu résilies en 1 clic.
+
+À très vite,
+L'équipe Storyit
+
+Vous recevez cet e-mail car vous avez un compte Storyit. Se désinscrire : ${unsub}`,
+  },
+  // subscribers who cancelled (or are cancelling): one short question, answered by replying to the e-mail.
+  // Sent only to the user ids passed in `only` (picked from the dashboard), never to everyone.
+  why_leaving: {
+    subject: 'Une question rapide (1 mot suffit)',
+    audience: 'list',
+    html: (unsub) => shell(`<tr><td style="font-size:16px;line-height:1.7">Bonjour,<br><br>Tu as arrêté ton abonnement (ou ton essai) Storyit, et c’est ok.<br><br>J’ai juste une question : <strong>qu’est-ce qui t’a fait arrêter ?</strong><br><br>Réponds simplement à ce mail, même en un mot : trop cher, pas le temps, les vidéos, un bug… Je lis toutes les réponses et on s’en sert pour améliorer Storyit.</td></tr>
+<tr><td style="font-size:14px;line-height:1.6;color:#4b4560;padding-top:14px">PS : si c’était une question de prix, il existe maintenant <strong>Starter à 9 $/mois</strong> (jusqu’à 3 vidéos par mois), depuis la page <a href="${APP}/app/billing?interval=month" style="color:#7c3aed">Offre et crédits</a>.</td></tr>`, unsub),
+    text: (unsub) => `Bonjour,
+
+Tu as arrêté ton abonnement (ou ton essai) Storyit, et c'est ok.
+
+J'ai juste une question : qu'est-ce qui t'a fait arrêter ?
+
+Réponds simplement à ce mail, même en un mot : trop cher, pas le temps, les vidéos, un bug… Je lis toutes les réponses et on s'en sert pour améliorer Storyit.
+
+PS : si c'était une question de prix, il existe maintenant Starter à 9 $/mois (jusqu'à 3 vidéos par mois) : ${APP}/app/billing?interval=month
 
 À très vite,
 L'équipe Storyit
@@ -429,18 +451,18 @@ const NUDGE = {
     inner: `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Ton histoire est prête 🎬</td></tr>
 <tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Storyit a écrit ton histoire <strong>« ${title} »</strong> : les dialogues et les scènes sont prêts. Il ne manque plus que la vidéo finie, avec les personnages animés, les voix, les sous-titres et la musique.</td></tr>
 <tr><td style="padding:14px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.7">
-<tr><td>🎁 <strong>Offre Creator</strong> : 50 000 crédits par mois, jusqu’à 14 vidéos</td></tr>
+<tr><td>🎁 <strong>Dès 9 $/mois avec Starter</strong> : jusqu’à 3 vidéos par mois</td></tr>
 <tr><td>⚡ La vidéo se crée toute seule, en quelques minutes</td></tr>
-<tr><td>🔁 29 $/mois, sans engagement, résiliable en 1 clic</td></tr></table></td></tr>
+<tr><td>🔁 Sans engagement, résiliable en 1 clic (Creator : 14 vidéos pour 29 $)</td></tr></table></td></tr>
 <tr><td align="center" style="padding:14px 0 8px"><a href="${link}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma vidéo</a></td></tr>`,
-    text: `Ton histoire est prête\n\nBonjour,\n\nStoryit a écrit ton histoire « ${title} » : les dialogues et les scènes sont prêts. Il ne manque plus que la vidéo finie, avec les personnages animés, les voix, les sous-titres et la musique.\n\n- Offre Creator : 50 000 crédits par mois, jusqu'à 14 vidéos\n- La vidéo se crée toute seule, en quelques minutes\n- 29 $/mois, sans engagement, résiliable en 1 clic\n\nCréer ma vidéo : ${link}`,
+    text: `Ton histoire est prête\n\nBonjour,\n\nStoryit a écrit ton histoire « ${title} » : les dialogues et les scènes sont prêts. Il ne manque plus que la vidéo finie, avec les personnages animés, les voix, les sous-titres et la musique.\n\n- Dès 9 $/mois avec Starter : jusqu'à 3 vidéos par mois\n- La vidéo se crée toute seule, en quelques minutes\n- Sans engagement (Creator : 14 vidéos pour 29 $), résiliable en 1 clic\n\nCréer ma vidéo : ${link}`,
   }),
   video2: (title: string, link: string) => ({
     subject: `⏳ Ta vidéo « ${title} » t’attend toujours`,
     inner: `<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Ta vidéo t’attend</td></tr>
-<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Ton histoire <strong>« ${title} »</strong> est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.<br><br>Avec l’offre Creator (<strong>29 $/mois</strong>, 50 000 crédits), tu la crées en 1 clic, et tu peux arrêter quand tu veux.</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Ton histoire <strong>« ${title} »</strong> est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.<br><br>Avec l’offre Starter (<strong>9 $/mois</strong>, jusqu’à 3 vidéos), tu la crées en 1 clic, et tu peux arrêter quand tu veux.</td></tr>
 <tr><td align="center" style="padding:20px 0 8px"><a href="${link}" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Créer ma vidéo</a></td></tr>`,
-    text: `Ta vidéo t'attend\n\nBonjour,\n\nTon histoire « ${title} » est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.\n\nAvec l'offre Creator (29 $/mois, 50 000 crédits), tu la crées en 1 clic, et tu peux arrêter quand tu veux.\n\nCréer ma vidéo : ${link}`,
+    text: `Ta vidéo t'attend\n\nBonjour,\n\nTon histoire « ${title} » est toujours prête. En 1 clic, Storyit en fait une vidéo verticale prête à poster sur TikTok, Reels et Shorts.\n\nAvec l'offre Starter (9 $/mois, jusqu'à 3 vidéos), tu la crées en 1 clic, et tu peux arrêter quand tu veux.\n\nCréer ma vidéo : ${link}`,
   }),
   start1: (link: string) => ({
     subject: '✨ Ta première vidéo IA en 2 minutes',
@@ -640,7 +662,7 @@ Deno.serve(async (req) => {
     return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });
   }
   if (!isCampaign && (req.headers.get('Authorization') !== `Bearer ${Deno.env.get('MAILING_TOKEN')}` || !Deno.env.get('MAILING_TOKEN'))) return new Response('Unauthorized', { status: 401 });
-  const { campaign, test_to, scheduled_at, cancel, direct } = await req.json().catch(() => ({})) as { campaign?: string; test_to?: string; scheduled_at?: string; cancel?: boolean;
+  const { campaign, test_to, scheduled_at, cancel, direct, only } = await req.json().catch(() => ({})) as { campaign?: string; test_to?: string; scheduled_at?: string; cancel?: boolean; only?: string[];
     direct?: { to: string; subject: string; html: string; text: string; reply_to?: string } };
   if (direct) { // one business e-mail (partnership request…), replies go to reply_to
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(direct.to ?? '') || !direct.subject || !direct.html || !direct.text) return Response.json({ error: 'to, subject, html and text are required' }, { status: 400 });
@@ -702,7 +724,9 @@ Deno.serve(async (req) => {
     (done ?? []).push(...(notEligible ?? []).map((r: { id: string }) => ({ user_id: r.id })));
   }
   const skip = new Set([...(out ?? []), ...(done ?? [])].map((r: { id?: string; user_id?: string }) => r.id ?? r.user_id));
-  const targets = list.users.filter((u) => u.email && u.email_confirmed_at && !skip.has(u.id));
+  if (c.audience === 'list' && !(Array.isArray(only) && only.length)) return Response.json({ error: 'this campaign needs the list of user ids (only)' }, { status: 400 });
+  const pick = c.audience === 'list' ? new Set((only ?? []).filter((x) => typeof x === 'string')) : null;
+  const targets = list.users.filter((u) => u.email && u.email_confirmed_at && !skip.has(u.id) && (!pick || pick.has(u.id)));
   const result = { sent: 0, failed: [] as string[], skipped: list.users.length - targets.length };
   for (const u of targets) {
     try {

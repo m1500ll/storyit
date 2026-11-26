@@ -77,6 +77,18 @@ Deno.serve(async (req) => {
   try {
     const body = (await req.json()) as { action: 'checkout' | 'portal' | 'status' | 'end_trial' | 'recent_checkouts' | 'customer_subscriptions' | 'recent_invoices' | 'auto_topup' | 'customer_payments' | 'recent_payments'; product?: ProductKey; trial?: boolean; user_id?: string; enabled?: boolean; threshold?: number; credits?: number; return_to?: string };
     const { action, product } = body;
+
+    // the "before you cancel" screen: why the subscriber leaves and what they chose (stored for the owner)
+    if ((action as string) === 'cancel_feedback') {
+      const f = body as unknown as { reason?: unknown; details?: unknown; outcome?: unknown };
+      const REASONS = ['too_expensive', 'not_using', 'no_views', 'quality', 'bug', 'other'];
+      const reason = typeof f.reason === 'string' && REASONS.includes(f.reason) ? f.reason : null;
+      const outcome = typeof f.outcome === 'string' && ['cancel', 'downgrade', 'stayed'].includes(f.outcome) ? f.outcome : null;
+      if (!reason || !outcome) return json({ error: 'Réponse invalide.' }, 400);
+      const { data: me } = await admin.from('profiles').select('plan').eq('id', user.id).single();
+      await admin.from('cancel_feedback').insert({ user_id: user.id, plan: me?.plan ?? null, reason, outcome, details: typeof f.details === 'string' ? f.details.slice(0, 1000) : null });
+      return json({ ok: true });
+    }
     // the $1 trial is closed (Nov 19 2026: many $1 charges look like card testing to payment providers); set the
     // secret TRIAL_ENABLED=true to open it again
     const trial = body.trial === true && Deno.env.get('TRIAL_ENABLED') === 'true';
@@ -227,7 +239,9 @@ Deno.serve(async (req) => {
       // except moving up from Starter or buying a plan during the trial: a new checkout, and the webhook cancels the
       // previous membership (Starter or trial) once the new one is paid
       const upFromStarter = wp?.plan === 'starter' && !!GRANTS[product].plan && GRANTS[product].plan !== 'starter';
-      if (onWhop && wp?.plan && wp.plan !== 'free' && GRANTS[product].plan && wp.whop_manage_url && !upFromStarter && !inWhopTrial) return json({ url: wp.whop_manage_url });
+      // down to Starter instead of cancelling (the "before you cancel" screen): same mechanism
+      const downToStarter = product === 'starter' && ['creator', 'pro', 'studio'].includes(wp?.plan ?? '');
+      if (onWhop && wp?.plan && wp.plan !== 'free' && GRANTS[product].plan && wp.whop_manage_url && !upFromStarter && !downToStarter && !inWhopTrial) return json({ url: wp.whop_manage_url });
       try {
         const back = typeof body.return_to === 'string' && /^\/app\/[A-Za-z0-9/_-]*(\?[A-Za-z0-9=&_-]*)?$/.test(body.return_to) ? body.return_to : '/app/billing';
         const wantsTrial = action === 'checkout' && trial === true && !wp?.trial_used && (wp?.plan ?? 'free') === 'free';
