@@ -228,3 +228,8 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 - why_leaving sent to the 14 (sent 14, failed 0).
 - Sources: 200/360 sign-ups carry a partner link (alva 86, fruitsia 81, zizo 32, fruya 1), 2 member referrals, 158 unknown (no referrer/UTM tracking).
 - New first question in WelcomeIntro (`source`: tiktok, google, youtube, instagram, friend, other), saved in profiles.onboarding. admin-stats returns kpis.sources / sourcesPaying; dashboard card "D'où viennent les inscrits" + "via X" on each member line.
+
+## 2026-11-26 — Trial review, manual-plan fix
+- Alfred: the $29 at 10:55 was an off-session one-time charge on his saved card (not his checkout), 2 h before his trial ended; he asked for a refund and deleted his Whop account. Owner told to refund; then remove his 50,000 credits (balance 50,100, plan already free).
+- whop-webhook: a membership event no longer ends a manual plan (billing_provider manual and no linked membership) — it had reset Alfred to free.
+- Trial results (Whop $0 trial, Nov 20–24): 17 real trials (+11 blocked fraud), 6 "converted" (5 real once Alfred is refunded), 10 lost (card declined at the end, past_due). ~31 % of decided trials paid; ~42k credits used by lost trials.

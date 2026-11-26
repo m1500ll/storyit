@@ -16,11 +16,11 @@ const isProduct = (p: unknown): p is ProductKey => typeof p === 'string' && p in
 
 async function profileOf(meta: any, membershipId: string | null) {
   if (meta?.user_id) {
-    const { data } = await admin.from('profiles').select('id, plan, whop_product, whop_membership_id, trial_used').eq('id', meta.user_id).maybeSingle();
+    const { data } = await admin.from('profiles').select('id, plan, whop_product, whop_membership_id, trial_used, billing_provider').eq('id', meta.user_id).maybeSingle();
     if (data) return data;
   }
   if (membershipId) {
-    const { data } = await admin.from('profiles').select('id, plan, whop_product, whop_membership_id, trial_used').eq('whop_membership_id', membershipId).maybeSingle();
+    const { data } = await admin.from('profiles').select('id, plan, whop_product, whop_membership_id, trial_used, billing_provider').eq('whop_membership_id', membershipId).maybeSingle();
     if (data) return data;
   }
   return null;
@@ -127,6 +127,8 @@ Deno.serve(async (req) => {
       if (!p) return ok({ skipped: 'unknown customer' });
       // only the membership the profile is billed through
       if (p.whop_membership_id && d.id && p.whop_membership_id !== d.id) return ok({ skipped: 'other membership' });
+      // a plan given by hand (billing_provider manual) runs until its own date: an old Whop membership must not end it
+      if (p.billing_provider === 'manual' && !p.whop_membership_id) return ok({ skipped: 'manual plan' });
       // the free trial starts when the membership becomes active (no payment at $0)
       const meta = d.metadata ?? {};
       // the trial itself is granted on payment.succeeded ($0), which carries the device and card checked by the guard
