@@ -302,7 +302,7 @@ Deno.serve(async (req) => {
       paidCents: money?.total ?? 0, lastPaymentAt: money?.last ?? null,
       credits: p.credit_balance ?? 0, spent: spent.get(u.id) ?? 0, videos: videos.get(u.id) ?? 0, lastActivityAt: lastAct.get(u.id) ?? null,
       partner: p.affiliate_id ? (affiliates.get(p.affiliate_id)?.code ?? 'partenaire') : null, isAdmin: !!p.is_admin, banned: !!p.banned_at, unsubscribed: !!p.marketing_opt_out,
-      onboarding: p.onboarding ? { goal: p.onboarding.goal ?? null, target: p.onboarding.target ?? null, time: p.onboarding.time ?? null, level: p.onboarding.level ?? null } : null,
+      onboarding: p.onboarding ? { source: p.onboarding.source ?? null, goal: p.onboarding.goal ?? null, target: p.onboarding.target ?? null, time: p.onboarding.time ?? null, level: p.onboarding.level ?? null } : null,
     };
   }).sort((a, b) => Date.parse(b.signedUpAt) - Date.parse(a.signedUpAt));
 
@@ -366,6 +366,9 @@ Deno.serve(async (req) => {
       activated: customers.filter((m) => m.videos > 0).length,
       creditsOutstanding: customers.reduce((s, m) => s + m.credits, 0),
       viaPartner: customers.filter((m) => m.partner).length,
+      /** "Comment as-tu connu Storyit ?" (sign-up question, since Nov 26 2026) */
+      sources: customers.reduce((acc: Record<string, number>, m) => { const k = m.onboarding?.source; if (k) acc[k] = (acc[k] ?? 0) + 1; return acc; }, {}),
+      sourcesPaying: customers.reduce((acc: Record<string, number>, m) => { const k = m.onboarding?.source; if (k && m.paidCents >= 500) acc[k] = (acc[k] ?? 0) + 1; return acc; }, {}),
     },
     trials,
     members,

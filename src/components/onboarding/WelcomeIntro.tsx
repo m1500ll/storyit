@@ -19,8 +19,13 @@ const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(pre
 function seen() { try { return localStorage.getItem(SEEN) === '1'; } catch { return true; } }
 
 type Opt = { id: string; label: string; hint?: string };
-type Question = { id: 'goal' | 'target' | 'time' | 'level' | 'platforms'; title: string; sub?: string; multi?: boolean; options: Opt[] };
+type Question = { id: 'source' | 'goal' | 'target' | 'time' | 'level' | 'platforms'; title: string; sub?: string; multi?: boolean; options: Opt[] };
 const QUESTIONS: Question[] = [
+  { id: 'source', title: 'Comment as-tu connu Storyit ?', options: [
+    { id: 'tiktok', label: 'TikTok', hint: 'Une vidéo ou un créateur' }, { id: 'google', label: 'Google' },
+    { id: 'youtube', label: 'YouTube' }, { id: 'instagram', label: 'Instagram' },
+    { id: 'friend', label: 'Un ami m’en a parlé' }, { id: 'other', label: 'Autre' },
+  ] },
   { id: 'goal', title: 'Quel est ton objectif avec Storyit ?', options: [
     { id: 'side', label: 'Un revenu en plus', hint: 'À côté de mes études ou de mon travail' },
     { id: 'business', label: 'En faire mon vrai business', hint: 'Vivre de mes comptes' },

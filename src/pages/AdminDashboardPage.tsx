@@ -48,12 +48,13 @@ function StatusBadge({ m }: { m: AdminMember }) {
 }
 
 const GOAL: Record<string, string> = { side: 'revenu en plus', business: 'en faire son business', grow: 'faire grandir son compte', test: 'curiosité' };
+const SOURCE: Record<string, string> = { tiktok: 'TikTok', google: 'Google', youtube: 'YouTube', instagram: 'Instagram', friend: 'Un ami', other: 'Autre' };
 const LEVEL: Record<string, string> = { zero: 'débutant', posted: 'a déjà posté', views: 'fait des vues', paid: 'monétise déjà' };
 /** the sign-up onboarding answers, in a few words */
 function onboardingLine(m: AdminMember) {
   const o = m.onboarding;
   if (!o) return '';
-  return [o.goal && GOAL[o.goal], o.target && `objectif ${o.target.replace('+', ' +')} $/mois`, o.time && `${o.time === '120' ? '2 h+' : o.time === '60' ? '1 h' : `${o.time} min`}/jour`, o.level && LEVEL[o.level]].filter(Boolean).join(' · ');
+  return [o.source && `via ${SOURCE[o.source] ?? o.source}`, o.goal && GOAL[o.goal], o.target && `objectif ${o.target.replace('+', ' +')} $/mois`, o.time && `${o.time === '120' ? '2 h+' : o.time === '60' ? '1 h' : `${o.time} min`}/jour`, o.level && LEVEL[o.level]].filter(Boolean).join(' · ');
 }
 
 function payLine(m: AdminMember) {
@@ -119,6 +120,22 @@ export default function AdminDashboardPage() {
           </div>
 
           {data.trials && <TrialsPanel t={data.trials} />}
+
+          {k.sources && Object.keys(k.sources).length > 0 && (
+            <Card className="mt-6">
+              <h2 className="font-display text-lg text-zinc-50">D’où viennent les inscrits</h2>
+              <p className="text-[11px] text-zinc-500">Réponse à « Comment as-tu connu Storyit ? » dans le parcours d’inscription (depuis le 26 novembre).</p>
+              <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                {Object.entries(k.sources).sort((a, b) => b[1] - a[1]).map(([key, n]) => (
+                  <li key={key} className="rounded-xl bg-line/[0.04] p-3">
+                    <p className="text-[11px] text-zinc-500">{SOURCE[key] ?? key}</p>
+                    <p className="mt-0.5 font-display text-2xl tabular-nums text-zinc-50">{n}</p>
+                    <p className="text-[11px] text-emerald-300">{k.sourcesPaying?.[key] ?? 0} ont payé</p>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
 
           <Card className="mt-6">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

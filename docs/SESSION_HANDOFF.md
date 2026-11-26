@@ -223,3 +223,8 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 - `Modal` now renders through a portal on <body> (it was trapped inside cards with a backdrop blur).
 - Nudge emails (video1/video2) now lead with Starter $9 (Creator mentioned second). They were already live (cron storyit-nudges, NUDGES_LIVE).
 - Campaign `why_leaving` (audience 'list': only the user ids passed in `only`). Preview sent to the owner; 14 targets (churned or cancelling, alfred excluded: manual plan). Ids in scratchpad why_ids.json. Not sent yet.
+
+## 2026-11-26 — "Comment as-tu connu Storyit ?"
+- why_leaving sent to the 14 (sent 14, failed 0).
+- Sources: 200/360 sign-ups carry a partner link (alva 86, fruitsia 81, zizo 32, fruya 1), 2 member referrals, 158 unknown (no referrer/UTM tracking).
+- New first question in WelcomeIntro (`source`: tiktok, google, youtube, instagram, friend, other), saved in profiles.onboarding. admin-stats returns kpis.sources / sourcesPaying; dashboard card "D'où viennent les inscrits" + "via X" on each member line.
