@@ -105,7 +105,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
                 </ul>
               )}
               <div className="mt-auto" />
-              {p.id !== 'free' && trialHere && !current && !included && (
+              {p.id !== 'free' && p.id !== 'starter' && trialHere && !current && !included && (
                 <>
                   <Button className="mt-4 h-11 w-full whitespace-nowrap bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 text-sm shadow-[0_10px_30px_-10px_rgba(139,92,246,0.9)] hover:brightness-110" loading={pending === `${p.id}:trial`}
                     disabled={pending !== null} onClick={() => buy(p.id as ProductKey, true)}>
@@ -120,7 +120,7 @@ export function PlanPicker({ currentPlan, compact, trialUsed, initialInterval = 
                   </button>
                 </>
               )}
-              {p.id !== 'free' && !(trialHere && !current && !included) && (
+              {p.id !== 'free' && !(p.id !== 'starter' && trialHere && !current && !included) && (
                 interval === 'year' && 'yearly' in p ? (
                   <Button size="sm" className="mt-4 h-auto min-h-9 w-full py-2 leading-tight" variant={featured && !included ? 'primary' : 'secondary'} disabled={included}
                     loading={pending === `${p.id}_year`} onClick={() => buy(`${p.id}_year` as ProductKey)}>

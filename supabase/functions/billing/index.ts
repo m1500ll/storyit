@@ -244,7 +244,8 @@ Deno.serve(async (req) => {
       if (onWhop && wp?.plan && wp.plan !== 'free' && GRANTS[product].plan && wp.whop_manage_url && !upFromStarter && !downToStarter && !inWhopTrial) return json({ url: wp.whop_manage_url });
       try {
         const back = typeof body.return_to === 'string' && /^\/app\/[A-Za-z0-9/_-]*(\?[A-Za-z0-9=&_-]*)?$/.test(body.return_to) ? body.return_to : '/app/billing';
-        const wantsTrial = action === 'checkout' && trial === true && !wp?.trial_used && (wp?.plan ?? 'free') === 'free';
+        // the free trial exists for the monthly Creator, Pro and Studio plans only (never Starter, yearly plans or packs)
+        const wantsTrial = action === 'checkout' && trial === true && ['creator', 'pro', 'studio'].includes(product) && !wp?.trial_used && (wp?.plan ?? 'free') === 'free';
         if (wantsTrial) {
           const ip = clientIp(req), ua = clientUa(req);
           const why = await trialRefusal(admin, { userId: user.id, email: user.email ?? '', ip, ua, source: 'checkout' });

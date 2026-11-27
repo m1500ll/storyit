@@ -122,6 +122,16 @@ Deno.serve(async (req) => {
         await recordTrialClaim(admin, { userId: meta.user_id, ip: d.ip_address ?? null, card: d.payment_instrument?.display_name ?? null,
           ua: typeof d.user_agent === 'string' ? d.user_agent.slice(0, 300) : null, holder: d.billing_address?.name ?? null, source: 'whop_failed' });
       }
+      // the first charge after a free trial was declined: the membership stops now, so Whop never charges the card
+      // days later by surprise (that ended in refund requests). A trial still not paid keeps trial_ends_at set.
+      if (d.billing_reason !== 'subscription_create' && d.membership_id) {
+        const { data: p } = await admin.from('profiles').select('id, trial_ends_at, whop_membership_id').eq('whop_membership_id', d.membership_id).maybeSingle();
+        if (p?.trial_ends_at && Date.parse(p.trial_ends_at) <= Date.now() + 3_600_000) {
+          await whopApi(`/memberships/${d.membership_id}/cancel`, { method: 'POST', body: { cancel_at_period_end: false } });
+          await admin.from('profiles').update({ plan: 'free', trial_ends_at: null }).eq('id', p.id);
+          console.log(JSON.stringify({ audit: 'trial_unpaid_cancelled', user: p.id, membership: d.membership_id }));
+        }
+      }
     } else if (event.type.startsWith('membership.')) {
       const p = await profileOf(d.metadata ?? {}, d.id ?? null);
       if (!p) return ok({ skipped: 'unknown customer' });
@@ -133,6 +143,16 @@ Deno.serve(async (req) => {
       const meta = d.metadata ?? {};
       // the trial itself is granted on payment.succeeded ($0), which carries the device and card checked by the guard
       void meta;
+      // same rule as payment.failed: a trial whose first charge failed (past_due) stops now, no late surprise charge
+      if (d.status === 'past_due' && d.id) {
+        const { data: t } = await admin.from('profiles').select('trial_ends_at').eq('id', p.id).single();
+        if (t?.trial_ends_at) {
+          await whopApi(`/memberships/${d.id}/cancel`, { method: 'POST', body: { cancel_at_period_end: false } });
+          await admin.from('profiles').update({ plan: 'free', trial_ends_at: null }).eq('id', p.id);
+          console.log(JSON.stringify({ audit: 'trial_unpaid_cancelled', user: p.id, membership: d.id }));
+          return ok({ trial: 'unpaid, cancelled' });
+        }
+      }
       const patch: Record<string, unknown> = { whop_membership_id: d.id ?? p.whop_membership_id, ...(d.manage_url ? { whop_manage_url: d.manage_url } : {}) };
       if (event.type === 'membership.deactivated' || ['canceled', 'expired', 'completed'].includes(d.status)) { patch.plan = 'free'; patch.trial_ends_at = null; }
       await admin.from('profiles').update(patch).eq('id', p.id);

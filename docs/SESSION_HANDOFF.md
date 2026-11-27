@@ -234,3 +234,9 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 - whop-webhook: a membership event no longer ends a manual plan (billing_provider manual and no linked membership) — it had reset Alfred to free.
 - Trial results (Whop $0 trial, Nov 20–24): 17 real trials (+11 blocked fraud), 6 "converted" (5 real once Alfred is refunded), 10 lost (card declined at the end, past_due). ~31 % of decided trials paid; ~42k credits used by lost trials.
 - Owner: Whop account verified (status active, payouts active). Alfred refunded by the owner; owner chose to LET HIM KEEP the 50,000 credits (balance 50,100, plan free).
+
+## 2026-11-27 — Free trial back (Creator, Pro, Studio), Starter without trial
+- Secret TRIAL_ENABLED=true, front TRIAL_ENABLED=true. billing: `wantsTrial` only for creator/pro/studio monthly (never starter, yearly, packs).
+- PlanPicker: "Essayer gratuitement" on Creator/Pro/Studio, Starter keeps a normal paid button. WelcomeIntro: offers list shows "3 jours gratuits" on trial plans; the button reads "Essayer <plan> gratuitement 3 jours" (or "Commencer dès maintenant" for Starter). Landing pricing banner is now the free trial (Starter banner removed).
+- New protection (whop-webhook): first charge after a trial declined (payment.failed not subscription_create, or membership past_due) while profile.trial_ends_at is set → membership cancelled now, plan free. No more late surprise charges.
+- The 10 older trials already past_due (Nov 20–23) are NOT cancelled yet: waiting for the owner's decision.

@@ -23,10 +23,10 @@ export function Pricing() {
 
       <div className="relative mx-auto mt-8 flex max-w-3xl flex-col items-center gap-4 overflow-hidden rounded-2xl border border-violet-500/40 bg-violet-600/[0.12] px-5 py-5 text-center sm:flex-row sm:text-left">
         <div className="min-w-0 flex-1">
-          <p className="font-display text-2xl text-zinc-50">{fr ? 'Petit budget ? Starter à 9 $/mois' : 'Small budget? Starter at $9/mo'}</p>
-          <p className="mt-1 text-sm text-zinc-300">{fr ? 'Tes 3 premières vidéos finies chaque mois : voix, sous-titres et musique. Sans engagement, et tu passes à Creator quand tu veux.' : 'Your first 3 finished videos every month: voices, subtitles and music. Cancel anytime, move up to Creator whenever you like.'}</p>
+          <p className="font-display text-2xl text-zinc-50">{fr ? 'Essai gratuit de 3 jours' : 'Free 3-day trial'}</p>
+          <p className="mt-1 text-sm text-zinc-300">{fr ? 'Sur Creator, Pro et Studio : de quoi créer ta première vidéo complète. Carte demandée, 0 $ aujourd’hui, résiliable en 1 clic avant la fin.' : 'On Creator, Pro and Studio: enough for your first full video. Card required, $0 today, cancel in one click before it ends.'}</p>
         </div>
-        <StartLink to="/app/billing?plan=starter&interval=month" className="shrink-0"><Button size="lg">{fr ? 'Choisir Starter' : 'Choose Starter'}</Button></StartLink>
+        <StartLink to="/app/billing?interval=month" className="shrink-0"><Button size="lg">{fr ? 'Essayer gratuitement' : 'Start free trial'}</Button></StartLink>
       </div>
 
       <div className="mt-8 flex justify-center">

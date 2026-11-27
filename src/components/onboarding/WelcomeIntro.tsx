@@ -144,9 +144,11 @@ export function WelcomeIntro() {
   const pick3 = chosen ?? (plan.plan.id as 'starter' | 'creator' | 'pro' | 'studio');
   const canTrial = TRIAL_ENABLED && billingPlan(profile).plan === 'free' && !billingPlan(profile).trialUsed;
   // the plan the answers point to (with the $1 trial when it is open)
+  // the free trial is for Creator, Pro and Studio (Starter is paid at once)
+  const trialPick = canTrial && pick3 !== 'starter';
   const startTrial = async () => {
     setPending(true); setError(null);
-    try { await billingService.checkout(canTrial ? 'creator' : pick3, { trial: canTrial, returnTo: '/app/prompts' }); setPending(false); close(); }
+    try { await billingService.checkout(pick3, { trial: trialPick, returnTo: '/app/prompts' }); setPending(false); close(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Le paiement n’a pas pu démarrer.'); setPending(false); }
   };
   const toStudio = () => { close(); navigate('/app/prompts'); };
@@ -336,17 +338,7 @@ export function WelcomeIntro() {
           </ul>
           <p className="mt-3 text-center text-xs text-white/55">Offre adaptée à ton rythme : <strong className="text-white/80">{plan.plan.name}</strong> (jusqu’à {plan.plan.videos} vidéos de 30 s par mois{plan.perMonth > plan.plan.videos ? ', et des recharges pour aller plus loin' : ''}).</p>
 
-          {canTrial ? (
-            <>
-              <button type="button" onClick={() => void startTrial()} disabled={pending}
-                className="touch-hit mt-6 inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-base font-semibold text-white shadow-[0_0_40px_-6px_rgba(217,70,239,0.9)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-60">
-                {pending ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Sparkles className="h-5 w-5" aria-hidden />} Essayer gratuitement 3 jours
-              </button>
-              <p className="mt-2 text-center text-[11px] text-white/50">{formatCredits(TRIAL.credits)} crédits (ta première vidéo complète). Carte demandée, 0 $ aujourd’hui, résiliable en 1 clic.</p>
-              {error && <p className="mt-2 text-center text-xs text-coral-300" aria-live="polite">{error}</p>}
-              <button type="button" onClick={toStudio} className="touch-hit mx-auto mt-3 block rounded text-xs text-white/50 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Commencer avec mes crédits gratuits</button>
-            </>
-          ) : billingPlan(profile).plan === 'free' ? (
+          {billingPlan(profile).plan === 'free' ? (
             <>
               <div className="mt-6 grid gap-2" role="radiogroup" aria-label="Choisis ton offre">
                 {offers.map((o) => {
@@ -357,7 +349,7 @@ export function WelcomeIntro() {
                         on ? 'border-fuchsia-400/80 bg-violet-600/25 shadow-[0_0_30px_-10px_rgba(217,70,239,0.9)]' : 'border-white/10 bg-white/[0.04] hover:border-violet-400/50')}>
                       <span className="min-w-0">
                         <span className="flex items-center gap-2 text-base font-semibold text-white">{o.name}{o.id === plan.plan.id && <span className="rounded-full bg-fuchsia-500/25 px-2 py-0.5 text-[10px] font-bold text-fuchsia-200">Conseillé pour toi</span>}</span>
-                        <span className="block text-xs text-white/60">{formatCredits(o.credits)} crédits / mois · jusqu’à {o.videos} vidéos</span>
+                        <span className="block text-xs text-white/60">{formatCredits(o.credits)} crédits / mois · jusqu’à {o.videos} vidéos{canTrial && o.id !== 'starter' ? <span className="font-semibold text-emerald-300"> · {TRIAL.days} jours gratuits</span> : ''}</span>
                       </span>
                       <span className="shrink-0 text-right"><span className="font-display text-xl text-white">{o.price}&nbsp;$</span><span className="block text-[10px] text-white/50">/mois</span></span>
                     </button>
@@ -366,9 +358,11 @@ export function WelcomeIntro() {
               </div>
               <button type="button" onClick={() => void startTrial()} disabled={pending}
                 className="touch-hit mt-4 inline-flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-base font-semibold text-white shadow-[0_0_40px_-6px_rgba(217,70,239,0.9)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-60">
-                {pending ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Sparkles className="h-5 w-5" aria-hidden />} Commencer dès maintenant
+                {pending ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Sparkles className="h-5 w-5" aria-hidden />} {trialPick ? `Essayer ${PLANS.find((x) => x.id === pick3)?.name} gratuitement ${TRIAL.days} jours` : 'Commencer dès maintenant'}
               </button>
-              <p className="mt-2 text-center text-[11px] text-white/50">Sans engagement, résiliable en 1 clic.</p>
+              <p className="mt-2 text-center text-[11px] text-white/50">{trialPick
+                ? `${formatCredits(TRIAL.credits)} crédits pour ta première vidéo. Carte demandée, 0 $ aujourd’hui. Puis ${PLANS.find((x) => x.id === pick3)?.price} $/mois, seulement si tu ne résilies pas avant.`
+                : 'Sans engagement, résiliable en 1 clic.'}</p>
               {error && <p className="mt-2 text-center text-xs text-coral-300" aria-live="polite">{error}</p>}
               <button type="button" onClick={toStudio} className="touch-hit mx-auto mt-3 block rounded text-xs text-white/50 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Plus tard</button>
             </>
