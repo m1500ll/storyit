@@ -242,3 +242,7 @@ casting), `_shared/promptVideo.ts` (prix, plan vidéo, musiques, sous-titres), `
 - The 10 older trials already past_due (Nov 20–23) are NOT cancelled yet: waiting for the owner's decision.
 - Owner approved: the 9 past_due trial memberships (Nov 20–24) were cancelled at Whop (profiles back to free). admin-stats trial list now carries `membership` and `uid`.
 - Loay was charged twice (Creator bought during his trial on Nov 22 + trial conversion $28.99 on Nov 25, before the stopPrevious protection). His trial membership is set to cancel at period end; he got a manual Pro offer on Nov 25. Suggested to the owner: refund the $28.99.
+
+## 2026-11-27 — Real trial conversion, low-credit upsell
+- Dashboard trial panel now counts PEOPLE since the beginning (admin-stats `trials.people`): received trial credits ("Essai gratuit…" since Nov 20 and the $1 "Essai N jours…" Nov 8–18) and paid ≥ $5 net of Whop refunds. Today: 39 took a trial, 10 paid (free 6/27, $1 4/12); Alfred still counts as paid because Whop's API still shows his $29 (pay_7JB9…) not refunded. Loay's $28.99 was refunded through a Whop dispute (substatus resolution_lost).
+- Low-credit email (DB trigger low_credits_email: paid plans, below 5,000 credits, once until topped up above 5,000; skipped for trials and auto top-up): now an upsell to the plan above (Starter→Creator, Creator→Pro, Pro→Studio; Studio: packs), packs and auto top-up second. `preview_to` sends an [APERÇU] copy only.

@@ -27,23 +27,25 @@ function Box({ label, value, hint, tone }: { label: string; value: string; hint?
 /** The free trials: how many became paying customers, and what the running ones would bring if they all paid. */
 export function TrialsPanel({ t }: { t: TrialStats }) {
   const [showAll, setShowAll] = useState(false);
-  const ended = t.converted + t.lost + t.cancelled; // trials whose outcome is known (a cancelled trial will not be charged)
-  const rate = ended ? Math.round((t.converted / ended) * 100) : null;
+  // the real rate: people who took a trial since the beginning, and how many paid
+  const all = t.people?.all, free = t.people?.free, dollar = t.people?.dollar;
+  const pct = (g?: { took: number; paid: number }) => (g && g.took ? Math.round((g.paid / g.took) * 100) : null);
+  const rate = pct(all);
   const running = t.ongoing + t.cancelled;
   const list = showAll ? t.list : t.list.slice(0, 8);
   return (
     <Card className="mt-6" aria-labelledby="trials-title">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 id="trials-title" className="font-display text-lg text-zinc-50">Essais gratuits</h2>
-        <p className="text-[11px] text-zinc-500">{t.total} essai{t.total > 1 ? 's' : ''} pris{t.blocked ? ` · ${t.blocked} bloqué${t.blocked > 1 ? 's' : ''} (fraude ou refus), non comptés` : ''}</p>
+        <p className="text-[11px] text-zinc-500">Depuis le début : {all?.took ?? 0} personnes ont pris un essai{all?.abuse ? `, dont ${all.abuse} retiré${all.abuse > 1 ? 's' : ''} pour fraude` : ''}</p>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
         <Box label="Taux de conversion" value={rate === null ? '—' : `${rate} %`} tone="text-emerald-300"
-          hint={rate === null ? 'aucun essai terminé pour l’instant' : `${t.converted} ont payé sur ${ended} essais terminés ou résiliés`} />
+          hint={all ? `${all.paid} ont payé sur ${all.took} essais · gratuit : ${free?.paid ?? 0}/${free?.took ?? 0} (${pct(free) ?? 0} %) · à 1 $ : ${dollar?.paid ?? 0}/${dollar?.took ?? 0} (${pct(dollar) ?? 0} %)` : ''} />
         <Box label="Essais en cours" value={String(running)} hint={`${t.ongoing} vont être prélevés · ${t.cancelled} ont résilié`} />
         <Box label="Si tous les essais en cours paient" value={usd(t.ifAllPayCents)} tone="text-violet-200"
           hint={`${usd(t.ifNotCancelledPayCents)} si seuls ceux qui n’ont pas résilié paient`} />
-        <Box label="Déjà encaissé grâce aux essais" value={usd(t.convertedCents)}
+        <Box label="Déjà encaissé grâce aux essais" value={usd(all?.paidCents ?? t.convertedCents)}
           hint={`${usd(t.ifAllEverPaidCents)} si tous les essais pris avaient payé`} />
       </div>
       {t.list.length > 0 && (

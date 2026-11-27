@@ -644,19 +644,32 @@ Deno.serve(async (req) => {
     const to = u?.user?.email;
     if (!to || !p || p.plan === 'free') return Response.json({ skipped: true });
     const left = Number(p.credit_balance).toLocaleString('fr-FR').replace(/ /g, ' ');
+    // upsell: the plan just above the current one (videos of 30 s at 3,400 credits), packs as the second choice
+    const UP: Record<string, { name: string; price: number; extra: number; videos: number } | null> = {
+      starter: { name: 'Creator', price: 29, extra: 20, videos: 14 }, creator: { name: 'Pro', price: 59, extra: 30, videos: 26 },
+      pro: { name: 'Studio', price: 99, extra: 40, videos: 51 }, studio: null,
+    };
+    const up = UP[p.plan] ?? null;
+    const lead = up
+      ? `Tu publies beaucoup, et c’est exactement ce qui fait grandir un compte. Pour ne plus être limité, passe à <strong>${up.name}</strong> : jusqu’à <strong>${up.videos} vidéos par mois</strong> pour ${up.price} $/mois (seulement ${up.extra} $ de plus).`
+      : 'Tu approches de la fin de tes crédits du mois. Recharge maintenant pour ne pas être bloqué au milieu de ta prochaine vidéo.';
+    const cta = up ? `Passer à ${up.name}` : 'Recharger mes crédits';
     const html = shell(`<tr><td style="font-size:24px;line-height:1.3;font-weight:800;color:#1f1b2e;padding-bottom:12px">Plus que <span style="color:#7c3aed">${left} crédits</span></td></tr>
-<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>Vous approchez de la fin de vos crédits Storyit. Rechargez maintenant pour ne pas être bloqué au milieu de votre prochaine vidéo.</td></tr>
+<tr><td style="font-size:16px;line-height:1.6">Bonjour,<br><br>${lead}</td></tr>
 <tr><td style="padding:16px 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f0ff;border-radius:12px;padding:14px 18px;font-size:15px;line-height:1.9">
-<tr><td>⚡ <strong>10 000 crédits</strong> pour 12 $ · <strong>50 000 crédits</strong> pour 49 $</td></tr>
-<tr><td>♾️ Les crédits rechargés <strong>n’expirent jamais</strong></td></tr>
-<tr><td>🔁 Ou activez la <strong>recharge automatique</strong> : plus jamais à court, au montant que vous choisissez</td></tr></table></td></tr>
-<tr><td align="center" style="padding:20px 0 8px"><a href="${APP}/app/billing" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">Recharger mes crédits</a></td></tr>`, `${APP}/app/billing`)
+${up ? `<tr><td>🚀 <strong>${up.name}</strong> : ${up.videos} vidéos de 30 s par mois, tes crédits restants sont gardés</td></tr>` : ''}
+<tr><td>⚡ Ou un pack : <strong>10 000 crédits</strong> pour 12 $ · <strong>50 000 crédits</strong> pour 49 $ (ils n’expirent jamais)</td></tr>
+<tr><td>🔁 Ou la <strong>recharge automatique</strong> : plus jamais à court</td></tr></table></td></tr>
+<tr><td align="center" style="padding:20px 0 8px"><a href="${APP}/app/billing?interval=month" style="display:inline-block;background:#7c3aed;color:#ffffff;text-decoration:none;font-weight:700;font-size:16px;padding:15px 28px;border-radius:12px">${cta}</a></td></tr>`, `${APP}/app/billing`)
       .replace('Vous recevez cet e-mail car vous avez un compte Storyit. <a href="' + `${APP}/app/billing` + '" style="color:#7a7390">Se désinscrire</a>', 'Message lié à votre abonnement Storyit (solde de crédits).');
-    const text = `Plus que ${left} crédits\n\nBonjour,\n\nVous approchez de la fin de vos crédits Storyit. Rechargez maintenant pour ne pas être bloqué au milieu de votre prochaine vidéo.\n\n- 10 000 crédits pour 12 $, 50 000 crédits pour 49 $\n- Les crédits rechargés n'expirent jamais\n- Ou activez la recharge automatique : plus jamais à court, au montant que vous choisissez\n\nRecharger mes crédits : ${APP}/app/billing\n\nÀ très vite,\nL'équipe Storyit`;
+    const leadText = lead.replace(/<[^>]+>/g, '');
+    const text = `Plus que ${left} crédits\n\nBonjour,\n\n${leadText}\n\n${up ? `- ${up.name} : ${up.videos} vidéos de 30 s par mois, tes crédits restants sont gardés\n` : ''}- Ou un pack : 10 000 crédits pour 12 $, 50 000 crédits pour 49 $ (ils n'expirent jamais)\n- Ou la recharge automatique : plus jamais à court\n\n${cta} : ${APP}/app/billing?interval=month\n\nÀ très vite,\nL'équipe Storyit`;
+    const previewTo = (sys as { preview_to?: string }).preview_to;
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST', headers: { Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [to], subject: `⚠️ Plus que ${left} crédits sur Storyit`, html, text }),
+      body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [previewTo ?? to], subject: `${previewTo ? '[APERÇU] ' : ''}${up ? '🚀' : '⚠️'} Plus que ${left} crédits sur Storyit`, html, text }),
     });
+
     const data = await res.json().catch(() => ({}));
     console.log(JSON.stringify({ audit: 'low_credits_email', user: low_credits, ok: res.ok }));
     return Response.json(res.ok ? { sent: true, id: data.id } : { error: data }, { status: res.ok ? 200 : 502 });

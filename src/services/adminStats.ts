@@ -25,6 +25,8 @@ export type TrialState = 'ongoing' | 'cancelled' | 'converted' | 'lost' | 'block
 /** free trials: ongoing (will be charged), cancelled (still running, will not be charged), converted (paid),
  *  lost (ended without paying), blocked (refused or fraud, left out of the rates) */
 export interface TrialStats {
+  /** people who received a trial since the beginning, and how many paid ($5 or more, refunds deducted) */
+  people?: Record<'all' | 'free' | 'dollar', { took: number; paid: number; abuse: number; paidCents: number }>;
   total: number; ongoing: number; cancelled: number; converted: number; lost: number; blocked: number;
   ifAllPayCents: number; ifNotCancelledPayCents: number; ifAllEverPaidCents: number; convertedCents: number;
   list: { email: string; state: TrialState; startedAt: number; endsAt: number | null; priceCents: number; paidCents: number; used: number }[];

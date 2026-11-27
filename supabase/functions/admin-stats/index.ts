@@ -331,7 +331,28 @@ Deno.serve(async (req) => {
   }
   const tCount = (s: string) => trialList.filter((t) => t.state === s).length;
   const tSum = (f: (t: (typeof trialList)[number]) => boolean) => trialList.filter(f).reduce((s, t) => s + t.priceCents, 0);
+  // the real conversion: PEOPLE who received a trial since the beginning (trial credits granted: the free trial since
+  // Nov 20 and the earlier $1 trial) and how many of them paid at least $5 (refunds deducted). Trials removed for abuse
+  // (credits taken back, or banned) are counted apart.
+  const trialPeople = new Map<string, { free: boolean; at: number }>();
+  const removed = new Set<string>();
+  for (const t of txRes.data ?? []) {
+    const desc = String(t.description ?? '');
+    if (desc.startsWith('Essai retiré')) removed.add(t.user_id);
+    const isFree = desc.startsWith('Essai gratuit'), isDollar = /^Essai \d+ jours/.test(desc);
+    if (t.type === 'subscription_grant' && (isFree || isDollar)) {
+      const prev = trialPeople.get(t.user_id);
+      trialPeople.set(t.user_id, { free: isFree || !!prev?.free, at: Math.min(prev?.at ?? Infinity, Date.parse(t.created_at)) });
+    }
+  }
+  const group = (free: boolean | null) => {
+    const ids = [...trialPeople].filter(([, v]) => free === null || v.free === free).map(([k]) => k);
+    const abuse = ids.filter((id) => removed.has(id) || (profiles.get(id) as any)?.banned_at);
+    const paidIds = ids.filter((id) => (paid.get(id)?.total ?? 0) >= 500);
+    return { took: ids.length, paid: paidIds.length, abuse: abuse.length, paidCents: paidIds.reduce((s, id) => s + (paid.get(id)?.total ?? 0), 0) };
+  };
   const trials = {
+    people: { all: group(null), free: group(true), dollar: group(false) },
     total: trialList.filter((t) => t.state !== 'blocked').length,
     ongoing: tCount('ongoing'), cancelled: tCount('cancelled'), converted: tCount('converted'), lost: tCount('lost'), blocked: tCount('blocked'),
     /** every trial still running pays (those who already cancelled included) */
