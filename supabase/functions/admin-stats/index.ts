@@ -314,7 +314,7 @@ Deno.serve(async (req) => {
     const amount = money(p.usd_total ?? p.total) - money(p.refunded_amount);
     if (amount > 0) paidOnMembership.set(p.membership_id, (paidOnMembership.get(p.membership_id) ?? 0) + amount);
   }
-  const trialList: { email: string; state: 'ongoing' | 'cancelled' | 'converted' | 'lost' | 'blocked'; startedAt: number; whop: string; endsAt: number | null; priceCents: number; paidCents: number; used: number }[] = [];
+  const trialList: { email: string; state: 'ongoing' | 'cancelled' | 'converted' | 'lost' | 'blocked'; startedAt: number; whop: string; membership: string; uid: string | null; endsAt: number | null; priceCents: number; paidCents: number; used: number }[] = [];
   for (const m of whopMembers) {
     if (m.metadata?.trial !== '1') continue;
     const uid = whopUid(m);
@@ -326,7 +326,7 @@ Deno.serve(async (req) => {
       : m.status === 'trialing' ? (m.cancel_at_period_end ? 'cancelled' : 'ongoing')
       // a trial stopped before its end date was cut by Storyit (fraud, guard refusal): a customer who cancels keeps it to the end
       : (p?.banned_at || !uid || !trialGranted.has(uid) || (m.canceled_at && Date.parse(m.canceled_at) < Date.parse(m.current_period_end) - 3_600_000)) ? 'blocked' : 'lost';
-    trialList.push({ email: uid ? emailOf.get(uid) ?? '' : '', state, startedAt: start, whop: String(m.status), endsAt: Date.parse(m.current_period_end) || null,
+    trialList.push({ email: uid ? emailOf.get(uid) ?? '' : '', state, startedAt: start, whop: String(m.status), membership: String(m.id), uid: uid ?? null, endsAt: Date.parse(m.current_period_end) || null,
       priceCents: money(m.renewal_price), paidCents: paidC, used: uid ? spent.get(uid) ?? 0 : 0 });
   }
   const tCount = (s: string) => trialList.filter((t) => t.state === s).length;
